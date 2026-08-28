@@ -1,7 +1,7 @@
 import XCTest
 @testable import TrustNet
 
-/// The wire contract with `https://portal.gmai.sa/socialsa/api/v1`.
+/// The wire contract with `https://sila.gmai.sa/api/v1`.
 ///
 /// These decode the exact payload shapes the backend documents, so a change on
 /// the server surfaces here rather than as a blank screen on device.
@@ -188,7 +188,7 @@ final class APIContractTests: XCTestCase {
     // MARK: Configuration
 
     func testTheAPIBaseURLIsWellFormedAndPointsAtTheDeployedBackend() {
-        XCTAssertEqual(AppConfig.apiBaseURL.absoluteString, "https://portal.gmai.sa/socialsa/api/v1")
+        XCTAssertEqual(AppConfig.apiBaseURL.absoluteString, "https://sila.gmai.sa/api/v1")
         XCTAssertEqual(AppConfig.apiBaseURL.scheme, "https", "No ATS exception is declared, so HTTPS is mandatory")
     }
 }

@@ -26,7 +26,7 @@ xcodebuild -project TrustNet.xcodeproj -scheme TrustNet \
 
 ## Backend
 
-`AppConfig.apiBaseURLString` → `https://portal.gmai.sa/socialsa/api/v1`
+`AppConfig.apiBaseURLString` → `https://sila.gmai.sa/api/v1`
 (one line to change; a unit test asserts it stays HTTPS, since no ATS exception
 is declared). API contract and ops notes live on the server at
 `/home/ubuntu/social-sa/docs/api-contract-v1.md` and `infra/DEPLOY.md`.

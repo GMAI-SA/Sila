@@ -7,7 +7,7 @@ import Foundation
 public enum AppConfig {
 
     /// The single source of truth for the backend origin + version prefix.
-    public static let apiBaseURLString = "https://portal.gmai.sa/socialsa/api/v1"
+    public static let apiBaseURLString = "https://sila.gmai.sa/api/v1"
 
     /// ``apiBaseURLString`` parsed as a `URL`.
     ///
@@ -23,10 +23,10 @@ public enum AppConfig {
     public static let appealEmail = "appeals@socialsa.com"
 
     /// Terms of Service, opened in a web sheet from registration.
-    public static let termsURLString = "https://portal.gmai.sa/socialsa/legal/terms"
+    public static let termsURLString = "https://sila.gmai.sa/legal/terms"
 
     /// Privacy Policy, opened in a web sheet from registration.
-    public static let privacyURLString = "https://portal.gmai.sa/socialsa/legal/privacy"
+    public static let privacyURLString = "https://sila.gmai.sa/legal/privacy"
 
     /// How long the OTP resend button stays disabled when the server does not
     /// tell us otherwise.

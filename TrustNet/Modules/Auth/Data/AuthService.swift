@@ -2,7 +2,7 @@ import Foundation
 
 /// The production ``AuthServiceProtocol``.
 ///
-/// Talks to `https://portal.gmai.sa/socialsa/api/v1` through the injected
+/// Talks to `https://sila.gmai.sa/api/v1` through the injected
 /// ``NetworkClient``, and owns the token lifecycle via ``AuthTokenStore``:
 /// every successful call that yields a ``TokenPair`` persists it, and every
 /// authenticated call transparently refreshes an expiring access token first.
