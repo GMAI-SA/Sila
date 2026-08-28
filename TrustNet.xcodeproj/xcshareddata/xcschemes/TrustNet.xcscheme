@@ -35,6 +35,20 @@
                ReferencedContainer = "container:TrustNet.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CA0F297F8838CC5ABB5CFD7F"
+               BuildableName = "TrustNetUITests.xctest"
+               BlueprintName = "TrustNetUITests"
+               ReferencedContainer = "container:TrustNet.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -61,6 +75,16 @@
                BlueprintIdentifier = "62AC9B7E0692CE112D695725"
                BuildableName = "TrustNetTests.xctest"
                BlueprintName = "TrustNetTests"
+               ReferencedContainer = "container:TrustNet.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CA0F297F8838CC5ABB5CFD7F"
+               BuildableName = "TrustNetUITests.xctest"
+               BlueprintName = "TrustNetUITests"
                ReferencedContainer = "container:TrustNet.xcodeproj">
             </BuildableReference>
          </TestableReference>

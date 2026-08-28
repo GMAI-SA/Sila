@@ -73,6 +73,19 @@ To see the whole feed without a backend:
 
 ## Tests
 
+218 total: 216 unit (7 opt-in, see below) and 2 XCUITests. The UI tests drive
+sign-in → feed against the mocks — no network, no seeded account — and are the
+only tests that would catch a broken route or an untappable button, since every
+view model passes in isolation whether or not the screens are wired together.
+They also attach screenshots, extractable from the result bundle:
+
+```bash
+xcodebuild ... test -only-testing:TrustNetUITests -resultBundlePath out.xcresult
+xcrun xcresulttool export --path out.xcresult --id <payloadRef> --output-path shot.png --type file
+```
+
+### Opt-in live tests
+
 212 tests. Three of them (`LiveAPITests`) hit the real deployed backend and skip
 unless you opt in — they are the only guard against the *server's* wire format
 drifting away from the app's decoders:

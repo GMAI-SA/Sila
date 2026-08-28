@@ -47,15 +47,32 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGNING_ALLOWED: NO
 
+  TrustNetUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: UITests
+    dependencies:
+      - target: TrustNet
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.trustnet.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        TEST_TARGET_NAME: TrustNet
+
 schemes:
   TrustNet:
     build:
       targets:
         TrustNet: all
         TrustNetTests: [test]
+        TrustNetUITests: [test]
     test:
       targets:
         - TrustNetTests
+        - TrustNetUITests
       gatherCoverageData: true
     run:
       config: Debug
