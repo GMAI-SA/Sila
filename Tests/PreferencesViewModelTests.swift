@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// ``PreferencesServiceProtocol`` whose every answer the test chooses.
 ///
@@ -728,19 +728,19 @@ final class InternationalFeedInvalidationTests: XCTestCase {
 final class PreferencesFeatureFlagTests: XCTestCase {
 
     func testThePreferencesPhaseShipsOnByDefault() {
-        XCTAssertTrue(FeatureFlags.resolved(arguments: ["TrustNet"]).preferences)
-        XCTAssertFalse(FeatureFlags.resolved(arguments: ["TrustNet"]).useMockPreferences)
+        XCTAssertTrue(FeatureFlags.resolved(arguments: ["Sila"]).preferences)
+        XCTAssertFalse(FeatureFlags.resolved(arguments: ["Sila"]).useMockPreferences)
     }
 
     func testMockPreferencesArgumentSwitchesToTheMockService() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockPreferences"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockPreferences"])
         XCTAssertTrue(flags.useMockPreferences)
         XCTAssertEqual(flags.mockPreferencesScenario, .populated)
     }
 
     func testMockPreferencesScenarioSelectsAWorldAndImpliesTheMock() {
         let flags = FeatureFlags.resolved(
-            arguments: ["TrustNet", "-mockPreferencesScenario", "saveFails"]
+            arguments: ["Sila", "-mockPreferencesScenario", "saveFails"]
         )
         XCTAssertTrue(flags.useMockPreferences)
         XCTAssertEqual(flags.mockPreferencesScenario, .saveFails)
@@ -748,19 +748,19 @@ final class PreferencesFeatureFlagTests: XCTestCase {
 
     func testAnUnknownPreferencesScenarioNameIsIgnored() {
         let flags = FeatureFlags.resolved(
-            arguments: ["TrustNet", "-mockPreferencesScenario", "banana"]
+            arguments: ["Sila", "-mockPreferencesScenario", "banana"]
         )
         XCTAssertFalse(flags.useMockPreferences)
     }
 
     func testMockingAuthAlsoMocksPreferencesBecauseThereIsNoRealToken() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockAuth"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockAuth"])
         XCTAssertTrue(flags.useMockPreferences)
     }
 
     func testAnExplicitPreferencesScenarioWinsOverTheMockAuthDefault() {
         let flags = FeatureFlags.resolved(
-            arguments: ["TrustNet", "-mockAuth", "-mockPreferencesScenario", "empty"]
+            arguments: ["Sila", "-mockAuth", "-mockPreferencesScenario", "empty"]
         )
         XCTAssertEqual(flags.mockPreferencesScenario, .empty)
     }

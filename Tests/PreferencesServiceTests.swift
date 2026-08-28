@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// The wire contract with contract v4 (`/topics`, `/me/preferences`) and the
 /// request construction around it.

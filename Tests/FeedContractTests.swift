@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// The wire contract with contract v2 (`/feed`, `/posts`).
 ///

@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 @MainActor
 final class ExploreViewModelTests: XCTestCase {
@@ -157,7 +157,7 @@ final class ExploreViewModelTests: XCTestCase {
         ]
         let viewModel = makeViewModel(search: search)
 
-        viewModel.updateQuery("trustnet", immediately: true)
+        viewModel.updateQuery("sila", immediately: true)
         try await settle()
         XCTAssertEqual(viewModel.posts.count, 1)
 
@@ -176,7 +176,7 @@ final class ExploreViewModelTests: XCTestCase {
         ]
         let viewModel = makeViewModel(search: search)
 
-        viewModel.updateQuery("trustnet", immediately: true)
+        viewModel.updateQuery("sila", immediately: true)
         try await settle()
         await viewModel.loadMore()
 

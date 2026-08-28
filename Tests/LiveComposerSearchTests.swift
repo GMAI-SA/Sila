@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// Drives the deployed server through the Composer and Search stacks.
 ///
@@ -12,8 +12,8 @@ import XCTest
 /// Opt-in, same as the other live suites. Anything created here is deleted
 /// again, so the account is left as it was found:
 /// ```
-/// TEST_RUNNER_TRUSTNET_LIVE_API=1 TEST_RUNNER_TRUSTNET_LIVE_EMAIL=… \
-/// TEST_RUNNER_TRUSTNET_LIVE_PASSWORD=… xcodebuild … test
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_LIVE_EMAIL=… \
+/// TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
 /// ```
 final class LiveComposerSearchTests: XCTestCase {
 
@@ -22,12 +22,12 @@ final class LiveComposerSearchTests: XCTestCase {
 
     override func setUp() async throws {
         let env = ProcessInfo.processInfo.environment
-        guard env["TRUSTNET_LIVE_API"] == "1" else {
-            throw XCTSkip("Live API tests are opt-in — set TRUSTNET_LIVE_API=1")
+        guard env["SILA_LIVE_API"] == "1" else {
+            throw XCTSkip("Live API tests are opt-in — set SILA_LIVE_API=1")
         }
-        guard let email = env["TRUSTNET_LIVE_EMAIL"],
-              let password = env["TRUSTNET_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set TRUSTNET_LIVE_EMAIL and TRUSTNET_LIVE_PASSWORD")
+        guard let email = env["SILA_LIVE_EMAIL"],
+              let password = env["SILA_LIVE_PASSWORD"] else {
+            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
         }
         let auth = AuthService(
             network: URLSessionNetworkClient(),

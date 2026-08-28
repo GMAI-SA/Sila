@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// ``PostDetailViewModel``: parent context, reply paging, and the composer bar's
 /// reflection of `viewer.can_reply`.

@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// Sign-in: credentials, the `email_unverified` detour, and biometric unlock.
 @MainActor
@@ -131,8 +131,8 @@ final class SignInViewModelTests: XCTestCase {
 
         await viewModel.loadBiometricState()
 
-        XCTAssertEqual(viewModel.biometricEmail, "saved@trustnet.app")
-        XCTAssertEqual(viewModel.email, "saved@trustnet.app")
+        XCTAssertEqual(viewModel.biometricEmail, "saved@sila.app")
+        XCTAssertEqual(viewModel.email, "saved@sila.app")
         XCTAssertTrue(viewModel.showsBiometricButton)
         XCTAssertEqual(viewModel.biometricButtonTitle, "Sign in with Face ID")
     }
@@ -160,7 +160,7 @@ final class SignInViewModelTests: XCTestCase {
 
         await viewModel.signInWithBiometrics()
 
-        XCTAssertEqual(viewModel.signedInPair?.user.email, "saved@trustnet.app")
+        XCTAssertEqual(viewModel.signedInPair?.user.email, "saved@sila.app")
         let calls = await service.recordedCalls
         XCTAssertEqual(calls, ["signInBiometric"])
     }

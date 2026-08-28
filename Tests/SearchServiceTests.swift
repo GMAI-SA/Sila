@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// The wire contract with contract v3 (`/search/*`, `/explore/trending`), and
 /// the request construction around it.
@@ -132,14 +132,14 @@ final class SearchServiceTests: XCTestCase {
 
     func testTrendingDecodesTagsWithoutTheHash() async throws {
         let network = StubNetworkClient(responses: ["""
-        {"tags": [{"tag": "riyadh", "post_count": 12}, {"tag": "trustnet", "post_count": 5}]}
+        {"tags": [{"tag": "riyadh", "post_count": 12}, {"tag": "sila", "post_count": 5}]}
         """])
 
         let tags = try await makeService(network).trendingTags(limit: 10)
 
         XCTAssertEqual(network.lastRequest?.path, "/explore/trending")
         XCTAssertEqual(network.lastRequest?.queryValue("limit"), "10")
-        XCTAssertEqual(tags.map(\.tag), ["riyadh", "trustnet"])
+        XCTAssertEqual(tags.map(\.tag), ["riyadh", "sila"])
         XCTAssertEqual(tags.map(\.postCount), [12, 5])
         XCTAssertEqual(tags.first?.hashtag, "#riyadh", "The '#' is added for display, never expected on the wire")
         XCTAssertEqual(tags.first?.id, "riyadh")

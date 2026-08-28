@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// What ``ComposerService`` actually puts on the wire for `POST /posts`, and
 /// how it reports the contract's failure codes back.

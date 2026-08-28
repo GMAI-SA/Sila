@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// ``NetworkClient`` that records what was asked for and replays a script.
 ///
@@ -32,6 +32,10 @@ final class StubNetworkClient: NetworkClient, @unchecked Sendable {
 
     func send(_ request: APIRequest) async throws {
         _ = try record(request)
+    }
+
+    func sendData(_ request: APIRequest) async throws -> Data {
+        Data(try record(request).utf8)
     }
 
     /// The most recent request, for one-shot assertions.

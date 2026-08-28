@@ -10,9 +10,9 @@ import XCTest
 ///
 /// Opt-in, because it needs the network and a real account:
 /// ```
-/// TEST_RUNNER_TRUSTNET_LIVE_API=1 TEST_RUNNER_TRUSTNET_LIVE_EMAIL=… \
-/// TEST_RUNNER_TRUSTNET_LIVE_PASSWORD=… xcodebuild … \
-///   test -only-testing:TrustNetUITests/LiveSignInUITests
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_LIVE_EMAIL=… \
+/// TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … \
+///   test -only-testing:SilaUITests/LiveSignInUITests
 /// ```
 final class LiveSignInUITests: XCTestCase {
 
@@ -22,11 +22,11 @@ final class LiveSignInUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         let env = ProcessInfo.processInfo.environment
-        guard env["TRUSTNET_LIVE_API"] == "1" else {
-            throw XCTSkip("Live sign-in is opt-in — set TRUSTNET_LIVE_API=1")
+        guard env["SILA_LIVE_API"] == "1" else {
+            throw XCTSkip("Live sign-in is opt-in — set SILA_LIVE_API=1")
         }
-        guard let e = env["TRUSTNET_LIVE_EMAIL"], let p = env["TRUSTNET_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set TRUSTNET_LIVE_EMAIL and TRUSTNET_LIVE_PASSWORD")
+        guard let e = env["SILA_LIVE_EMAIL"], let p = env["SILA_LIVE_PASSWORD"] else {
+            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
         }
         email = e
         password = p

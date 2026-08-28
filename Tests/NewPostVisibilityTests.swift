@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// What happens to a post *after* the composer succeeds.
 ///

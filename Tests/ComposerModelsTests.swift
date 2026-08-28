@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// The composer's pure logic: counting characters, deciding which audiences an
 /// account may open a thread to, and finding the `@mention` being typed.

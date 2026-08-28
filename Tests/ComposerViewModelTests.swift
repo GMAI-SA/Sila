@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// ``ComposerServiceProtocol`` whose every call is scriptable, so the thread
 /// chain and its failure points can be driven exactly.

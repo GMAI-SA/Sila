@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// The pure mappings the feed's UI is built from: country flags, scope chips,
 /// reply permissions, relative timestamps and inline entity parsing.

@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// Session routing: the single place that decides feed vs. wall vs. rejected.
 @MainActor

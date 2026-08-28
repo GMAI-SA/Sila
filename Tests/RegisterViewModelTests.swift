@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// Registration: validation rules, the happy path, and server-side rejection.
 @MainActor
@@ -98,13 +98,13 @@ final class RegisterViewModelTests: XCTestCase {
 
     func testEmailTakenMapsToInlineFieldError() async {
         let (viewModel, _) = makeViewModel()
-        viewModel.email = "taken@trustnet.app"
+        viewModel.email = "taken@sila.app"
         viewModel.password = "Str0ng!Passw0rd"
         viewModel.confirmPassword = "Str0ng!Passw0rd"
 
         await viewModel.submit()
 
-        XCTAssertEqual(viewModel.emailError, "That email already has a TrustNet account.")
+        XCTAssertEqual(viewModel.emailError, "That email already has a Sila account.")
         XCTAssertNil(viewModel.registeredEmail)
         XCTAssertEqual(viewModel.toast?.kind, .error)
     }

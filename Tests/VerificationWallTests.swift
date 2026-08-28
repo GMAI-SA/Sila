@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// Every ``VerificationStatus`` must map to a coherent wall presentation, and
 /// the wall's view model must reflect what `/verification/status` returns.
@@ -44,7 +44,7 @@ final class VerificationWallTests: XCTestCase {
     func testVerifiedOffersEntryToTheApp() {
         let presentation = WallPresentation.make(for: .verified)
         XCTAssertEqual(presentation.badgeText, "Verified")
-        XCTAssertEqual(presentation.primaryActionTitle, "Enter TrustNet")
+        XCTAssertEqual(presentation.primaryActionTitle, "Enter Sila")
         XCTAssertFalse(presentation.showsProcessingAnimation)
     }
 

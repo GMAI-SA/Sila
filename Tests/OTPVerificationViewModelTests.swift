@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// The six-box code field: auto-advance, backspace, paste, verification and
 /// the resend countdown.

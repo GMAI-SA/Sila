@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// Round-trips the real deployed backend through the app's own networking and
 /// decoding stack. Every other test in this suite runs against fixtures, so
@@ -9,8 +9,8 @@ import XCTest
 ///
 /// Opt-in, because it needs the network and a seeded account:
 /// ```
-/// TRUSTNET_LIVE_API=1 TRUSTNET_LIVE_EMAIL=... TRUSTNET_LIVE_PASSWORD=... \
-///   xcodebuild ... test -only-testing:TrustNetTests/LiveAPITests
+/// SILA_LIVE_API=1 SILA_LIVE_EMAIL=... SILA_LIVE_PASSWORD=... \
+///   xcodebuild ... test -only-testing:SilaTests/LiveAPITests
 /// ```
 final class LiveAPITests: XCTestCase {
 
@@ -18,12 +18,12 @@ final class LiveAPITests: XCTestCase {
 
     override func setUpWithError() throws {
         let env = ProcessInfo.processInfo.environment
-        guard env["TRUSTNET_LIVE_API"] == "1" else {
-            throw XCTSkip("Live API tests are opt-in — set TRUSTNET_LIVE_API=1")
+        guard env["SILA_LIVE_API"] == "1" else {
+            throw XCTSkip("Live API tests are opt-in — set SILA_LIVE_API=1")
         }
-        guard let email = env["TRUSTNET_LIVE_EMAIL"],
-              let password = env["TRUSTNET_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set TRUSTNET_LIVE_EMAIL and TRUSTNET_LIVE_PASSWORD")
+        guard let email = env["SILA_LIVE_EMAIL"],
+              let password = env["SILA_LIVE_PASSWORD"] else {
+            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
         }
         credentials = (email, password)
     }

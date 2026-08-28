@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// ``FeedServiceProtocol`` whose every method is scriptable, so pagination and
 /// rollback can be driven exactly.

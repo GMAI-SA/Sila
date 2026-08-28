@@ -1,5 +1,5 @@
 import XCTest
-@testable import TrustNet
+@testable import Sila
 
 /// The wire contract with `https://sila.gmai.sa/api/v1`.
 ///
@@ -208,7 +208,7 @@ final class APIContractTests: XCTestCase {
 final class FeatureFlagsTests: XCTestCase {
 
     func testDefaultsUseTheLiveBackendAndEnableTheShippedPhases() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila"])
         XCTAssertFalse(flags.useMockAuth)
         XCTAssertFalse(flags.useMockFeed)
         XCTAssertFalse(flags.useMockComposer)
@@ -222,49 +222,49 @@ final class FeatureFlagsTests: XCTestCase {
     }
 
     func testMockAuthArgumentSwitchesToTheMockService() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockAuth"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockAuth"])
         XCTAssertTrue(flags.useMockAuth)
         XCTAssertEqual(flags.mockScenario, .pendingReview)
     }
 
     func testMockScenarioArgumentSelectsAJourneyAndImpliesMockAuth() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockScenario", "rejected"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockScenario", "rejected"])
         XCTAssertTrue(flags.useMockAuth)
         XCTAssertEqual(flags.mockScenario, .rejected)
     }
 
     func testAnUnknownScenarioNameIsIgnored() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockScenario", "banana"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockScenario", "banana"])
         XCTAssertFalse(flags.useMockAuth)
     }
 
     func testBiometricsCanBeDisabledForUITests() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-noBiometrics"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-noBiometrics"])
         XCTAssertFalse(flags.biometricSignIn)
     }
 
     func testMockFeedScenarioArgumentSelectsAWorldAndImpliesMockFeed() {
         let flags = FeatureFlags.resolved(
-            arguments: ["TrustNet", "-mockFeedScenario", "unverifiedNoCountry"]
+            arguments: ["Sila", "-mockFeedScenario", "unverifiedNoCountry"]
         )
         XCTAssertTrue(flags.useMockFeed)
         XCTAssertEqual(flags.mockFeedScenario, .unverifiedNoCountry)
     }
 
     func testAnUnknownFeedScenarioNameIsIgnored() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockFeedScenario", "banana"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockFeedScenario", "banana"])
         XCTAssertFalse(flags.useMockFeed)
     }
 
     func testMockingAuthAlsoMocksTheFeedBecauseThereIsNoRealToken() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockAuth"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockAuth"])
         XCTAssertTrue(flags.useMockFeed)
         XCTAssertEqual(flags.mockFeedScenario, .populated)
     }
 
     func testAnExplicitFeedScenarioWinsOverTheMockAuthDefault() {
         let flags = FeatureFlags.resolved(
-            arguments: ["TrustNet", "-mockAuth", "-mockFeedScenario", "empty"]
+            arguments: ["Sila", "-mockAuth", "-mockFeedScenario", "empty"]
         )
         XCTAssertTrue(flags.useMockFeed)
         XCTAssertEqual(flags.mockFeedScenario, .empty)
@@ -273,7 +273,7 @@ final class FeatureFlagsTests: XCTestCase {
     // MARK: Phase 4
 
     func testMockComposerArgumentSwitchesToTheMockService() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockComposer"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockComposer"])
         XCTAssertTrue(flags.useMockComposer)
         XCTAssertEqual(flags.mockComposerScenario, .success)
         XCTAssertTrue(flags.useMockSearch, "A composer demo needs a mention list that resolves")
@@ -281,32 +281,32 @@ final class FeatureFlagsTests: XCTestCase {
 
     func testMockComposerScenarioArgumentSelectsAWorldAndImpliesMockComposer() {
         let flags = FeatureFlags.resolved(
-            arguments: ["TrustNet", "-mockComposerScenario", "threadFailsMidway"]
+            arguments: ["Sila", "-mockComposerScenario", "threadFailsMidway"]
         )
         XCTAssertTrue(flags.useMockComposer)
         XCTAssertEqual(flags.mockComposerScenario, .threadFailsMidway)
     }
 
     func testAnUnknownComposerScenarioNameIsIgnored() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockComposerScenario", "banana"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockComposerScenario", "banana"])
         XCTAssertFalse(flags.useMockComposer)
     }
 
     func testMockSearchScenarioArgumentSelectsAWorldAndImpliesMockSearch() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockSearchScenario", "offline"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockSearchScenario", "offline"])
         XCTAssertTrue(flags.useMockSearch)
         XCTAssertEqual(flags.mockSearchScenario, .offline)
     }
 
     func testMockingAuthAlsoMocksTheComposerAndSearch() {
-        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockAuth"])
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockAuth"])
         XCTAssertTrue(flags.useMockComposer)
         XCTAssertTrue(flags.useMockSearch)
     }
 
     func testAnExplicitComposerScenarioWinsOverTheMockAuthDefault() {
         let flags = FeatureFlags.resolved(
-            arguments: ["TrustNet", "-mockAuth", "-mockComposerScenario", "unverified"]
+            arguments: ["Sila", "-mockAuth", "-mockComposerScenario", "unverified"]
         )
         XCTAssertEqual(flags.mockComposerScenario, .unverified)
     }

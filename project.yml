@@ -1,4 +1,4 @@
-name: TrustNet
+name: Sila
 options:
   bundleIdPrefix: com.socialsa
   deploymentTarget:
@@ -13,17 +13,17 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: NO
 
 targets:
-  TrustNet:
+  Sila:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: TrustNet
+      - path: Sila
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.trustnet
-        PRODUCT_NAME: TrustNet
-        INFOPLIST_FILE: TrustNet/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.sila
+        PRODUCT_NAME: Sila
+        INFOPLIST_FILE: Sila/Resources/Info.plist
         CODE_SIGN_STYLE: Automatic
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGNING_ALLOWED: NO
@@ -33,46 +33,46 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         DEVELOPMENT_ASSET_PATHS: ""
 
-  TrustNetTests:
+  SilaTests:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget: "17.0"
     sources:
       - path: Tests
     dependencies:
-      - target: TrustNet
+      - target: Sila
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.trustnet.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.sila.tests
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGNING_ALLOWED: NO
 
-  TrustNetUITests:
+  SilaUITests:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget: "17.0"
     sources:
       - path: UITests
     dependencies:
-      - target: TrustNet
+      - target: Sila
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.trustnet.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.sila.uitests
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGNING_ALLOWED: NO
-        TEST_TARGET_NAME: TrustNet
+        TEST_TARGET_NAME: Sila
 
 schemes:
-  TrustNet:
+  Sila:
     build:
       targets:
-        TrustNet: all
-        TrustNetTests: [test]
-        TrustNetUITests: [test]
+        Sila: all
+        SilaTests: [test]
+        SilaUITests: [test]
     test:
       targets:
-        - TrustNetTests
-        - TrustNetUITests
+        - SilaTests
+        - SilaUITests
       gatherCoverageData: true
     run:
       config: Debug

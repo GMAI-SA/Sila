@@ -1,4 +1,4 @@
-# TrustNet iOS (Social SA)
+# Sila iOS (Social SA)
 
 Phases 1 (Authentication), 3 (Feed) and 4 (Composer & Search), plus contract
 v4's feed preferences. Swift 5.9 / SwiftUI, iOS 17+, MVVM + Clean Architecture,
@@ -10,17 +10,17 @@ The project file is generated, so regenerate it after adding or moving files:
 
 ```bash
 ~/tools/xcodegen/bin/xcodegen generate --spec project.yml
-open TrustNet.xcodeproj
+open Sila.xcodeproj
 ```
 
 Command line:
 
 ```bash
-xcodebuild -project TrustNet.xcodeproj -scheme TrustNet \
+xcodebuild -project Sila.xcodeproj -scheme Sila \
   -destination 'generic/platform=iOS Simulator' \
   -configuration Debug CODE_SIGNING_ALLOWED=NO build
 
-xcodebuild -project TrustNet.xcodeproj -scheme TrustNet \
+xcodebuild -project Sila.xcodeproj -scheme Sila \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
   -configuration Debug CODE_SIGNING_ALLOWED=NO test
 ```
@@ -142,7 +142,7 @@ isolation whether or not the screens are wired together.
 They also attach screenshots, extractable from the result bundle:
 
 ```bash
-xcodebuild ... test -only-testing:TrustNetUITests -resultBundlePath out.xcresult
+xcodebuild ... test -only-testing:SilaUITests -resultBundlePath out.xcresult
 xcrun xcresulttool export --path out.xcresult --id <payloadRef> --output-path shot.png --type file
 ```
 
@@ -154,10 +154,10 @@ the real deployed backend and skip unless you opt in — they are the only guard
 drifting away from the app's decoders:
 
 ```bash
-TEST_RUNNER_TRUSTNET_LIVE_API=1 \
-TEST_RUNNER_TRUSTNET_LIVE_EMAIL=you@example.com \
-TEST_RUNNER_TRUSTNET_LIVE_PASSWORD='...' \
-xcodebuild ... test -only-testing:TrustNetTests/LiveAPITests
+TEST_RUNNER_SILA_LIVE_API=1 \
+TEST_RUNNER_SILA_LIVE_EMAIL=you@example.com \
+TEST_RUNNER_SILA_LIVE_PASSWORD='...' \
+xcodebuild ... test -only-testing:SilaTests/LiveAPITests
 ```
 The `TEST_RUNNER_` prefix is required — plain environment variables do not reach
 the test process on the simulator.
@@ -165,8 +165,8 @@ the test process on the simulator.
 ## Layout
 
 ```
-TrustNet/
-├── App/           TrustNetApp, AppContainer (DI root), AppRouter, FeatureFlags, AppConfig
+Sila/
+├── App/           SilaApp, AppContainer (DI root), AppRouter, FeatureFlags, AppConfig
 ├── Core/          Network, Storage, Security (Keychain + biometrics), Analytics, DesignSystem
 ├── Modules/Auth/  Domain (models, protocols) · Data (AuthService, mock) · Presentation (screens)
 ├── Modules/Feed/  Domain (Post/UserSummary/FeedPage, presentation mappings)
