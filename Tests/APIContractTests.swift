@@ -185,6 +185,17 @@ final class APIContractTests: XCTestCase {
         XCTAssertEqual(error, .unauthenticated)
     }
 
+    func testTheDeployedBackends401ReadsAsAnEndedSession() {
+        // Neither contract documents this code, but it is what
+        // `GET /feed/for-you` without a token actually returns. Without the
+        // mapping the user would be shown the raw "Missing bearer token".
+        let data = Data(#"{"detail": {"code": "unauthorized", "message": "Missing bearer token"}}"#.utf8)
+        let error = URLSessionNetworkClient.makeError(status: 401, data: data)
+
+        XCTAssertEqual(error.code, .unauthorized)
+        XCTAssertEqual(error.userMessage, "Your session has ended. Please sign in again.")
+    }
+
     // MARK: Configuration
 
     func testTheAPIBaseURLIsWellFormedAndPointsAtTheDeployedBackend() {
@@ -196,11 +207,15 @@ final class APIContractTests: XCTestCase {
 /// The launch-argument overrides that select the mock stack.
 final class FeatureFlagsTests: XCTestCase {
 
-    func testDefaultsUseTheLiveBackendAndOnlyEnablePhaseOne() {
+    func testDefaultsUseTheLiveBackendAndEnableTheShippedPhases() {
         let flags = FeatureFlags.resolved(arguments: ["TrustNet"])
         XCTAssertFalse(flags.useMockAuth)
-        XCTAssertTrue(flags.auth)
-        XCTAssertFalse(flags.feed)
+        XCTAssertFalse(flags.useMockFeed)
+        XCTAssertTrue(flags.auth, "Phase 1 ships")
+        XCTAssertTrue(flags.feed, "Phase 3 ships")
+        XCTAssertFalse(flags.verification, "Phase 2 does not exist yet")
+        XCTAssertFalse(flags.composer, "Phase 4 does not exist yet")
+        XCTAssertFalse(flags.profile, "Phase 7 does not exist yet")
         XCTAssertTrue(flags.biometricSignIn)
     }
 
@@ -224,5 +239,32 @@ final class FeatureFlagsTests: XCTestCase {
     func testBiometricsCanBeDisabledForUITests() {
         let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-noBiometrics"])
         XCTAssertFalse(flags.biometricSignIn)
+    }
+
+    func testMockFeedScenarioArgumentSelectsAWorldAndImpliesMockFeed() {
+        let flags = FeatureFlags.resolved(
+            arguments: ["TrustNet", "-mockFeedScenario", "unverifiedNoCountry"]
+        )
+        XCTAssertTrue(flags.useMockFeed)
+        XCTAssertEqual(flags.mockFeedScenario, .unverifiedNoCountry)
+    }
+
+    func testAnUnknownFeedScenarioNameIsIgnored() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockFeedScenario", "banana"])
+        XCTAssertFalse(flags.useMockFeed)
+    }
+
+    func testMockingAuthAlsoMocksTheFeedBecauseThereIsNoRealToken() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockAuth"])
+        XCTAssertTrue(flags.useMockFeed)
+        XCTAssertEqual(flags.mockFeedScenario, .populated)
+    }
+
+    func testAnExplicitFeedScenarioWinsOverTheMockAuthDefault() {
+        let flags = FeatureFlags.resolved(
+            arguments: ["TrustNet", "-mockAuth", "-mockFeedScenario", "empty"]
+        )
+        XCTAssertTrue(flags.useMockFeed)
+        XCTAssertEqual(flags.mockFeedScenario, .empty)
     }
 }

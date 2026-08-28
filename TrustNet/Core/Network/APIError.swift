@@ -17,6 +17,32 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case emailUnverified = "email_unverified"
     /// The caller is being throttled.
     case rateLimited = "rate_limited"
+    /// No usable bearer token reached the server.
+    ///
+    /// Undocumented in either contract, but what the deployed backend actually
+    /// answers on an unauthenticated request — without this the raw
+    /// "Missing bearer token" would be shown to the user.
+    case unauthorized = "unauthorized"
+
+    // MARK: Contract v2 — feed & social
+
+    /// The requested post id does not exist (or is no longer visible).
+    case postNotFound = "post_not_found"
+    /// The thread's scope excludes this viewer — see `viewer.reply_block_reason`.
+    case replyNotAllowed = "reply_not_allowed"
+    /// `GET /feed/country` from an account with no verified country.
+    case noCountry = "no_country"
+    /// A post body longer than ``FeedConstants/maximumPostLength``.
+    case textTooLong = "text_too_long"
+    /// Delete or edit attempted on someone else's post.
+    case notPostAuthor = "not_post_author"
+    /// The requested handle is already in use.
+    case handleTaken = "handle_taken"
+    /// The requested handle breaks the `[a-z0-9_]{3,20}` rule.
+    case invalidHandle = "invalid_handle"
+    /// An account tried to follow itself.
+    case selfFollow = "self_follow"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -66,6 +92,26 @@ public enum APIError: Error, Equatable, Sendable {
                 return "Confirm your email address to continue."
             case .rateLimited:
                 return "Too many requests. Wait a moment and try again."
+            case .unauthorized:
+                return "Your session has ended. Please sign in again."
+            case .postNotFound:
+                return "That post is no longer available."
+            case .replyNotAllowed:
+                // The card and the detail screen show the specific
+                // `reply_block_reason`; this is the fallback if one slips past.
+                return "You can't reply to this thread."
+            case .noCountry:
+                return "Your country flag comes from identity verification. Verify to unlock My Country."
+            case .textTooLong:
+                return "That post is longer than \(FeedConstants.maximumPostLength) characters."
+            case .notPostAuthor:
+                return "You can only delete your own posts."
+            case .handleTaken:
+                return "That handle is already taken."
+            case .invalidHandle:
+                return "Handles are 3–20 characters of letters, numbers and underscores."
+            case .selfFollow:
+                return "You can't follow yourself."
             case .unknown:
                 return message.isEmpty ? "Something went wrong. Please try again." : message
             }

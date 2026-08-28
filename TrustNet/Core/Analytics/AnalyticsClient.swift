@@ -17,7 +17,7 @@ extension AnalyticsClient {
     }
 }
 
-/// Events emitted by Phase 1.
+/// Events emitted by Phases 1 and 3.
 public enum AnalyticsEvent: String, Sendable {
     case appLaunched = "app_launched"
     case registerSubmitted = "register_submitted"
@@ -30,6 +30,22 @@ public enum AnalyticsEvent: String, Sendable {
     case verificationWallShown = "verification_wall_shown"
     case verificationStarted = "verification_started"
     case appealOpened = "appeal_opened"
+
+    // MARK: Phase 3 — Feed
+
+    case feedTabSelected = "feed_tab_selected"
+    case feedLoaded = "feed_loaded"
+    case postOpened = "post_opened"
+    case postLiked = "post_liked"
+    case postUnliked = "post_unliked"
+    case postReposted = "post_reposted"
+    case postUnreposted = "post_unreposted"
+    case postBookmarked = "post_bookmarked"
+    case postUnbookmarked = "post_unbookmarked"
+    case postShared = "post_shared"
+    case replyBlocked = "reply_blocked"
+    /// A screen that belongs to a later phase told the user so.
+    case featureStubShown = "feature_stub_shown"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

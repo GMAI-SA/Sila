@@ -52,11 +52,18 @@ public struct RootView: View {
                 .transition(.opacity)
 
             case .feed:
-                FeedPlaceholderScreen(
-                    user: container.session.user,
-                    onSignOut: { Task { await container.session.signOut() } }
-                )
-                .transition(.opacity)
+                if container.flags.feed {
+                    MainTabView(container: container)
+                        .transition(.opacity)
+                } else {
+                    // The Phase-3 kill switch: a verified user still gets in,
+                    // they just get the pre-feed screen.
+                    FeedPlaceholderScreen(
+                        user: container.session.user,
+                        onSignOut: { Task { await container.session.signOut() } }
+                    )
+                    .transition(.opacity)
+                }
             }
         }
         .animation(.easeInOut(duration: 0.28), value: container.session.route)
@@ -168,10 +175,10 @@ public struct RootView: View {
     }
 }
 
-/// Phase-3 placeholder shown to fully verified users.
+/// The pre-feed screen, retained as ``FeatureFlags/feed``'s off state.
 ///
-/// Exists so the "verified" branch of the routing table is real and testable;
-/// Phase 3 replaces it with `MainTabView`.
+/// ``MainTabView`` is what a verified user sees now. This stays so the feed
+/// phase has a real kill switch that still lets a verified user sign out.
 @MainActor
 struct FeedPlaceholderScreen: View {
 

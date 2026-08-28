@@ -23,8 +23,12 @@ public final class AppContainer {
     public let biometrics: BiometricAuthenticating
     /// Phase 1's service.
     public let authService: AuthServiceProtocol
+    /// On-device session secrets.
+    public let tokenStore: AuthTokenStore
     /// The live session — the object every screen observes.
     public let session: AuthSession
+    /// Phase 3's service.
+    public let feedService: FeedServiceProtocol
     /// Navigation coordinator.
     public let router: AppRouter
 
@@ -39,7 +43,8 @@ public final class AppContainer {
         keychain: KeychainClient? = nil,
         analytics: AnalyticsClient? = nil,
         biometrics: BiometricAuthenticating? = nil,
-        authService: AuthServiceProtocol? = nil
+        authService: AuthServiceProtocol? = nil,
+        feedService: FeedServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -77,17 +82,34 @@ public final class AppContainer {
         }
 
         self.authService = resolvedService
+        self.tokenStore = store
         self.session = AuthSession(service: resolvedService, store: store, analytics: analytics)
+
+        if let feedService {
+            self.feedService = feedService
+        } else if flags.useMockFeed {
+            self.feedService = FeedServiceMock(scenario: flags.mockFeedScenario, latency: 0.35)
+        } else {
+            self.feedService = FeedService(
+                network: network,
+                tokens: SessionAccessTokenProvider(store: store, service: resolvedService),
+                analytics: analytics
+            )
+        }
+
         self.router = AppRouter()
     }
 
     /// A container wired entirely to mocks, for previews.
     public static func preview(
-        scenario: AuthServiceMock.MockScenario = .pendingReview
+        scenario: AuthServiceMock.MockScenario = .pendingReview,
+        feedScenario: FeedServiceMock.MockScenario = .populated
     ) -> AppContainer {
         var flags = FeatureFlags()
         flags.useMockAuth = true
         flags.mockScenario = scenario
+        flags.useMockFeed = true
+        flags.mockFeedScenario = feedScenario
         return AppContainer(
             flags: flags,
             network: URLSessionNetworkClient(),
@@ -95,7 +117,8 @@ public final class AppContainer {
             keychain: InMemoryKeychainClient(),
             analytics: RecordingAnalyticsClient(),
             biometrics: StubBiometricAuthenticator(),
-            authService: AuthServiceMock(scenario: scenario, hasBiometricCredential: true)
+            authService: AuthServiceMock(scenario: scenario, hasBiometricCredential: true),
+            feedService: FeedServiceMock(scenario: feedScenario)
         )
     }
 }

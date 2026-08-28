@@ -13,17 +13,25 @@ public enum AuthRoute: Hashable, Sendable {
     case forgotPassword
 }
 
-/// Navigation coordinator for Phase 1.
+/// Screens reachable inside the verified app's home stack.
+public enum FeedRoute: Hashable, Sendable {
+    /// A post with its reply thread.
+    case postDetail(Post)
+}
+
+/// Navigation coordinator.
 ///
-/// Owns the auth `NavigationStack` path and the modals. Cross-screen routing
+/// Owns the `NavigationStack` paths and the modals. Cross-screen routing
 /// decisions that depend on *session state* live in ``AuthSession``; this type
-/// only moves the user around inside the unauthenticated flow.
+/// only moves the user around inside a stack.
 @MainActor
 @Observable
 public final class AppRouter {
 
     /// The auth stack's path.
     public var authPath: [AuthRoute] = []
+    /// The home (Phase 3) stack's path.
+    public var feedPath: [FeedRoute] = []
     /// Legal document currently presented in a sheet, if any.
     public var presentedLegalDocument: LegalDocument?
     /// App-level toast.
@@ -78,6 +86,16 @@ public final class AppRouter {
     /// be able to swipe back into a sign-in form that will keep failing.
     public func replaceWithOTP(email: String, purpose: OTPPurpose) {
         authPath = [.otp(email: email, purpose: purpose)]
+    }
+
+    /// Pushes a screen onto the home stack.
+    public func push(_ route: FeedRoute) {
+        feedPath.append(route)
+    }
+
+    /// Empties the home stack — used when the session ends.
+    public func popFeedToRoot() {
+        feedPath.removeAll()
     }
 
     /// Presents a legal document sheet.
