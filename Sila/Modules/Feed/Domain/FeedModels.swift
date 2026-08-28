@@ -63,7 +63,15 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
         handle = decodedHandle
         let name = (try? container.decodeIfPresent(String.self, forKey: .displayName)) ?? nil
         displayName = (name?.isEmpty == false ? name : nil) ?? decodedHandle
-        avatarURL = (try? container.decodeIfPresent(URL.self, forKey: .avatarURL)) ?? nil
+        // Resolved against the API origin rather than decoded straight into a
+        // `URL`. The server sends a root-relative path
+        // (`/api/v1/media/avatars/…`), which `URL(string:)` accepts and turns
+        // into a relative URL with no host — something `AsyncImage` can never
+        // load, and which fails silently as a missing image rather than as an
+        // error anybody would see.
+        avatarURL = AppConfig.mediaURL(
+            (try? container.decodeIfPresent(String.self, forKey: .avatarURL)) ?? nil
+        )
         isVerified = (try? container.decode(Bool.self, forKey: .isVerified)) ?? false
         countryCode = CountryCode.normalised(
             (try? container.decodeIfPresent(String.self, forKey: .countryCode)) ?? nil

@@ -35,6 +35,8 @@ public final class AppContainer {
     public let searchService: SearchServiceProtocol
     /// Contract v4's interests service — topics and feed preferences.
     public let preferencesService: PreferencesServiceProtocol
+    /// Contract v5's account service — profile, credentials, export, deletion.
+    public let accountService: AccountServiceProtocol
     /// Navigation coordinator.
     public let router: AppRouter
 
@@ -53,7 +55,8 @@ public final class AppContainer {
         feedService: FeedServiceProtocol? = nil,
         composerService: ComposerServiceProtocol? = nil,
         searchService: SearchServiceProtocol? = nil,
-        preferencesService: PreferencesServiceProtocol? = nil
+        preferencesService: PreferencesServiceProtocol? = nil,
+        accountService: AccountServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -140,6 +143,21 @@ public final class AppContainer {
             )
         }
 
+        if let accountService {
+            self.accountService = accountService
+        } else if flags.useMockAccount {
+            self.accountService = AccountServiceMock(
+                scenario: flags.mockAccountScenario,
+                latency: 0.3
+            )
+        } else {
+            self.accountService = AccountService(
+                network: network,
+                tokens: tokens,
+                analytics: analytics
+            )
+        }
+
         self.router = AppRouter()
     }
 
@@ -149,7 +167,8 @@ public final class AppContainer {
         feedScenario: FeedServiceMock.MockScenario = .populated,
         composerScenario: ComposerServiceMock.MockScenario = .success,
         searchScenario: SearchServiceMock.MockScenario = .populated,
-        preferencesScenario: PreferencesServiceMock.MockScenario = .populated
+        preferencesScenario: PreferencesServiceMock.MockScenario = .populated,
+        accountScenario: AccountServiceMock.MockScenario = .populated
     ) -> AppContainer {
         var flags = FeatureFlags()
         flags.useMockAuth = true
@@ -162,6 +181,8 @@ public final class AppContainer {
         flags.mockSearchScenario = searchScenario
         flags.useMockPreferences = true
         flags.mockPreferencesScenario = preferencesScenario
+        flags.useMockAccount = true
+        flags.mockAccountScenario = accountScenario
         return AppContainer(
             flags: flags,
             network: URLSessionNetworkClient(),
@@ -173,7 +194,8 @@ public final class AppContainer {
             feedService: FeedServiceMock(scenario: feedScenario),
             composerService: ComposerServiceMock(scenario: composerScenario),
             searchService: SearchServiceMock(scenario: searchScenario),
-            preferencesService: PreferencesServiceMock(scenario: preferencesScenario)
+            preferencesService: PreferencesServiceMock(scenario: preferencesScenario),
+            accountService: AccountServiceMock(scenario: accountScenario)
         )
     }
 }

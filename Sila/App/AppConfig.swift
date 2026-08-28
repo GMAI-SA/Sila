@@ -19,6 +19,34 @@ public enum AppConfig {
         URL(string: apiBaseURLString) ?? URL(fileURLWithPath: "/invalid-api-base-url")
     }
 
+    /// The API's origin — scheme and host, with no path.
+    ///
+    /// Media paths come back **root-relative** (`/api/v1/media/avatars/…`), so
+    /// they must be resolved against this rather than against
+    /// ``apiBaseURL``, whose `/api/v1` suffix the path already carries.
+    public static var originURL: URL {
+        guard var components = URLComponents(url: apiBaseURL, resolvingAgainstBaseURL: false) else {
+            return apiBaseURL
+        }
+        components.path = ""
+        components.query = nil
+        components.fragment = nil
+        return components.url ?? apiBaseURL
+    }
+
+    /// Turns a path the API handed back into something loadable.
+    ///
+    /// - Parameter path: A value such as `/api/v1/media/avatars/x.jpg`, an
+    ///   absolute URL, or `nil`.
+    /// - Returns: An absolute `URL`, or `nil` when there is nothing to load.
+    ///   Absolute inputs are passed through untouched, so the day the backend
+    ///   moves avatars to a CDN nothing here has to change.
+    public static func mediaURL(_ path: String?) -> URL? {
+        guard let path, !path.isEmpty else { return nil }
+        if let absolute = URL(string: path), absolute.scheme != nil { return absolute }
+        return URL(string: path, relativeTo: originURL)?.absoluteURL
+    }
+
     /// Address used by the "Appeal" mail link on the rejected screen.
     public static let appealEmail = "appeals@socialsa.com"
 

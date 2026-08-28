@@ -1,8 +1,8 @@
 # Sila iOS (Social SA)
 
 Phases 1 (Authentication), 3 (Feed) and 4 (Composer & Search), plus contract
-v4's feed preferences. Swift 5.9 / SwiftUI, iOS 17+, MVVM + Clean Architecture,
-zero third-party dependencies.
+v4's feed preferences and v5's account management. Swift 5.9 / SwiftUI, iOS 17+,
+MVVM + Clean Architecture, zero third-party dependencies.
 
 ## Build
 
@@ -33,7 +33,8 @@ is declared). API contracts and ops notes live on the server at
 `/home/ubuntu/social-sa/docs/api-contract-v1.md` (auth),
 `api-contract-v2-feed.md` (feed/social), `api-contract-v3-search.md`
 (compose clarifications, `/search/*`, `/explore/trending`),
-`api-contract-v4-interests.md` (`/topics`, `/me/preferences`) and
+`api-contract-v4-interests.md` (`/topics`, `/me/preferences`),
+`api-contract-v5-account.md` (`/me/account`, credentials, export, deletion) and
 `infra/DEPLOY.md`.
 
 **Auth is email + password with a 6-digit email OTP.** Phone OTP and the Nafath
@@ -94,6 +95,71 @@ inside it — otherwise they would open a thread they could not reply in.
 Unavailable rows are **shown and explained**, not hidden: an account with no
 badge needs to learn that the flag comes from identity verification.
 
+## Account management, and the three rules it is built on
+
+`AccountScreen` is the profile, credential, export and deletion surface. Three
+rules shape it, and each is asserted in tests rather than left to a code review.
+
+* **A session is not consent.** Every credential change — password, email,
+  phone, deletion — carries the current password, because a bearer token proves
+  somebody signed in once, not that whoever is holding the phone now is the
+  account holder. Each one lives in its own sheet that asks for it first.
+  Removing a phone number needs it too: the rule does not bend for the changes
+  that happen to be subtractive.
+* **`403 account_deactivated` is a state, not an error.** Any call can answer
+  it, and every one of them routes to `AccountRecoveryScreen` — which offers
+  **Cancel deletion** — rather than publishing an error string. A generic alert
+  with a Retry button would loop somebody through the same 403 until the purge
+  ran and the choice stopped existing. `GET /me/account` is one of only two
+  endpoints a deactivated account may call, so it answers `200` with the
+  deletion timestamps set and the recovery screen appears on the way in.
+* **The phone number is never rendered as verified.** No tick, no green, no
+  "confirmed". There is no SMS provider in this deployment, so `phone_verified`
+  is always false — and `Account` does not decode it at all, which makes it
+  structurally impossible for a view to bind a checkmark to it. A unit test
+  fails the moment the property comes back.
+
+Deletion is gated on two separate deliberate acts: the current password must be
+non-empty and the typed word must equal `DELETE` byte for byte — case-sensitive,
+with no trimming, so `"delete"` and `"DELETE "` do not pass. The field
+deliberately does not auto-capitalise. All four consequences are stated before
+the button can be pressed (deactivated immediately, every session signed out,
+posts leave every feed, recoverable for 30 days), and `DeletionDisclosure` holds
+that wording as constants so the copy is asserted rather than drifting.
+
+Avatars go through `PhotosUI.PhotosPicker` — zero third-party dependencies is a
+hard rule — and anything over 5 MB is refused client-side rather than uploaded
+to earn a 413. The screen states what the server does to the file: it is
+re-encoded to a 512×512 JPEG and **every EXIF tag, including GPS coordinates, is
+dropped**. That is a privacy fact, not housekeeping; nobody reads "set a photo"
+as a decision about their location history.
+
+The email change is two steps and says out loud that the code goes to the **new**
+address. If the address is claimed while the code sits in an inbox the server
+refuses at confirm time with `email_taken`; the client sends the form back to the
+start and says the address is unchanged, because the code is spent.
+
+### What the v5 contract actually does, versus what it documents
+
+* `PATCH /me/profile` answers a **`UserSummaryOut`**, not the account — no `bio`,
+  no `email`, no `phone`. `AccountService` follows the write with a read rather
+  than folding a partial response into the local copy.
+* `avatar_url` is **root-relative** (`/api/v1/media/avatars/…`). Decoded straight
+  into a `URL` it is unloadable, so `Account` keeps the string and resolves it
+  through `AppConfig.mediaURL(_:)`. `AuthUser.avatarURL` still has this bug.
+* A wrong current password is **`403 invalid_credentials`**, which shares its
+  status with `403 account_deactivated`. Routing keys on the *code*, never the
+  status.
+* `POST /me/password` revokes **every** refresh token, this device's included —
+  so "signs other sessions out" understates it. The success panel says the
+  current session will need the new password too, and offers to sign out now.
+* `POST /me/delete` validates `confirm` **before** the password, so a bad
+  confirmation word is reported as `confirmation_required` even when the password
+  is also wrong.
+* `POST /me/email/request` can answer `409 email_taken` and `502
+  email_delivery_failed`; the latter is undocumented and falls through to
+  `APIErrorCode.unknown`, which shows the server's own message.
+
 ## Running without a backend
 
 ```bash
@@ -121,9 +187,18 @@ report without losing the edits). It serves the real 20-topic taxonomy, because
 twenty rows is the layout problem worth demoing, and it applies the same
 full-replacement semantics the server does.
 
-`-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch` and
-`-mockPreferences` unless the matching `-mock…Scenario` argument says otherwise,
-because a mocked session carries no bearer token the live API would accept.
+`AccountServiceMock` ships 5: `populated`, `fresh` (a new account with nothing
+filled in), `offline`, `pendingDeletion` (the grace period — the state the
+recovery screen exists for, and otherwise only reachable by deleting a real
+account) and `wrongPassword`. It reproduces the server's refusals rather than
+saying yes to everything, including the 403 that `get_current_user` raises for
+every endpoint except `/me/account` and `/me/delete/cancel`.
+
+`-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch`,
+`-mockPreferences` and `-mockAccount` unless the matching `-mock…Scenario`
+argument says otherwise, because a mocked session carries no bearer token the
+live API would accept — and in the account module's case because the live
+version of the deletion demo costs a real account.
 
 To see the whole app without a backend:
 
@@ -133,12 +208,14 @@ To see the whole app without a backend:
 
 ## Tests
 
-441 total: 434 unit (23 opt-in, see below) and 7 XCUITests. The UI tests drive
-sign-in → feed → composer → Explore → feed preferences against the mocks — no
-network, no seeded account — and are the only tests that would catch a broken
-route, an
-unpresented sheet or an untappable button, since every view model passes in
-isolation whether or not the screens are wired together.
+537 total: 526 unit (23 opt-in, see below) and 11 XCUITests. The UI tests drive
+sign-in → feed → composer → Explore → feed preferences → account against the
+mocks — no network, no seeded account — and are the only tests that would catch a
+broken route, an unpresented sheet or an untappable button, since every view
+model passes in isolation whether or not the screens are wired together.
+`AccountJourneyUITests` is the one that drives the deletion gate through the real
+UI: it asserts the confirm button stays inert with a password alone, with a
+lower-case word, and with a partial one.
 They also attach screenshots, extractable from the result bundle:
 
 ```bash
@@ -177,14 +254,19 @@ Sila/
 │                      ScopePickerView, ReplyComposerBar)
 ├── Modules/Search/    Domain (TrendingTag, SearchServiceProtocol)
 │                      Data (SearchService, mock) · Presentation (ExploreScreen)
-└── Modules/Preferences/  Domain (TopicOption/TopicStance/FeedPreferences,
-                          PreferencesSummary, MutedCountries)
-                          Data (PreferencesService, mock)
-                          Presentation (PreferencesScreen, view model)
+├── Modules/Preferences/  Domain (TopicOption/TopicStance/FeedPreferences,
+│                         PreferencesSummary, MutedCountries)
+│                         Data (PreferencesService, mock)
+│                         Presentation (PreferencesScreen, view model)
+└── Modules/Account/      Domain (Account, ProfileDraft, PhoneNumber,
+                          AvatarUpload, DeletionConfirmation/Disclosure,
+                          AccountRouting)
+                          Data (AccountService, mock)
+                          Presentation (AccountScreen, sheets, recovery screen)
 ```
 
-`FeatureFlags` declares all 15 flags; `auth`, `feed`, `composer` and
-`preferences` are on. Later phases add a folder under `Modules/` and flip their flag — they talk
+`FeatureFlags` declares all 16 flags; `auth`, `feed`, `composer`, `preferences`
+and `account` are on. Later phases add a folder under `Modules/` and flip their flag — they talk
 to Auth only through `AuthSessionProtocol`, and get a bearer token only through
 `AccessTokenProviding`. Turning `composer` off restores the Phase-3 stubs (the
 `[+]` toast and the read-only reply bar) without touching the feed.

@@ -25,6 +25,8 @@ public struct MainTabView: View {
     /// push, because both entry points (Profile and the International feed)
     /// live in different navigation stacks.
     @State private var isShowingPreferences = false
+    /// `true` while account settings are up.
+    @State private var isShowingAccount = false
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -71,6 +73,44 @@ public struct MainTabView: View {
             }
             .tint(SLColor.primary)
         }
+        .sheet(isPresented: $isShowingAccount) {
+            NavigationStack {
+                AccountScreen(
+                    viewModel: accountViewModel(),
+                    onClose: { isShowingAccount = false }
+                )
+            }
+            .tint(SLColor.primary)
+        }
+    }
+
+    // MARK: - Account
+
+    /// Opens account settings, or `nil` when the flag is off — which hides the
+    /// affordance rather than showing one that goes nowhere.
+    private var accountHandler: (@MainActor () -> Void)? {
+        guard container.flags.account else { return nil }
+        return {
+            container.analytics.track(.accountOpened)
+            isShowingAccount = true
+        }
+    }
+
+    /// Builds the account view model for a presentation.
+    ///
+    /// Fresh each time, so the screen always opens on the server's current state
+    /// — which matters more here than anywhere else, because a stale copy could
+    /// show a deleted account as healthy.
+    private func accountViewModel() -> AccountViewModel {
+        AccountViewModel(
+            service: container.accountService,
+            analytics: container.analytics,
+            onSignOut: {
+                isShowingAccount = false
+                container.router.popFeedToRoot()
+                Task { await container.session.signOut() }
+            }
+        )
     }
 
     // MARK: - Preferences
@@ -198,6 +238,7 @@ public struct MainTabView: View {
                 user: container.session.user,
                 onStub: stub,
                 onOpenPreferences: preferencesHandler,
+                onOpenAccount: accountHandler,
                 onSignOut: {
                     container.router.popFeedToRoot()
                     Task { await container.session.signOut() }
@@ -289,6 +330,8 @@ struct ProfileStubScreen: View {
     let onStub: @MainActor (String) -> Void
     /// Opens feed preferences, or `nil` when the flag is off.
     var onOpenPreferences: (@MainActor () -> Void)?
+    /// Opens account settings, or `nil` when the flag is off.
+    var onOpenAccount: (@MainActor () -> Void)?
     let onSignOut: () -> Void
 
     var body: some View {
@@ -327,15 +370,35 @@ struct ProfileStubScreen: View {
                 }
             }
 
+            if let onOpenAccount {
+                settingsEntry(
+                    icon: "person.text.rectangle",
+                    title: "Account",
+                    detail: "Your name, handle, picture, email, password — and how to "
+                        + "download or delete everything.",
+                    hint: "Opens your profile details, sign-in credentials, data export "
+                        + "and account deletion",
+                    open: onOpenAccount
+                )
+                .padding(.horizontal, SLSpacing.lg)
+            }
+
             if let onOpenPreferences {
-                preferencesEntry(onOpenPreferences)
-                    .padding(.horizontal, SLSpacing.lg)
+                settingsEntry(
+                    icon: "slider.horizontal.3",
+                    title: "Feed preferences",
+                    detail: "Topics, muted topics and muted countries — and how posts get labelled.",
+                    hint: "Opens topic interests, muted topics and muted countries, and "
+                        + "explains how posts are labelled",
+                    open: onOpenPreferences
+                )
+                .padding(.horizontal, SLSpacing.lg)
             }
 
             SLEmptyState(
                 icon: "person.crop.square",
                 title: "Profiles arrive later",
-                subtitle: "Your handle, country flag, bio, follower counts and post history land with the profile release. Nothing here is guessed in the meantime.",
+                subtitle: "Your public profile page — follower counts, post history and how others see you — lands with the profile release. Your name, handle, bio and picture are editable now under Account. Nothing here is guessed in the meantime.",
                 tint: SLColor.textSecondary,
                 actionTitle: "Tell me when it lands",
                 action: { onStub("Profiles") }
@@ -356,29 +419,32 @@ struct ProfileStubScreen: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// The route into the one settings screen that exists.
+    /// One route into a settings screen.
     ///
-    /// A full-width card rather than a line of small print: it is where the
-    /// automatic topic labelling is disclosed, so it has to be findable by
-    /// someone who does not already know it exists.
-    private func preferencesEntry(_ open: @escaping @MainActor () -> Void) -> some View {
-        SLCard(
-            accessibilityLabel: "Feed preferences",
-            accessibilityHint: "Opens topic interests, muted topics and muted countries, and explains how posts are labelled",
-            onTap: open
-        ) {
+    /// A full-width card rather than a line of small print. Feed preferences is
+    /// where the automatic topic labelling is disclosed and Account is where
+    /// deletion and the data export live, so both have to be findable by someone
+    /// who does not already know they exist.
+    private func settingsEntry(
+        icon: String,
+        title: String,
+        detail: String,
+        hint: String,
+        open: @escaping @MainActor () -> Void
+    ) -> some View {
+        SLCard(accessibilityLabel: title, accessibilityHint: hint, onTap: open) {
             HStack(spacing: SLSpacing.md) {
-                Image(systemName: "slider.horizontal.3")
+                Image(systemName: icon)
                     .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(SLColor.primary)
                     .frame(width: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Feed preferences")
+                    Text(title)
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(SLColor.textPrimary)
 
-                    Text("Topics, muted topics and muted countries — and how posts get labelled.")
+                    Text(detail)
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)

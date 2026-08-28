@@ -20,6 +20,8 @@ import Foundation
 /// -mockSearchScenario X    pick a SearchServiceMock.MockScenario
 /// -mockPreferences     run against PreferencesServiceMock instead of the live API
 /// -mockPreferencesScenario X  pick a PreferencesServiceMock.MockScenario
+/// -mockAccount         run against AccountServiceMock instead of the live API
+/// -mockAccountScenario X   pick an AccountServiceMock.MockScenario
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -42,6 +44,10 @@ public struct FeatureFlags: Sendable {
     /// preferences on the server keep applying, because the client does not
     /// own them.
     public var preferences = true
+    /// v5 — Account management: profile, picture, credentials, export and
+    /// deletion. Turning this off hides the entry point; the endpoints keep
+    /// working, because the client does not own the account.
+    public var account = true
     /// P5 — Encrypted messaging.
     public var messaging = false
     /// P5 sub-feature — audio/video calls.
@@ -96,6 +102,13 @@ public struct FeatureFlags: Sendable {
     public var useMockPreferences = false
     /// Which mock world to serve when ``useMockPreferences`` is on.
     public var mockPreferencesScenario: PreferencesServiceMock.MockScenario = .populated
+
+    // MARK: Contract v5 build switches
+
+    /// Use ``AccountServiceMock`` instead of the live backend.
+    public var useMockAccount = false
+    /// Which mock world to serve when ``useMockAccount`` is on.
+    public var mockAccountScenario: AccountServiceMock.MockScenario = .populated
 
     public init() {}
 
@@ -168,11 +181,26 @@ public struct FeatureFlags: Sendable {
         if (flags.useMockAuth || flags.useMockComposer) && !arguments.contains("-mockSearchScenario") {
             flags.useMockSearch = true
         }
+        if arguments.contains("-mockAccount") {
+            flags.useMockAccount = true
+        }
+        if let index = arguments.firstIndex(of: "-mockAccountScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = AccountServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockAccount = true
+            flags.mockAccountScenario = scenario
+        }
         // Same reasoning again: a mocked session's token would 401 against the
         // real `/me/preferences`, and a preferences screen that cannot load is
         // not a demo of anything.
         if flags.useMockAuth && !arguments.contains("-mockPreferencesScenario") {
             flags.useMockPreferences = true
+        }
+        // And once more for the account surface. It matters a little more here:
+        // the mock is the only safe way to walk through deletion and recovery,
+        // because the live version of that demo costs a real account.
+        if flags.useMockAuth && !arguments.contains("-mockAccountScenario") {
+            flags.useMockAccount = true
         }
         return flags
     }

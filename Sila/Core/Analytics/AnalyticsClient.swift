@@ -87,6 +87,42 @@ public enum AnalyticsEvent: String, Sendable {
     case preferencesSaveFailed = "preferences_save_failed"
     /// One topic's stance changed in the draft.
     case topicStanceChanged = "topic_stance_changed"
+
+    // MARK: Contract v5 — account management
+
+    /// Account settings were opened.
+    case accountOpened = "account_opened"
+    /// `GET /me/account` came back.
+    case accountLoaded = "account_loaded"
+    /// The server accepted a profile write.
+    case accountProfileSaved = "account_profile_saved"
+    /// A picture was stored.
+    case accountAvatarUploaded = "account_avatar_uploaded"
+    /// A picture was deleted.
+    case accountAvatarRemoved = "account_avatar_removed"
+    /// A picture was refused **by the client**, before any upload.
+    case accountAvatarRejected = "account_avatar_rejected"
+    /// The password was replaced.
+    case accountPasswordChanged = "account_password_changed"
+    /// A code was sent to a new address.
+    case accountEmailChangeRequested = "account_email_change_requested"
+    /// A new address was confirmed.
+    case accountEmailChanged = "account_email_changed"
+    /// The contact number was set or cleared.
+    case accountPhoneChanged = "account_phone_changed"
+    /// A data export was downloaded.
+    case accountExported = "account_exported"
+    /// Deletion was scheduled.
+    case accountDeletionRequested = "account_deletion_requested"
+    /// A pending deletion was called off.
+    case accountDeletionCancelled = "account_deletion_cancelled"
+    /// The recovery screen was routed to, and why.
+    ///
+    /// Carries `source`: `403` (a call was refused), `loaded` (the account came
+    /// back already pending) or `requested` (the user just asked for deletion).
+    /// Worth separating: a spike in `403` means people are hitting the wall
+    /// somewhere they should not have been able to.
+    case accountDeletionRouted = "account_deletion_routed"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

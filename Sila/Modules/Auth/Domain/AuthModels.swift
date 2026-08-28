@@ -143,7 +143,12 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         countryCode = CountryCode.normalised(
             (try? container.decodeIfPresent(String.self, forKey: .countryCode)) ?? nil
         )
-        avatarURL = (try? container.decodeIfPresent(URL.self, forKey: .avatarURL)) ?? nil
+        // See the note in `UserSummary.init(from:)`: the wire carries a
+        // root-relative path, so it has to be resolved against the API origin
+        // or it decodes into a hostless URL that never loads.
+        avatarURL = AppConfig.mediaURL(
+            (try? container.decodeIfPresent(String.self, forKey: .avatarURL)) ?? nil
+        )
     }
 
     /// The handle as it is rendered, with the `@`, when the account has one.
