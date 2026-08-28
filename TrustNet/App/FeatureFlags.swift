@@ -18,6 +18,8 @@ import Foundation
 /// -mockComposerScenario X  pick a ComposerServiceMock.MockScenario
 /// -mockSearch          run against SearchServiceMock instead of the live API
 /// -mockSearchScenario X    pick a SearchServiceMock.MockScenario
+/// -mockPreferences     run against PreferencesServiceMock instead of the live API
+/// -mockPreferencesScenario X  pick a PreferencesServiceMock.MockScenario
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -34,6 +36,12 @@ public struct FeatureFlags: Sendable {
     /// and the reply bar back to their Phase-3 stubs and returns Explore to a
     /// read-only screen, without touching the feed.
     public var composer = true
+    /// v4 — Feed preferences: topic interests, muted topics and muted
+    /// countries, plus the disclosure of the automatic topic labelling those
+    /// controls exist for. Turning this off hides the entry points; the stored
+    /// preferences on the server keep applying, because the client does not
+    /// own them.
+    public var preferences = true
     /// P5 — Encrypted messaging.
     public var messaging = false
     /// P5 sub-feature — audio/video calls.
@@ -81,6 +89,13 @@ public struct FeatureFlags: Sendable {
     public var useMockSearch = false
     /// Which mock world to serve when ``useMockSearch`` is on.
     public var mockSearchScenario: SearchServiceMock.MockScenario = .populated
+
+    // MARK: Contract v4 build switches
+
+    /// Use ``PreferencesServiceMock`` instead of the live backend.
+    public var useMockPreferences = false
+    /// Which mock world to serve when ``useMockPreferences`` is on.
+    public var mockPreferencesScenario: PreferencesServiceMock.MockScenario = .populated
 
     public init() {}
 
@@ -130,6 +145,15 @@ public struct FeatureFlags: Sendable {
             flags.useMockSearch = true
             flags.mockSearchScenario = scenario
         }
+        if arguments.contains("-mockPreferences") {
+            flags.useMockPreferences = true
+        }
+        if let index = arguments.firstIndex(of: "-mockPreferencesScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = PreferencesServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockPreferences = true
+            flags.mockPreferencesScenario = scenario
+        }
         // A mocked session has no real bearer token, so a live feed behind it
         // could only ever 401. Mocking auth implies mocking the feed unless the
         // caller asked for a specific feed world.
@@ -143,6 +167,12 @@ public struct FeatureFlags: Sendable {
         }
         if (flags.useMockAuth || flags.useMockComposer) && !arguments.contains("-mockSearchScenario") {
             flags.useMockSearch = true
+        }
+        // Same reasoning again: a mocked session's token would 401 against the
+        // real `/me/preferences`, and a preferences screen that cannot load is
+        // not a demo of anything.
+        if flags.useMockAuth && !arguments.contains("-mockPreferencesScenario") {
+            flags.useMockPreferences = true
         }
         return flags
     }

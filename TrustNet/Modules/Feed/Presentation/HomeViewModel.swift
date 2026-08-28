@@ -342,6 +342,33 @@ public final class HomeViewModel {
         }
     }
 
+    /// Throws away the International feed's loaded page and reloads it if it is
+    /// on screen.
+    ///
+    /// Called after the preferences screen saves a change the server accepted.
+    /// `GET /feed/international` applies the stored preferences server-side, so
+    /// everything already in memory was selected under the *old* rules —
+    /// keeping it would show a filter that visibly did nothing. The other three
+    /// feeds are untouched because the backend does not filter them by topic.
+    public func invalidateInternationalFeed() async {
+        var state = self.state(for: .international)
+        state.posts = []
+        state.cursor = nil
+        state.hasMore = true
+        state.hasLoaded = false
+        state.emptyKind = nil
+        state.isLoading = false
+        state.isLoadingMore = false
+        state.isRefreshing = false
+        states[.international] = state
+
+        // If the user is looking at it, refetch now; otherwise the cleared
+        // `hasLoaded` makes the next visit load it.
+        if selectedTab == .international {
+            await loadFirstPage(.international, isRefresh: false)
+        }
+    }
+
     /// Merges a post edited elsewhere (e.g. the detail screen) back into the feeds.
     public func merge(_ post: Post) {
         applyEverywhere(id: post.id) { current in

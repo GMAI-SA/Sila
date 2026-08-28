@@ -74,6 +74,19 @@ public enum AnalyticsEvent: String, Sendable {
     case searchPerformed = "search_performed"
     /// A trending tag was tapped.
     case trendingTagOpened = "trending_tag_opened"
+
+    // MARK: Contract v4 — feed preferences
+
+    /// The preferences screen was opened.
+    case preferencesOpened = "preferences_opened"
+    /// The taxonomy and stored preferences arrived.
+    case preferencesLoaded = "preferences_loaded"
+    /// The server accepted a write (emitted by the service).
+    case preferencesSaved = "preferences_saved"
+    /// A write was rejected and the edits were kept on screen.
+    case preferencesSaveFailed = "preferences_save_failed"
+    /// One topic's stance changed in the draft.
+    case topicStanceChanged = "topic_stance_changed"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

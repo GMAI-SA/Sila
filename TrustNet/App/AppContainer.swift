@@ -33,6 +33,8 @@ public final class AppContainer {
     public let composerService: ComposerServiceProtocol
     /// Phase 4's search service — Explore and `@mention` autocomplete.
     public let searchService: SearchServiceProtocol
+    /// Contract v4's interests service — topics and feed preferences.
+    public let preferencesService: PreferencesServiceProtocol
     /// Navigation coordinator.
     public let router: AppRouter
 
@@ -50,7 +52,8 @@ public final class AppContainer {
         authService: AuthServiceProtocol? = nil,
         feedService: FeedServiceProtocol? = nil,
         composerService: ComposerServiceProtocol? = nil,
-        searchService: SearchServiceProtocol? = nil
+        searchService: SearchServiceProtocol? = nil,
+        preferencesService: PreferencesServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -122,6 +125,21 @@ public final class AppContainer {
             self.searchService = SearchService(network: network, tokens: tokens, analytics: analytics)
         }
 
+        if let preferencesService {
+            self.preferencesService = preferencesService
+        } else if flags.useMockPreferences {
+            self.preferencesService = PreferencesServiceMock(
+                scenario: flags.mockPreferencesScenario,
+                latency: 0.3
+            )
+        } else {
+            self.preferencesService = PreferencesService(
+                network: network,
+                tokens: tokens,
+                analytics: analytics
+            )
+        }
+
         self.router = AppRouter()
     }
 
@@ -130,7 +148,8 @@ public final class AppContainer {
         scenario: AuthServiceMock.MockScenario = .pendingReview,
         feedScenario: FeedServiceMock.MockScenario = .populated,
         composerScenario: ComposerServiceMock.MockScenario = .success,
-        searchScenario: SearchServiceMock.MockScenario = .populated
+        searchScenario: SearchServiceMock.MockScenario = .populated,
+        preferencesScenario: PreferencesServiceMock.MockScenario = .populated
     ) -> AppContainer {
         var flags = FeatureFlags()
         flags.useMockAuth = true
@@ -141,6 +160,8 @@ public final class AppContainer {
         flags.mockComposerScenario = composerScenario
         flags.useMockSearch = true
         flags.mockSearchScenario = searchScenario
+        flags.useMockPreferences = true
+        flags.mockPreferencesScenario = preferencesScenario
         return AppContainer(
             flags: flags,
             network: URLSessionNetworkClient(),
@@ -151,7 +172,8 @@ public final class AppContainer {
             authService: AuthServiceMock(scenario: scenario, hasBiometricCredential: true),
             feedService: FeedServiceMock(scenario: feedScenario),
             composerService: ComposerServiceMock(scenario: composerScenario),
-            searchService: SearchServiceMock(scenario: searchScenario)
+            searchService: SearchServiceMock(scenario: searchScenario),
+            preferencesService: PreferencesServiceMock(scenario: preferencesScenario)
         )
     }
 }

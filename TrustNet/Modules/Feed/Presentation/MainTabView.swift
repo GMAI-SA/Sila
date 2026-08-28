@@ -21,6 +21,10 @@ public struct MainTabView: View {
     /// The Explore tab's own navigation destination. It keeps its own stack so
     /// opening a search result does not disturb the home feed's history.
     @State private var exploreDetailPost: Post?
+    /// `true` while the feed-preferences sheet is up. A sheet rather than a
+    /// push, because both entry points (Profile and the International feed)
+    /// live in different navigation stacks.
+    @State private var isShowingPreferences = false
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -58,6 +62,43 @@ public struct MainTabView: View {
         ) { context in
             ComposerSheetHost { composerViewModel(for: context) }
         }
+        .sheet(isPresented: $isShowingPreferences) {
+            NavigationStack {
+                PreferencesScreen(
+                    viewModel: preferencesViewModel(),
+                    onClose: { isShowingPreferences = false }
+                )
+            }
+            .tint(TNColor.primary)
+        }
+    }
+
+    // MARK: - Preferences
+
+    /// The hook both entry points use, or `nil` when the flag is off — which is
+    /// what hides the affordance rather than showing one that goes nowhere.
+    private var preferencesHandler: (@MainActor () -> Void)? {
+        guard container.flags.preferences else { return nil }
+        return {
+            container.analytics.track(.preferencesOpened)
+            isShowingPreferences = true
+        }
+    }
+
+    /// Builds the preferences view model for a presentation.
+    ///
+    /// A fresh one each time, so the screen always opens on the server's
+    /// current state rather than on a draft left behind by an earlier visit.
+    private func preferencesViewModel() -> PreferencesViewModel {
+        PreferencesViewModel(
+            service: container.preferencesService,
+            analytics: container.analytics,
+            onFilteringChanged: {
+                // `GET /feed/international` applies these server-side, so the
+                // page already on screen was chosen under the old settings.
+                Task { await viewModel.invalidateInternationalFeed() }
+            }
+        )
     }
 
     // MARK: - Composer
@@ -116,7 +157,8 @@ public struct MainTabView: View {
                     viewModel: viewModel,
                     onOpenPost: { container.router.push(FeedRoute.postDetail($0)) },
                     onStub: stub,
-                    onCompose: composeHandler
+                    onCompose: composeHandler,
+                    onOpenPreferences: preferencesHandler
                 )
                 .tnNavigationBar(title: "TrustNet")
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -155,6 +197,7 @@ public struct MainTabView: View {
             ProfileStubScreen(
                 user: container.session.user,
                 onStub: stub,
+                onOpenPreferences: preferencesHandler,
                 onSignOut: {
                     container.router.popFeedToRoot()
                     Task { await container.session.signOut() }
@@ -237,18 +280,28 @@ public struct MainTabView: View {
 
 /// The Profile tab until Phase 7 builds the real thing.
 ///
-/// It carries the only affordance a user genuinely needs here today — signing
-/// out — and does not invent follower counts or a bio.
+/// It carries the affordances a user genuinely needs here today — feed
+/// preferences and signing out — and does not invent follower counts or a bio.
 @MainActor
 struct ProfileStubScreen: View {
 
     let user: AuthUser?
     let onStub: @MainActor (String) -> Void
+    /// Opens feed preferences, or `nil` when the flag is off.
+    var onOpenPreferences: (@MainActor () -> Void)?
     let onSignOut: () -> Void
 
     var body: some View {
+        ScrollView {
+            content
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .tnScreenBackground()
+    }
+
+    private var content: some View {
         VStack(spacing: TNSpacing.lg) {
-            Spacer()
+            Spacer(minLength: TNSpacing.xl)
 
             TNAvatar(
                 initials: user?.initials ?? "TN",
@@ -274,6 +327,11 @@ struct ProfileStubScreen: View {
                 }
             }
 
+            if let onOpenPreferences {
+                preferencesEntry(onOpenPreferences)
+                    .padding(.horizontal, TNSpacing.lg)
+            }
+
             TNEmptyState(
                 icon: "person.crop.square",
                 title: "Profiles arrive later",
@@ -293,10 +351,46 @@ struct ProfileStubScreen: View {
             )
             .padding(.horizontal, TNSpacing.xxl)
 
-            Spacer()
+            Spacer(minLength: TNSpacing.xl)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .tnScreenBackground()
+        .frame(maxWidth: .infinity)
+    }
+
+    /// The route into the one settings screen that exists.
+    ///
+    /// A full-width card rather than a line of small print: it is where the
+    /// automatic topic labelling is disclosed, so it has to be findable by
+    /// someone who does not already know it exists.
+    private func preferencesEntry(_ open: @escaping @MainActor () -> Void) -> some View {
+        TNCard(
+            accessibilityLabel: "Feed preferences",
+            accessibilityHint: "Opens topic interests, muted topics and muted countries, and explains how posts are labelled",
+            onTap: open
+        ) {
+            HStack(spacing: TNSpacing.md) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(TNColor.primary)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Feed preferences")
+                        .font(TNFont.bodyEmphasis)
+                        .foregroundStyle(TNColor.textPrimary)
+
+                    Text("Topics, muted topics and muted countries — and how posts get labelled.")
+                        .font(TNFont.caption)
+                        .foregroundStyle(TNColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(TNColor.textMuted)
+            }
+        }
     }
 }
 

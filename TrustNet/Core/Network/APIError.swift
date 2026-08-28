@@ -54,6 +54,13 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// A search query shorter than ``SearchConstants/minimumQueryLength``.
     case queryTooShort = "query_too_short"
 
+    // MARK: Contract v4 — interests & preferences
+
+    /// `PUT /me/preferences` carried a topic id outside the server's taxonomy.
+    case unknownTopic = "unknown_topic"
+    /// `PUT /me/preferences` carried something that is not an ISO-3166 alpha-2 code.
+    case invalidCountry = "invalid_country"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -129,6 +136,12 @@ public enum APIError: Error, Equatable, Sendable {
                 return "That audience isn't available for this post."
             case .queryTooShort:
                 return "Type at least \(SearchConstants.minimumQueryLength) characters to search."
+            case .unknownTopic:
+                // The whole PUT is rejected, so nothing was stored — say that
+                // rather than leaving the user unsure what got through.
+                return "TrustNet's topic list has changed, so nothing was saved. Reload this screen and try again."
+            case .invalidCountry:
+                return "Country codes are two letters, like SA or JP."
             case .unknown:
                 return message.isEmpty ? "Something went wrong. Please try again." : message
             }

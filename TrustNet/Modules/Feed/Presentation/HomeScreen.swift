@@ -11,6 +11,7 @@ public struct HomeScreen: View {
     private let onOpenPost: @MainActor (Post) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
+    private let onOpenPreferences: (@MainActor () -> Void)?
 
     /// - Parameters:
     ///   - viewModel: Owned by ``MainTabView`` so tab state survives navigation.
@@ -19,16 +20,21 @@ public struct HomeScreen: View {
     ///   - onCompose: Opens the Phase-4 composer. `nil` — the Phase-3 behaviour —
     ///     falls back to the stub toast, which is what
     ///     ``FeatureFlags/composer`` switches off to.
+    ///   - onOpenPreferences: Opens the feed-preferences screen. `nil` — the
+    ///     default — renders nothing at all, so every existing caller keeps the
+    ///     screen it already had.
     public init(
         viewModel: HomeViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onStub: @escaping @MainActor (String) -> Void,
-        onCompose: (@MainActor (ComposerContext) -> Void)? = nil
+        onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
+        onOpenPreferences: (@MainActor () -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
         self.onStub = onStub
         self.onCompose = onCompose
+        self.onOpenPreferences = onOpenPreferences
     }
 
     public var body: some View {
@@ -42,6 +48,8 @@ public struct HomeScreen: View {
                 accessibilityHint: { $0.accessibilityHint },
                 title: { $0.title }
             )
+
+            preferencesBar
 
             TabView(
                 selection: Binding(
@@ -59,6 +67,43 @@ public struct HomeScreen: View {
         .tnScreenBackground()
         .task { await viewModel.loadIfNeeded(viewModel.selectedTab) }
         .tnToast($viewModel.toast)
+    }
+
+    // MARK: - Preferences entry point
+
+    /// A link to the topic controls, on the one feed they affect.
+    ///
+    /// International is the only feed the server filters by topic, so the
+    /// shortcut appears only there — putting it above Following or My Country
+    /// would imply those are filtered too, which is the exact
+    /// misunderstanding this feature has to avoid.
+    @ViewBuilder
+    private var preferencesBar: some View {
+        if let onOpenPreferences, viewModel.selectedTab == .international {
+            Button(action: onOpenPreferences) {
+                HStack(spacing: TNSpacing.sm) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(TNColor.primary)
+
+                    Text("Topics and muted countries")
+                        .font(TNFont.caption)
+                        .foregroundStyle(TNColor.textSecondary)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(TNColor.textMuted)
+                }
+                .padding(.horizontal, TNSpacing.lg)
+                .padding(.vertical, TNSpacing.sm)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Feed preferences"))
+            .accessibilityHint(Text("Opens the topic and muted-country settings that filter this feed"))
+        }
     }
 
     // MARK: - One feed

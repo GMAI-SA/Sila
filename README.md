@@ -1,7 +1,8 @@
 # TrustNet iOS (Social SA)
 
-Phases 1 (Authentication), 3 (Feed) and 4 (Composer & Search). Swift 5.9 /
-SwiftUI, iOS 17+, MVVM + Clean Architecture, zero third-party dependencies.
+Phases 1 (Authentication), 3 (Feed) and 4 (Composer & Search), plus contract
+v4's feed preferences. Swift 5.9 / SwiftUI, iOS 17+, MVVM + Clean Architecture,
+zero third-party dependencies.
 
 ## Build
 
@@ -31,7 +32,9 @@ xcodebuild -project TrustNet.xcodeproj -scheme TrustNet \
 is declared). API contracts and ops notes live on the server at
 `/home/ubuntu/social-sa/docs/api-contract-v1.md` (auth),
 `api-contract-v2-feed.md` (feed/social), `api-contract-v3-search.md`
-(compose clarifications, `/search/*`, `/explore/trending`) and `infra/DEPLOY.md`.
+(compose clarifications, `/search/*`, `/explore/trending`),
+`api-contract-v4-interests.md` (`/topics`, `/me/preferences`) and
+`infra/DEPLOY.md`.
 
 **Auth is email + password with a 6-digit email OTP.** Phone OTP and the Nafath
 track land later behind the same endpoints.
@@ -49,6 +52,39 @@ A post's `scope` (`international` / `country` / `region`) restricts **who may
 reply**, never who may read. The server computes `viewer.can_reply` and
 `viewer.reply_block_reason` per request; the client shows the reason in plain
 language instead of a dead reply button and never re-derives the rule itself.
+
+## Topic labelling, and the one screen that discloses it
+
+The backend classifies every post into hidden topic tags and can filter the
+**International feed** by them. The tags never appear on a post, so
+`PreferencesScreen` is the only place a person learns the mechanism exists —
+which is why the disclosure is the first card on the screen, in body type, and
+is asserted verbatim in `TaggingDisclosureTests`.
+
+The screen is built around not overstating what its controls do. Three rules
+come straight from `interest_filter.py` and are reproduced in the copy:
+
+* **The filter switch on with nothing selected narrows nothing.** The backend
+  keeps the feed open rather than returning zero posts, so the live summary
+  still reads "shows everything" and a warning says the switch is doing nothing
+  and what to do about it.
+* **Muted topics and muted countries apply whether or not that switch is on.**
+  They are not gated by it, so the copy never implies they are.
+* **`show_untagged_posts` only matters while the feed is narrowed to
+  interests.** When nothing narrows it, the row says so instead of implying a
+  change.
+
+A live sentence (`PreferencesSummary.sentence(for:)`) states what the feed will
+show, and is labelled `IN EFFECT NOW` only when the draft equals the last state
+the *server* confirmed. Saving is explicit; a rejected save keeps every edit and
+says "Not saved". A save the server accepts calls
+`HomeViewModel.invalidateInternationalFeed()`, because `GET /feed/international`
+applies the preferences server-side and anything already loaded was chosen under
+the old rules.
+
+Muted countries are validated with `CountryCode.normalised(_:)` before sending —
+stricter than the server, which accepts any two letters and would happily store
+`ZZ`.
 
 The composer's scope picker is the same idea from the writing side, and it is
 the composer's centrepiece rather than a toolbar setting. "My Country" may only
@@ -78,9 +114,16 @@ rather than as a clean failure), `unverified`, `offline` and `rateLimited`.
 `SearchServiceMock` ships 3: `populated` (searches the same fixture world the
 mocked feed shows), `empty` and `offline`.
 
-`-mockAuth` implies `-mockFeed`, `-mockComposer` and `-mockSearch` unless the
-matching `-mock…Scenario` argument says otherwise, because a mocked session
-carries no bearer token the live API would accept.
+`PreferencesServiceMock` ships 4: `populated` (the filter on, two interests, one
+muted topic, one muted country), `empty` (a new account's defaults), `offline`
+and `saveFails` (loads fine, rejects every write — the state the screen must
+report without losing the edits). It serves the real 20-topic taxonomy, because
+twenty rows is the layout problem worth demoing, and it applies the same
+full-replacement semantics the server does.
+
+`-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch` and
+`-mockPreferences` unless the matching `-mock…Scenario` argument says otherwise,
+because a mocked session carries no bearer token the live API would accept.
 
 To see the whole app without a backend:
 
@@ -90,9 +133,10 @@ To see the whole app without a backend:
 
 ## Tests
 
-357 total: 352 unit (16 opt-in, see below) and 5 XCUITests. The UI tests drive
-sign-in → feed → composer → Explore against the mocks — no network, no seeded
-account — and are the only tests that would catch a broken route, an
+441 total: 434 unit (23 opt-in, see below) and 7 XCUITests. The UI tests drive
+sign-in → feed → composer → Explore → feed preferences against the mocks — no
+network, no seeded account — and are the only tests that would catch a broken
+route, an
 unpresented sheet or an untappable button, since every view model passes in
 isolation whether or not the screens are wired together.
 They also attach screenshots, extractable from the result bundle:
@@ -104,7 +148,8 @@ xcrun xcresulttool export --path out.xcresult --id <payloadRef> --output-path sh
 
 ### Opt-in live tests
 
-Sixteen tests (`LiveAPITests`, `LiveFeedTests`, `LiveComposerSearchTests`) hit
+Twenty-three tests (`LiveAPITests`, `LiveFeedTests`, `LiveComposerSearchTests`,
+`LivePreferencesTests`) hit
 the real deployed backend and skip unless you opt in — they are the only guard against the *server's* wire format
 drifting away from the app's decoders:
 
@@ -130,12 +175,16 @@ TrustNet/
 ├── Modules/Composer/  Domain (ComposeScope/ScopePicker, PostDraft, MentionDetector)
 │                      Data (ComposerService, mock) · Presentation (ComposerSheetScreen,
 │                      ScopePickerView, ReplyComposerBar)
-└── Modules/Search/    Domain (TrendingTag, SearchServiceProtocol)
-                       Data (SearchService, mock) · Presentation (ExploreScreen)
+├── Modules/Search/    Domain (TrendingTag, SearchServiceProtocol)
+│                      Data (SearchService, mock) · Presentation (ExploreScreen)
+└── Modules/Preferences/  Domain (TopicOption/TopicStance/FeedPreferences,
+                          PreferencesSummary, MutedCountries)
+                          Data (PreferencesService, mock)
+                          Presentation (PreferencesScreen, view model)
 ```
 
-`FeatureFlags` declares all 14 phase flags; `auth`, `feed` and `composer` are
-on. Later phases add a folder under `Modules/` and flip their flag — they talk
+`FeatureFlags` declares all 15 flags; `auth`, `feed`, `composer` and
+`preferences` are on. Later phases add a folder under `Modules/` and flip their flag — they talk
 to Auth only through `AuthSessionProtocol`, and get a bearer token only through
 `AccessTokenProviding`. Turning `composer` off restores the Phase-3 stubs (the
 `[+]` toast and the read-only reply bar) without touching the feed.
