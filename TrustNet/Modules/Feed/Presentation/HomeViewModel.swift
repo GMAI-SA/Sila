@@ -294,6 +294,54 @@ public final class HomeViewModel {
         }
     }
 
+    /// Puts posts the viewer just wrote at the top of the feeds they belong in.
+    ///
+    /// Called after the Phase-4 composer succeeds. These are the server's own
+    /// ``Post`` values, not a local guess at what it stored, so nothing here is
+    /// fabricated — the alternative is a user staring at an unchanged list
+    /// wondering whether their post went anywhere.
+    ///
+    /// Replies are skipped: they belong under their parent on the detail
+    /// screen, not at the top of For You.
+    /// - Parameter newPosts: Everything that reached the server, in order.
+    public func insert(newPosts: [Post]) {
+        let roots = newPosts.filter { !$0.isReply }
+        guard !roots.isEmpty else { return }
+
+        for tab in FeedTab.allCases {
+            let relevant = roots.filter { belongs($0, in: tab) }
+            guard !relevant.isEmpty, var tabState = states[tab] else { continue }
+            // A tab that has never loaded has nothing stale to correct, and
+            // marking it loaded here would suppress its first fetch entirely.
+            guard tabState.hasLoaded else { continue }
+
+            let known = Set(tabState.posts.map(\.id))
+            let additions = relevant.filter { !known.contains($0.id) }
+            guard !additions.isEmpty else { continue }
+
+            tabState.posts.insert(contentsOf: additions, at: 0)
+            // The tab now has content, whatever it was showing before.
+            tabState.emptyKind = nil
+            states[tab] = tabState
+        }
+    }
+
+    /// Which feeds a freshly written post shows up in.
+    ///
+    /// Conservative on purpose: a post is only placed where the server's own
+    /// rules would certainly put it. `Following` is left alone because you do
+    /// not follow yourself, and `My Country` only takes country-scoped posts —
+    /// the country feed is "posts by verified compatriots", which the viewer's
+    /// own post qualifies for exactly when it carries that scope.
+    private func belongs(_ post: Post, in tab: FeedTab) -> Bool {
+        switch tab {
+        case .forYou: return true
+        case .following: return false
+        case .myCountry: return post.scope == .country
+        case .international: return post.scope == .international
+        }
+    }
+
     /// Merges a post edited elsewhere (e.g. the detail screen) back into the feeds.
     public func merge(_ post: Post) {
         applyEverywhere(id: post.id) { current in

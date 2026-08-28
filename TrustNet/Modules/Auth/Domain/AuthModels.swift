@@ -77,13 +77,33 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     public let verificationStatus: VerificationStatus
     public let createdAt: Date
 
+    /// Unique, lowercase handle generated from the email on first use.
+    ///
+    /// Added by contract v2. `nil` on a session cached by an older build, or
+    /// from a server that has not deployed v2 yet.
+    public let handle: String?
+
+    /// The **country-verified** flag: ISO-3166 alpha-2, or `nil`.
+    ///
+    /// Written only by the verification pipeline, and served only while the
+    /// account is verified — a revoked account reports `nil` here, which is what
+    /// closes the country-thread loophole. The composer's scope picker reads
+    /// this and nothing else; it is never inferred from a locale or an IP.
+    public let countryCode: String?
+
+    /// Remote avatar image, or `nil` for the monogram fallback.
+    public let avatarURL: URL?
+
     public init(
         id: UUID,
         email: String,
         displayName: String? = nil,
         emailVerified: Bool,
         verificationStatus: VerificationStatus,
-        createdAt: Date
+        createdAt: Date,
+        handle: String? = nil,
+        countryCode: String? = nil,
+        avatarURL: URL? = nil
     ) {
         self.id = id
         self.email = email
@@ -91,10 +111,15 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         self.emailVerified = emailVerified
         self.verificationStatus = verificationStatus
         self.createdAt = createdAt
+        self.handle = handle
+        self.countryCode = CountryCode.normalised(countryCode)
+        self.avatarURL = avatarURL
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
+        case handle, countryCode
+        case avatarURL = "avatarUrl"
     }
 
     /// Tolerant decoder: a missing optional or a malformed `id` must not blow
@@ -112,6 +137,19 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         emailVerified = (try? container.decode(Bool.self, forKey: .emailVerified)) ?? false
         verificationStatus = (try? container.decode(VerificationStatus.self, forKey: .verificationStatus)) ?? .unstarted
         createdAt = (try? container.decode(Date.self, forKey: .createdAt)) ?? Date()
+        handle = (try? container.decodeIfPresent(String.self, forKey: .handle)) ?? nil
+        // An unrecognised code is dropped, not rendered: a flag the client
+        // cannot name would be a guess, and the badge is never a guess.
+        countryCode = CountryCode.normalised(
+            (try? container.decodeIfPresent(String.self, forKey: .countryCode)) ?? nil
+        )
+        avatarURL = (try? container.decodeIfPresent(URL.self, forKey: .avatarURL)) ?? nil
+    }
+
+    /// The handle as it is rendered, with the `@`, when the account has one.
+    public var atHandle: String? {
+        guard let handle, !handle.isEmpty else { return nil }
+        return "@\(handle)"
     }
 
     /// Two-letter monogram for ``TNAvatar``.

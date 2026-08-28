@@ -17,6 +17,10 @@ public struct MainTabView: View {
     private let container: AppContainer
     @State private var selection: Tab = .home
     @State private var viewModel: HomeViewModel
+    @State private var exploreViewModel: ExploreViewModel
+    /// The Explore tab's own navigation destination. It keeps its own stack so
+    /// opening a search result does not disturb the home feed's history.
+    @State private var exploreDetailPost: Post?
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -24,6 +28,13 @@ public struct MainTabView: View {
         self._viewModel = State(
             initialValue: HomeViewModel(
                 service: container.feedService,
+                analytics: container.analytics
+            )
+        )
+        self._exploreViewModel = State(
+            initialValue: ExploreViewModel(
+                search: container.searchService,
+                feed: container.feedService,
                 analytics: container.analytics
             )
         )
@@ -35,10 +46,60 @@ public struct MainTabView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             TNTabBar(items: tabBarItems, selection: $selection) { id in
-                if id == "compose" { stub("Composing posts") }
+                if id == "compose" { openComposer() }
             }
         }
         .tnScreenBackground()
+        .sheet(
+            item: Binding(
+                get: { container.router.presentedComposer },
+                set: { container.router.presentedComposer = $0 }
+            )
+        ) { context in
+            ComposerSheetHost { composerViewModel(for: context) }
+        }
+    }
+
+    // MARK: - Composer
+
+    /// The hook every screen uses to start a composition, or `nil` when Phase 4
+    /// is switched off — which is what puts the stub toasts back.
+    private var composeHandler: (@MainActor (ComposerContext) -> Void)? {
+        guard container.flags.composer else { return nil }
+        return { context in
+            container.analytics.track(.composerOpened, properties: ["context": context.id])
+            container.router.openComposer(context)
+        }
+    }
+
+    /// Opens the composer, or says why it is not there.
+    private func openComposer() {
+        guard container.flags.composer else {
+            stub("Composing posts")
+            return
+        }
+        container.analytics.track(.composerOpened, properties: ["context": "new"])
+        container.router.openComposer(.newPost)
+    }
+
+    /// Builds the composer's view model for a presentation.
+    ///
+    /// Everything it publishes goes somewhere real: the posts land in the feeds
+    /// that should hold them, and in the Explore results when they match what
+    /// the user is looking at.
+    private func composerViewModel(for context: ComposerContext) -> ComposerViewModel {
+        ComposerViewModel(
+            context: context,
+            author: ComposerAuthor(user: container.session.user),
+            composer: container.composerService,
+            search: container.searchService,
+            analytics: container.analytics,
+            onPosted: { posted in
+                viewModel.insert(newPosts: posted)
+                exploreViewModel.insert(posted)
+            },
+            onClose: { container.router.dismissComposer() }
+        )
     }
 
     // MARK: - Screens
@@ -54,7 +115,8 @@ public struct MainTabView: View {
                 HomeScreen(
                     viewModel: viewModel,
                     onOpenPost: { container.router.push(FeedRoute.postDetail($0)) },
-                    onStub: stub
+                    onStub: stub,
+                    onCompose: composeHandler
                 )
                 .tnNavigationBar(title: "TrustNet")
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -64,7 +126,27 @@ public struct MainTabView: View {
             .tint(TNColor.primary)
 
         case .explore:
-            ExploreScreen(onStub: stub)
+            NavigationStack {
+                ExploreScreen(
+                    viewModel: exploreViewModel,
+                    onOpenPost: { post in exploreDetailPost = post },
+                    onStub: stub,
+                    onCompose: composeHandler
+                )
+                .tnNavigationBar(title: "Explore")
+                .navigationDestination(item: $exploreDetailPost) { post in
+                    detail(
+                        for: post,
+                        // Engagement changed on a search result's detail screen
+                        // must not be lost when the user swipes back.
+                        onDismiss: { updated in
+                            exploreViewModel.merge(updated)
+                            viewModel.merge(updated)
+                        }
+                    )
+                }
+            }
+            .tint(TNColor.primary)
 
         case .notifications:
             NotificationsScreen(onStub: stub)
@@ -85,19 +167,33 @@ public struct MainTabView: View {
     private func destination(for route: FeedRoute) -> some View {
         switch route {
         case let .postDetail(post):
-            PostDetailScreen(
-                viewModel: PostDetailViewModel(
-                    post: post,
-                    service: container.feedService,
-                    analytics: container.analytics
-                ),
-                onOpenPost: { container.router.push(FeedRoute.postDetail($0)) },
-                onStub: stub,
-                // Engagement changed on the detail screen must not be lost when
-                // the user swipes back to a feed still holding the old copy.
-                onDismiss: { viewModel.merge($0) }
-            )
+            // Engagement changed on the detail screen must not be lost when the
+            // user swipes back to a feed still holding the old copy.
+            detail(for: post, onDismiss: { viewModel.merge($0) })
         }
+    }
+
+    /// A post's thread, with the reply bar wired to Phase 4 when it is on.
+    private func detail(
+        for post: Post,
+        onDismiss: @escaping @MainActor (Post) -> Void
+    ) -> some View {
+        PostDetailScreen(
+            viewModel: PostDetailViewModel(
+                post: post,
+                service: container.feedService,
+                analytics: container.analytics
+            ),
+            onOpenPost: { container.router.push(FeedRoute.postDetail($0)) },
+            onStub: stub,
+            onDismiss: onDismiss,
+            // `nil` when the phase is off, which restores the Phase-3 stub bar.
+            composerService: container.flags.composer ? container.composerService : nil,
+            searchService: container.flags.composer ? container.searchService : nil,
+            author: ComposerAuthor(user: container.session.user),
+            analytics: container.analytics,
+            onCompose: composeHandler
+        )
     }
 
     // MARK: - Tab bar
@@ -110,11 +206,15 @@ public struct MainTabView: View {
             ),
             TNTabBarItem(
                 id: "explore", icon: "magnifyingglass", selectedIcon: "magnifyingglass",
-                label: "Explore", hint: "Search and trending, coming in a later release", kind: .tab(.explore)
+                label: "Explore", hint: "Search posts and people, and see what is trending", kind: .tab(.explore)
             ),
             TNTabBarItem(
                 id: "compose", icon: "plus",
-                label: "Post", hint: "Writing posts arrives in a later release", kind: .action
+                label: "Post",
+                hint: container.flags.composer
+                    ? "Opens the composer"
+                    : "Writing posts arrives in a later release",
+                kind: .action
             ),
             TNTabBarItem(
                 id: "notifications", icon: "bell", selectedIcon: "bell.fill",

@@ -211,10 +211,12 @@ final class FeatureFlagsTests: XCTestCase {
         let flags = FeatureFlags.resolved(arguments: ["TrustNet"])
         XCTAssertFalse(flags.useMockAuth)
         XCTAssertFalse(flags.useMockFeed)
+        XCTAssertFalse(flags.useMockComposer)
+        XCTAssertFalse(flags.useMockSearch)
         XCTAssertTrue(flags.auth, "Phase 1 ships")
         XCTAssertTrue(flags.feed, "Phase 3 ships")
         XCTAssertFalse(flags.verification, "Phase 2 does not exist yet")
-        XCTAssertFalse(flags.composer, "Phase 4 does not exist yet")
+        XCTAssertTrue(flags.composer, "Phase 4 ships")
         XCTAssertFalse(flags.profile, "Phase 7 does not exist yet")
         XCTAssertTrue(flags.biometricSignIn)
     }
@@ -266,5 +268,46 @@ final class FeatureFlagsTests: XCTestCase {
         )
         XCTAssertTrue(flags.useMockFeed)
         XCTAssertEqual(flags.mockFeedScenario, .empty)
+    }
+
+    // MARK: Phase 4
+
+    func testMockComposerArgumentSwitchesToTheMockService() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockComposer"])
+        XCTAssertTrue(flags.useMockComposer)
+        XCTAssertEqual(flags.mockComposerScenario, .success)
+        XCTAssertTrue(flags.useMockSearch, "A composer demo needs a mention list that resolves")
+    }
+
+    func testMockComposerScenarioArgumentSelectsAWorldAndImpliesMockComposer() {
+        let flags = FeatureFlags.resolved(
+            arguments: ["TrustNet", "-mockComposerScenario", "threadFailsMidway"]
+        )
+        XCTAssertTrue(flags.useMockComposer)
+        XCTAssertEqual(flags.mockComposerScenario, .threadFailsMidway)
+    }
+
+    func testAnUnknownComposerScenarioNameIsIgnored() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockComposerScenario", "banana"])
+        XCTAssertFalse(flags.useMockComposer)
+    }
+
+    func testMockSearchScenarioArgumentSelectsAWorldAndImpliesMockSearch() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockSearchScenario", "offline"])
+        XCTAssertTrue(flags.useMockSearch)
+        XCTAssertEqual(flags.mockSearchScenario, .offline)
+    }
+
+    func testMockingAuthAlsoMocksTheComposerAndSearch() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockAuth"])
+        XCTAssertTrue(flags.useMockComposer)
+        XCTAssertTrue(flags.useMockSearch)
+    }
+
+    func testAnExplicitComposerScenarioWinsOverTheMockAuthDefault() {
+        let flags = FeatureFlags.resolved(
+            arguments: ["TrustNet", "-mockAuth", "-mockComposerScenario", "unverified"]
+        )
+        XCTAssertEqual(flags.mockComposerScenario, .unverified)
     }
 }

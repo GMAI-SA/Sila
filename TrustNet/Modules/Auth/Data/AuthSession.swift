@@ -102,7 +102,13 @@ public final class AuthSession {
                     displayName: current.displayName,
                     emailVerified: current.emailVerified,
                     verificationStatus: report.status,
-                    createdAt: current.createdAt
+                    createdAt: current.createdAt,
+                    handle: current.handle,
+                    // The badge follows verification: a status that is no longer
+                    // `verified` carries no country, exactly as the server's
+                    // `effective_country()` reports it.
+                    countryCode: report.status.grantsAccess ? current.countryCode : nil,
+                    avatarURL: current.avatarURL
                 )
                 user = updated
                 await store.updateUser(updated)

@@ -34,6 +34,8 @@ public final class AppRouter {
     public var feedPath: [FeedRoute] = []
     /// Legal document currently presented in a sheet, if any.
     public var presentedLegalDocument: LegalDocument?
+    /// The composer currently presented as a sheet, if any.
+    public var presentedComposer: ComposerContext?
     /// App-level toast.
     public var toast: TNToastMessage?
 
@@ -106,5 +108,20 @@ public final class AppRouter {
     /// Shows an app-level toast.
     public func show(_ toast: TNToastMessage) {
         self.toast = toast
+    }
+
+    /// Closes the composer sheet.
+    public func dismissComposer() {
+        presentedComposer = nil
+    }
+}
+
+extension AppRouter: ComposerLaunching {
+    /// Presents the Phase-4 composer.
+    ///
+    /// Conforming here is what lets Feed and Explore start a composition
+    /// without importing the Composer module's screens.
+    public func openComposer(_ context: ComposerContext) {
+        presentedComposer = context
     }
 }

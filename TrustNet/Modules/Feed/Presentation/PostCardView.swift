@@ -19,6 +19,10 @@ public struct PostCardActions {
     public var onReply: @MainActor (Post) -> Void
     /// Reply button pressed while `viewer.can_reply` is `false`.
     public var onReplyBlocked: @MainActor (Post) -> Void
+    /// "Quote" chosen from the long-press menu — opens a new post that embeds
+    /// this one. Quoting is not restricted by the quoted post's scope: the
+    /// quote is a post of the author's own, with its own audience.
+    public var onQuote: @MainActor (Post) -> Void
     /// An `@mention` was tapped; the payload has no leading `@`.
     public var onMention: @MainActor (String) -> Void
     /// A `#hashtag` was tapped; the payload has no leading `#`.
@@ -37,6 +41,7 @@ public struct PostCardActions {
         onBookmark: @escaping @MainActor (Post) -> Void = { _ in },
         onReply: @escaping @MainActor (Post) -> Void = { _ in },
         onReplyBlocked: @escaping @MainActor (Post) -> Void = { _ in },
+        onQuote: @escaping @MainActor (Post) -> Void = { _ in },
         onMention: @escaping @MainActor (String) -> Void = { _ in },
         onHashtag: @escaping @MainActor (String) -> Void = { _ in },
         onOpenQuoted: @escaping @MainActor (Post) -> Void = { _ in },
@@ -48,6 +53,7 @@ public struct PostCardActions {
         self.onBookmark = onBookmark
         self.onReply = onReply
         self.onReplyBlocked = onReplyBlocked
+        self.onQuote = onQuote
         self.onMention = onMention
         self.onHashtag = onHashtag
         self.onOpenQuoted = onOpenQuoted
@@ -408,6 +414,12 @@ public struct PostCardView: View {
 
     @ViewBuilder
     private var longPressMenu: some View {
+        Button {
+            actions.onQuote(post)
+        } label: {
+            Label("Quote", systemImage: "quote.bubble")
+        }
+
         Button {
             actions.onBookmark(post)
         } label: {

@@ -43,6 +43,17 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// An account tried to follow itself.
     case selfFollow = "self_follow"
 
+    // MARK: Contract v3 — compose & search
+
+    /// `POST /posts` from an account that has not completed identity
+    /// verification. Reading is open to everyone; speaking is not.
+    case unverified
+    /// The `scope` / `scope_country` / `scope_region` combination was rejected —
+    /// e.g. a country thread opened for a country the author is not verified in.
+    case invalidScope = "invalid_scope"
+    /// A search query shorter than ``SearchConstants/minimumQueryLength``.
+    case queryTooShort = "query_too_short"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -112,6 +123,12 @@ public enum APIError: Error, Equatable, Sendable {
                 return "Handles are 3–20 characters of letters, numbers and underscores."
             case .selfFollow:
                 return "You can't follow yourself."
+            case .unverified:
+                return "Only verified humans can post. Everyone can read TrustNet — finish identity verification to speak."
+            case .invalidScope:
+                return "That audience isn't available for this post."
+            case .queryTooShort:
+                return "Type at least \(SearchConstants.minimumQueryLength) characters to search."
             case .unknown:
                 return message.isEmpty ? "Something went wrong. Please try again." : message
             }

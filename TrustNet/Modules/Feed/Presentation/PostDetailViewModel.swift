@@ -128,6 +128,31 @@ public final class PostDetailViewModel {
         }
     }
 
+    /// Appends replies the viewer just wrote, and bumps the reply counter.
+    ///
+    /// Called by ``ReplyComposerBar`` on success. The posts are the server's
+    /// own, so the thread shows exactly what was stored; only the counter is
+    /// predicted, and it is predicted by the same rule the server uses (one per
+    /// direct reply).
+    /// - Parameter newReplies: Everything the composer got through, in order.
+    public func insert(replies newReplies: [Post]) {
+        // A thread posted from the reply bar chains onto itself, so only the
+        // segments that answer *this* post are direct replies to it.
+        let direct = newReplies.filter { $0.replyToPostId == post.id }
+        let known = Set(replies.map(\.id))
+        let additions = direct.filter { !known.contains($0.id) }
+        guard !additions.isEmpty else { return }
+
+        replies.append(contentsOf: additions)
+        post.metrics = PostMetrics(
+            likes: post.metrics.likes,
+            reposts: post.metrics.reposts,
+            replies: post.metrics.replies + additions.count,
+            views: post.metrics.views,
+            bookmarks: post.metrics.bookmarks
+        )
+    }
+
     /// Explains a reply the viewer is not allowed to write.
     public func replyBlocked(_ target: Post) {
         guard let message = ReplyPermission.make(for: target).blockedMessage else { return }

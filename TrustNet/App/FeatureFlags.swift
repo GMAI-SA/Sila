@@ -14,6 +14,10 @@ import Foundation
 /// -mockScenario X      pick an AuthServiceMock.MockScenario by raw value
 /// -mockFeed            run against FeedServiceMock instead of the live API
 /// -mockFeedScenario X  pick a FeedServiceMock.MockScenario by raw value
+/// -mockComposer        run against ComposerServiceMock instead of the live API
+/// -mockComposerScenario X  pick a ComposerServiceMock.MockScenario
+/// -mockSearch          run against SearchServiceMock instead of the live API
+/// -mockSearchScenario X    pick a SearchServiceMock.MockScenario
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -26,8 +30,10 @@ public struct FeatureFlags: Sendable {
     /// P3 — Social feed. Turning this off drops verified users back onto the
     /// Phase-1 placeholder instead of ``MainTabView``.
     public var feed = true
-    /// P4 — Composer.
-    public var composer = false
+    /// P4 — Composer and Explore search. Turning this off puts the `[+]` tab
+    /// and the reply bar back to their Phase-3 stubs and returns Explore to a
+    /// read-only screen, without touching the feed.
+    public var composer = true
     /// P5 — Encrypted messaging.
     public var messaging = false
     /// P5 sub-feature — audio/video calls.
@@ -65,6 +71,17 @@ public struct FeatureFlags: Sendable {
     /// Which mock world to serve when ``useMockFeed`` is on.
     public var mockFeedScenario: FeedServiceMock.MockScenario = .populated
 
+    // MARK: Phase 4 build switches
+
+    /// Use ``ComposerServiceMock`` instead of the live backend.
+    public var useMockComposer = false
+    /// Which mock world to serve when ``useMockComposer`` is on.
+    public var mockComposerScenario: ComposerServiceMock.MockScenario = .success
+    /// Use ``SearchServiceMock`` instead of the live backend.
+    public var useMockSearch = false
+    /// Which mock world to serve when ``useMockSearch`` is on.
+    public var mockSearchScenario: SearchServiceMock.MockScenario = .populated
+
     public init() {}
 
     /// Builds the flag set for a launch, applying launch-argument overrides.
@@ -95,11 +112,37 @@ public struct FeatureFlags: Sendable {
             flags.useMockFeed = true
             flags.mockFeedScenario = scenario
         }
+        if arguments.contains("-mockComposer") {
+            flags.useMockComposer = true
+        }
+        if let index = arguments.firstIndex(of: "-mockComposerScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = ComposerServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockComposer = true
+            flags.mockComposerScenario = scenario
+        }
+        if arguments.contains("-mockSearch") {
+            flags.useMockSearch = true
+        }
+        if let index = arguments.firstIndex(of: "-mockSearchScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = SearchServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockSearch = true
+            flags.mockSearchScenario = scenario
+        }
         // A mocked session has no real bearer token, so a live feed behind it
         // could only ever 401. Mocking auth implies mocking the feed unless the
         // caller asked for a specific feed world.
         if flags.useMockAuth && !arguments.contains("-mockFeedScenario") {
             flags.useMockFeed = true
+        }
+        // Same reasoning for the Phase-4 services, plus one of its own: a
+        // composer demo whose mention list cannot resolve anybody is not a demo.
+        if flags.useMockAuth && !arguments.contains("-mockComposerScenario") {
+            flags.useMockComposer = true
+        }
+        if (flags.useMockAuth || flags.useMockComposer) && !arguments.contains("-mockSearchScenario") {
+            flags.useMockSearch = true
         }
         return flags
     }

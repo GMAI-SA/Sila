@@ -244,7 +244,12 @@ public actor AuthServiceMock: AuthServiceProtocol {
                 displayName: nil,
                 emailVerified: emailVerified,
                 verificationStatus: scenario.verificationStatus,
-                createdAt: Date().addingTimeInterval(-86_400)
+                createdAt: Date().addingTimeInterval(-86_400),
+                handle: "aziz",
+                // Only a verified account carries a country badge, which is what
+                // makes the composer's "My Country" scope appear or not appear
+                // in a mocked run.
+                countryCode: scenario.verificationStatus == .verified ? "SA" : nil
             )
         )
     }

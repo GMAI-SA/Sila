@@ -10,19 +10,25 @@ public struct HomeScreen: View {
     @Bindable private var viewModel: HomeViewModel
     private let onOpenPost: @MainActor (Post) -> Void
     private let onStub: @MainActor (String) -> Void
+    private let onCompose: (@MainActor (ComposerContext) -> Void)?
 
     /// - Parameters:
     ///   - viewModel: Owned by ``MainTabView`` so tab state survives navigation.
     ///   - onOpenPost: Pushes the detail screen.
     ///   - onStub: Announces a feature that belongs to a later phase.
+    ///   - onCompose: Opens the Phase-4 composer. `nil` — the Phase-3 behaviour —
+    ///     falls back to the stub toast, which is what
+    ///     ``FeatureFlags/composer`` switches off to.
     public init(
         viewModel: HomeViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
-        onStub: @escaping @MainActor (String) -> Void
+        onStub: @escaping @MainActor (String) -> Void,
+        onCompose: (@MainActor (ComposerContext) -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
         self.onStub = onStub
+        self.onCompose = onCompose
     }
 
     public var body: some View {
@@ -173,14 +179,24 @@ public struct HomeScreen: View {
 
     // MARK: - Card wiring
 
+    /// Opens the composer, or says the feature is not on.
+    private func compose(_ context: ComposerContext, fallback: String) {
+        guard let onCompose else {
+            onStub(fallback)
+            return
+        }
+        onCompose(context)
+    }
+
     private func actions(for post: Post) -> PostCardActions {
         PostCardActions(
             onOpen: onOpenPost,
             onLike: { post in Task { await viewModel.toggleLike(post) } },
             onRepost: { post in Task { await viewModel.toggleRepost(post) } },
             onBookmark: { post in Task { await viewModel.toggleBookmark(post) } },
-            onReply: { _ in onStub("Replying") },
+            onReply: { post in compose(.reply(to: post), fallback: "Replying") },
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
+            onQuote: { post in compose(.quote(post), fallback: "Quote posts") },
             onMention: { _ in onStub("Profiles") },
             onHashtag: { _ in onStub("Hashtag search") },
             onOpenQuoted: onOpenPost,

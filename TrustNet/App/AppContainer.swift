@@ -29,6 +29,10 @@ public final class AppContainer {
     public let session: AuthSession
     /// Phase 3's service.
     public let feedService: FeedServiceProtocol
+    /// Phase 4's post-creation service.
+    public let composerService: ComposerServiceProtocol
+    /// Phase 4's search service — Explore and `@mention` autocomplete.
+    public let searchService: SearchServiceProtocol
     /// Navigation coordinator.
     public let router: AppRouter
 
@@ -44,7 +48,9 @@ public final class AppContainer {
         analytics: AnalyticsClient? = nil,
         biometrics: BiometricAuthenticating? = nil,
         authService: AuthServiceProtocol? = nil,
-        feedService: FeedServiceProtocol? = nil
+        feedService: FeedServiceProtocol? = nil,
+        composerService: ComposerServiceProtocol? = nil,
+        searchService: SearchServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -85,16 +91,35 @@ public final class AppContainer {
         self.tokenStore = store
         self.session = AuthSession(service: resolvedService, store: store, analytics: analytics)
 
+        // One provider for every authenticated service, so a token refreshed by
+        // any of them is picked up by all of them.
+        let tokens = SessionAccessTokenProvider(store: store, service: resolvedService)
+
         if let feedService {
             self.feedService = feedService
         } else if flags.useMockFeed {
             self.feedService = FeedServiceMock(scenario: flags.mockFeedScenario, latency: 0.35)
         } else {
-            self.feedService = FeedService(
-                network: network,
-                tokens: SessionAccessTokenProvider(store: store, service: resolvedService),
-                analytics: analytics
+            self.feedService = FeedService(network: network, tokens: tokens, analytics: analytics)
+        }
+
+        if let composerService {
+            self.composerService = composerService
+        } else if flags.useMockComposer {
+            self.composerService = ComposerServiceMock(
+                scenario: flags.mockComposerScenario,
+                latency: 0.35
             )
+        } else {
+            self.composerService = ComposerService(network: network, tokens: tokens, analytics: analytics)
+        }
+
+        if let searchService {
+            self.searchService = searchService
+        } else if flags.useMockSearch {
+            self.searchService = SearchServiceMock(scenario: flags.mockSearchScenario, latency: 0.25)
+        } else {
+            self.searchService = SearchService(network: network, tokens: tokens, analytics: analytics)
         }
 
         self.router = AppRouter()
@@ -103,13 +128,19 @@ public final class AppContainer {
     /// A container wired entirely to mocks, for previews.
     public static func preview(
         scenario: AuthServiceMock.MockScenario = .pendingReview,
-        feedScenario: FeedServiceMock.MockScenario = .populated
+        feedScenario: FeedServiceMock.MockScenario = .populated,
+        composerScenario: ComposerServiceMock.MockScenario = .success,
+        searchScenario: SearchServiceMock.MockScenario = .populated
     ) -> AppContainer {
         var flags = FeatureFlags()
         flags.useMockAuth = true
         flags.mockScenario = scenario
         flags.useMockFeed = true
         flags.mockFeedScenario = feedScenario
+        flags.useMockComposer = true
+        flags.mockComposerScenario = composerScenario
+        flags.useMockSearch = true
+        flags.mockSearchScenario = searchScenario
         return AppContainer(
             flags: flags,
             network: URLSessionNetworkClient(),
@@ -118,7 +149,9 @@ public final class AppContainer {
             analytics: RecordingAnalyticsClient(),
             biometrics: StubBiometricAuthenticator(),
             authService: AuthServiceMock(scenario: scenario, hasBiometricCredential: true),
-            feedService: FeedServiceMock(scenario: feedScenario)
+            feedService: FeedServiceMock(scenario: feedScenario),
+            composerService: ComposerServiceMock(scenario: composerScenario),
+            searchService: SearchServiceMock(scenario: searchScenario)
         )
     }
 }

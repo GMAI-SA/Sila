@@ -46,6 +46,34 @@ public enum AnalyticsEvent: String, Sendable {
     case replyBlocked = "reply_blocked"
     /// A screen that belongs to a later phase told the user so.
     case featureStubShown = "feature_stub_shown"
+
+    // MARK: Phase 4 — Composer
+
+    /// The composer sheet was presented.
+    case composerOpened = "composer_opened"
+    /// A thread segment was added.
+    case composerSegmentAdded = "composer_segment_added"
+    /// The audience was changed.
+    case composerScopeSelected = "composer_scope_selected"
+    /// A handle was picked from the mention list.
+    case composerMentionInserted = "composer_mention_inserted"
+    /// A draft was thrown away.
+    case composerDiscarded = "composer_discarded"
+    /// One post reached the server (emitted by the service, per post).
+    case postCreated = "post_created"
+    /// A composition finished, counting every segment that got through.
+    case postPublished = "post_published"
+    /// A thread stopped partway, leaving real posts behind.
+    case postPartiallyFailed = "post_partially_failed"
+    /// Nothing was posted.
+    case postFailed = "post_failed"
+
+    // MARK: Phase 4 — Search & Explore
+
+    /// A search query ran.
+    case searchPerformed = "search_performed"
+    /// A trending tag was tapped.
+    case trendingTagOpened = "trending_tag_opened"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does
