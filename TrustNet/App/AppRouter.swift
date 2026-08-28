@@ -1,0 +1,92 @@
+import Foundation
+import Observation
+
+/// Screens reachable inside the unauthenticated navigation stack.
+public enum AuthRoute: Hashable, Sendable {
+    /// Email + password + confirm.
+    case register
+    /// Six-digit code entry for a given address and purpose.
+    case otp(email: String, purpose: OTPPurpose)
+    /// Email + password, with optional biometric unlock.
+    case signIn
+    /// Address entry for the forgotten-password OTP.
+    case forgotPassword
+}
+
+/// Navigation coordinator for Phase 1.
+///
+/// Owns the auth `NavigationStack` path and the modals. Cross-screen routing
+/// decisions that depend on *session state* live in ``AuthSession``; this type
+/// only moves the user around inside the unauthenticated flow.
+@MainActor
+@Observable
+public final class AppRouter {
+
+    /// The auth stack's path.
+    public var authPath: [AuthRoute] = []
+    /// Legal document currently presented in a sheet, if any.
+    public var presentedLegalDocument: LegalDocument?
+    /// App-level toast.
+    public var toast: TNToastMessage?
+
+    public init() {}
+
+    /// A legal document shown in a web sheet from the register screen.
+    public enum LegalDocument: String, Identifiable, Sendable {
+        case terms, privacy
+
+        public var id: String { rawValue }
+
+        /// Sheet title.
+        public var title: String {
+            switch self {
+            case .terms: return "Terms of Service"
+            case .privacy: return "Privacy Policy"
+            }
+        }
+
+        /// Remote URL, or `nil` if the configured string is malformed.
+        public var url: URL? {
+            switch self {
+            case .terms: return URL(string: AppConfig.termsURLString)
+            case .privacy: return URL(string: AppConfig.privacyURLString)
+            }
+        }
+    }
+
+    // MARK: - Stack operations
+
+    /// Pushes a screen onto the auth stack.
+    public func push(_ route: AuthRoute) {
+        authPath.append(route)
+    }
+
+    /// Pops one screen, if there is one.
+    public func pop() {
+        guard !authPath.isEmpty else { return }
+        authPath.removeLast()
+    }
+
+    /// Returns to the welcome screen.
+    public func popToRoot() {
+        authPath.removeAll()
+    }
+
+    /// Replaces the whole stack with the OTP screen for `email`.
+    ///
+    /// Used when `/auth/login` answers `email_unverified` — the user should not
+    /// be able to swipe back into a sign-in form that will keep failing.
+    public func replaceWithOTP(email: String, purpose: OTPPurpose) {
+        authPath = [.otp(email: email, purpose: purpose)]
+    }
+
+    /// Presents a legal document sheet.
+    public func present(_ document: LegalDocument) {
+        presentedLegalDocument = document
+    }
+
+    /// Shows an app-level toast.
+    public func show(_ toast: TNToastMessage) {
+        self.toast = toast
+    }
+}

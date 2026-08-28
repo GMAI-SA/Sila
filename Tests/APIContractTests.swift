@@ -1,0 +1,228 @@
+import XCTest
+@testable import TrustNet
+
+/// The wire contract with `https://portal.gmai.sa/socialsa/api/v1`.
+///
+/// These decode the exact payload shapes the backend documents, so a change on
+/// the server surfaces here rather than as a blank screen on device.
+final class APIContractTests: XCTestCase {
+
+    private func decode<T: Decodable>(_ type: T.Type, from json: String) throws -> T {
+        let data = Data(json.utf8)
+        return try JSONCoding.decoder.decode(T.self, from: data)
+    }
+
+    // MARK: TokenPair
+
+    func testTokenPairDecodesSnakeCaseAndFlattensIntoTokenPlusUser() throws {
+        let json = """
+        {
+          "access_token": "eyJhbGciOi",
+          "refresh_token": "rt_9f3c",
+          "expires_at": "2026-08-28T12:30:00Z",
+          "user": {
+            "id": "6c1b1f7e-5a3d-4b2a-9d21-0c1f2a3b4c5d",
+            "email": "aziz@example.com",
+            "display_name": "Aziz",
+            "email_verified": true,
+            "verification_status": "pending_review",
+            "created_at": "2026-08-01T09:00:00Z"
+          }
+        }
+        """
+
+        let pair = try decode(TokenPair.self, from: json)
+
+        XCTAssertEqual(pair.token.accessToken, "eyJhbGciOi")
+        XCTAssertEqual(pair.token.refreshToken, "rt_9f3c")
+        XCTAssertEqual(pair.user.email, "aziz@example.com")
+        XCTAssertEqual(pair.user.displayName, "Aziz")
+        XCTAssertTrue(pair.user.emailVerified)
+        XCTAssertEqual(pair.user.verificationStatus, .pendingReview)
+        XCTAssertEqual(
+            pair.token.expiresAt.timeIntervalSince1970,
+            ISO8601DateFormatter().date(from: "2026-08-28T12:30:00Z")?.timeIntervalSince1970
+        )
+    }
+
+    func testTokenPairAcceptsFractionalSecondTimestamps() throws {
+        let json = """
+        {
+          "access_token": "a", "refresh_token": "r",
+          "expires_at": "2026-08-28T12:30:00.512Z",
+          "user": {
+            "id": "6c1b1f7e-5a3d-4b2a-9d21-0c1f2a3b4c5d",
+            "email": "aziz@example.com",
+            "email_verified": false,
+            "verification_status": "unstarted",
+            "created_at": "2026-08-01T09:00:00.000Z"
+          }
+        }
+        """
+
+        let pair = try decode(TokenPair.self, from: json)
+        XCTAssertNil(pair.user.displayName)
+        XCTAssertEqual(pair.user.verificationStatus, .unstarted)
+    }
+
+    // MARK: VerificationStatus
+
+    func testEveryDocumentedStatusValueDecodes() throws {
+        let expected: [String: VerificationStatus] = [
+            "unstarted": .unstarted,
+            "in_progress": .inProgress,
+            "pending_review": .pendingReview,
+            "verified": .verified,
+            "rejected": .rejected
+        ]
+        for (raw, status) in expected {
+            let decoded = try decode(VerificationStatus.self, from: "\"\(raw)\"")
+            XCTAssertEqual(decoded, status, "\(raw) decoded incorrectly")
+        }
+    }
+
+    func testAnUnknownStatusFallsBackToUnstartedRatherThanFailing() throws {
+        let decoded = try decode(VerificationStatus.self, from: "\"appeal_pending\"")
+        XCTAssertEqual(decoded, .unstarted, "A new server value must not break the whole response")
+    }
+
+    // MARK: Other endpoints
+
+    func testRegistrationResultDecodes() throws {
+        let json = """
+        {"user_id": "6c1b1f7e-5a3d-4b2a-9d21-0c1f2a3b4c5d", "otp_sent": true}
+        """
+        let result = try decode(RegistrationResult.self, from: json)
+        XCTAssertTrue(result.otpSent)
+        XCTAssertEqual(result.userId.uuidString.lowercased(), "6c1b1f7e-5a3d-4b2a-9d21-0c1f2a3b4c5d")
+    }
+
+    func testOTPSendResultDecodesTheResendWindow() throws {
+        let result = try decode(OTPSendResult.self, from: #"{"sent": true, "resend_after_seconds": 45}"#)
+        XCTAssertTrue(result.sent)
+        XCTAssertEqual(result.resendAfterSeconds, 45)
+    }
+
+    func testOTPSendResultFallsBackToTheDefaultWindow() throws {
+        let result = try decode(OTPSendResult.self, from: #"{"sent": true}"#)
+        XCTAssertEqual(result.resendAfterSeconds, AppConfig.defaultOTPResendSeconds)
+    }
+
+    func testVerificationStatusReportDecodesNullTimestamps() throws {
+        let json = """
+        {
+          "status": "rejected",
+          "rejection_reason": "Document unreadable",
+          "submitted_at": "2026-08-27T10:00:00Z",
+          "reviewed_at": null
+        }
+        """
+        let report = try decode(VerificationStatusReport.self, from: json)
+        XCTAssertEqual(report.status, .rejected)
+        XCTAssertEqual(report.rejectionReason, "Document unreadable")
+        XCTAssertNotNil(report.submittedAt)
+        XCTAssertNil(report.reviewedAt)
+    }
+
+    // MARK: Request encoding
+
+    func testRequestBodiesEncodeToSnakeCase() throws {
+        let request = try APIRequest.json(
+            "/auth/otp/verify",
+            body: OTPVerifyBody(email: "aziz@example.com", code: "482913", purpose: "register")
+        )
+        let body = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: body) as? [String: Any]
+        )
+        XCTAssertEqual(object["email"] as? String, "aziz@example.com")
+        XCTAssertEqual(object["code"] as? String, "482913")
+        XCTAssertEqual(object["purpose"] as? String, "register")
+    }
+
+    func testRefreshBodyUsesTheSnakeCaseKeyTheServerExpects() throws {
+        let request = try APIRequest.json("/auth/refresh", body: RefreshRequestBody(refreshToken: "rt_1"))
+        let body = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        XCTAssertEqual(object["refresh_token"] as? String, "rt_1")
+        XCTAssertNil(object["refreshToken"])
+    }
+
+    // MARK: Errors
+
+    func testStructuredDetailBecomesATypedAPIError() {
+        let data = Data(#"{"detail": {"code": "otp_expired", "message": "Code expired"}}"#.utf8)
+        let error = URLSessionNetworkClient.makeError(status: 400, data: data)
+
+        XCTAssertEqual(error.code, .otpExpired)
+        XCTAssertEqual(error.userMessage, "That code has expired. Request a new one.")
+    }
+
+    func testEmailUnverifiedIsRecognisedSoSignInCanRouteToOTP() {
+        let data = Data(#"{"detail": {"code": "email_unverified", "message": "..."}}"#.utf8)
+        let error = URLSessionNetworkClient.makeError(status: 403, data: data)
+
+        XCTAssertEqual(error.code, .emailUnverified)
+    }
+
+    func testAnUnknownCodeFallsBackToTheServerMessage() {
+        let data = Data(#"{"detail": {"code": "teapot", "message": "I'm a teapot"}}"#.utf8)
+        let error = URLSessionNetworkClient.makeError(status: 418, data: data)
+
+        XCTAssertEqual(error.code, .unknown)
+        XCTAssertEqual(error.userMessage, "I'm a teapot")
+    }
+
+    func testAPlainStringDetailIsStillUsable() {
+        let data = Data(#"{"detail": "Not Found"}"#.utf8)
+        let error = URLSessionNetworkClient.makeError(status: 404, data: data)
+
+        XCTAssertEqual(error, .http(status: 404, message: "Not Found"))
+    }
+
+    func testAnUnparseable401BecomesUnauthenticated() {
+        let error = URLSessionNetworkClient.makeError(status: 401, data: Data())
+        XCTAssertEqual(error, .unauthenticated)
+    }
+
+    // MARK: Configuration
+
+    func testTheAPIBaseURLIsWellFormedAndPointsAtTheDeployedBackend() {
+        XCTAssertEqual(AppConfig.apiBaseURL.absoluteString, "https://portal.gmai.sa/socialsa/api/v1")
+        XCTAssertEqual(AppConfig.apiBaseURL.scheme, "https", "No ATS exception is declared, so HTTPS is mandatory")
+    }
+}
+
+/// The launch-argument overrides that select the mock stack.
+final class FeatureFlagsTests: XCTestCase {
+
+    func testDefaultsUseTheLiveBackendAndOnlyEnablePhaseOne() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet"])
+        XCTAssertFalse(flags.useMockAuth)
+        XCTAssertTrue(flags.auth)
+        XCTAssertFalse(flags.feed)
+        XCTAssertTrue(flags.biometricSignIn)
+    }
+
+    func testMockAuthArgumentSwitchesToTheMockService() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockAuth"])
+        XCTAssertTrue(flags.useMockAuth)
+        XCTAssertEqual(flags.mockScenario, .pendingReview)
+    }
+
+    func testMockScenarioArgumentSelectsAJourneyAndImpliesMockAuth() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockScenario", "rejected"])
+        XCTAssertTrue(flags.useMockAuth)
+        XCTAssertEqual(flags.mockScenario, .rejected)
+    }
+
+    func testAnUnknownScenarioNameIsIgnored() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-mockScenario", "banana"])
+        XCTAssertFalse(flags.useMockAuth)
+    }
+
+    func testBiometricsCanBeDisabledForUITests() {
+        let flags = FeatureFlags.resolved(arguments: ["TrustNet", "-noBiometrics"])
+        XCTAssertFalse(flags.biometricSignIn)
+    }
+}
