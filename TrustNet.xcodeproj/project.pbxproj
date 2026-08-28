@@ -71,6 +71,7 @@
 		6FDBA04EC1B9E3FB9F759FA4 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D912F1F26CEDFF3CE5462143 /* HomeScreen.swift */; };
 		7223B9AA7CB28E097998D608 /* RegisterScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7362EBBA071656F050B7594F /* RegisterScreen.swift */; };
 		77361F43D1E0CCE2EB64392A /* NavigationBarModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116F58C503E6EA2C701BB90C /* NavigationBarModifier.swift */; };
+		77C46DFD98B182988BCBCBAF /* LiveSignInUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE0AC3463EAF02C322DDB73 /* LiveSignInUITests.swift */; };
 		7B9C33FDB25591B597BF486F /* ScopePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B044B4ED37FB911D77D7BEB /* ScopePickerView.swift */; };
 		7C059B0FA3CAA9B4E2F68D61 /* TNSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC828BBC4E21FC19894C27B8 /* TNSegmentedControl.swift */; };
 		82913C800E5DB20EE9DF7126 /* OTPVerificationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCBD805D24DF4B96012BBD8 /* OTPVerificationViewModel.swift */; };
@@ -166,6 +167,7 @@
 		388DE6FCA5305CD0A93F704D /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		3D25CA525AF314263BEAA843 /* ComposerServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerServiceMock.swift; sourceTree = "<group>"; };
 		3EA942DFD0F1F2869D315AFE /* PreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesService.swift; sourceTree = "<group>"; };
+		3EE0AC3463EAF02C322DDB73 /* LiveSignInUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSignInUITests.swift; sourceTree = "<group>"; };
 		45B34F4AA20E859DCB6AD93C /* APIContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIContractTests.swift; sourceTree = "<group>"; };
 		46CA08235A62DCD8C709D771 /* PasswordStrength.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordStrength.swift; sourceTree = "<group>"; };
 		4825D0DCC3563289E1002480 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -388,6 +390,7 @@
 			children = (
 				D0448F2600E95810A297DCC1 /* ComposerJourneyUITests.swift */,
 				E3F6F160BE506083F8D7D753 /* FeedJourneyUITests.swift */,
+				3EE0AC3463EAF02C322DDB73 /* LiveSignInUITests.swift */,
 				E29C30039A5B8906663693A2 /* PreferencesJourneyUITests.swift */,
 			);
 			path = UITests;
@@ -849,6 +852,7 @@
 			files = (
 				1E1EB099C000A8D02052F672 /* ComposerJourneyUITests.swift in Sources */,
 				62AE56E3A57B93930FF4C2EA /* FeedJourneyUITests.swift in Sources */,
+				77C46DFD98B182988BCBCBAF /* LiveSignInUITests.swift in Sources */,
 				4571ADB74242903ACC3136A9 /* PreferencesJourneyUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
