@@ -9,6 +9,7 @@ public struct HomeScreen: View {
 
     @Bindable private var viewModel: HomeViewModel
     private let onOpenPost: @MainActor (Post) -> Void
+    private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let onOpenPreferences: (@MainActor () -> Void)?
@@ -16,6 +17,9 @@ public struct HomeScreen: View {
     /// - Parameters:
     ///   - viewModel: Owned by ``MainTabView`` so tab state survives navigation.
     ///   - onOpenPost: Pushes the detail screen.
+    ///   - onOpenProfile: Pushes an account's profile — a tapped author or an
+    ///     `@mention`. `nil` is not offered: the default does nothing, which is
+    ///     what every existing caller already had.
     ///   - onStub: Announces a feature that belongs to a later phase.
     ///   - onCompose: Opens the Phase-4 composer. `nil` — the Phase-3 behaviour —
     ///     falls back to the stub toast, which is what
@@ -27,11 +31,13 @@ public struct HomeScreen: View {
         viewModel: HomeViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onStub: @escaping @MainActor (String) -> Void,
+        onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
+        self.onOpenProfile = onOpenProfile
         self.onStub = onStub
         self.onCompose = onCompose
         self.onOpenPreferences = onOpenPreferences
@@ -242,9 +248,10 @@ public struct HomeScreen: View {
             onReply: { post in compose(.reply(to: post), fallback: "Replying") },
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in compose(.quote(post), fallback: "Quote posts") },
-            onMention: { _ in onStub("Profiles") },
+            onMention: { handle in onOpenProfile(handle) },
             onHashtag: { _ in onStub("Hashtag search") },
             onOpenQuoted: onOpenPost,
+            onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub
         )
     }

@@ -1,11 +1,16 @@
 import SwiftUI
 
-/// The verified app's shell: five slots, four screens, one honest stub.
+/// The verified app's shell: five slots, four screens.
 ///
 /// Replaces Phase 1's `FeedPlaceholderScreen` as the destination for
-/// ``SessionRoute/feed``. Compose (Phase 4) and Profile (Phase 7) do not exist
-/// yet, so they say so out loud rather than pretending — the same contract the
-/// wall's "Start Verification" button already honours.
+/// ``SessionRoute/feed``. Notifications is the last surface with no backend
+/// behind it, and it says so out loud rather than pretending — the same
+/// contract the wall's "Start Verification" button already honours.
+///
+/// Each tab owns its own navigation stack, and all three carry the same
+/// ``FeedRoute`` cases: a post leads to its author, whose timeline leads to
+/// another post. Pushing that chain onto the tab it started in is what stops
+/// Explore from rearranging the history the home feed is holding.
 @MainActor
 public struct MainTabView: View {
 
@@ -18,9 +23,6 @@ public struct MainTabView: View {
     @State private var selection: Tab = .home
     @State private var viewModel: HomeViewModel
     @State private var exploreViewModel: ExploreViewModel
-    /// The Explore tab's own navigation destination. It keeps its own stack so
-    /// opening a search result does not disturb the home feed's history.
-    @State private var exploreDetailPost: Post?
     /// `true` while the feed-preferences sheet is up. A sheet rather than a
     /// push, because both entry points (Profile and the International feed)
     /// live in different navigation stacks.
@@ -195,8 +197,9 @@ public struct MainTabView: View {
             )) {
                 HomeScreen(
                     viewModel: viewModel,
-                    onOpenPost: { container.router.push(FeedRoute.postDetail($0)) },
+                    onOpenPost: openPost,
                     onStub: stub,
+                    onOpenProfile: openProfile,
                     onCompose: composeHandler,
                     onOpenPreferences: preferencesHandler
                 )
@@ -208,24 +211,20 @@ public struct MainTabView: View {
             .tint(SLColor.primary)
 
         case .explore:
-            NavigationStack {
+            NavigationStack(path: Binding(
+                get: { container.router.explorePath },
+                set: { container.router.explorePath = $0 }
+            )) {
                 ExploreScreen(
                     viewModel: exploreViewModel,
-                    onOpenPost: { post in exploreDetailPost = post },
+                    onOpenPost: openPost,
                     onStub: stub,
+                    onOpenProfile: openProfile,
                     onCompose: composeHandler
                 )
                 .tnNavigationBar(title: "Explore")
-                .navigationDestination(item: $exploreDetailPost) { post in
-                    detail(
-                        for: post,
-                        // Engagement changed on a search result's detail screen
-                        // must not be lost when the user swipes back.
-                        onDismiss: { updated in
-                            exploreViewModel.merge(updated)
-                            viewModel.merge(updated)
-                        }
-                    )
+                .navigationDestination(for: FeedRoute.self) { route in
+                    destination(for: route)
                 }
             }
             .tint(SLColor.primary)
@@ -234,6 +233,52 @@ public struct MainTabView: View {
             NotificationsScreen(onStub: stub)
 
         case .profile:
+            NavigationStack(path: Binding(
+                get: { container.router.profilePath },
+                set: { container.router.profilePath = $0 }
+            )) {
+                ownProfile
+                    .navigationDestination(for: FeedRoute.self) { route in
+                        destination(for: route)
+                    }
+            }
+            .tint(SLColor.primary)
+        }
+    }
+
+    // MARK: - Profile
+
+    /// The Profile tab's root.
+    ///
+    /// The real page when Phase 7 is on, and the honest stub when it is not —
+    /// the flag has a genuine off state, and the stub is still the route into
+    /// account settings and sign-out.
+    @ViewBuilder
+    private var ownProfile: some View {
+        if container.flags.profile {
+            ProfileScreenHost(
+                makeViewModel: {
+                    // The session's handle is both *whose* page this is and the
+                    // provisional answer to `is_me`, so the settings routes are
+                    // on screen before the server confirms anything — and stay
+                    // there if it never does.
+                    profileViewModel(handle: container.session.user?.handle ?? "")
+                },
+                onOpenPost: openPost,
+                onOpenProfile: openProfile,
+                onStub: stub,
+                onCompose: composeHandler,
+                ownerActions: ProfileOwnerActions(
+                    onOpenAccount: accountHandler,
+                    onOpenPreferences: preferencesHandler,
+                    onSignOut: {
+                        container.router.popFeedToRoot()
+                        Task { await container.session.signOut() }
+                    }
+                )
+            )
+            .tnNavigationBar(title: profileTitle)
+        } else {
             ProfileStubScreen(
                 user: container.session.user,
                 onStub: stub,
@@ -247,13 +292,91 @@ public struct MainTabView: View {
         }
     }
 
+    /// `"@aziz"`, or the neutral title when the session carries no handle.
+    private var profileTitle: String {
+        guard let handle = container.session.user?.handle, !handle.isEmpty else {
+            return "Profile"
+        }
+        return "@\(handle)"
+    }
+
+    /// Builds a profile view model for one destination.
+    private func profileViewModel(handle: String) -> ProfileViewModel {
+        ProfileViewModel(
+            handle: handle,
+            viewerHandle: container.session.user?.handle,
+            service: container.profileService,
+            feed: container.feedService,
+            analytics: container.analytics
+        )
+    }
+
+    // MARK: - Navigation
+
+    /// Pushes a route onto the stack the user is currently looking at.
+    ///
+    /// Notifications has no stack of its own; it also has nothing that pushes.
+    private func push(_ route: FeedRoute) {
+        switch selection {
+        case .home: container.router.feedPath.append(route)
+        case .explore: container.router.explorePath.append(route)
+        case .profile: container.router.profilePath.append(route)
+        case .notifications: break
+        }
+    }
+
+    private func openPost(_ post: Post) {
+        push(.postDetail(post))
+    }
+
+    /// Opens somebody's profile, or says why it is not there.
+    ///
+    /// A handle that cannot survive ``Handle/pathComponent(_:)`` is refused
+    /// here rather than pushed: it would only produce the "isn't available"
+    /// screen, and a mention that was never a handle is not a missing account.
+    private func openProfile(_ handle: String) {
+        guard container.flags.profile else {
+            stub("Profiles")
+            return
+        }
+        let component = Handle.pathComponent(handle)
+        guard !component.isEmpty else {
+            container.router.show(.info("That doesn't look like a Sila handle."))
+            return
+        }
+        container.analytics.track(.profileOpened, properties: ["handle": component])
+        push(.profile(handle: component))
+    }
+
     @ViewBuilder
     private func destination(for route: FeedRoute) -> some View {
         switch route {
         case let .postDetail(post):
             // Engagement changed on the detail screen must not be lost when the
-            // user swipes back to a feed still holding the old copy.
-            detail(for: post, onDismiss: { viewModel.merge($0) })
+            // user swipes back to a list still holding the old copy. Both lists
+            // are told, because either could be the one behind this screen.
+            detail(for: post, onDismiss: { updated in
+                viewModel.merge(updated)
+                exploreViewModel.merge(updated)
+            })
+
+        case let .profile(handle):
+            ProfileScreenHost(
+                makeViewModel: { profileViewModel(handle: handle) },
+                onOpenPost: openPost,
+                onOpenProfile: openProfile,
+                onStub: stub,
+                onCompose: composeHandler,
+                // No sign-out on a pushed page: ending the session is a Profile
+                // tab affordance, not something to meet at the end of a
+                // navigation chain. The other two only render when the page
+                // turns out to be the viewer's own.
+                ownerActions: ProfileOwnerActions(
+                    onOpenAccount: accountHandler,
+                    onOpenPreferences: preferencesHandler
+                )
+            )
+            .tnNavigationBar(title: "@\(handle)")
         }
     }
 
@@ -268,8 +391,9 @@ public struct MainTabView: View {
                 service: container.feedService,
                 analytics: container.analytics
             ),
-            onOpenPost: { container.router.push(FeedRoute.postDetail($0)) },
+            onOpenPost: openPost,
             onStub: stub,
+            onOpenProfile: openProfile,
             onDismiss: onDismiss,
             // `nil` when the phase is off, which restores the Phase-3 stub bar.
             composerService: container.flags.composer ? container.composerService : nil,
@@ -306,7 +430,7 @@ public struct MainTabView: View {
             ),
             SLTabBarItem(
                 id: "profile", icon: "person", selectedIcon: "person.fill",
-                label: "Profile", hint: "Your account", kind: .tab(.profile)
+                label: "Profile", hint: "Your profile, your posts and your account settings", kind: .tab(.profile)
             )
         ]
     }
@@ -319,10 +443,12 @@ public struct MainTabView: View {
     }
 }
 
-/// The Profile tab until Phase 7 builds the real thing.
+/// The Profile tab when ``FeatureFlags/profile`` is off.
 ///
-/// It carries the affordances a user genuinely needs here today — feed
-/// preferences and signing out — and does not invent follower counts or a bio.
+/// Retained as the flag's genuine off state rather than deleted: it carries the
+/// affordances a user needs whatever else is switched off — account settings,
+/// feed preferences and signing out — and it invents no follower counts and no
+/// bio, because with the endpoints unreachable there are none to show.
 @MainActor
 struct ProfileStubScreen: View {
 
@@ -397,8 +523,8 @@ struct ProfileStubScreen: View {
 
             SLEmptyState(
                 icon: "person.crop.square",
-                title: "Profiles arrive later",
-                subtitle: "Your public profile page — follower counts, post history and how others see you — lands with the profile release. Your name, handle, bio and picture are editable now under Account. Nothing here is guessed in the meantime.",
+                title: "Profiles are switched off",
+                subtitle: "Public profile pages — follower counts, post history and how others see you — are turned off in this build. Your name, handle, bio and picture are editable now under Account. Nothing here is guessed in the meantime.",
                 tint: SLColor.textSecondary,
                 actionTitle: "Tell me when it lands",
                 action: { onStub("Profiles") }

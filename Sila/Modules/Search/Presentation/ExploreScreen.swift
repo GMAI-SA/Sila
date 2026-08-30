@@ -12,6 +12,7 @@ public struct ExploreScreen: View {
 
     @Bindable private var viewModel: ExploreViewModel
     private let onOpenPost: @MainActor (Post) -> Void
+    private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
 
@@ -20,17 +21,20 @@ public struct ExploreScreen: View {
     /// - Parameters:
     ///   - viewModel: Owns the query and both result lists.
     ///   - onOpenPost: Pushes the detail screen for a post result.
-    ///   - onStub: Announces a feature that belongs to a later phase — tapping a
-    ///     person still has nowhere to go until profiles ship.
+    ///   - onOpenProfile: Pushes an account's profile. A People result, a
+    ///     tapped author and an `@mention` all lead here.
+    ///   - onStub: Announces a feature that belongs to a later phase.
     ///   - onCompose: Opens the composer for a quote. `nil` falls back to the stub.
     public init(
         viewModel: ExploreViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onStub: @escaping @MainActor (String) -> Void,
+        onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
+        self.onOpenProfile = onOpenProfile
         self.onStub = onStub
         self.onCompose = onCompose
     }
@@ -266,7 +270,7 @@ public struct ExploreScreen: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(viewModel.people) { user in
-                        PersonResultRow(user: user, onTap: { onStub("Profiles") })
+                        PersonResultRow(user: user, onTap: { onOpenProfile(user.handle) })
                         SLDivider()
                     }
                 }
@@ -349,9 +353,13 @@ public struct ExploreScreen: View {
                 }
                 onCompose(.quote(post))
             },
-            onMention: { handle in viewModel.updateQuery("@\(handle)", immediately: true) },
+            // A tapped `@mention` opens the person, not a search for their
+            // name — the same thing it does in every other post on the app.
+            // `#hashtags` still search, because a tag is a query and nothing else.
+            onMention: { handle in onOpenProfile(handle) },
             onHashtag: { tag in viewModel.updateQuery("#\(tag)", immediately: true) },
             onOpenQuoted: onOpenPost,
+            onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub
         )
     }
@@ -409,7 +417,7 @@ struct PersonResultRow: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(accessibilityLabel))
-        .accessibilityHint(Text("Profiles arrive in a later release"))
+        .accessibilityHint(Text("Opens this account's profile"))
     }
 
     private var accessibilityLabel: String {

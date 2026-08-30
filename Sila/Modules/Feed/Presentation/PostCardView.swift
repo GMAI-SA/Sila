@@ -29,6 +29,13 @@ public struct PostCardActions {
     public var onHashtag: @MainActor (String) -> Void
     /// The embedded quote card was tapped.
     public var onOpenQuoted: @MainActor (Post) -> Void
+    /// The author's avatar or name was tapped: open their profile.
+    ///
+    /// Carries the whole ``UserSummary`` rather than a handle so the caller can
+    /// decide without a lookup — the profile screen still re-reads the account
+    /// from the server, because the copy pinned to a post is only as fresh as
+    /// the page it arrived on.
+    public var onOpenAuthor: @MainActor (UserSummary) -> Void
     /// A long-press menu item with no backend yet (Report / Not interested).
     public var onStub: @MainActor (String) -> Void
 
@@ -45,6 +52,7 @@ public struct PostCardActions {
         onMention: @escaping @MainActor (String) -> Void = { _ in },
         onHashtag: @escaping @MainActor (String) -> Void = { _ in },
         onOpenQuoted: @escaping @MainActor (Post) -> Void = { _ in },
+        onOpenAuthor: @escaping @MainActor (UserSummary) -> Void = { _ in },
         onStub: @escaping @MainActor (String) -> Void = { _ in }
     ) {
         self.onOpen = onOpen
@@ -57,6 +65,7 @@ public struct PostCardActions {
         self.onMention = onMention
         self.onHashtag = onHashtag
         self.onOpenQuoted = onOpenQuoted
+        self.onOpenAuthor = onOpenAuthor
         self.onStub = onStub
     }
 }
@@ -109,20 +118,7 @@ public struct PostCardView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            HStack(alignment: .top, spacing: SLSpacing.md) {
-                SLAvatar(
-                    url: post.author.avatarURL,
-                    initials: post.author.initials,
-                    size: style == .detail ? .lg : .md,
-                    isVerified: post.author.isVerified,
-                    displayName: post.author.displayName
-                )
-
-                VStack(alignment: .leading, spacing: SLSpacing.xs) {
-                    header
-                    scopeChip
-                }
-            }
+            authorBlock
 
             postText
                 .padding(.leading, style == .detail ? 0 : 56)
@@ -150,6 +146,52 @@ public struct PostCardView: View {
     }
 
     // MARK: - Header
+
+    /// The avatar, name, handle and timestamp — a control in its own right.
+    ///
+    /// A `Button` nested inside the card, so the author region opens the
+    /// profile while the rest of the card still opens the post. The scope chip
+    /// is deliberately left outside it: it describes the *thread's* audience,
+    /// not the person, and tapping it should not navigate to them.
+    private var authorBlock: some View {
+        HStack(alignment: .top, spacing: SLSpacing.md) {
+            Button {
+                actions.onOpenAuthor(post.author)
+            } label: {
+                HStack(alignment: .top, spacing: SLSpacing.md) {
+                    SLAvatar(
+                        url: post.author.avatarURL,
+                        initials: post.author.initials,
+                        size: style == .detail ? .lg : .md,
+                        isVerified: post.author.isVerified,
+                        displayName: post.author.displayName
+                    )
+
+                    VStack(alignment: .leading, spacing: SLSpacing.xs) {
+                        header
+                        scopeChip
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(authorAccessibilityLabel))
+            .accessibilityHint(Text("Opens \(post.author.displayName)'s profile"))
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// What VoiceOver reads for the author control, without the post's text.
+    private var authorAccessibilityLabel: String {
+        var parts = [post.author.displayName]
+        if post.author.isVerified { parts.append("verified") }
+        if let label = CountryCode.accessibilityLabel(post.author.countryCode) { parts.append(label) }
+        parts.append(post.author.atHandle)
+        parts.append(RelativeTime.accessible(post.createdAt))
+        return parts.joined(separator: ". ")
+    }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 1) {

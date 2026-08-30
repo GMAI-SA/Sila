@@ -42,6 +42,13 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case invalidHandle = "invalid_handle"
     /// An account tried to follow itself.
     case selfFollow = "self_follow"
+    /// No active account has that handle.
+    ///
+    /// Returned by every `/users/{handle}` route for an unknown handle **and**
+    /// for a deactivated one — the lookup filters `deactivated == False`, so the
+    /// two are deliberately indistinguishable. An error that admitted the second
+    /// case would leak the existence of an account that asked to be gone.
+    case userNotFound = "user_not_found"
 
     // MARK: Contract v3 — compose & search
 
@@ -153,6 +160,11 @@ public enum APIError: Error, Equatable, Sendable {
                 return "Handles are 3–20 characters of letters, numbers and underscores."
             case .selfFollow:
                 return "You can't follow yourself."
+            case .userNotFound:
+                // Phrased as a fact about the handle, not as a failure of the
+                // request: there is nothing to retry, and the profile screen
+                // shows this without a Try Again button for that reason.
+                return "This account isn't available."
             case .unverified:
                 return "Only verified humans can post. Everyone can read Sila — finish identity verification to speak."
             case .invalidScope:

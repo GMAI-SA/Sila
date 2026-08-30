@@ -123,6 +123,24 @@ public enum AnalyticsEvent: String, Sendable {
     /// Worth separating: a spike in `403` means people are hitting the wall
     /// somewhere they should not have been able to.
     case accountDeletionRouted = "account_deletion_routed"
+
+    // MARK: Phase 7 — Profiles
+
+    /// A profile screen was opened and its header arrived.
+    case profileOpened = "profile_opened"
+    /// `GET /users/{handle}` came back (emitted by the service).
+    case profileLoaded = "profile_loaded"
+    /// A handle resolved to nothing — an unknown or deactivated account.
+    ///
+    /// Worth its own event: a rise here usually means stale links or handles
+    /// being rendered somewhere the account has already gone.
+    case profileUnavailable = "profile_unavailable"
+    /// A follow was stored.
+    case followAdded = "follow_added"
+    /// A follow was removed.
+    case followRemoved = "follow_removed"
+    /// A follow or unfollow was refused, and the button was put back.
+    case followFailed = "follow_failed"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

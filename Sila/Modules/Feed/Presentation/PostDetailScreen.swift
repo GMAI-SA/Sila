@@ -13,6 +13,7 @@ public struct PostDetailScreen: View {
 
     @Bindable private var viewModel: PostDetailViewModel
     private let onOpenPost: @MainActor (Post) -> Void
+    private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onDismiss: @MainActor (Post) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
@@ -25,6 +26,8 @@ public struct PostDetailScreen: View {
     /// - Parameters:
     ///   - viewModel: Owns the thread.
     ///   - onOpenPost: Pushes another post (parent, quote, or reply).
+    ///   - onOpenProfile: Pushes an account's profile — a tapped author or an
+    ///     `@mention` anywhere in the thread.
     ///   - onStub: Announces a feature that belongs to a later phase.
     ///   - onDismiss: Called on disappear with the current post, so the feed can
     ///     adopt engagement changes made here.
@@ -40,6 +43,7 @@ public struct PostDetailScreen: View {
         viewModel: PostDetailViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onStub: @escaping @MainActor (String) -> Void,
+        onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onDismiss: @escaping @MainActor (Post) -> Void = { _ in },
         composerService: ComposerServiceProtocol? = nil,
         searchService: SearchServiceProtocol? = nil,
@@ -49,6 +53,7 @@ public struct PostDetailScreen: View {
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
+        self.onOpenProfile = onOpenProfile
         self.onStub = onStub
         self.onDismiss = onDismiss
         self.onCompose = onCompose
@@ -256,9 +261,10 @@ public struct PostDetailScreen: View {
             onReply: { post in compose(.reply(to: post), fallback: "Replying") },
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in compose(.quote(post), fallback: "Quote posts") },
-            onMention: { _ in onStub("Profiles") },
+            onMention: { handle in onOpenProfile(handle) },
             onHashtag: { _ in onStub("Hashtag search") },
             onOpenQuoted: onOpenPost,
+            onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub
         )
     }

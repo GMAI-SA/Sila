@@ -213,11 +213,16 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertFalse(flags.useMockFeed)
         XCTAssertFalse(flags.useMockComposer)
         XCTAssertFalse(flags.useMockSearch)
+        XCTAssertFalse(flags.useMockProfile)
         XCTAssertTrue(flags.auth, "Phase 1 ships")
         XCTAssertTrue(flags.feed, "Phase 3 ships")
         XCTAssertFalse(flags.verification, "Phase 2 does not exist yet")
         XCTAssertTrue(flags.composer, "Phase 4 ships")
-        XCTAssertFalse(flags.profile, "Phase 7 does not exist yet")
+        XCTAssertTrue(flags.preferences, "contract v4 ships")
+        XCTAssertTrue(flags.account, "contract v5 ships")
+        XCTAssertTrue(flags.profile, "Phase 7 ships")
+        XCTAssertFalse(flags.deepDive, "the Deep Dive panel has no endpoint behind it")
+        XCTAssertFalse(flags.messaging, "Phase 5 does not exist yet")
         XCTAssertTrue(flags.biometricSignIn)
     }
 
@@ -236,6 +241,20 @@ final class FeatureFlagsTests: XCTestCase {
     func testAnUnknownScenarioNameIsIgnored() {
         let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockScenario", "banana"])
         XCTAssertFalse(flags.useMockAuth)
+    }
+
+    func testMockProfileArgumentSelectsAWorldAndImpliesTheMockService() {
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockProfileScenario", "notFound"])
+        XCTAssertTrue(flags.useMockProfile)
+        XCTAssertEqual(flags.mockProfileScenario, .notFound)
+    }
+
+    /// A mocked session's token would only ever 401 against the real
+    /// `/users/{handle}`, and the Profile tab is the route into account
+    /// settings — so mocking auth has to imply mocking profiles too.
+    func testAMockedSessionImpliesAMockedProfileService() {
+        let flags = FeatureFlags.resolved(arguments: ["Sila", "-mockAuth"])
+        XCTAssertTrue(flags.useMockProfile)
     }
 
     func testBiometricsCanBeDisabledForUITests() {

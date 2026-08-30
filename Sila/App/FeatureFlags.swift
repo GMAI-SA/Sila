@@ -22,6 +22,8 @@ import Foundation
 /// -mockPreferencesScenario X  pick a PreferencesServiceMock.MockScenario
 /// -mockAccount         run against AccountServiceMock instead of the live API
 /// -mockAccountScenario X   pick an AccountServiceMock.MockScenario
+/// -mockProfile         run against ProfileServiceMock instead of the live API
+/// -mockProfileScenario X   pick a ProfileServiceMock.MockScenario
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -54,8 +56,12 @@ public struct FeatureFlags: Sendable {
     public var calls = false
     /// P6 — Spaces.
     public var spaces = false
-    /// P7 — Profiles.
-    public var profile = false
+    /// P7 — Profiles: another person's page, their top-level posts, and the
+    /// follow button. Turning this off removes every route into a profile and
+    /// puts the Profile tab back to account settings and sign-out only; the
+    /// follows already stored on the server keep deciding the Following feed,
+    /// because the client does not own them.
+    public var profile = true
     /// P7 sub-feature — the Deep Dive transparency panel.
     public var deepDive = false
     /// P8 — Monetization.
@@ -109,6 +115,13 @@ public struct FeatureFlags: Sendable {
     public var useMockAccount = false
     /// Which mock world to serve when ``useMockAccount`` is on.
     public var mockAccountScenario: AccountServiceMock.MockScenario = .populated
+
+    // MARK: Phase 7 build switches
+
+    /// Use ``ProfileServiceMock`` instead of the live backend.
+    public var useMockProfile = false
+    /// Which mock world to serve when ``useMockProfile`` is on.
+    public var mockProfileScenario: ProfileServiceMock.MockScenario = .populated
 
     public init() {}
 
@@ -201,6 +214,21 @@ public struct FeatureFlags: Sendable {
         // because the live version of that demo costs a real account.
         if flags.useMockAuth && !arguments.contains("-mockAccountScenario") {
             flags.useMockAccount = true
+        }
+        if arguments.contains("-mockProfile") {
+            flags.useMockProfile = true
+        }
+        if let index = arguments.firstIndex(of: "-mockProfileScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = ProfileServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockProfile = true
+            flags.mockProfileScenario = scenario
+        }
+        // And once more for profiles: a mocked session's token would 401 against
+        // the real `/users/{handle}`, and the Profile tab is the route into
+        // account settings — a tab that cannot load is not a demo of anything.
+        if flags.useMockAuth && !arguments.contains("-mockProfileScenario") {
+            flags.useMockProfile = true
         }
         return flags
     }

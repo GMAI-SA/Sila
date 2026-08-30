@@ -1,8 +1,8 @@
 # Sila iOS (Social SA)
 
-Phases 1 (Authentication), 3 (Feed) and 4 (Composer & Search), plus contract
-v4's feed preferences and v5's account management. Swift 5.9 / SwiftUI, iOS 17+,
-MVVM + Clean Architecture, zero third-party dependencies.
+Phases 1 (Authentication), 3 (Feed), 4 (Composer & Search) and 7 (Profiles),
+plus contract v4's feed preferences and v5's account management. Swift 5.9 /
+SwiftUI, iOS 17+, MVVM + Clean Architecture, zero third-party dependencies.
 
 ## Build
 
@@ -35,7 +35,8 @@ is declared). API contracts and ops notes live on the server at
 (compose clarifications, `/search/*`, `/explore/trending`),
 `api-contract-v4-interests.md` (`/topics`, `/me/preferences`),
 `api-contract-v5-account.md` (`/me/account`, credentials, export, deletion) and
-`infra/DEPLOY.md`.
+`infra/DEPLOY.md`. The profile routes (`/users/{handle}`, `…/posts`,
+`…/follow`) are part of the v2 feed/social contract.
 
 **Auth is email + password with a 6-digit email OTP.** Phone OTP and the Nafath
 track land later behind the same endpoints.
@@ -160,6 +161,59 @@ start and says the address is unchanged, because the code is spent.
   email_delivery_failed`; the latter is undocumented and falls through to
   `APIErrorCode.unknown`, which shows the server's own message.
 
+## Profiles, and the two things they must not overclaim
+
+`Sila/Modules/Profile/` is one person's page: the header, their posts, and the
+one button that changes the viewer's relationship to them. It reuses rather than
+re-declares — `UserSummary` is the same value that sits beside a post,
+`/users/{handle}/posts` decodes into the same `FeedPage` the four feeds use, and
+editing your own profile stays in `Modules/Account/`, which the page links to
+instead of growing a second editor.
+
+**The follower count is never counted locally.** A tap predicts `±1` so the
+button moves under the finger, and then the number is *replaced* by the one the
+response carries. `POST` and `DELETE /users/{handle}/follow` are both
+idempotent — following twice succeeds and changes nothing — so a local `+1` is
+simply wrong whenever another device has already acted. `Profile.reconciled(with:)`
+is the only thing allowed to set the count after a tap.
+
+**The timeline is not everything the person has written.** The server filters
+`reply_to_post_id IS NULL`, so replies appear in neither the list nor
+`post_count`. The screen says so under the heading (`ProfileCopy.timelineScope`)
+whether or not the list happens to have rows, because the exclusion is a fact
+about the endpoint rather than about today's contents.
+
+Two smaller rules follow from the product:
+
+* **No follow button on your own page** — not a disabled one. The server answers
+  `400 self_follow`, so a greyed-out control would be an affordance for
+  something that cannot happen. It is replaced by a route into `AccountScreen`.
+* **A 404 gets no Retry.** An unknown *or deactivated* handle answers
+  `404 user_not_found`, and the two are indistinguishable on purpose — an error
+  that admitted the second would leak the existence of an account that asked to
+  be gone. The screen states it plainly and offers nothing to press, because
+  pressing it could only fail again.
+
+Tapping an author — in the feed, on a post's detail screen, in Explore's People
+results, or as an `@mention` in any post's text — opens that person. Each tab
+keeps its own `NavigationStack` path, so following the chain from a search result
+never rearranges the home feed's history.
+
+### What the profile routes actually do, versus what is documented
+
+* `post_count` is computed with **the same `reply_to_post_id IS NULL` filter** as
+  the timeline, so on this deployment the count and the pageable rows agree. It
+  is still not "how much this person has written", and neither number is labelled
+  that way.
+* `404` carries the code **`user_not_found`**, which appears in no contract file.
+  Without it the raw "No account with that handle" would have been shown to the
+  user; `APIErrorCode.userNotFound` now maps it.
+* `limit` is validated `ge=1, le=50` and answers **422** outside that range
+  rather than clamping. FastAPI's validation body is a shape this client does not
+  model, so `ProfileService` clamps before sending.
+* Both follow verbs return the authoritative `follower_count`, and neither is an
+  error when it changes nothing — the client depends on both facts.
+
 ## Running without a backend
 
 ```bash
@@ -194,9 +248,17 @@ account) and `wrongPassword`. It reproduces the server's refusals rather than
 saying yes to everything, including the 403 that `get_current_user` raises for
 every endpoint except `/me/account` and `/me/delete/cancel`.
 
+`ProfileServiceMock` ships 7: `populated`, `unverified` (no checkmark and
+therefore no country — the badge must render nothing), `empty`, `notFound` (the
+dead end), `offline`, `followFails` and `followedElsewhere` — where the server's
+follower count comes back **two** higher than the local `+1` predicted, because
+a second device followed too. That last one is the entire reason the client
+reconciles instead of counting. Its people and posts are `FeedServiceMock`'s,
+so an author tapped in the mocked feed opens the same person.
+
 `-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch`,
-`-mockPreferences` and `-mockAccount` unless the matching `-mock…Scenario`
-argument says otherwise, because a mocked session carries no bearer token the
+`-mockPreferences`, `-mockAccount` and `-mockProfile` unless the matching
+`-mock…Scenario` argument says otherwise, because a mocked session carries no bearer token the
 live API would accept — and in the account module's case because the live
 version of the deletion demo costs a real account.
 
@@ -208,14 +270,16 @@ To see the whole app without a backend:
 
 ## Tests
 
-537 total: 526 unit (23 opt-in, see below) and 11 XCUITests. The UI tests drive
-sign-in → feed → composer → Explore → feed preferences → account against the
-mocks — no network, no seeded account — and are the only tests that would catch a
+639 total: 623 unit (46 opt-in, see below) and 16 XCUITests. The UI tests drive
+sign-in → feed → composer → Explore → feed preferences → account → profile
+against the mocks — no network, no seeded account — and are the only tests that would catch a
 broken route, an unpresented sheet or an untappable button, since every view
 model passes in isolation whether or not the screens are wired together.
 `AccountJourneyUITests` is the one that drives the deletion gate through the real
 UI: it asserts the confirm button stays inert with a password alone, with a
-lower-case word, and with a partial one.
+lower-case word, and with a partial one. `ProfileJourneyUITests` is the one that
+would notice a tapped author going nowhere, a follow button appearing on the
+viewer's own page, or a Retry being offered for a handle that cannot exist.
 They also attach screenshots, extractable from the result bundle:
 
 ```bash
@@ -225,8 +289,8 @@ xcrun xcresulttool export --path out.xcresult --id <payloadRef> --output-path sh
 
 ### Opt-in live tests
 
-Twenty-three tests (`LiveAPITests`, `LiveFeedTests`, `LiveComposerSearchTests`,
-`LivePreferencesTests`) hit
+`LiveAPITests`, `LiveFeedTests`, `LiveComposerSearchTests`,
+`LivePreferencesTests`, `LiveAccountTests` and `LiveProfileTests` hit
 the real deployed backend and skip unless you opt in — they are the only guard against the *server's* wire format
 drifting away from the app's decoders:
 
@@ -238,6 +302,14 @@ xcodebuild ... test -only-testing:SilaTests/LiveAPITests
 ```
 The `TEST_RUNNER_` prefix is required — plain environment variables do not reach
 the test process on the simulator.
+
+They are all **non-destructive**. `LiveAccountTests` never changes a password
+(which revokes every session, this one included), never sends real mail and
+never completes a deletion; `LiveProfileTests` never touches the live account's
+own profile fields at all — the only state it changes is whether that account
+follows one seeded demo person (`yuki`), and `tearDown` restores it whichever
+way round it started. Both provoke the *refusals* instead, which are safe
+precisely because they fail.
 
 ## Layout
 
@@ -258,24 +330,30 @@ Sila/
 │                         PreferencesSummary, MutedCountries)
 │                         Data (PreferencesService, mock)
 │                         Presentation (PreferencesScreen, view model)
-└── Modules/Account/      Domain (Account, ProfileDraft, PhoneNumber,
-                          AvatarUpload, DeletionConfirmation/Disclosure,
-                          AccountRouting)
-                          Data (AccountService, mock)
-                          Presentation (AccountScreen, sheets, recovery screen)
+├── Modules/Account/      Domain (Account, ProfileDraft, PhoneNumber,
+│                         AvatarUpload, DeletionConfirmation/Disclosure,
+│                         AccountRouting)
+│                         Data (AccountService, mock)
+│                         Presentation (AccountScreen, sheets, recovery screen)
+└── Modules/Profile/      Domain (Profile, FollowResult, ProfileCopy,
+                          Handle normalisation)
+                          Data (ProfileService, mock)
+                          Presentation (ProfileScreen + host, view model)
 ```
 
-`FeatureFlags` declares all 16 flags; `auth`, `feed`, `composer`, `preferences`
-and `account` are on. Later phases add a folder under `Modules/` and flip their flag — they talk
+`FeatureFlags` declares all 16 flags; `auth`, `feed`, `composer`, `preferences`,
+`account` and `profile` are on. Later phases add a folder under `Modules/` and flip their flag — they talk
 to Auth only through `AuthSessionProtocol`, and get a bearer token only through
 `AccessTokenProviding`. Turning `composer` off restores the Phase-3 stubs (the
 `[+]` toast and the read-only reply bar) without touching the feed.
 
-`PostCardView` is exported: the profile phase renders timelines with it
-unchanged, and Explore's post results already do. Profile (Phase 7) and
-Notifications remain honest stubs — a toast saying the feature arrives in a
-later release — because no endpoint backs them yet and inventing one would
-undermine the whole proposition.
+`PostCardView` is exported, and Phase 7 took it up as promised: profile
+timelines and Explore's post results render it unchanged. Turning `profile` off
+removes every route into a profile and restores `ProfileStubScreen` as the
+tab — the flag has a real off state, and that screen still carries account
+settings and sign-out. Notifications remains the last honest stub — a toast
+saying the feature arrives in a later release — because no endpoint backs it yet
+and inventing one would undermine the whole proposition.
 
 Phase 4 deliberately ships **less** than its spec: the backend has no media
 upload, poll or scheduling endpoint, so there is no `MediaPickerSheet`,

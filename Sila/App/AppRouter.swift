@@ -13,10 +13,20 @@ public enum AuthRoute: Hashable, Sendable {
     case forgotPassword
 }
 
-/// Screens reachable inside the verified app's home stack.
+/// Screens reachable inside the verified app's home and Explore stacks.
+///
+/// Shared by both stacks rather than duplicated per tab: the same two
+/// destinations chain into each other — a post leads to its author, whose
+/// timeline leads to another post — and a second enum would only let the two
+/// tabs drift apart.
 public enum FeedRoute: Hashable, Sendable {
     /// A post with its reply thread.
     case postDetail(Post)
+    /// One account's public page. Carries the handle rather than a
+    /// ``UserSummary`` because the profile is re-read from the server on
+    /// arrival — the copy attached to a post is whatever was true when that
+    /// page was fetched.
+    case profile(handle: String)
 }
 
 /// Navigation coordinator.
@@ -32,6 +42,13 @@ public final class AppRouter {
     public var authPath: [AuthRoute] = []
     /// The home (Phase 3) stack's path.
     public var feedPath: [FeedRoute] = []
+    /// The Explore tab's own stack path.
+    ///
+    /// Separate from ``feedPath`` so opening a search result — or the profile
+    /// behind it — never disturbs the history the home feed is holding.
+    public var explorePath: [FeedRoute] = []
+    /// The Profile tab's own stack path, above the viewer's own profile.
+    public var profilePath: [FeedRoute] = []
     /// Legal document currently presented in a sheet, if any.
     public var presentedLegalDocument: LegalDocument?
     /// The composer currently presented as a sheet, if any.
@@ -95,9 +112,14 @@ public final class AppRouter {
         feedPath.append(route)
     }
 
-    /// Empties the home stack — used when the session ends.
+    /// Empties every in-app stack — used when the session ends.
+    ///
+    /// All three, not just the feed: a profile or a search result left on the
+    /// Explore stack would still be there behind the next sign-in.
     public func popFeedToRoot() {
         feedPath.removeAll()
+        explorePath.removeAll()
+        profilePath.removeAll()
     }
 
     /// Presents a legal document sheet.
