@@ -141,6 +141,57 @@ public enum AnalyticsEvent: String, Sendable {
     case followRemoved = "follow_removed"
     /// A follow or unfollow was refused, and the button was put back.
     case followFailed = "follow_failed"
+
+    // MARK: Safety — block, mute, report, suspension
+
+    /// The `…` menu was opened on a post or a profile.
+    case safetyMenuOpened = "safety_menu_opened"
+    /// The block confirmation was put on screen. **Not** a block: the gap
+    /// between this and ``blockAdded`` is how many people read the consequences
+    /// and changed their mind, which is the number that says whether the copy
+    /// is doing its job.
+    case blockConfirmationShown = "block_confirmation_shown"
+    /// The block confirmation was dismissed without blocking.
+    case blockCancelled = "block_cancelled"
+    /// A block was stored (emitted by the service).
+    case blockAdded = "block_added"
+    /// A block was lifted.
+    case blockRemoved = "block_removed"
+    /// A mute was stored.
+    case muteAdded = "mute_added"
+    /// A mute was lifted.
+    case muteRemoved = "mute_removed"
+    /// A block or mute was refused, and the UI was put back.
+    case safetyActionFailed = "safety_action_failed"
+    /// The report sheet was opened.
+    case reportOpened = "report_opened"
+    /// A reason was picked in the report sheet.
+    case reportReasonSelected = "report_reason_selected"
+    /// A report reached the server (emitted by the service). Carries the reason
+    /// and whether support resources came back — never the free text.
+    case reportSubmitted = "report_submitted"
+    /// A report was refused by the server.
+    case reportFailed = "report_failed"
+    /// The care-first outcome was shown instead of a receipt.
+    ///
+    /// Worth its own event: it is the one screen whose absence would be a
+    /// product failure nobody would otherwise notice.
+    case reportSupportShown = "report_support_shown"
+    /// The safety lists were opened from settings.
+    case safetyListsOpened = "safety_lists_opened"
+    /// The app routed to the suspension screen, and why.
+    ///
+    /// Carries `source`: `403` (a call was refused) or `loaded`
+    /// (`GET /me/suspension` said so). A spike in `403` means people are
+    /// reaching the wall somewhere they should already have been routed away
+    /// from.
+    case suspensionRouted = "suspension_routed"
+    /// A suspension was lifted and the app let the user back in.
+    case suspensionLifted = "suspension_lifted"
+    /// An appeal was sent.
+    case appealSubmitted = "appeal_submitted"
+    /// A second appeal was refused, and the screen showed the first one instead.
+    case appealAlreadyOnFile = "appeal_already_on_file"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

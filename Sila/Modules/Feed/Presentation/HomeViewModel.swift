@@ -369,6 +369,47 @@ public final class HomeViewModel {
         }
     }
 
+    /// Removes everything written by one account, from every tab, now.
+    ///
+    /// Called after a block. The server will stop serving these posts on the
+    /// next request anyway — the point is that they must not still be on screen
+    /// while that request is in flight. A block whose effect only appears after
+    /// a manual pull-to-refresh reads as a button that did not work, which on
+    /// this particular button is not a small failure.
+    ///
+    /// Quoted posts are cleared too, so a blocked account cannot keep speaking
+    /// from inside somebody else's quote card.
+    /// - Parameter handle: The blocked account's handle, any casing.
+    /// - Returns: How many posts were taken out.
+    @discardableResult
+    public func removeAuthor(_ handle: String) -> Int {
+        let target = Handle.normalised(handle)
+        guard !target.isEmpty else { return 0 }
+        var removed = 0
+
+        for tab in FeedTab.allCases {
+            guard var tabState = states[tab] else { continue }
+            let before = tabState.posts.count
+            tabState.posts.removeAll { Handle.normalised($0.author.handle) == target }
+            removed += before - tabState.posts.count
+
+            // A post that merely *quotes* the blocked account stays — it is
+            // somebody else's post — but the quote card inside it goes.
+            tabState.posts = tabState.posts.map { post in
+                guard let quoted = post.quotedPost,
+                      Handle.normalised(quoted.author.handle) == target
+                else { return post }
+                return post.strippingQuote()
+            }
+
+            if before != tabState.posts.count || tabState.posts.isEmpty {
+                tabState.emptyKind = tabState.posts.isEmpty && tabState.hasLoaded ? .noPosts : tabState.emptyKind
+            }
+            states[tab] = tabState
+        }
+        return removed
+    }
+
     /// Merges a post edited elsewhere (e.g. the detail screen) back into the feeds.
     public func merge(_ post: Post) {
         applyEverywhere(id: post.id) { current in

@@ -24,6 +24,8 @@ import Foundation
 /// -mockAccountScenario X   pick an AccountServiceMock.MockScenario
 /// -mockProfile         run against ProfileServiceMock instead of the live API
 /// -mockProfileScenario X   pick a ProfileServiceMock.MockScenario
+/// -mockSafety          run against SafetyServiceMock instead of the live API
+/// -mockSafetyScenario X    pick a SafetyServiceMock.MockScenario
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -122,6 +124,22 @@ public struct FeatureFlags: Sendable {
     public var useMockProfile = false
     /// Which mock world to serve when ``useMockProfile`` is on.
     public var mockProfileScenario: ProfileServiceMock.MockScenario = .populated
+
+    // MARK: Safety build switches
+
+    /// Use ``SafetyServiceMock`` instead of the live backend.
+    ///
+    /// > Note: There is deliberately **no `safety` phase toggle** beside the
+    /// > others above. Every flag in this type has a genuine off state that
+    /// > hides an affordance; blocking and reporting are the two things App
+    /// > Store Review Guideline 1.2 requires of any app carrying
+    /// > user-generated content, so an off state for them would be a switch
+    /// > whose only function is to make the app unshippable. A kill switch you
+    /// > can never pull is not a kill switch — it is a way to ship the bug by
+    /// > accident.
+    public var useMockSafety = false
+    /// Which mock world to serve when ``useMockSafety`` is on.
+    public var mockSafetyScenario: SafetyServiceMock.MockScenario = .populated
 
     public init() {}
 
@@ -229,6 +247,22 @@ public struct FeatureFlags: Sendable {
         // account settings — a tab that cannot load is not a demo of anything.
         if flags.useMockAuth && !arguments.contains("-mockProfileScenario") {
             flags.useMockProfile = true
+        }
+        if arguments.contains("-mockSafety") {
+            flags.useMockSafety = true
+        }
+        if let index = arguments.firstIndex(of: "-mockSafetyScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = SafetyServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockSafety = true
+            flags.mockSafetyScenario = scenario
+        }
+        // And for safety, with one extra reason of its own: the suspension
+        // screen and the self-harm support screen are only otherwise reachable
+        // by getting a real account suspended or by filing a real report about
+        // somebody in danger. Neither is a demo anybody should have to stage.
+        if flags.useMockAuth && !arguments.contains("-mockSafetyScenario") {
+            flags.useMockSafety = true
         }
         return flags
     }

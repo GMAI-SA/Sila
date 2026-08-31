@@ -36,8 +36,18 @@ public struct PostCardActions {
     /// from the server, because the copy pinned to a post is only as fresh as
     /// the page it arrived on.
     public var onOpenAuthor: @MainActor (UserSummary) -> Void
-    /// A long-press menu item with no backend yet (Report / Not interested).
+    /// A long-press menu item with no backend yet (Not interested).
     public var onStub: @MainActor (String) -> Void
+
+    /// Builds the block / mute / report menu for a post, or returns `nil` when
+    /// there should not be one — on the viewer's own post, or on a surface with
+    /// no safety backend wired.
+    ///
+    /// A factory rather than three closures because the menu's *labels* depend
+    /// on what the viewer has already done to this author, and that is knowledge
+    /// only the safety model has. `nil` restores the pre-safety card exactly:
+    /// no `…` button, and Report falls back to ``onStub``.
+    public var safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
 
     /// Creates an action set. Every hook defaults to doing nothing, so a
     /// preview or a read-only surface only supplies what it needs.
@@ -53,7 +63,8 @@ public struct PostCardActions {
         onHashtag: @escaping @MainActor (String) -> Void = { _ in },
         onOpenQuoted: @escaping @MainActor (Post) -> Void = { _ in },
         onOpenAuthor: @escaping @MainActor (UserSummary) -> Void = { _ in },
-        onStub: @escaping @MainActor (String) -> Void = { _ in }
+        onStub: @escaping @MainActor (String) -> Void = { _ in },
+        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
     ) {
         self.onOpen = onOpen
         self.onLike = onLike
@@ -67,6 +78,7 @@ public struct PostCardActions {
         self.onOpenQuoted = onOpenQuoted
         self.onOpenAuthor = onOpenAuthor
         self.onStub = onStub
+        self.safetyMenu = safetyMenu
     }
 }
 
@@ -180,6 +192,15 @@ public struct PostCardView: View {
             .accessibilityHint(Text("Opens \(post.author.displayName)'s profile"))
 
             Spacer(minLength: 0)
+
+            // Top-right, away from the engagement row. Report and block must be
+            // one tap from any post — Guideline 1.2 is not optional for a
+            // user-generated-content app — but they must not sit next to Reply
+            // as though they were peers of it.
+            if let safety = actions.safetyMenu?(post) {
+                SafetyMenuButton(actions: safety)
+                    .offset(y: -4)
+            }
         }
     }
 
@@ -484,10 +505,18 @@ public struct PostCardView: View {
             Label("Not Interested", systemImage: "hand.thumbsdown")
         }
 
-        Button(role: .destructive) {
-            actions.onStub("Report")
-        } label: {
-            Label("Report", systemImage: "flag")
+        // The same three verbs as the `…` button, so a long press and a tap on
+        // the ellipsis never offer different things about the same person.
+        if let safety = actions.safetyMenu?(post) {
+            SafetyMenu(actions: safety)
+        } else {
+            // The pre-safety fallback, kept so a surface with no safety backend
+            // still says what it cannot do rather than hiding Report entirely.
+            Button(role: .destructive) {
+                actions.onStub("Report")
+            } label: {
+                Label("Report", systemImage: "flag")
+            }
         }
     }
 

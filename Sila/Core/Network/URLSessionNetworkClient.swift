@@ -10,12 +10,28 @@ public final class URLSessionNetworkClient: NetworkClient {
     private let baseURL: URL
     private let session: URLSession
 
+    /// Told whenever a request comes back `403 account_suspended`.
+    ///
+    /// The one piece of routing this layer does, and it is here rather than in
+    /// the view models on purpose. A suspended account is refused by *every*
+    /// endpoint except two, so the alternative is a `catch` clause bolted onto
+    /// every screen and a suspended account walking straight past whichever one
+    /// its author forgot. One transport, one interception, no gaps.
+    private let suspension: SuspensionReporting?
+
     /// Creates a client.
     /// - Parameters:
     ///   - baseURL: Defaults to ``AppConfig/apiBaseURL``.
     ///   - session: Injectable for tests. Defaults to an ephemeral-friendly default session.
-    public init(baseURL: URL = AppConfig.apiBaseURL, session: URLSession? = nil) {
+    ///   - suspension: Told about `403 account_suspended`. `nil` in tests and
+    ///     previews, where there is no app shell to route.
+    public init(
+        baseURL: URL = AppConfig.apiBaseURL,
+        session: URLSession? = nil,
+        suspension: SuspensionReporting? = nil
+    ) {
         self.baseURL = baseURL
+        self.suspension = suspension
         if let session {
             self.session = session
         } else {
@@ -69,7 +85,14 @@ public final class URLSessionNetworkClient: NetworkClient {
         }
 
         guard (200..<300).contains(http.statusCode) else {
-            throw Self.makeError(status: http.statusCode, data: data)
+            let error = Self.makeError(status: http.statusCode, data: data)
+            // Reported *and* thrown. The caller still gets its error — it may
+            // need to stop a spinner or roll a button back — but the app shell
+            // has already been told to stop showing that screen at all.
+            if error.code == .accountSuspended {
+                suspension?.accountSuspended()
+            }
+            throw error
         }
 
         return data

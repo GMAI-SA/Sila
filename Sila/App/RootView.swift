@@ -20,6 +20,65 @@ public struct RootView: View {
         ZStack {
             SLColor.background.ignoresSafeArea()
 
+            if container.suspension.isSuspended, isSignedIn {
+                // A root, like the verification wall and the deletion recovery
+                // screen — not a sheet and not a push. There is nothing behind
+                // it to swipe back to, because for a suspended account there is
+                // nothing behind it that works.
+                //
+                // Ahead of the session switch on purpose: `403 account_suspended`
+                // is answered by every endpoint except two, so whatever screen
+                // the session route would otherwise pick would spend its life
+                // failing. Showing an error with a Retry button would loop
+                // somebody through the same 403 until the suspension lapsed,
+                // while the appeal — the one action that changes anything —
+                // stayed off screen.
+                SuspensionScreen(viewModel: suspensionViewModel())
+                    .transition(.opacity)
+            } else {
+                sessionContent
+            }
+        }
+        .animation(.easeInOut(duration: 0.28), value: container.session.route)
+        .animation(.easeInOut(duration: 0.28), value: container.suspension.isSuspended)
+        .tnToast(Binding(
+            get: { container.router.toast },
+            set: { container.router.toast = $0 }
+        ))
+    }
+
+    /// `true` once there is a session a suspension could apply to.
+    ///
+    /// The welcome and sign-in screens are deliberately exempt: a stale
+    /// suspension flag must never be able to stand between somebody and the
+    /// sign-in form.
+    private var isSignedIn: Bool {
+        switch container.session.route {
+        case .splash, .unauthenticated: return false
+        default: return true
+        }
+    }
+
+    /// Builds the suspension screen's model.
+    ///
+    /// Signing out clears the monitor as well as the session, so the next
+    /// account to use this device does not inherit somebody else's suspension.
+    private func suspensionViewModel() -> SuspensionViewModel {
+        SuspensionViewModel(
+            service: container.safetyService,
+            analytics: container.analytics,
+            monitor: container.suspension,
+            onSignOut: {
+                container.suspension.clear()
+                container.router.popFeedToRoot()
+                Task { await container.session.signOut() }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var sessionContent: some View {
+        Group {
             switch container.session.route {
             case .splash:
                 SplashScreen(session: container.session)
@@ -66,11 +125,6 @@ public struct RootView: View {
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.28), value: container.session.route)
-        .tnToast(Binding(
-            get: { container.router.toast },
-            set: { container.router.toast = $0 }
-        ))
     }
 
     // MARK: - Unauthenticated stack

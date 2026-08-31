@@ -13,6 +13,7 @@ public struct HomeScreen: View {
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let onOpenPreferences: (@MainActor () -> Void)?
+    private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
 
     /// - Parameters:
     ///   - viewModel: Owned by ``MainTabView`` so tab state survives navigation.
@@ -27,13 +28,16 @@ public struct HomeScreen: View {
     ///   - onOpenPreferences: Opens the feed-preferences screen. `nil` — the
     ///     default — renders nothing at all, so every existing caller keeps the
     ///     screen it already had.
+    ///   - safetyMenu: Builds each card's block / mute / report menu. `nil`
+    ///     leaves the card exactly as it was before the safety surface existed.
     public init(
         viewModel: HomeViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onStub: @escaping @MainActor (String) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
-        onOpenPreferences: (@MainActor () -> Void)? = nil
+        onOpenPreferences: (@MainActor () -> Void)? = nil,
+        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -41,6 +45,7 @@ public struct HomeScreen: View {
         self.onStub = onStub
         self.onCompose = onCompose
         self.onOpenPreferences = onOpenPreferences
+        self.safetyMenu = safetyMenu
     }
 
     public var body: some View {
@@ -252,7 +257,8 @@ public struct HomeScreen: View {
             onHashtag: { _ in onStub("Hashtag search") },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
-            onStub: onStub
+            onStub: onStub,
+            safetyMenu: safetyMenu
         )
     }
 }

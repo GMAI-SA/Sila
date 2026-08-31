@@ -14,22 +14,27 @@ public struct ProfileOwnerActions {
     public var onOpenAccount: (@MainActor () -> Void)?
     /// Opens feed preferences.
     public var onOpenPreferences: (@MainActor () -> Void)?
+    /// Opens the blocked, muted and reported lists.
+    public var onOpenSafety: (@MainActor () -> Void)?
     /// Ends the session.
     public var onSignOut: (@MainActor () -> Void)?
 
     public init(
         onOpenAccount: (@MainActor () -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil,
+        onOpenSafety: (@MainActor () -> Void)? = nil,
         onSignOut: (@MainActor () -> Void)? = nil
     ) {
         self.onOpenAccount = onOpenAccount
         self.onOpenPreferences = onOpenPreferences
+        self.onOpenSafety = onOpenSafety
         self.onSignOut = onSignOut
     }
 
     /// `true` when nothing at all was supplied.
     public var isEmpty: Bool {
-        onOpenAccount == nil && onOpenPreferences == nil && onSignOut == nil
+        onOpenAccount == nil && onOpenPreferences == nil
+            && onOpenSafety == nil && onSignOut == nil
     }
 }
 
@@ -56,6 +61,8 @@ public struct ProfileScreen: View {
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let ownerActions: ProfileOwnerActions
+    private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
+    private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
 
     /// - Parameters:
     ///   - viewModel: Owns the profile and the timeline.
@@ -66,13 +73,19 @@ public struct ProfileScreen: View {
     ///   - onCompose: Opens the composer for a reply or a quote. `nil` falls
     ///     back to the stub toast.
     ///   - ownerActions: Routes shown only on the viewer's own profile.
+    ///   - safetyMenu: Builds the header's `…` menu, or returns `nil` when there
+    ///     should not be one — on the viewer's own page, or with no safety
+    ///     backend wired.
+    ///   - postSafetyMenu: The same, for each card on the timeline.
     public init(
         viewModel: ProfileViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onStub: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
-        ownerActions: ProfileOwnerActions = ProfileOwnerActions()
+        ownerActions: ProfileOwnerActions = ProfileOwnerActions(),
+        safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
+        postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -80,14 +93,64 @@ public struct ProfileScreen: View {
         self.onStub = onStub
         self.onCompose = onCompose
         self.ownerActions = ownerActions
+        self.safetyMenu = safetyMenu
+        self.postSafetyMenu = postSafetyMenu
     }
 
     public var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .tnScreenBackground()
-            .task { await viewModel.load() }
+            .task {
+                await viewModel.load()
+                // Somebody already blocked, opened from a mention or a search
+                // result, must arrive on the blocked panel rather than on a
+                // timeline the server is about to stop serving.
+                syncBlockState(isBlockedByViewer)
+            }
+            // The app's safety model is the source of truth for "is this person
+            // blocked", and it is what a confirmation dialog three screens up
+            // writes to. Watching it here is what makes a block taken from the
+            // header empty this timeline immediately.
+            .onChange(of: isBlockedByViewer) { _, blocked in
+                syncBlockState(blocked)
+            }
+            .onChange(of: isMutedByViewer) { _, muted in
+                viewModel.apply(muted ? .muted(safetyTarget) : .unmuted(safetyTarget))
+            }
             .tnToast($viewModel.toast)
+    }
+
+    // MARK: - Safety state
+
+    /// The header's menu, when there should be one.
+    ///
+    /// Built from the handle rather than from a loaded ``Profile`` on purpose: a
+    /// blocked account 404s, so on exactly the page where the Unblock control
+    /// matters most there is no profile object to build a menu from.
+    private var headerSafety: SafetyMenuActions? {
+        safetyMenu?(safetyTarget)
+    }
+
+    /// Who this page is about, for the local state updates.
+    private var safetyTarget: SafetyTarget {
+        SafetyTarget(handle: viewModel.handle, name: viewModel.profile?.displayName)
+    }
+
+    /// Whether the app's safety model says this account is blocked.
+    private var isBlockedByViewer: Bool { headerSafety?.isBlocked ?? false }
+
+    /// Whether it says this account is muted.
+    private var isMutedByViewer: Bool { headerSafety?.isMuted ?? false }
+
+    /// Brings the timeline into line with a block that was taken or lifted.
+    private func syncBlockState(_ blocked: Bool) {
+        guard blocked != viewModel.isBlocked else { return }
+        if blocked {
+            viewModel.apply(.blocked(safetyTarget))
+        } else {
+            Task { await viewModel.reloadAfterUnblock() }
+        }
     }
 
     // MARK: - Routing
@@ -99,21 +162,32 @@ public struct ProfileScreen: View {
             skeleton
 
         case .unavailable:
-            // No action, on purpose: the handle will not start existing because
-            // somebody pressed a button. The owner routes stay reachable so the
-            // Profile tab is never a trap.
-            ScrollView {
-                VStack(spacing: SLSpacing.lg) {
-                    SLEmptyState(
-                        icon: "person.crop.circle.badge.xmark",
-                        title: ProfileCopy.unavailableTitle,
-                        subtitle: ProfileCopy.unavailableSubtitle(for: viewModel.handle),
-                        tint: SLColor.textSecondary
-                    )
-                    ownerSection
+            // **A blocked account 404s.** The server makes a block
+            // indistinguishable from a handle that never existed, which is the
+            // right answer to give a stranger and the wrong one to show the
+            // person who made the block. This client knows which it is, so it
+            // says so — and offers the undo. Without this branch, blocking
+            // somebody and later opening their page would claim their account
+            // had been deleted.
+            if viewModel.isBlocked {
+                blockedRoot
+            } else {
+                // No action, on purpose: the handle will not start existing
+                // because somebody pressed a button. The owner routes stay
+                // reachable so the Profile tab is never a trap.
+                ScrollView {
+                    VStack(spacing: SLSpacing.lg) {
+                        SLEmptyState(
+                            icon: "person.crop.circle.badge.xmark",
+                            title: ProfileCopy.unavailableTitle,
+                            subtitle: ProfileCopy.unavailableSubtitle(for: viewModel.handle),
+                            tint: SLColor.textSecondary
+                        )
+                        ownerSection
+                    }
+                    .padding(.horizontal, SLSpacing.lg)
+                    .padding(.top, SLSpacing.xxl)
                 }
-                .padding(.horizontal, SLSpacing.lg)
-                .padding(.top, SLSpacing.xxl)
             }
 
         case let .failed(message):
@@ -163,7 +237,10 @@ public struct ProfileScreen: View {
                 SLDivider()
                 timelineHeading
 
-                if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
+                if viewModel.isBlocked {
+                    blockedPanel
+
+                } else if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
                     VStack(spacing: SLSpacing.lg) {
                         ForEach(0..<3, id: \.self) { _ in
                             SLSkeletonRow(lineCount: 2).padding(.horizontal, SLSpacing.lg)
@@ -224,6 +301,59 @@ public struct ProfileScreen: View {
         .refreshable { await viewModel.reload(isRefresh: true) }
     }
 
+    /// What the timeline becomes once this account is blocked.
+    ///
+    /// The posts are gone *now*, not after a refetch, which is the whole point:
+    /// a block that leaves somebody's posts on screen while a request goes out
+    /// reads as a button that did not work. The undo is right here rather than
+    /// buried in settings, and it says plainly what unblocking does not restore.
+    private var blockedPanel: some View {
+        VStack(spacing: SLSpacing.md) {
+            SLEmptyState(
+                icon: "hand.raised.fill",
+                title: "You blocked \(viewModel.profile?.displayName ?? viewModel.handle)",
+                subtitle: "Neither of you can see the other's posts, and any follow between "
+                    + "you was removed. They were not told.",
+                tint: SLColor.textSecondary
+            )
+
+            if let unblock = headerSafety?.onUnblock {
+                SLButton(
+                    "Unblock",
+                    variant: .secondary,
+                    size: .compact,
+                    accessibilityHint: "Lets you see each other again. It does not restore "
+                        + "any follow that was severed.",
+                    // Only asks for the unblock. The timeline comes back when the
+                    // app's safety model says the block is gone — see
+                    // ``syncBlockState(_:)`` — rather than on a hopeful reload
+                    // fired before the request has landed.
+                    action: unblock
+                )
+                .frame(width: 160)
+            }
+        }
+        .padding(.horizontal, SLSpacing.lg)
+        .padding(.vertical, SLSpacing.xl)
+    }
+
+    /// The whole screen, when the header could not load because the block made
+    /// the account 404.
+    ///
+    /// Same panel, presented as the page rather than under a header there is no
+    /// data to draw. The owner routes ride along so the Profile tab can never
+    /// become a dead end.
+    private var blockedRoot: some View {
+        ScrollView {
+            VStack(spacing: SLSpacing.lg) {
+                blockedPanel
+                ownerSection
+            }
+            .padding(.horizontal, SLSpacing.lg)
+            .padding(.top, SLSpacing.xl)
+        }
+    }
+
     private var timelineHeading: some View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
             Text("POSTS")
@@ -263,6 +393,14 @@ public struct ProfileScreen: View {
                     Spacer(minLength: 0)
 
                     followControl(profile)
+
+                    // Beside Follow, not instead of it. Report, mute and block
+                    // have to be reachable from a profile — Guideline 1.2 — but
+                    // a page whose loudest control was "Block" would be a
+                    // strange thing to open somebody's account and find.
+                    if let safety = headerSafety {
+                        SafetyMenuButton(actions: safety, size: 17)
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
@@ -298,6 +436,19 @@ public struct ProfileScreen: View {
                         Text(since)
                             .font(SLFont.micro)
                             .foregroundStyle(SLColor.textMuted)
+                    }
+
+                    // Muting silences a feed; it does not blank a page somebody
+                    // deliberately opened. The badge is the whole difference
+                    // between a mute and a block on this screen — and it says,
+                    // where the user can read it, that the mute is not announced.
+                    if viewModel.isMuted && !viewModel.isBlocked {
+                        SLBadge("Muted", style: .neutral, icon: "speaker.slash.fill")
+                            .padding(.top, SLSpacing.xs)
+                            .accessibilityLabel(Text(
+                                "You have muted this account. Their posts are hidden from "
+                                    + "your feeds. They were not told."
+                            ))
                     }
                 }
 
@@ -415,6 +566,18 @@ public struct ProfileScreen: View {
                     )
                 }
 
+                if let open = ownerActions.onOpenSafety {
+                    settingsEntry(
+                        icon: "hand.raised",
+                        title: "Safety",
+                        detail: "Who you've blocked, who you've muted, and what you've reported. "
+                            + "None of them were told.",
+                        hint: "Opens your blocked and muted accounts, each undoable in place, "
+                            + "and the reports you have filed",
+                        open: open
+                    )
+                }
+
                 if let signOut = ownerActions.onSignOut {
                     SLButton(
                         "Sign out",
@@ -493,7 +656,8 @@ public struct ProfileScreen: View {
                 guard author.handle != viewModel.handle else { return }
                 onOpenProfile(author.handle)
             },
-            onStub: onStub
+            onStub: onStub,
+            safetyMenu: postSafetyMenu
         )
     }
 
@@ -522,6 +686,8 @@ public struct ProfileScreenHost: View {
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let ownerActions: ProfileOwnerActions
+    private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
+    private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
 
     /// - Parameters:
     ///   - makeViewModel: Called **once**, when the destination first appears.
@@ -530,13 +696,17 @@ public struct ProfileScreenHost: View {
     ///   - onStub: Announces a feature that belongs to a later phase.
     ///   - onCompose: Opens the composer.
     ///   - ownerActions: Routes shown only on the viewer's own profile.
+    ///   - safetyMenu: Builds the header's `…` menu.
+    ///   - postSafetyMenu: Builds each timeline card's `…` menu.
     public init(
         makeViewModel: () -> ProfileViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onStub: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
-        ownerActions: ProfileOwnerActions = ProfileOwnerActions()
+        ownerActions: ProfileOwnerActions = ProfileOwnerActions(),
+        safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
+        postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
     ) {
         self._viewModel = State(initialValue: makeViewModel())
         self.onOpenPost = onOpenPost
@@ -544,6 +714,8 @@ public struct ProfileScreenHost: View {
         self.onStub = onStub
         self.onCompose = onCompose
         self.ownerActions = ownerActions
+        self.safetyMenu = safetyMenu
+        self.postSafetyMenu = postSafetyMenu
     }
 
     public var body: some View {
@@ -553,7 +725,9 @@ public struct ProfileScreenHost: View {
             onOpenProfile: onOpenProfile,
             onStub: onStub,
             onCompose: onCompose,
-            ownerActions: ownerActions
+            ownerActions: ownerActions,
+            safetyMenu: safetyMenu,
+            postSafetyMenu: postSafetyMenu
         )
     }
 }

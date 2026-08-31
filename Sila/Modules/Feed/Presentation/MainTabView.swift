@@ -29,6 +29,15 @@ public struct MainTabView: View {
     @State private var isShowingPreferences = false
     /// `true` while account settings are up.
     @State private var isShowingAccount = false
+    /// `true` while the blocked / muted / reported lists are up.
+    @State private var isShowingSafety = false
+    /// Blocking, muting and reporting for every card and every header below.
+    ///
+    /// One instance for the whole shell rather than one per screen. The block
+    /// confirmation has to survive the card it was opened from disappearing —
+    /// which is exactly what a block does to it — and a menu on a profile must
+    /// already know about a block taken on a post two screens ago.
+    @State private var safety: SafetyViewModel
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -44,6 +53,16 @@ public struct MainTabView: View {
                 search: container.searchService,
                 feed: container.feedService,
                 analytics: container.analytics
+            )
+        )
+        // `onChange` is wired after construction, because it has to reach the
+        // two view models built just above.
+        self._safety = State(
+            initialValue: SafetyViewModel(
+                service: container.safetyService,
+                analytics: container.analytics,
+                suspension: container.suspension,
+                viewerHandle: container.session.user?.handle
             )
         )
     }
@@ -84,6 +103,100 @@ public struct MainTabView: View {
             }
             .tint(SLColor.primary)
         }
+        .sheet(isPresented: $isShowingSafety) {
+            NavigationStack {
+                SafetyListsScreen(
+                    viewModel: safetyListsViewModel(),
+                    onClose: { isShowingSafety = false },
+                    onOpenProfile: { handle in
+                        isShowingSafety = false
+                        openProfile(handle)
+                    }
+                )
+            }
+            .tint(SLColor.primary)
+        }
+        // The block confirmation, the report sheet and the safety toast, hosted
+        // once above the tab bar. They have to outlive whatever card or row they
+        // were started from — a block's whole job is to make that row disappear.
+        .safetyPresentation(safety)
+        .task {
+            // Only so the menus say "Unmute" rather than "Mute" where that is
+            // true. Failures are swallowed inside; a label optimisation must not
+            // put an error banner in front of somebody who asked for nothing.
+            await safety.loadRelationships()
+        }
+        // **This is what makes a block visible.** The safety model is the single
+        // record of who is blocked; when it grows, everything that person wrote
+        // leaves the feeds, the search results and the navigation stacks at once
+        // — rather than sitting there until somebody pulls to refresh.
+        .onChange(of: safety.blockedHandles) { previous, current in
+            for handle in current.subtracting(previous) {
+                viewModel.removeAuthor(handle)
+                exploreViewModel.removeAuthor(handle)
+                pruneStacks(blocking: handle)
+            }
+        }
+    }
+
+    // MARK: - Safety
+
+    /// Opens the blocked / muted / reported lists, which are always available.
+    ///
+    /// Unlike the other two settings routes this one has no flag behind it and
+    /// never returns `nil`: an app carrying user-generated content has to let
+    /// somebody see and undo their own blocks, and a build where that entry
+    /// point could be switched off is a build that should not reach review.
+    private var safetyHandler: (@MainActor () -> Void)? {
+        {
+            container.analytics.track(.safetyListsOpened)
+            isShowingSafety = true
+        }
+    }
+
+    /// Builds the lists' view model for a presentation.
+    ///
+    /// Fresh each time, so the screen always opens on the server's current
+    /// state; changes are pushed back into the shared model so the `…` menus
+    /// agree without a round trip.
+    private func safetyListsViewModel() -> SafetyListsViewModel {
+        SafetyListsViewModel(
+            service: container.safetyService,
+            analytics: container.analytics,
+            suspension: container.suspension,
+            onChange: { change in safety.adopt(change) }
+        )
+    }
+
+    /// Drops any pushed screen that is *about* a blocked account.
+    ///
+    /// Their profile 404s from this moment and their post detail would render a
+    /// thread nobody can reply to, so both are removed from the stacks rather
+    /// than left for the user to walk back into. Removal is by predicate across
+    /// the whole path, not just its tail: the offending screen is often two back
+    /// by the time a block is confirmed from a card further in.
+    private func pruneStacks(blocking handle: String) {
+        let target = Handle.normalised(handle)
+        guard !target.isEmpty else { return }
+        let isAbout: (FeedRoute) -> Bool = { route in
+            switch route {
+            case let .profile(handle): return Handle.normalised(handle) == target
+            case let .postDetail(post): return Handle.normalised(post.author.handle) == target
+            }
+        }
+        container.router.feedPath.removeAll(where: isAbout)
+        container.router.explorePath.removeAll(where: isAbout)
+        container.router.profilePath.removeAll(where: isAbout)
+    }
+
+    /// The `…` menu for one post, or `nil` on the viewer's own.
+    private func safetyMenu(for post: Post) -> SafetyMenuActions? {
+        safety.menu(for: post)
+    }
+
+    /// The `…` menu for a profile header, or `nil` on the viewer's own page.
+    private func safetyMenu(for target: SafetyTarget) -> SafetyMenuActions? {
+        safety.menu(for: target)
     }
 
     // MARK: - Account
@@ -109,6 +222,7 @@ public struct MainTabView: View {
             analytics: container.analytics,
             onSignOut: {
                 isShowingAccount = false
+                container.suspension.clear()
                 container.router.popFeedToRoot()
                 Task { await container.session.signOut() }
             }
@@ -201,7 +315,8 @@ public struct MainTabView: View {
                     onStub: stub,
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
-                    onOpenPreferences: preferencesHandler
+                    onOpenPreferences: preferencesHandler,
+                    safetyMenu: safetyMenu(for:)
                 )
                 .tnNavigationBar(title: "Sila")
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -220,7 +335,8 @@ public struct MainTabView: View {
                     onOpenPost: openPost,
                     onStub: stub,
                     onOpenProfile: openProfile,
-                    onCompose: composeHandler
+                    onCompose: composeHandler,
+                    safetyMenu: safetyMenu(for:)
                 )
                 .tnNavigationBar(title: "Explore")
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -271,11 +387,15 @@ public struct MainTabView: View {
                 ownerActions: ProfileOwnerActions(
                     onOpenAccount: accountHandler,
                     onOpenPreferences: preferencesHandler,
+                    onOpenSafety: safetyHandler,
                     onSignOut: {
+                        container.suspension.clear()
                         container.router.popFeedToRoot()
                         Task { await container.session.signOut() }
                     }
-                )
+                ),
+                safetyMenu: safetyMenu(for:),
+                postSafetyMenu: safetyMenu(for:)
             )
             .tnNavigationBar(title: profileTitle)
         } else {
@@ -284,7 +404,9 @@ public struct MainTabView: View {
                 onStub: stub,
                 onOpenPreferences: preferencesHandler,
                 onOpenAccount: accountHandler,
+                onOpenSafety: safetyHandler,
                 onSignOut: {
+                    container.suspension.clear()
                     container.router.popFeedToRoot()
                     Task { await container.session.signOut() }
                 }
@@ -373,8 +495,11 @@ public struct MainTabView: View {
                 // turns out to be the viewer's own.
                 ownerActions: ProfileOwnerActions(
                     onOpenAccount: accountHandler,
-                    onOpenPreferences: preferencesHandler
-                )
+                    onOpenPreferences: preferencesHandler,
+                    onOpenSafety: safetyHandler
+                ),
+                safetyMenu: safetyMenu(for:),
+                postSafetyMenu: safetyMenu(for:)
             )
             .tnNavigationBar(title: "@\(handle)")
         }
@@ -395,6 +520,7 @@ public struct MainTabView: View {
             onStub: stub,
             onOpenProfile: openProfile,
             onDismiss: onDismiss,
+            safetyMenu: safetyMenu(for:),
             // `nil` when the phase is off, which restores the Phase-3 stub bar.
             composerService: container.flags.composer ? container.composerService : nil,
             searchService: container.flags.composer ? container.searchService : nil,
@@ -458,6 +584,10 @@ struct ProfileStubScreen: View {
     var onOpenPreferences: (@MainActor () -> Void)?
     /// Opens account settings, or `nil` when the flag is off.
     var onOpenAccount: (@MainActor () -> Void)?
+    /// Opens the blocked / muted / reported lists. Never `nil` in the app —
+    /// there is no flag behind it, because an app with user-generated content
+    /// has to let people see and undo their own blocks.
+    var onOpenSafety: (@MainActor () -> Void)?
     let onSignOut: () -> Void
 
     var body: some View {
@@ -517,6 +647,19 @@ struct ProfileStubScreen: View {
                     hint: "Opens topic interests, muted topics and muted countries, and "
                         + "explains how posts are labelled",
                     open: onOpenPreferences
+                )
+                .padding(.horizontal, SLSpacing.lg)
+            }
+
+            if let onOpenSafety {
+                settingsEntry(
+                    icon: "hand.raised",
+                    title: "Safety",
+                    detail: "Who you've blocked, who you've muted, and what you've reported. "
+                        + "None of them were told.",
+                    hint: "Opens your blocked and muted accounts, each undoable in place, "
+                        + "and the reports you have filed",
+                    open: onOpenSafety
                 )
                 .padding(.horizontal, SLSpacing.lg)
             }

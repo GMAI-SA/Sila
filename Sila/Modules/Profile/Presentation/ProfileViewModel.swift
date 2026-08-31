@@ -72,6 +72,20 @@ public final class ProfileViewModel {
     public private(set) var postsError: String?
     /// `true` while a follow or unfollow is in flight.
     public private(set) var isFollowPending = false
+    /// `true` once the viewer has blocked this account.
+    ///
+    /// Held here rather than derived from a reload, because the timeline has to
+    /// empty the moment the block is confirmed. Waiting for
+    /// `GET /users/{handle}/posts` to start filtering would leave somebody
+    /// staring at the posts they just blocked, which reads as a button that did
+    /// not work — on the one screen where that doubt matters most.
+    public private(set) var isBlocked = false
+    /// `true` once the viewer has muted this account.
+    ///
+    /// Only ever a badge in the header. A muted account's page still renders in
+    /// full: muting takes somebody out of the *feeds*, and blanking a profile
+    /// the user deliberately opened would be the app overruling them.
+    public private(set) var isMuted = false
     /// Banner message.
     public var toast: SLToastMessage?
 
@@ -318,6 +332,49 @@ public final class ProfileViewModel {
     public func replyBlocked(_ post: Post) {
         guard let message = ReplyPermission.make(for: post).blockedMessage else { return }
         toast = .warning(message)
+    }
+
+    // MARK: - Safety
+
+    /// Reacts to a block, mute or unblock taken anywhere in the app.
+    ///
+    /// Only changes that are about **this** account do anything, so a block
+    /// taken on a card inside a quoted post does not blank the page of the
+    /// person whose profile it is.
+    /// - Parameter change: What just happened.
+    public func apply(_ change: SafetyChange) {
+        guard Handle.normalised(change.target.handle) == handle else { return }
+        switch change {
+        case .blocked:
+            isBlocked = true
+            isMuted = false
+            // The posts go now, not after a refetch. The server will filter them
+            // out of the next request anyway; the point is that the screen must
+            // not still be showing them while it waits.
+            posts = []
+            cursor = nil
+            hasMore = false
+            postsError = nil
+            // A block severs the follow in both directions, so the header's
+            // button must stop claiming otherwise even before a reload.
+            if let profile, profile.isFollowing {
+                self.profile = profile.predicting(following: false)
+            }
+        case .unblocked:
+            isBlocked = false
+        case .muted:
+            isMuted = true
+        case .unmuted:
+            isMuted = false
+        }
+    }
+
+    /// Reloads after an unblock, so the timeline comes back without the user
+    /// having to leave the screen and return to it.
+    public func reloadAfterUnblock() async {
+        isBlocked = false
+        loadState = .idle
+        await reload()
     }
 
     /// Merges a post changed elsewhere (the detail screen) back into the timeline.

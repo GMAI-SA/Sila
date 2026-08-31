@@ -15,6 +15,7 @@ public struct ExploreScreen: View {
     private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
+    private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
 
     @FocusState private var isFieldFocused: Bool
 
@@ -30,13 +31,15 @@ public struct ExploreScreen: View {
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onStub: @escaping @MainActor (String) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
-        onCompose: (@MainActor (ComposerContext) -> Void)? = nil
+        onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
+        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
         self.onStub = onStub
         self.onCompose = onCompose
+        self.safetyMenu = safetyMenu
     }
 
     public var body: some View {
@@ -360,7 +363,8 @@ public struct ExploreScreen: View {
             onHashtag: { tag in viewModel.updateQuery("#\(tag)", immediately: true) },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
-            onStub: onStub
+            onStub: onStub,
+            safetyMenu: safetyMenu
         )
     }
 }

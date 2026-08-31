@@ -17,6 +17,7 @@ public struct PostDetailScreen: View {
     private let onStub: @MainActor (String) -> Void
     private let onDismiss: @MainActor (Post) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
+    private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Owns the reply draft. `nil` when Phase 4 is switched off, which is what
     /// puts the Phase-3 stub bar back.
     ///
@@ -45,6 +46,7 @@ public struct PostDetailScreen: View {
         onStub: @escaping @MainActor (String) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onDismiss: @escaping @MainActor (Post) -> Void = { _ in },
+        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         composerService: ComposerServiceProtocol? = nil,
         searchService: SearchServiceProtocol? = nil,
         author: ComposerAuthor = ComposerAuthor(isVerified: false),
@@ -57,6 +59,7 @@ public struct PostDetailScreen: View {
         self.onStub = onStub
         self.onDismiss = onDismiss
         self.onCompose = onCompose
+        self.safetyMenu = safetyMenu
 
         guard let composerService else {
             self._replyViewModel = State(initialValue: nil)
@@ -105,8 +108,30 @@ public struct PostDetailScreen: View {
         .onChange(of: viewModel.post) { _, fresh in
             replyViewModel?.updateReplyTarget(fresh)
         }
+        // A block taken on a reply takes that reply out of the thread now. The
+        // *focused* post's author is handled a level up, by pruning this whole
+        // destination off the stack: blanking the top of a thread in place would
+        // leave a reply list with nothing above it.
+        .onChange(of: blockedRepliers) { previous, current in
+            for handle in current.subtracting(previous) {
+                viewModel.removeAuthor(handle)
+            }
+        }
         .onDisappear { onDismiss(viewModel.post) }
         .tnToast($viewModel.toast)
+    }
+
+    /// Everyone on this screen the viewer has now blocked.
+    ///
+    /// Derived from the same menus the cards draw, so there is one record of who
+    /// is blocked rather than a second copy kept in step by hand.
+    private var blockedRepliers: Set<String> {
+        guard let safetyMenu else { return [] }
+        var handles: Set<String> = []
+        for reply in viewModel.replies where safetyMenu(reply)?.isBlocked == true {
+            handles.insert(Handle.normalised(reply.author.handle))
+        }
+        return handles
     }
 
     // MARK: - Parent context
@@ -265,7 +290,8 @@ public struct PostDetailScreen: View {
             onHashtag: { _ in onStub("Hashtag search") },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
-            onStub: onStub
+            onStub: onStub,
+            safetyMenu: safetyMenu
         )
     }
 }

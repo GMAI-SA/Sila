@@ -153,6 +153,33 @@ public final class PostDetailViewModel {
         )
     }
 
+    /// Removes a blocked account's replies from the thread, now.
+    ///
+    /// Only the replies. When the **focused** post's author is the one blocked
+    /// there is nothing sensible left on this screen, so the host pops the whole
+    /// destination instead — see ``isSubject(_:)``. Blanking the top of a thread
+    /// in place would leave somebody staring at a reply list with no post above
+    /// it.
+    /// - Parameter handle: The blocked account's handle, any casing.
+    /// - Returns: How many replies were taken out.
+    @discardableResult
+    public func removeAuthor(_ handle: String) -> Int {
+        let target = Handle.normalised(handle)
+        guard !target.isEmpty else { return 0 }
+        let before = replies.count
+        replies.removeAll { Handle.normalised($0.author.handle) == target }
+        if let parent, Handle.normalised(parent.author.handle) == target {
+            self.parent = nil
+        }
+        return before - replies.count
+    }
+
+    /// `true` when this screen is *about* the blocked account, and so has
+    /// nothing left to show.
+    public func isSubject(_ handle: String) -> Bool {
+        Handle.normalised(post.author.handle) == Handle.normalised(handle)
+    }
+
     /// Explains a reply the viewer is not allowed to write.
     public func replyBlocked(_ target: Post) {
         guard let message = ReplyPermission.make(for: target).blockedMessage else { return }

@@ -302,6 +302,36 @@ public final class ExploreViewModel {
         }
     }
 
+    /// Removes everything by one account from the results, now.
+    ///
+    /// Called after a block. Explore matters as much as the feed here — arguably
+    /// more, because the reason somebody blocked an account is often that they
+    /// went looking for them — and results that survive the block until the next
+    /// keystroke are results the user has to watch disappear on their own.
+    /// - Parameter handle: The blocked account's handle, any casing.
+    /// - Returns: How many rows were taken out, across posts and people.
+    @discardableResult
+    public func removeAuthor(_ handle: String) -> Int {
+        let target = Handle.normalised(handle)
+        guard !target.isEmpty else { return 0 }
+        let before = posts.count + people.count
+
+        posts.removeAll { Handle.normalised($0.author.handle) == target }
+        // The People tab too: a blocked account must not still be offered as
+        // somebody to open.
+        people.removeAll { Handle.normalised($0.handle) == target }
+        posts = posts.map { post in
+            guard let quoted = post.quotedPost,
+                  Handle.normalised(quoted.author.handle) == target
+            else { return post }
+            return post.strippingQuote()
+        }
+
+        let removed = before - (posts.count + people.count)
+        if removed > 0 { refreshEmptyKind() }
+        return removed
+    }
+
     /// Inserts posts the user just wrote, so a search they are looking at is
     /// not stale — but only when they actually match the query.
     public func insert(_ newPosts: [Post]) {

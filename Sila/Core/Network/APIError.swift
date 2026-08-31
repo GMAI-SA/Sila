@@ -91,6 +91,35 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// routes it to the recovery screen rather than showing it as an error.
     case accountDeactivated = "account_deactivated"
 
+    // MARK: Safety — block, mute, report, suspension
+
+    /// An account tried to block itself (HTTP 400).
+    case selfBlock = "self_block"
+    /// An account tried to mute itself (HTTP 400).
+    case selfMute = "self_mute"
+    /// An account tried to report itself (HTTP 400).
+    case selfReport = "self_report"
+    /// `POST /reports` carried a reason outside the server's list (HTTP 400).
+    ///
+    /// Unreachable from the picker, which is built out of ``ReportReason`` — it
+    /// exists for a build talking to a server whose vocabulary has moved on.
+    case invalidReason = "invalid_reason"
+    /// There is a block between the viewer and this thread (HTTP 403).
+    ///
+    /// Deliberately says nothing about **which** direction. Whether somebody
+    /// blocked you or you blocked them, the outcome is the same and the client
+    /// has no business turning a safety tool into a notification.
+    case blocked
+    /// The account is suspended (HTTP 403).
+    ///
+    /// Not a 401: the credentials are good. Every authenticated call answers
+    /// this except `GET /me/suspension` and `POST /me/appeal`, which is why the
+    /// client routes it to the suspension screen rather than showing it as an
+    /// error with a Retry button that can only produce it again.
+    case accountSuspended = "account_suspended"
+    /// A second appeal against the same suspension (HTTP 409).
+    case alreadyAppealed = "already_appealed"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -195,6 +224,24 @@ public enum APIError: Error, Equatable, Sendable {
                 // Shown only if this ever reaches a screen: the deactivation
                 // monitor is meant to route it to the recovery screen first.
                 return "This account is scheduled for deletion. Cancel the deletion to use it again."
+            case .selfBlock:
+                return "You can't block yourself."
+            case .selfMute:
+                return "You can't mute yourself."
+            case .selfReport:
+                return "You can't report yourself."
+            case .invalidReason:
+                return "Sila's list of reasons has changed, so nothing was sent. Reopen this form and try again."
+            case .blocked:
+                // Says a block exists, never who made it. Turning a safety tool
+                // into a notification is exactly what nobody signed up for.
+                return "You can't reply here. There's a block between you and this account."
+            case .accountSuspended:
+                // Shown only if this ever reaches a screen: the suspension
+                // monitor is meant to route it to the suspension screen first.
+                return "This account is suspended."
+            case .alreadyAppealed:
+                return "You've already appealed this suspension. One appeal is all Sila accepts."
             case .unknown:
                 return message.isEmpty ? "Something went wrong. Please try again." : message
             }
