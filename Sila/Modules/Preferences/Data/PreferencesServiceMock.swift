@@ -110,6 +110,11 @@ public actor PreferencesServiceMock: PreferencesServiceProtocol {
             }
             next.mutedCountries = MutedCountries.normalised(countries)
         }
+        if let notifications = update.notifications {
+            // Full replacement, exactly like the server: the object that comes
+            // back is the object that was sent.
+            next.notifications = NotificationPreferences(enabled: notifications)
+        }
         stored = next
         return stored
     }
@@ -147,7 +152,10 @@ public actor PreferencesServiceMock: PreferencesServiceProtocol {
         mutedTopics: ["politics"],
         filterInternationalByInterests: true,
         showUntaggedPosts: true,
-        mutedCountries: ["JP"]
+        mutedCountries: ["JP"],
+        // Likes already silenced — the switch people reach for first, so the
+        // mocked world shows what the screen looks like once somebody has.
+        notifications: NotificationPreferences([.like: false])
     )
 
     private func delay() async throws {

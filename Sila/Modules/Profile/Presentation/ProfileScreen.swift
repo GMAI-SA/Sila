@@ -63,6 +63,8 @@ public struct ProfileScreen: View {
     private let ownerActions: ProfileOwnerActions
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
+    /// Builds the author's own menu for a card — Delete, on your posts only.
+    private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
 
     /// - Parameters:
     ///   - viewModel: Owns the profile and the timeline.
@@ -85,7 +87,8 @@ public struct ProfileScreen: View {
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         ownerActions: ProfileOwnerActions = ProfileOwnerActions(),
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
-        postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
+        postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -95,6 +98,7 @@ public struct ProfileScreen: View {
         self.ownerActions = ownerActions
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
+        self.ownPost = ownPost
     }
 
     public var body: some View {
@@ -657,7 +661,8 @@ public struct ProfileScreen: View {
                 onOpenProfile(author.handle)
             },
             onStub: onStub,
-            safetyMenu: postSafetyMenu
+            safetyMenu: postSafetyMenu,
+            ownPost: ownPost
         )
     }
 
@@ -688,6 +693,7 @@ public struct ProfileScreenHost: View {
     private let ownerActions: ProfileOwnerActions
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
+    private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
 
     /// - Parameters:
     ///   - makeViewModel: Called **once**, when the destination first appears.
@@ -698,6 +704,7 @@ public struct ProfileScreenHost: View {
     ///   - ownerActions: Routes shown only on the viewer's own profile.
     ///   - safetyMenu: Builds the header's `…` menu.
     ///   - postSafetyMenu: Builds each timeline card's `…` menu.
+    ///   - ownPost: Builds the Delete menu on the viewer's own cards.
     public init(
         makeViewModel: () -> ProfileViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
@@ -706,7 +713,8 @@ public struct ProfileScreenHost: View {
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         ownerActions: ProfileOwnerActions = ProfileOwnerActions(),
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
-        postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
+        postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
     ) {
         self._viewModel = State(initialValue: makeViewModel())
         self.onOpenPost = onOpenPost
@@ -716,6 +724,7 @@ public struct ProfileScreenHost: View {
         self.ownerActions = ownerActions
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
+        self.ownPost = ownPost
     }
 
     public var body: some View {
@@ -727,7 +736,8 @@ public struct ProfileScreenHost: View {
             onCompose: onCompose,
             ownerActions: ownerActions,
             safetyMenu: safetyMenu,
-            postSafetyMenu: postSafetyMenu
+            postSafetyMenu: postSafetyMenu,
+            ownPost: ownPost
         )
     }
 }

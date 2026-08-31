@@ -14,6 +14,8 @@ public struct HomeScreen: View {
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let onOpenPreferences: (@MainActor () -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
+    /// Builds the author's own menu for a card — Delete, on your posts only.
+    private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
 
     /// - Parameters:
     ///   - viewModel: Owned by ``MainTabView`` so tab state survives navigation.
@@ -37,7 +39,8 @@ public struct HomeScreen: View {
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil,
-        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
+        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -46,6 +49,7 @@ public struct HomeScreen: View {
         self.onCompose = onCompose
         self.onOpenPreferences = onOpenPreferences
         self.safetyMenu = safetyMenu
+        self.ownPost = ownPost
     }
 
     public var body: some View {
@@ -258,7 +262,8 @@ public struct HomeScreen: View {
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,
-            safetyMenu: safetyMenu
+            safetyMenu: safetyMenu,
+            ownPost: ownPost
         )
     }
 }

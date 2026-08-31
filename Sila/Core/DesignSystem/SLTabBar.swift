@@ -23,6 +23,11 @@ public struct SLTabBarItem<Tab: Hashable>: Identifiable, Sendable where Tab: Sen
     public let hint: String
     /// Selection or action.
     public let kind: Kind
+    /// An unread count drawn on the icon, or `nil` for no badge.
+    ///
+    /// Zero draws nothing rather than a `0` bubble: a badge exists to say
+    /// something is waiting, and one that says nothing is waiting is noise.
+    public let badge: Int?
 
     /// Creates a tab-bar item.
     public init(
@@ -31,7 +36,8 @@ public struct SLTabBarItem<Tab: Hashable>: Identifiable, Sendable where Tab: Sen
         selectedIcon: String? = nil,
         label: String,
         hint: String,
-        kind: Kind
+        kind: Kind,
+        badge: Int? = nil
     ) {
         self.id = id
         self.icon = icon
@@ -39,6 +45,20 @@ public struct SLTabBarItem<Tab: Hashable>: Identifiable, Sendable where Tab: Sen
         self.label = label
         self.hint = hint
         self.kind = kind
+        self.badge = badge
+    }
+
+    /// The badge as it is drawn: `nil` below one, and capped so a very large
+    /// count cannot widen the slot.
+    var badgeText: String? {
+        guard let badge, badge > 0 else { return nil }
+        return badge > 99 ? "99+" : String(badge)
+    }
+
+    /// What VoiceOver adds after the label, e.g. `"3 unread"`.
+    var badgeAccessibilityValue: String? {
+        guard let badge, badge > 0 else { return nil }
+        return badge == 1 ? "1 unread" : "\(badge) unread"
     }
 }
 
@@ -115,6 +135,10 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
                     Image(systemName: isSelected ? item.selectedIcon : item.icon)
                         .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
                         .foregroundStyle(isSelected ? SLColor.primary : SLColor.textSecondary)
+
+                    if let text = item.badgeText {
+                        badge(text)
+                    }
                 }
                 .frame(height: 28)
 
@@ -129,8 +153,24 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(item.label))
+        .accessibilityValue(Text(item.badgeAccessibilityValue ?? ""))
         .accessibilityHint(Text(item.hint))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// The unread bubble. Hidden from VoiceOver because the same number is
+    /// already the slot's accessibility value — announcing it twice is how a
+    /// badge turns into a stutter.
+    private func badge(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(Color.black)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(SLColor.secondary))
+            .overlay(Capsule().strokeBorder(SLColor.surface1, lineWidth: 1.5))
+            .offset(x: 14, y: -10)
+            .accessibilityHidden(true)
     }
 
     private func actionSlot(_ item: SLTabBarItem<Tab>) -> some View {

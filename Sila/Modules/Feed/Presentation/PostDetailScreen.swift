@@ -18,6 +18,8 @@ public struct PostDetailScreen: View {
     private let onDismiss: @MainActor (Post) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
+    /// Builds the author's own menu for a card — Delete, on your posts only.
+    private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
     /// Owns the reply draft. `nil` when Phase 4 is switched off, which is what
     /// puts the Phase-3 stub bar back.
     ///
@@ -47,6 +49,7 @@ public struct PostDetailScreen: View {
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onDismiss: @escaping @MainActor (Post) -> Void = { _ in },
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
         composerService: ComposerServiceProtocol? = nil,
         searchService: SearchServiceProtocol? = nil,
         author: ComposerAuthor = ComposerAuthor(isVerified: false),
@@ -60,6 +63,7 @@ public struct PostDetailScreen: View {
         self.onDismiss = onDismiss
         self.onCompose = onCompose
         self.safetyMenu = safetyMenu
+        self.ownPost = ownPost
 
         guard let composerService else {
             self._replyViewModel = State(initialValue: nil)
@@ -291,7 +295,8 @@ public struct PostDetailScreen: View {
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,
-            safetyMenu: safetyMenu
+            safetyMenu: safetyMenu,
+            ownPost: ownPost
         )
     }
 }

@@ -48,6 +48,10 @@ public struct PostCardActions {
     /// only the safety model has. `nil` restores the pre-safety card exactly:
     /// no `…` button, and Report falls back to ``onStub``.
     public var safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
+    /// What the *author* can do to their own post. `nil` on everybody
+    /// else's — and mutually exclusive with ``safetyMenu``, which is `nil`
+    /// on your own, since you cannot block or report yourself.
+    public var ownPost: (@MainActor (Post) -> OwnPostActions?)?
 
     /// Creates an action set. Every hook defaults to doing nothing, so a
     /// preview or a read-only surface only supplies what it needs.
@@ -64,7 +68,8 @@ public struct PostCardActions {
         onOpenQuoted: @escaping @MainActor (Post) -> Void = { _ in },
         onOpenAuthor: @escaping @MainActor (UserSummary) -> Void = { _ in },
         onStub: @escaping @MainActor (String) -> Void = { _ in },
-        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
+        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
     ) {
         self.onOpen = onOpen
         self.onLike = onLike
@@ -79,6 +84,7 @@ public struct PostCardActions {
         self.onOpenAuthor = onOpenAuthor
         self.onStub = onStub
         self.safetyMenu = safetyMenu
+        self.ownPost = ownPost
     }
 }
 
@@ -505,9 +511,14 @@ public struct PostCardView: View {
             Label("Not Interested", systemImage: "hand.thumbsdown")
         }
 
-        // The same three verbs as the `…` button, so a long press and a tap on
-        // the ellipsis never offer different things about the same person.
-        if let safety = actions.safetyMenu?(post) {
+        // Your own post offers Delete; everybody else's offers the safety
+        // verbs. Never both: you cannot block yourself, and you cannot delete
+        // somebody else's words.
+        if let own = actions.ownPost?(post) {
+            Button(role: .destructive, action: own.onDelete) {
+                Label("Delete Post", systemImage: "trash")
+            }
+        } else if let safety = actions.safetyMenu?(post) {
             SafetyMenu(actions: safety)
         } else {
             // The pre-safety fallback, kept so a surface with no safety backend

@@ -3,14 +3,13 @@ import SwiftUI
 /// The verified app's shell: five slots, four screens.
 ///
 /// Replaces Phase 1's `FeedPlaceholderScreen` as the destination for
-/// ``SessionRoute/feed``. Notifications is the last surface with no backend
-/// behind it, and it says so out loud rather than pretending — the same
-/// contract the wall's "Start Verification" button already honours.
+/// ``SessionRoute/feed``.
 ///
-/// Each tab owns its own navigation stack, and all three carry the same
+/// Each tab owns its own navigation stack, and all four carry the same
 /// ``FeedRoute`` cases: a post leads to its author, whose timeline leads to
 /// another post. Pushing that chain onto the tab it started in is what stops
-/// Explore from rearranging the history the home feed is holding.
+/// Explore from rearranging the history the home feed is holding — and now
+/// stops a tapped notification from doing it either.
 @MainActor
 public struct MainTabView: View {
 
@@ -31,6 +30,13 @@ public struct MainTabView: View {
     @State private var isShowingAccount = false
     /// `true` while the blocked / muted / reported lists are up.
     @State private var isShowingSafety = false
+    /// `true` while the five notification switches are up.
+    @State private var isShowingNotificationSettings = false
+    /// Owns the notification list and — the reason it lives up here rather than
+    /// inside the tab — the unread count the tab-bar badge draws. A view model
+    /// created inside the Notifications branch would be thrown away every time
+    /// somebody switched tabs, taking the badge with it.
+    @State private var notificationsViewModel: NotificationsViewModel
     /// Blocking, muting and reporting for every card and every header below.
     ///
     /// One instance for the whole shell rather than one per screen. The block
@@ -38,6 +44,11 @@ public struct MainTabView: View {
     /// which is exactly what a block does to it — and a menu on a profile must
     /// already know about a block taken on a post two screens ago.
     @State private var safety: SafetyViewModel
+
+    /// Deleting your own posts, shared for the same reason ``safety`` is:
+    /// a post deleted from the feed must also be gone from a profile
+    /// timeline and from search, without each screen re-fetching.
+    @State private var deletion: PostDeletionViewModel
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -55,8 +66,23 @@ public struct MainTabView: View {
                 analytics: container.analytics
             )
         )
+        self._notificationsViewModel = State(
+            initialValue: NotificationsViewModel(
+                service: container.notificationsService,
+                feed: container.feedService,
+                analytics: container.analytics,
+                suspension: container.suspension
+            )
+        )
         // `onChange` is wired after construction, because it has to reach the
         // two view models built just above.
+        self._deletion = State(
+            initialValue: PostDeletionViewModel(
+                service: container.feedService,
+                analytics: container.analytics,
+                viewerHandle: container.session.user?.handle
+            )
+        )
         self._safety = State(
             initialValue: SafetyViewModel(
                 service: container.safetyService,
@@ -103,6 +129,18 @@ public struct MainTabView: View {
             }
             .tint(SLColor.primary)
         }
+        .sheet(isPresented: $isShowingNotificationSettings) {
+            NavigationStack {
+                NotificationSettingsSheet(
+                    viewModel: NotificationSettingsViewModel(
+                        service: container.preferencesService,
+                        analytics: container.analytics
+                    ),
+                    onClose: { isShowingNotificationSettings = false }
+                )
+            }
+            .tint(SLColor.primary)
+        }
         .sheet(isPresented: $isShowingSafety) {
             NavigationStack {
                 SafetyListsScreen(
@@ -120,11 +158,49 @@ public struct MainTabView: View {
         // once above the tab bar. They have to outlive whatever card or row they
         // were started from — a block's whole job is to make that row disappear.
         .safetyPresentation(safety)
+        .confirmationDialog(
+            "Delete this post?",
+            isPresented: Binding(
+                get: { deletion.pending != nil },
+                set: { if !$0 { deletion.cancel() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) { Task { await deletion.confirm() } }
+            Button("Keep", role: .cancel) { deletion.cancel() }
+        } message: {
+            // States what is actually lost. There is no undo on the server.
+            Text("This removes it from every feed, thread and search result. It cannot be undone.")
+        }
+        .alert(
+            "Could not delete",
+            isPresented: Binding(
+                get: { deletion.error != nil },
+                set: { if !$0 { deletion.clearError() } }
+            )
+        ) {
+            Button("OK", role: .cancel) { deletion.clearError() }
+        } message: {
+            Text(deletion.error ?? "")
+        }
         .task {
             // Only so the menus say "Unmute" rather than "Mute" where that is
             // true. Failures are swallowed inside; a label optimisation must not
             // put an error banner in front of somebody who asked for nothing.
             await safety.loadRelationships()
+        }
+        .task {
+            // The badge, before anybody opens the tab. Reading the count is not
+            // reading the notifications: nothing is marked, and the number is
+            // the server's rather than one counted from rows this shell holds.
+            await notificationsViewModel.refreshUnreadCount()
+        }
+        .onChange(of: selection) { _, current in
+            // Coming back to another tab is the moment the badge would
+            // otherwise go stale — the list itself keeps its place and is
+            // refreshed by pulling down.
+            guard current != .notifications else { return }
+            Task { await notificationsViewModel.refreshUnreadCount() }
         }
         // **This is what makes a block visible.** The safety model is the single
         // record of who is blocked; when it grows, everything that person wrote
@@ -187,11 +263,18 @@ public struct MainTabView: View {
         container.router.feedPath.removeAll(where: isAbout)
         container.router.explorePath.removeAll(where: isAbout)
         container.router.profilePath.removeAll(where: isAbout)
+        container.router.notificationsPath.removeAll(where: isAbout)
     }
 
     /// The `…` menu for one post, or `nil` on the viewer's own.
     private func safetyMenu(for post: Post) -> SafetyMenuActions? {
         safety.menu(for: post)
+    }
+
+    /// Delete, on the viewer's own posts only. `nil` on everybody else's,
+    /// where the safety menu takes over instead.
+    private func ownPostMenu(for post: Post) -> OwnPostActions? {
+        deletion.actions(for: post)
     }
 
     /// The `…` menu for a profile header, or `nil` on the viewer's own page.
@@ -316,7 +399,8 @@ public struct MainTabView: View {
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
                     onOpenPreferences: preferencesHandler,
-                    safetyMenu: safetyMenu(for:)
+                    safetyMenu: safetyMenu(for:),
+                    ownPost: ownPostMenu(for:)
                 )
                 .tnNavigationBar(title: "Sila")
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -336,7 +420,8 @@ public struct MainTabView: View {
                     onStub: stub,
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
-                    safetyMenu: safetyMenu(for:)
+                    safetyMenu: safetyMenu(for:),
+                    ownPost: ownPostMenu(for:)
                 )
                 .tnNavigationBar(title: "Explore")
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -346,7 +431,27 @@ public struct MainTabView: View {
             .tint(SLColor.primary)
 
         case .notifications:
-            NotificationsScreen(onStub: stub)
+            NavigationStack(path: Binding(
+                get: { container.router.notificationsPath },
+                set: { container.router.notificationsPath = $0 }
+            )) {
+                NotificationsScreen(
+                    viewModel: notificationsViewModel,
+                    onOpenPost: openPost,
+                    onOpenProfile: openProfile,
+                    onOpenSettings: {
+                        guard container.flags.preferences else {
+                            stub("Notification settings")
+                            return
+                        }
+                        isShowingNotificationSettings = true
+                    }
+                )
+                .navigationDestination(for: FeedRoute.self) { route in
+                    destination(for: route)
+                }
+            }
+            .tint(SLColor.primary)
 
         case .profile:
             NavigationStack(path: Binding(
@@ -395,7 +500,8 @@ public struct MainTabView: View {
                     }
                 ),
                 safetyMenu: safetyMenu(for:),
-                postSafetyMenu: safetyMenu(for:)
+                postSafetyMenu: safetyMenu(for:),
+                ownPost: ownPostMenu(for:)
             )
             .tnNavigationBar(title: profileTitle)
         } else {
@@ -436,14 +542,12 @@ public struct MainTabView: View {
     // MARK: - Navigation
 
     /// Pushes a route onto the stack the user is currently looking at.
-    ///
-    /// Notifications has no stack of its own; it also has nothing that pushes.
     private func push(_ route: FeedRoute) {
         switch selection {
         case .home: container.router.feedPath.append(route)
         case .explore: container.router.explorePath.append(route)
         case .profile: container.router.profilePath.append(route)
-        case .notifications: break
+        case .notifications: container.router.notificationsPath.append(route)
         }
     }
 
@@ -499,7 +603,8 @@ public struct MainTabView: View {
                     onOpenSafety: safetyHandler
                 ),
                 safetyMenu: safetyMenu(for:),
-                postSafetyMenu: safetyMenu(for:)
+                postSafetyMenu: safetyMenu(for:),
+                ownPost: ownPostMenu(for:)
             )
             .tnNavigationBar(title: "@\(handle)")
         }
@@ -552,7 +657,13 @@ public struct MainTabView: View {
             ),
             SLTabBarItem(
                 id: "notifications", icon: "bell", selectedIcon: "bell.fill",
-                label: "Alerts", hint: "Your notifications, coming in a later release", kind: .tab(.notifications)
+                label: "Alerts",
+                hint: "Follows, likes, reposts, replies and mentions",
+                kind: .tab(.notifications),
+                // The server's count, straight from the last response. Nothing
+                // here recounts rows: the badge and the list have to agree, and
+                // they only can if both come from the same place.
+                badge: notificationsViewModel.unreadCount
             ),
             SLTabBarItem(
                 id: "profile", icon: "person", selectedIcon: "person.fill",

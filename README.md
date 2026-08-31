@@ -320,7 +320,7 @@ Sila/
 ├── Modules/Auth/  Domain (models, protocols) · Data (AuthService, mock) · Presentation (screens)
 ├── Modules/Feed/  Domain (Post/UserSummary/FeedPage, presentation mappings)
 │                  Data (FeedService, mock) · Presentation (MainTabView, HomeScreen,
-│                  PostCardView, PostDetailScreen, Notifications)
+│                  PostCardView, PostDetailScreen)
 ├── Modules/Composer/  Domain (ComposeScope/ScopePicker, PostDraft, MentionDetector)
 │                      Data (ComposerService, mock) · Presentation (ComposerSheetScreen,
 │                      ScopePickerView, ReplyComposerBar)
@@ -335,10 +335,14 @@ Sila/
 │                         AccountRouting)
 │                         Data (AccountService, mock)
 │                         Presentation (AccountScreen, sheets, recovery screen)
-└── Modules/Profile/      Domain (Profile, FollowResult, ProfileCopy,
-                          Handle normalisation)
-                          Data (ProfileService, mock)
-                          Presentation (ProfileScreen + host, view model)
+├── Modules/Profile/      Domain (Profile, FollowResult, ProfileCopy,
+│                         Handle normalisation)
+│                         Data (ProfileService, mock)
+│                         Presentation (ProfileScreen + host, view model)
+└── Modules/Notifications/ Domain (UserNotification/NotificationKind/Page,
+                           NotificationPreferences, NotificationCopy)
+                           Data (NotificationsService, mock)
+                           Presentation (NotificationsScreen, settings sheet)
 ```
 
 `FeatureFlags` declares all 16 flags; `auth`, `feed`, `composer`, `preferences`,
@@ -351,9 +355,16 @@ to Auth only through `AuthSessionProtocol`, and get a bearer token only through
 timelines and Explore's post results render it unchanged. Turning `profile` off
 removes every route into a profile and restores `ProfileStubScreen` as the
 tab — the flag has a real off state, and that screen still carries account
-settings and sign-out. Notifications remains the last honest stub — a toast
-saying the feature arrives in a later release — because no endpoint backs it yet
-and inventing one would undermine the whole proposition.
+settings and sign-out.
+
+Notifications is real now that `/notifications` is deployed: five kinds, each
+with its own sentence, paged by the server's cursor and badged with the server's
+own `unread_count` rather than a number counted from the rows on screen. Nothing
+is marked read by arriving — only the explicit "Mark all read" and opening a
+single row — because `POST /notifications/read` has no inverse. A notification
+whose post has since been deleted keeps its row and loses only its excerpt: the
+event still happened. The five on/off switches live in `/me/preferences` beside
+the feed settings and are edited from the list they govern.
 
 Phase 4 deliberately ships **less** than its spec: the backend has no media
 upload, poll or scheduling endpoint, so there is no `MediaPickerSheet`,

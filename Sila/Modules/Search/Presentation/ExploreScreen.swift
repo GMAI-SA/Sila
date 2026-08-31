@@ -16,6 +16,8 @@ public struct ExploreScreen: View {
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
+    /// Builds the author's own menu for a card — Delete, on your posts only.
+    private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
 
     @FocusState private var isFieldFocused: Bool
 
@@ -32,7 +34,8 @@ public struct ExploreScreen: View {
         onStub: @escaping @MainActor (String) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
-        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil
+        safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -40,6 +43,7 @@ public struct ExploreScreen: View {
         self.onStub = onStub
         self.onCompose = onCompose
         self.safetyMenu = safetyMenu
+        self.ownPost = ownPost
     }
 
     public var body: some View {
@@ -364,7 +368,8 @@ public struct ExploreScreen: View {
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,
-            safetyMenu: safetyMenu
+            safetyMenu: safetyMenu,
+            ownPost: ownPost
         )
     }
 }

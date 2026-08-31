@@ -61,6 +61,7 @@ public enum AnalyticsEvent: String, Sendable {
     case composerDiscarded = "composer_discarded"
     /// One post reached the server (emitted by the service, per post).
     case postCreated = "post_created"
+    case postDeleted = "post_deleted"
     /// A composition finished, counting every segment that got through.
     case postPublished = "post_published"
     /// A thread stopped partway, leaving real posts behind.
@@ -192,6 +193,20 @@ public enum AnalyticsEvent: String, Sendable {
     case appealSubmitted = "appeal_submitted"
     /// A second appeal was refused, and the screen showed the first one instead.
     case appealAlreadyOnFile = "appeal_already_on_file"
+
+    // MARK: Notifications
+
+    /// A page of `GET /notifications` came back (emitted by the service).
+    case notificationsLoaded = "notifications_loaded"
+    /// A row was tapped. Carries the kind, whether it was already read, and
+    /// whether the post behind it had been deleted — the last one is how a rise
+    /// in dead-end taps would become visible.
+    case notificationOpened = "notification_opened"
+    /// Something was marked read (emitted by the service). Carries `scope`:
+    /// `all` for the button, `ids` for a single opened row.
+    case notificationsMarkedRead = "notifications_marked_read"
+    /// One of the five notification switches was changed.
+    case notificationPreferenceChanged = "notification_preference_changed"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

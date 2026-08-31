@@ -124,6 +124,13 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
     public var showUntaggedPosts: Bool
     /// ISO-3166 alpha-2 codes whose *verified* authors are hidden, sorted.
     public var mutedCountries: [String]
+    /// Which kinds of notification reach the notifications list.
+    ///
+    /// Lives in the same document as the feed settings because the server keeps
+    /// it there, but it is edited from ``NotificationSettingsSheet`` rather than
+    /// the feed-preferences screen — the person who wants likes silenced is
+    /// standing in the notifications list when they decide that.
+    public var notifications: NotificationPreferences
 
     /// Creates a preference set. The defaults match the server's.
     public init(
@@ -131,8 +138,10 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         mutedTopics: [String] = [],
         filterInternationalByInterests: Bool = false,
         showUntaggedPosts: Bool = true,
-        mutedCountries: [String] = []
+        mutedCountries: [String] = [],
+        notifications: NotificationPreferences = NotificationPreferences()
     ) {
+        self.notifications = notifications
         self.interests = interests.sorted()
         self.mutedTopics = mutedTopics.sorted()
         self.filterInternationalByInterests = filterInternationalByInterests
@@ -148,6 +157,7 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         case filterInternationalByInterests
         case showUntaggedPosts
         case mutedCountries
+        case notifications
     }
 
     /// Tolerant decoder.
@@ -168,6 +178,11 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         mutedCountries = MutedCountries.normalised(
             (try? container.decode([String].self, forKey: .mutedCountries)) ?? []
         )
+        // An absent `notifications` object means every kind is on, which is the
+        // server's default for an account that has never touched them.
+        notifications =
+            ((try? container.decodeIfPresent(NotificationPreferences.self, forKey: .notifications)) ?? nil)
+            ?? NotificationPreferences()
     }
 
     // MARK: Stances
@@ -284,23 +299,36 @@ public struct PreferencesUpdate: Encodable, Equatable, Sendable {
     public var showUntaggedPosts: Bool?
     /// Full replacement of the muted-country list.
     public var mutedCountries: [String]?
+    /// Full replacement of the per-kind notification switches.
+    ///
+    /// Like `topics` and `mutedCountries` this **replaces** what is stored, so
+    /// ``NotificationPreferences/payload`` always states every kind rather than
+    /// only the one that changed.
+    public var notifications: [String: Bool]?
 
     public init(
         topics: [TopicStancePayload]? = nil,
         filterInternationalByInterests: Bool? = nil,
         showUntaggedPosts: Bool? = nil,
-        mutedCountries: [String]? = nil
+        mutedCountries: [String]? = nil,
+        notifications: [String: Bool]? = nil
     ) {
         self.topics = topics
         self.filterInternationalByInterests = filterInternationalByInterests
         self.showUntaggedPosts = showUntaggedPosts
         self.mutedCountries = mutedCountries
+        self.notifications = notifications
     }
 
     /// A body that makes the server's state equal `preferences` exactly.
     ///
-    /// Sends every field, because the screen edits every field and a partial
-    /// body would leave the user unable to tell what actually got stored.
+    /// Sends every field the **feed-preferences screen** edits, because that
+    /// screen edits all of them and a partial body would leave the user unable
+    /// to tell what actually got stored.
+    ///
+    /// `notifications` is deliberately **not** among them: those five switches
+    /// live on their own surface and save themselves, and re-asserting a copy
+    /// this screen loaded minutes ago would quietly undo a change made there.
     /// - Parameter preferences: The edited working copy.
     public static func replacing(_ preferences: FeedPreferences) -> PreferencesUpdate {
         PreferencesUpdate(

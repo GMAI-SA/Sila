@@ -26,6 +26,8 @@ import Foundation
 /// -mockProfileScenario X   pick a ProfileServiceMock.MockScenario
 /// -mockSafety          run against SafetyServiceMock instead of the live API
 /// -mockSafetyScenario X    pick a SafetyServiceMock.MockScenario
+/// -mockNotifications   run against NotificationsServiceMock instead of the live API
+/// -mockNotificationsScenario X  pick a NotificationsServiceMock.MockScenario
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -140,6 +142,17 @@ public struct FeatureFlags: Sendable {
     public var useMockSafety = false
     /// Which mock world to serve when ``useMockSafety`` is on.
     public var mockSafetyScenario: SafetyServiceMock.MockScenario = .populated
+
+    // MARK: Notifications build switches
+
+    /// Use ``NotificationsServiceMock`` instead of the live backend.
+    ///
+    /// > Note: Like safety, notifications have **no phase toggle**. The tab
+    /// > exists in the shell either way, and a flag whose off state is an empty
+    /// > bell icon would only be a way to ship a screen that looks broken.
+    public var useMockNotifications = false
+    /// Which mock world to serve when ``useMockNotifications`` is on.
+    public var mockNotificationsScenario: NotificationsServiceMock.MockScenario = .populated
 
     public init() {}
 
@@ -263,6 +276,21 @@ public struct FeatureFlags: Sendable {
         // somebody in danger. Neither is a demo anybody should have to stage.
         if flags.useMockAuth && !arguments.contains("-mockSafetyScenario") {
             flags.useMockSafety = true
+        }
+        if arguments.contains("-mockNotifications") {
+            flags.useMockNotifications = true
+        }
+        if let index = arguments.firstIndex(of: "-mockNotificationsScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = NotificationsServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockNotifications = true
+            flags.mockNotificationsScenario = scenario
+        }
+        // And for notifications, with the reason that applies to all of them: a
+        // mocked session's token would 401 against the real `/notifications`,
+        // and a tab that can only show an error is not a demo of anything.
+        if flags.useMockAuth && !arguments.contains("-mockNotificationsScenario") {
+            flags.useMockNotifications = true
         }
         return flags
     }

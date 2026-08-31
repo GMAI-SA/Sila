@@ -42,6 +42,8 @@ public final class AppContainer {
     /// Blocking, muting, reporting, and the two endpoints a suspended account
     /// may still call.
     public let safetyService: SafetyServiceProtocol
+    /// Follows, likes, reposts, replies and mentions.
+    public let notificationsService: NotificationsServiceProtocol
     /// Whether the app should be showing nothing but the suspension screen.
     ///
     /// Constructed **before** the network client and handed to it, so every
@@ -69,7 +71,8 @@ public final class AppContainer {
         preferencesService: PreferencesServiceProtocol? = nil,
         accountService: AccountServiceProtocol? = nil,
         profileService: ProfileServiceProtocol? = nil,
-        safetyService: SafetyServiceProtocol? = nil
+        safetyService: SafetyServiceProtocol? = nil,
+        notificationsService: NotificationsServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -206,6 +209,21 @@ public final class AppContainer {
             )
         }
 
+        if let notificationsService {
+            self.notificationsService = notificationsService
+        } else if flags.useMockNotifications {
+            self.notificationsService = NotificationsServiceMock(
+                scenario: flags.mockNotificationsScenario,
+                latency: 0.25
+            )
+        } else {
+            self.notificationsService = NotificationsService(
+                network: network,
+                tokens: tokens,
+                analytics: analytics
+            )
+        }
+
         self.router = AppRouter()
     }
 
@@ -218,7 +236,8 @@ public final class AppContainer {
         preferencesScenario: PreferencesServiceMock.MockScenario = .populated,
         accountScenario: AccountServiceMock.MockScenario = .populated,
         profileScenario: ProfileServiceMock.MockScenario = .populated,
-        safetyScenario: SafetyServiceMock.MockScenario = .populated
+        safetyScenario: SafetyServiceMock.MockScenario = .populated,
+        notificationsScenario: NotificationsServiceMock.MockScenario = .populated
     ) -> AppContainer {
         var flags = FeatureFlags()
         flags.useMockAuth = true
@@ -237,6 +256,8 @@ public final class AppContainer {
         flags.mockProfileScenario = profileScenario
         flags.useMockSafety = true
         flags.mockSafetyScenario = safetyScenario
+        flags.useMockNotifications = true
+        flags.mockNotificationsScenario = notificationsScenario
         return AppContainer(
             flags: flags,
             network: URLSessionNetworkClient(),
@@ -251,7 +272,8 @@ public final class AppContainer {
             preferencesService: PreferencesServiceMock(scenario: preferencesScenario),
             accountService: AccountServiceMock(scenario: accountScenario),
             profileService: ProfileServiceMock(scenario: profileScenario),
-            safetyService: SafetyServiceMock(scenario: safetyScenario)
+            safetyService: SafetyServiceMock(scenario: safetyScenario),
+            notificationsService: NotificationsServiceMock(scenario: notificationsScenario)
         )
     }
 }

@@ -49,6 +49,13 @@ public final class AppRouter {
     public var explorePath: [FeedRoute] = []
     /// The Profile tab's own stack path, above the viewer's own profile.
     public var profilePath: [FeedRoute] = []
+    /// The Notifications tab's own stack path.
+    ///
+    /// Notifications lead *into* the app — a reply row opens a thread, a follow
+    /// row opens a person — so the tab needs a stack of its own. Sharing the
+    /// home feed's would mean opening a notification rearranged the history
+    /// somebody left behind on Home.
+    public var notificationsPath: [FeedRoute] = []
     /// Legal document currently presented in a sheet, if any.
     public var presentedLegalDocument: LegalDocument?
     /// The composer currently presented as a sheet, if any.
@@ -114,12 +121,13 @@ public final class AppRouter {
 
     /// Empties every in-app stack — used when the session ends.
     ///
-    /// All three, not just the feed: a profile or a search result left on the
+    /// All four, not just the feed: a profile or a search result left on the
     /// Explore stack would still be there behind the next sign-in.
     public func popFeedToRoot() {
         feedPath.removeAll()
         explorePath.removeAll()
         profilePath.removeAll()
+        notificationsPath.removeAll()
     }
 
     /// Presents a legal document sheet.
