@@ -1,8 +1,22 @@
 # Sila iOS (Social SA)
 
-Phases 1 (Authentication), 3 (Feed), 4 (Composer & Search) and 7 (Profiles),
-plus contract v4's feed preferences and v5's account management. Swift 5.9 /
-SwiftUI, iOS 17+, MVVM + Clean Architecture, zero third-party dependencies.
+Phases 1 (Authentication), 3 (Feed), 4 (Composer & Search), 6 (Voice Rooms) and
+7 (Profiles), plus contract v4's feed preferences and v5's account management,
+safety and notifications. Swift 5.9 / SwiftUI, iOS 17+, MVVM + Clean
+Architecture.
+
+**One third-party dependency, deliberately.** The
+[LiveKit Swift SDK](https://github.com/livekit/client-sdk-swift) (pinned to
+`2.4.0` in `project.yml`) is the media stack behind Voice Rooms. It is the only
+one, it was in the original blueprint, and it lives behind
+`VoiceEngineProtocol` — exactly one file in the app imports it
+(`Modules/Rooms/Data/LiveKitVoiceEngine.swift`), so every rule the feature has
+to hold is testable without a WebRTC stack, a microphone or a media server.
+
+> The pin is `2.4.0` rather than the latest: `2.5.0` and above call
+> `MainActor.assumeIsolated`, which needs an iOS 17 availability annotation the
+> SDK does not carry, and the package therefore does not compile under
+> Xcode 15.2.
 
 ## Build
 
@@ -214,6 +228,55 @@ never rearranges the home feed's history.
 * Both follow verbs return the authoritative `follower_count`, and neither is an
   error when it changes nothing — the client depends on both facts.
 
+## Voice rooms, and the four rules they run on
+
+Base `/rooms`; `POST /rooms/{id}/join` answers `{room, url, token, role}` where
+`url` is `wss://sila.gmai.sa/rtc` and `token` is a LiveKit credential.
+
+**1. Scope governs who may SPEAK, never who may listen.** Every room is open to
+every account — there is no field for "may this person enter", because everyone
+may. `can_speak` and `speak_refusal` are computed server-side per request and
+the client renders the refusal **verbatim**; nothing in `Modules/Rooms/` derives
+the rule from a country code, because two implementations of one rule is one of
+them being wrong. The list is therefore never filtered by speaking rights:
+hiding a room somebody cannot speak in would turn a speaking rule into a
+visibility rule.
+
+**2. The token is the enforcement.** A listener's LiveKit token carries
+`canPublish: false` and the media server drops their audio whatever the UI does.
+So the microphone affordance is gated on `RoomRole.canPublish` and nothing else,
+and a promotion is followed by a **re-join** rather than a flipped boolean — the
+grant travels with the role, in a new token. `LiveRoomViewModel.refresh()`
+notices the roster role changed, tears the connection down and joins again.
+Unknown roles decode as `.listener`, and a missing `can_speak` reads as `false`:
+both fail closed, because a mic button that cannot work is worse than none.
+
+**3. Rooms are never recorded.** Said on the list, on the create sheet and
+inside the room itself — where somebody reads it before they speak, not in a
+settings page. There is no recording affordance anywhere in the module.
+
+**4. Removal is per-room and is not a block.** `is_removed` /
+`removed_from_room` mean one host, one room. `RoomCopy.removedFromRoom` says so
+in words ("it isn't a block, nothing about your account has changed"), and
+`RoomModelsTests` asserts that sentence stays different from the block message.
+
+Two more things the module holds to:
+
+* **Microphone permission is requested only when somebody takes the
+  microphone** — never on entering a room. A listener needs no microphone, and
+  asking anyway teaches people to deny by reflex. `MicrophonePermissionRequesting`
+  is a seam so the denied path is testable.
+* **Leaving always does both halves**: `POST /rooms/{id}/leave` *and* a LiveKit
+  disconnect, from the Leave button, from a room that ended under you, and from
+  `UIApplication.willTerminateNotification`. Backgrounding deliberately does
+  *not* leave — `Info.plist` declares `UIBackgroundModes: [audio]` so a room
+  survives somebody checking a message — it only stops the roster poll.
+
+The audience picker is the composer's `ScopePicker`, unchanged, and the topic
+list is the same `GET /topics` the feed preferences screen reads. Both are reuse
+for the same reason: a second copy of the country rule, or a hard-coded
+taxonomy, is a second thing to go stale.
+
 ## Running without a backend
 
 ```bash
@@ -256,8 +319,19 @@ a second device followed too. That last one is the entire reason the client
 reconciles instead of counting. Its people and posts are `FeedServiceMock`'s,
 so an author tapped in the mocked feed opens the same person.
 
+`RoomsServiceMock` ships 7: `populated` (three live rooms and two scheduled),
+`empty`, `listenerOnly` (every room refuses the mic with a scope reason — the
+state the whole feature turns on), `hosting` (the viewer hosts the first room,
+so the host controls are reachable), `removed` (a join refused with
+`removed_from_room`), `offline` and `writesFail`. `-mockRooms` implies
+`-mockVoiceEngine`, because a mocked join hands back a token no real media
+server would accept. `VoiceEngineMock` **enforces** the rule rather than
+recording it: a connection made with `canPublish: false` refuses to open the
+microphone, exactly as the media server would.
+
 `-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch`,
-`-mockPreferences`, `-mockAccount` and `-mockProfile` unless the matching
+`-mockPreferences`, `-mockAccount`, `-mockProfile`, `-mockNotifications`,
+`-mockSafety` and `-mockRooms` unless the matching
 `-mock…Scenario` argument says otherwise, because a mocked session carries no bearer token the
 live API would accept — and in the account module's case because the live
 version of the deletion demo costs a real account.
@@ -270,7 +344,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-639 total: 623 unit (46 opt-in, see below) and 16 XCUITests. The UI tests drive
+869 total: 845 unit (74 opt-in, see below) and 24 XCUITests. The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a
 broken route, an unpresented sheet or an untappable button, since every view
@@ -290,7 +364,8 @@ xcrun xcresulttool export --path out.xcresult --id <payloadRef> --output-path sh
 ### Opt-in live tests
 
 `LiveAPITests`, `LiveFeedTests`, `LiveComposerSearchTests`,
-`LivePreferencesTests`, `LiveAccountTests` and `LiveProfileTests` hit
+`LivePreferencesTests`, `LiveAccountTests`, `LiveProfileTests`,
+`LiveNotificationsTests`, `LiveSafetyTests` and `LiveRoomsTests` hit
 the real deployed backend and skip unless you opt in — they are the only guard against the *server's* wire format
 drifting away from the app's decoders:
 
@@ -310,6 +385,16 @@ own profile fields at all — the only state it changes is whether that account
 follows one seeded demo person (`yuki`), and `tearDown` restores it whichever
 way round it started. Both provoke the *refusals* instead, which are safe
 precisely because they fail.
+
+`LiveRoomsTests` is the one exception, and a bounded one: it **does** create
+rooms, because a room is the only way to observe a real join token and rooms are
+cheap and end-able. Every room it opens is registered for cleanup *before* the
+assertion that might fail, `tearDown` leaves every room it joined and ends every
+room it created, and it then re-reads each one to assert it is no longer live —
+so a silent failure to clean up is a failed test rather than a live room on a
+production list with nobody in it. It does not remove anybody from a room: a
+removal needs a second real account and leaves a per-room ban this contract has
+no endpoint to lift.
 
 ## Layout
 
@@ -339,6 +424,13 @@ Sila/
 │                         Handle normalisation)
 │                         Data (ProfileService, mock)
 │                         Presentation (ProfileScreen + host, view model)
+├── Modules/Rooms/        Domain (VoiceRoom/RoomRole/RoomJoin/RoomParticipant,
+│                         VoiceEngineProtocol + MicrophonePermissionRequesting,
+│                         RoomCopy)
+│                         Data (RoomsService, mock, LiveKitVoiceEngine — the one
+│                         file that imports a third-party library — VoiceEngineMock)
+│                         Presentation (RoomsScreen, CreateRoomSheet,
+│                         LiveRoomScreen, three view models)
 └── Modules/Notifications/ Domain (UserNotification/NotificationKind/Page,
                            NotificationPreferences, NotificationCopy)
                            Data (NotificationsService, mock)

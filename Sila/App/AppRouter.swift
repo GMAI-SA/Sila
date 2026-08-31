@@ -29,6 +29,24 @@ public enum FeedRoute: Hashable, Sendable {
     case profile(handle: String)
 }
 
+/// Screens reachable inside the Rooms tab's stack.
+///
+/// A stack of its own rather than another ``FeedRoute`` case, because a room is
+/// a *connection*, not a document: it carries a live media token, it has to be
+/// torn down when it is popped, and pushing one onto the feed's history would
+/// let somebody swipe back into a room they had already left.
+///
+/// ``room(_:)`` carries the whole ``RoomJoin`` — the token included — because
+/// the join happened before the push. Doing it the other way round would put a
+/// room screen on the display and only then discover the person had been
+/// removed from that room.
+public enum RoomsRoute: Hashable, Sendable {
+    /// A live room, already joined.
+    case room(RoomJoin)
+    /// One account's public page, reached from the participant list.
+    case profile(handle: String)
+}
+
 /// Navigation coordinator.
 ///
 /// Owns the `NavigationStack` paths and the modals. Cross-screen routing
@@ -56,6 +74,10 @@ public final class AppRouter {
     /// home feed's would mean opening a notification rearranged the history
     /// somebody left behind on Home.
     public var notificationsPath: [FeedRoute] = []
+    /// The Rooms tab's own stack path.
+    public var roomsPath: [RoomsRoute] = []
+    /// `true` while the create-room sheet is up.
+    public var isCreatingRoom = false
     /// Legal document currently presented in a sheet, if any.
     public var presentedLegalDocument: LegalDocument?
     /// The composer currently presented as a sheet, if any.
@@ -121,13 +143,16 @@ public final class AppRouter {
 
     /// Empties every in-app stack — used when the session ends.
     ///
-    /// All four, not just the feed: a profile or a search result left on the
-    /// Explore stack would still be there behind the next sign-in.
+    /// All five, not just the feed: a profile or a search result left on the
+    /// Explore stack would still be there behind the next sign-in, and a room
+    /// left on the Rooms stack would still be holding a media token belonging
+    /// to a session that has ended.
     public func popFeedToRoot() {
         feedPath.removeAll()
         explorePath.removeAll()
         profilePath.removeAll()
         notificationsPath.removeAll()
+        roomsPath.removeAll()
     }
 
     /// Presents a legal document sheet.

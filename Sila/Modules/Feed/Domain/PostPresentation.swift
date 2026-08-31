@@ -17,48 +17,72 @@ public struct ScopePresentation: Equatable, Sendable {
     /// Maps a post to its scope chip.
     /// - Parameter post: The post being rendered.
     public static func make(for post: Post) -> ScopePresentation {
-        switch post.scope {
+        make(scope: post.scope, country: post.scopeCountry, region: post.scopeRegion)
+    }
+
+    /// Maps a raw scope triple to its chip.
+    ///
+    /// Split out from ``make(for:)`` so a voice room — which carries the same
+    /// three wire fields and means the same thing by them — renders the same
+    /// chip as a post rather than growing a second vocabulary for one idea.
+    /// The noun differs, because a room is not a thread: see ``noun``.
+    /// - Parameters:
+    ///   - scope: The `scope` field.
+    ///   - country: `scope_country`, when the scope carries one.
+    ///   - region: `scope_region`, when the scope carries one.
+    ///   - noun: What the thing being scoped is called — `"thread"` for a post,
+    ///     `"room"` for a voice room. Only ever read by VoiceOver.
+    ///   - verb: What the scope governs — `"reply"` for a post, `"speak"` for a
+    ///     room. This is the load-bearing word: in a room the scope decides who
+    ///     may **speak**, and everybody may still listen.
+    public static func make(
+        scope: PostScope,
+        country: String?,
+        region: String?,
+        noun: String = "thread",
+        verb: String = "reply"
+    ) -> ScopePresentation {
+        switch scope {
         case .international:
             return ScopePresentation(
                 icon: "globe",
                 label: "International",
-                accessibilityLabel: "International thread. Any verified account can reply."
+                accessibilityLabel: "International \(noun). Any verified account can \(verb)."
             )
 
         case .country:
-            let code = post.scopeCountry
-            let flag = CountryCode.flag(code)
-            let name = CountryCode.name(code)
+            let flag = CountryCode.flag(country)
+            let name = CountryCode.name(country)
             switch (flag, name) {
             case let (flag?, name?):
                 return ScopePresentation(
                     icon: "flag.fill",
                     label: "\(flag) \(name) only",
-                    accessibilityLabel: "Country thread. Only verified accounts in \(name) can reply."
+                    accessibilityLabel: "Country \(noun). Only verified accounts in \(name) can \(verb)."
                 )
             default:
                 // The server said "country" but gave us no usable code. Say so
                 // plainly rather than inventing a flag.
                 return ScopePresentation(
                     icon: "flag.fill",
-                    label: "Country thread",
-                    accessibilityLabel: "Country thread. Only verified accounts in that country can reply."
+                    label: "Country \(noun)",
+                    accessibilityLabel: "Country \(noun). Only verified accounts in that country can \(verb)."
                 )
             }
 
         case .region:
-            let region = post.scopeRegion?.uppercased()
+            let region = region?.uppercased()
             if let region, !region.isEmpty {
                 return ScopePresentation(
                     icon: "map.fill",
                     label: "\(region) region",
-                    accessibilityLabel: "Regional thread. Only verified accounts in \(region) can reply."
+                    accessibilityLabel: "Regional \(noun). Only verified accounts in \(region) can \(verb)."
                 )
             }
             return ScopePresentation(
                 icon: "map.fill",
-                label: "Regional thread",
-                accessibilityLabel: "Regional thread. Only verified accounts in that region can reply."
+                label: "Regional \(noun)",
+                accessibilityLabel: "Regional \(noun). Only verified accounts in that region can \(verb)."
             )
         }
     }

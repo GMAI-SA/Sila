@@ -13,9 +13,9 @@ import SwiftUI
 @MainActor
 public struct MainTabView: View {
 
-    /// The four selectable destinations. Compose is an action, not a tab.
+    /// The five selectable destinations. Compose is an action, not a tab.
     public enum Tab: String, Hashable, Sendable, CaseIterable {
-        case home, explore, notifications, profile
+        case home, explore, rooms, notifications, profile
     }
 
     private let container: AppContainer
@@ -37,6 +37,10 @@ public struct MainTabView: View {
     /// created inside the Notifications branch would be thrown away every time
     /// somebody switched tabs, taking the badge with it.
     @State private var notificationsViewModel: NotificationsViewModel
+    /// Owns both room lists. Up here for the same reason the notifications
+    /// model is: a list thrown away on every tab switch would refetch — and
+    /// lose somebody's place — every time they glanced at Home.
+    @State private var roomsViewModel: RoomsViewModel
     /// Blocking, muting and reporting for every card and every header below.
     ///
     /// One instance for the whole shell rather than one per screen. The block
@@ -70,6 +74,13 @@ public struct MainTabView: View {
             initialValue: NotificationsViewModel(
                 service: container.notificationsService,
                 feed: container.feedService,
+                analytics: container.analytics,
+                suspension: container.suspension
+            )
+        )
+        self._roomsViewModel = State(
+            initialValue: RoomsViewModel(
+                service: container.roomsService,
                 analytics: container.analytics,
                 suspension: container.suspension
             )
@@ -137,6 +148,28 @@ public struct MainTabView: View {
                         analytics: container.analytics
                     ),
                     onClose: { isShowingNotificationSettings = false }
+                )
+            }
+            .tint(SLColor.primary)
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { container.router.isCreatingRoom },
+                set: { container.router.isCreatingRoom = $0 }
+            )
+        ) {
+            NavigationStack {
+                CreateRoomSheet(
+                    viewModel: createRoomViewModel(),
+                    onClose: { container.router.isCreatingRoom = false },
+                    // Straight into the room that was just opened, when it is
+                    // one. A scheduled room has nothing to walk into yet, so it
+                    // is left on the list where it belongs.
+                    onCreated: { room in
+                        guard room.status.isJoinable else { return }
+                        selection = .rooms
+                        openRoom(room)
+                    }
                 )
             }
             .tint(SLColor.primary)
@@ -264,6 +297,13 @@ public struct MainTabView: View {
         container.router.explorePath.removeAll(where: isAbout)
         container.router.profilePath.removeAll(where: isAbout)
         container.router.notificationsPath.removeAll(where: isAbout)
+        // A room the blocked account is hosting is not removed: leaving one is
+        // a teardown, not an array edit, and dropping the screen would strand a
+        // live socket. Their profile page goes, which is what a block promises.
+        container.router.roomsPath.removeAll { route in
+            guard case let .profile(handle) = route else { return false }
+            return Handle.normalised(handle) == target
+        }
     }
 
     /// The `…` menu for one post, or `nil` on the viewer's own.
@@ -430,6 +470,23 @@ public struct MainTabView: View {
             }
             .tint(SLColor.primary)
 
+        case .rooms:
+            NavigationStack(path: Binding(
+                get: { container.router.roomsPath },
+                set: { container.router.roomsPath = $0 }
+            )) {
+                RoomsScreen(
+                    viewModel: roomsViewModel,
+                    onOpen: { join in container.router.roomsPath.append(.room(join)) },
+                    onCreate: roomCreationHandler,
+                    onOpenProfile: openRoomProfile
+                )
+                .navigationDestination(for: RoomsRoute.self) { route in
+                    roomsDestination(for: route)
+                }
+            }
+            .tint(SLColor.primary)
+
         case .notifications:
             NavigationStack(path: Binding(
                 get: { container.router.notificationsPath },
@@ -548,6 +605,105 @@ public struct MainTabView: View {
         case .explore: container.router.explorePath.append(route)
         case .profile: container.router.profilePath.append(route)
         case .notifications: container.router.notificationsPath.append(route)
+        // The Rooms tab keeps its own route type, because a room is a live
+        // connection rather than a document — it has to be torn down when it
+        // is popped, which a `FeedRoute` knows nothing about. Only the profile
+        // case crosses over; a post has no way of being reached from in here.
+        case .rooms:
+            if case let .profile(handle) = route {
+                container.router.roomsPath.append(.profile(handle: handle))
+            }
+        }
+    }
+
+    // MARK: - Rooms
+
+    /// Opens the create sheet, or `nil` when the phase is off — which hides the
+    /// affordance rather than showing one that goes nowhere.
+    private var roomCreationHandler: (@MainActor () -> Void)? {
+        guard container.flags.rooms else { return nil }
+        return { container.router.isCreatingRoom = true }
+    }
+
+    /// Builds the create sheet's view model.
+    ///
+    /// Fresh each time, so the sheet always opens on an empty draft and on the
+    /// server's current taxonomy rather than one cached from a previous visit.
+    private func createRoomViewModel() -> CreateRoomViewModel {
+        CreateRoomViewModel(
+            author: ComposerAuthor(user: container.session.user),
+            service: container.roomsService,
+            preferences: container.preferencesService,
+            analytics: container.analytics,
+            suspension: container.suspension,
+            onCreated: { room in roomsViewModel.insert(room) }
+        )
+    }
+
+    /// Joins a room and pushes it. Used after creating one.
+    private func openRoom(_ room: VoiceRoom) {
+        Task {
+            guard let join = await roomsViewModel.open(room) else { return }
+            container.router.roomsPath.append(.room(join))
+        }
+    }
+
+    /// Opens a profile from inside the Rooms tab, without disturbing any other
+    /// tab's history.
+    private func openRoomProfile(_ handle: String) {
+        guard container.flags.profile else {
+            stub("Profiles")
+            return
+        }
+        let component = Handle.pathComponent(handle)
+        guard !component.isEmpty else { return }
+        container.router.roomsPath.append(.profile(handle: component))
+    }
+
+    @ViewBuilder
+    private func roomsDestination(for route: RoomsRoute) -> some View {
+        switch route {
+        case let .room(join):
+            LiveRoomScreen(
+                viewModel: LiveRoomViewModel(
+                    join: join,
+                    viewerHandle: container.session.user?.handle ?? "",
+                    service: container.roomsService,
+                    // One engine per room. A shared one would mean the second
+                    // room somebody opened silently stole the first's socket.
+                    engine: container.makeVoiceEngine(),
+                    analytics: container.analytics,
+                    suspension: container.suspension
+                ),
+                onLeave: {
+                    // Back to the list, and anything pushed above the room —
+                    // a profile opened from the participant list — goes with
+                    // it: it was reached through a room that has been left.
+                    container.router.roomsPath.removeAll()
+                    // The count on the row behind is stale by exactly one.
+                    Task { await roomsViewModel.reload(isRefresh: true) }
+                },
+                onOpenProfile: openRoomProfile,
+                safetyMenu: { target in safety.menu(for: target) }
+            )
+
+        case let .profile(handle):
+            ProfileScreenHost(
+                makeViewModel: { profileViewModel(handle: handle) },
+                onOpenPost: openPost,
+                onOpenProfile: openRoomProfile,
+                onStub: stub,
+                onCompose: composeHandler,
+                ownerActions: ProfileOwnerActions(
+                    onOpenAccount: accountHandler,
+                    onOpenPreferences: preferencesHandler,
+                    onOpenSafety: safetyHandler
+                ),
+                safetyMenu: safetyMenu(for:),
+                postSafetyMenu: safetyMenu(for:),
+                ownPost: ownPostMenu(for:)
+            )
+            .tnNavigationBar(title: "@\(handle)")
         }
     }
 
@@ -638,7 +794,7 @@ public struct MainTabView: View {
     // MARK: - Tab bar
 
     private var tabBarItems: [SLTabBarItem<Tab>] {
-        [
+        var items: [SLTabBarItem<Tab>] = [
             SLTabBarItem(
                 id: "home", icon: "house", selectedIcon: "house.fill",
                 label: "Home", hint: "Shows your four feeds", kind: .tab(.home)
@@ -670,6 +826,21 @@ public struct MainTabView: View {
                 label: "Profile", hint: "Your profile, your posts and your account settings", kind: .tab(.profile)
             )
         ]
+        // Inserted rather than appended, so Rooms sits beside the compose
+        // button where a thing you *start* belongs — and so the flag's off
+        // state is a bar with no gap in it rather than a hidden slot.
+        if container.flags.rooms {
+            items.insert(
+                SLTabBarItem(
+                    id: "rooms", icon: "waveform", selectedIcon: "waveform.circle.fill",
+                    label: "Rooms",
+                    hint: "Live voice rooms. Anyone can listen to any room",
+                    kind: .tab(.rooms)
+                ),
+                at: 3
+            )
+        }
+        return items
     }
 
     /// Announces a feature that belongs to a later phase, exactly the way the

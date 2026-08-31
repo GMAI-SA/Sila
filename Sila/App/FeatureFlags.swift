@@ -28,6 +28,9 @@ import Foundation
 /// -mockSafetyScenario X    pick a SafetyServiceMock.MockScenario
 /// -mockNotifications   run against NotificationsServiceMock instead of the live API
 /// -mockNotificationsScenario X  pick a NotificationsServiceMock.MockScenario
+/// -mockRooms           run against RoomsServiceMock instead of the live API
+/// -mockRoomsScenario X pick a RoomsServiceMock.MockScenario
+/// -mockVoiceEngine     run against VoiceEngineMock instead of LiveKit
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -58,6 +61,10 @@ public struct FeatureFlags: Sendable {
     public var messaging = false
     /// P5 sub-feature — audio/video calls.
     public var calls = false
+    /// P6 — Voice rooms. Turning this off removes the Rooms tab and every
+    /// route into a room; the rooms already open on the server keep running,
+    /// because the client does not own them.
+    public var rooms = true
     /// P6 — Spaces.
     public var spaces = false
     /// P7 — Profiles: another person's page, their top-level posts, and the
@@ -153,6 +160,21 @@ public struct FeatureFlags: Sendable {
     public var useMockNotifications = false
     /// Which mock world to serve when ``useMockNotifications`` is on.
     public var mockNotificationsScenario: NotificationsServiceMock.MockScenario = .populated
+
+    // MARK: Voice rooms build switches
+
+    /// Use ``RoomsServiceMock`` instead of the live backend.
+    public var useMockRooms = false
+    /// Which mock world to serve when ``useMockRooms`` is on.
+    public var mockRoomsScenario: RoomsServiceMock.MockScenario = .populated
+    /// Use ``VoiceEngineMock`` instead of LiveKit.
+    ///
+    /// Implied by ``useMockRooms``: a mocked join hands back a token no real
+    /// media server would accept, so a live engine behind it could only ever
+    /// fail to connect. It is separately settable because the reverse is
+    /// occasionally useful — real rooms, no audio, on a machine with no
+    /// microphone.
+    public var useMockVoiceEngine = false
 
     public init() {}
 
@@ -291,6 +313,26 @@ public struct FeatureFlags: Sendable {
         // and a tab that can only show an error is not a demo of anything.
         if flags.useMockAuth && !arguments.contains("-mockNotificationsScenario") {
             flags.useMockNotifications = true
+        }
+        if arguments.contains("-mockRooms") {
+            flags.useMockRooms = true
+        }
+        if let index = arguments.firstIndex(of: "-mockRoomsScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = RoomsServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockRooms = true
+            flags.mockRoomsScenario = scenario
+        }
+        if flags.useMockAuth && !arguments.contains("-mockRoomsScenario") {
+            flags.useMockRooms = true
+        }
+        // A mocked join hands back a token no media server would accept, so a
+        // real engine behind a mocked room could only ever fail to connect.
+        if flags.useMockRooms {
+            flags.useMockVoiceEngine = true
+        }
+        if arguments.contains("-mockVoiceEngine") {
+            flags.useMockVoiceEngine = true
         }
         return flags
     }

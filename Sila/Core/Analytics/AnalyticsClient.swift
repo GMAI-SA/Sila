@@ -207,6 +207,39 @@ public enum AnalyticsEvent: String, Sendable {
     case notificationsMarkedRead = "notifications_marked_read"
     /// One of the five notification switches was changed.
     case notificationPreferenceChanged = "notification_preference_changed"
+
+    // MARK: Voice rooms
+
+    /// A page of `GET /rooms` came back (emitted by the service).
+    case roomsLoaded = "rooms_loaded"
+    /// A room search ran.
+    case roomsSearched = "rooms_searched"
+    /// A room was opened (emitted by the service).
+    case roomCreated = "room_created"
+    /// A join succeeded. Carries `role` and `can_speak` — **never the token.**
+    case roomJoined = "room_joined"
+    /// `POST /leave` succeeded.
+    case roomLeft = "room_left"
+    /// A host ended their room.
+    case roomEnded = "room_ended"
+    /// The microphone was turned on. Carries `role`, which is the only thing
+    /// that should ever make this possible.
+    case roomMicEnabled = "room_mic_enabled"
+    /// The microphone was turned off.
+    case roomMicDisabled = "room_mic_disabled"
+    /// iOS refused microphone access, so the person kept listening instead.
+    case roomMicDenied = "room_mic_denied"
+    /// Somebody was invited onto the stage.
+    case roomSpeakerPromoted = "room_speaker_promoted"
+    /// Somebody was moved back to the audience. **Not** a removal.
+    case roomSpeakerDemoted = "room_speaker_demoted"
+    /// Somebody was removed from one room. Per-room; not a block, and this
+    /// event must never be read as one.
+    case roomParticipantRemoved = "room_participant_removed"
+    /// A join was refused because the viewer had been removed from that room.
+    case roomJoinRefusedRemoved = "room_join_refused_removed"
+    /// The media connection dropped or failed. Carries `state`.
+    case roomMediaFailed = "room_media_failed"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

@@ -24,6 +24,12 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Sign in with Face ID</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sila uses your microphone only when you take the microphone in a voice room. Listening never needs it, rooms are never recorded, and nothing you say is stored.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

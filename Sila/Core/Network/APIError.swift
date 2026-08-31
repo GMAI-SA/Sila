@@ -120,6 +120,31 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// A second appeal against the same suspension (HTTP 409).
     case alreadyAppealed = "already_appealed"
 
+    // MARK: Voice rooms
+
+    /// The room's scope excludes this account from **speaking**.
+    ///
+    /// Never from listening: there is no code for that, because there is no
+    /// such refusal. Anyone may enter any room.
+    case scopeNotAllowed = "scope_not_allowed"
+    /// The host removed this account from **this room**.
+    ///
+    /// Per-room and nothing more. It is not a block, it changes nothing about
+    /// the account, and it does not follow anybody into another room — which is
+    /// why it has its own code and its own sentence rather than borrowing
+    /// ``blocked``'s.
+    case removedFromRoom = "removed_from_room"
+    /// The room is over. Nothing was recorded, so there is nothing to rejoin.
+    case roomEnded = "room_ended"
+    /// A host-only call from somebody who is not the host.
+    case notRoomHost = "not_room_host"
+    /// The stage has as many speakers as it will hold.
+    case stageFull = "stage_full"
+    /// A host tried to move themselves off their own stage.
+    case cannotDemoteHost = "cannot_demote_host"
+    /// The room id does not exist.
+    case notFound = "not_found"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -242,6 +267,22 @@ public enum APIError: Error, Equatable, Sendable {
                 return "This account is suspended."
             case .alreadyAppealed:
                 return "You've already appealed this suspension. One appeal is all Sila accepts."
+            case .scopeNotAllowed:
+                // Says exactly what is refused. The room itself is still open —
+                // scope governs the microphone, never the door.
+                return "You can listen to this room, but its audience means you can't speak in it."
+            case .removedFromRoom:
+                return RoomCopy.removedFromRoom
+            case .roomEnded:
+                return RoomCopy.roomEnded
+            case .notRoomHost:
+                return "Only the room's host can do that."
+            case .stageFull:
+                return RoomCopy.stageFull
+            case .cannotDemoteHost:
+                return RoomCopy.cannotDemoteHost
+            case .notFound:
+                return "That room is no longer available."
             case .unknown:
                 return message.isEmpty ? "Something went wrong. Please try again." : message
             }

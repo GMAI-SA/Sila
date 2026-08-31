@@ -6,6 +6,15 @@ options:
   createIntermediateGroups: true
   generateEmptyDirectories: false
 
+# The app is otherwise zero-third-party. The LiveKit Swift SDK is the single
+# sanctioned exception: Voice Rooms need a WebRTC media stack, and a hand-rolled
+# one is not a thing anybody should ship. Pinned to an exact version so a room
+# never changes its transport because somebody ran a resolve.
+packages:
+  LiveKit:
+    url: https://github.com/livekit/client-sdk-swift
+    exactVersion: 2.4.0
+
 settings:
   base:
     SWIFT_VERSION: "5.9"
@@ -19,6 +28,9 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Sila
+    dependencies:
+      - package: LiveKit
+        product: LiveKit
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.sila

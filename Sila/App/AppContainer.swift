@@ -44,6 +44,8 @@ public final class AppContainer {
     public let safetyService: SafetyServiceProtocol
     /// Follows, likes, reposts, replies and mentions.
     public let notificationsService: NotificationsServiceProtocol
+    /// Live voice rooms — listing, joining, hosting.
+    public let roomsService: RoomsServiceProtocol
     /// Whether the app should be showing nothing but the suspension screen.
     ///
     /// Constructed **before** the network client and handed to it, so every
@@ -72,7 +74,8 @@ public final class AppContainer {
         accountService: AccountServiceProtocol? = nil,
         profileService: ProfileServiceProtocol? = nil,
         safetyService: SafetyServiceProtocol? = nil,
-        notificationsService: NotificationsServiceProtocol? = nil
+        notificationsService: NotificationsServiceProtocol? = nil,
+        roomsService: RoomsServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -224,7 +227,38 @@ public final class AppContainer {
             )
         }
 
+        if let roomsService {
+            self.roomsService = roomsService
+        } else if flags.useMockRooms {
+            self.roomsService = RoomsServiceMock(
+                scenario: flags.mockRoomsScenario,
+                latency: 0.25,
+                // The demo cast's own handle. The mock only uses it for the
+                // host-only refusals, and a mocked session is not signed into
+                // anything the store would know about anyway.
+                viewerHandle: "aziz"
+            )
+        } else {
+            self.roomsService = RoomsService(
+                network: network,
+                tokens: tokens,
+                analytics: analytics
+            )
+        }
+
         self.router = AppRouter()
+    }
+
+    /// A fresh media transport for one room.
+    ///
+    /// Built per room rather than held here, because a ``VoiceEngineProtocol``
+    /// owns exactly one connection and a shared one would mean the second room
+    /// somebody opened silently stole the first one's socket. The mocked engine
+    /// is used whenever the rooms service is mocked: a mocked join hands back a
+    /// token no real media server would accept.
+    @MainActor
+    public func makeVoiceEngine() -> VoiceEngineProtocol {
+        flags.useMockVoiceEngine ? VoiceEngineMock() : LiveKitVoiceEngine()
     }
 
     /// A container wired entirely to mocks, for previews.
@@ -237,7 +271,8 @@ public final class AppContainer {
         accountScenario: AccountServiceMock.MockScenario = .populated,
         profileScenario: ProfileServiceMock.MockScenario = .populated,
         safetyScenario: SafetyServiceMock.MockScenario = .populated,
-        notificationsScenario: NotificationsServiceMock.MockScenario = .populated
+        notificationsScenario: NotificationsServiceMock.MockScenario = .populated,
+        roomsScenario: RoomsServiceMock.MockScenario = .populated
     ) -> AppContainer {
         var flags = FeatureFlags()
         flags.useMockAuth = true
@@ -258,6 +293,9 @@ public final class AppContainer {
         flags.mockSafetyScenario = safetyScenario
         flags.useMockNotifications = true
         flags.mockNotificationsScenario = notificationsScenario
+        flags.useMockRooms = true
+        flags.mockRoomsScenario = roomsScenario
+        flags.useMockVoiceEngine = true
         return AppContainer(
             flags: flags,
             network: URLSessionNetworkClient(),
@@ -273,7 +311,8 @@ public final class AppContainer {
             accountService: AccountServiceMock(scenario: accountScenario),
             profileService: ProfileServiceMock(scenario: profileScenario),
             safetyService: SafetyServiceMock(scenario: safetyScenario),
-            notificationsService: NotificationsServiceMock(scenario: notificationsScenario)
+            notificationsService: NotificationsServiceMock(scenario: notificationsScenario),
+            roomsService: RoomsServiceMock(scenario: roomsScenario)
         )
     }
 }
