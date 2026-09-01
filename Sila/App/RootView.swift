@@ -114,6 +114,10 @@ public struct RootView: View {
                 if container.flags.feed {
                     MainTabView(container: container)
                         .transition(.opacity)
+                        // Once, on reaching the feed. `/languages` is
+                        // authenticated, so there is nothing to ask for before
+                        // this point, and nothing on screen waits for the answer.
+                        .task { await container.loadLanguages() }
                 } else {
                     // The Phase-3 kill switch: a verified user still gets in,
                     // they just get the pre-feed screen.
@@ -212,12 +216,12 @@ public struct RootView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Sign out") {
+                    Button(L10n.t("common.signOut")) {
                         Task { await container.session.signOut() }
                     }
                     .foregroundStyle(SLColor.textSecondary)
-                    .accessibilityLabel(Text("Sign out"))
-                    .accessibilityHint(Text("Ends your session and returns to the welcome screen"))
+                    .accessibilityLabel(Text(L10n.t("common.signOut")))
+                    .accessibilityHint(Text(L10n.t("app.signOut.hint")))
                 }
             }
         }
@@ -252,8 +256,8 @@ struct FeedPlaceholderScreen: View {
 
             SLEmptyState(
                 icon: "checkmark.seal.fill",
-                title: "You're in",
-                subtitle: "The feed arrives in Phase 3. Your account is verified and ready.",
+                title: L10n.t("app.placeholder.title"),
+                subtitle: L10n.t("app.placeholder.subtitle"),
                 tint: SLColor.secondary
             )
 
@@ -261,14 +265,15 @@ struct FeedPlaceholderScreen: View {
                 Text(email)
                     .font(SLFont.mono)
                     .foregroundStyle(SLColor.textMuted)
-                    .accessibilityLabel(Text("Signed in as \(email)"))
+                    .slContentDirection(TextDirection.resolve(languageCode: nil, text: email))
+                    .accessibilityLabel(Text(L10n.t("app.placeholder.signedInAs", email)))
             }
 
             SLButton(
-                "Sign out",
+                L10n.t("common.signOut"),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Ends your session and returns to the welcome screen",
+                accessibilityHint: L10n.t("app.signOut.hint"),
                 action: onSignOut
             )
             .padding(.horizontal, SLSpacing.xxl)

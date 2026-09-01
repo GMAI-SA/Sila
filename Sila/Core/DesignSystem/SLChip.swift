@@ -58,7 +58,7 @@ public struct SLChip: View {
             .buttonStyle(.plain)
             .disabled(onTap == nil)
             .accessibilityLabel(Text(title))
-            .accessibilityHint(Text(accessibilityHintText ?? "Filters by \(title)"))
+            .accessibilityHint(Text(accessibilityHintText ?? L10n.t("ds.chip.filterHint", title)))
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
 
             if let onRemove {
@@ -68,8 +68,8 @@ public struct SLChip: View {
                         .foregroundStyle(isSelected ? Color(tnHex: 0x02121C) : SLColor.textMuted)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Remove \(title)"))
-                .accessibilityHint(Text("Removes the \(title) tag"))
+                .accessibilityLabel(Text(L10n.t("ds.chip.removeLabel", title)))
+                .accessibilityHint(Text(L10n.t("ds.chip.removeHint", title)))
             }
         }
         .padding(.horizontal, SLSpacing.md)

@@ -51,17 +51,17 @@ public struct ComposerSheetScreen: View {
             .tnToast($viewModel.toast)
             .onAppear { focusedSegment = viewModel.segments.first?.id }
             .confirmationDialog(
-                "Discard this draft?",
+                L10n.t("composer.discard.title"),
                 isPresented: Binding(
                     get: { viewModel.isConfirmingDiscard },
                     set: { if !$0 { viewModel.cancelDiscard() } }
                 ),
                 titleVisibility: .visible
             ) {
-                Button("Discard", role: .destructive) { viewModel.confirmDiscard() }
-                Button("Keep writing", role: .cancel) { viewModel.cancelDiscard() }
+                Button(L10n.t("composer.discard.confirm"), role: .destructive) { viewModel.confirmDiscard() }
+                Button(L10n.t("composer.discard.keepWriting"), role: .cancel) { viewModel.cancelDiscard() }
             } message: {
-                Text("Your text will not be saved.")
+                Text(L10n.t("composer.discard.message"))
             }
         }
         .tint(SLColor.primary)
@@ -73,13 +73,14 @@ public struct ComposerSheetScreen: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button("Cancel") { viewModel.requestDismiss() }
+            Button(L10n.t("common.cancel")) { viewModel.requestDismiss() }
                 .foregroundStyle(SLColor.textSecondary)
-                .accessibilityLabel(Text("Cancel"))
+                .accessibilityIdentifier("composer.cancel")
+                .accessibilityLabel(Text(L10n.t("common.cancel")))
                 .accessibilityHint(Text(
                     viewModel.hasContent
-                        ? "Asks whether to discard this draft"
-                        : "Closes the composer"
+                        ? L10n.t("composer.cancel.a11yHintDiscard")
+                        : L10n.t("composer.cancel.a11yHintClose")
                 ))
         }
 
@@ -99,9 +100,9 @@ public struct ComposerSheetScreen: View {
 
     private var postHint: String {
         if viewModel.segments.count > 1 {
-            return "Posts \(viewModel.segments.count) linked posts, one after another"
+            return L10n.plural("composer.post.a11yHintThread", viewModel.segments.count)
         }
-        return "Publishes this post to \(viewModel.scopeSummary.title)"
+        return L10n.t("composer.post.a11yHintSingle", viewModel.scopeSummary.title)
     }
 
     // MARK: - Segments
@@ -155,9 +156,13 @@ public struct ComposerSheetScreen: View {
 
     private func segmentHeader(index: Int) -> some View {
         HStack(spacing: SLSpacing.sm) {
-            Text("\(index + 1) of \(viewModel.segments.count)")
-                .font(SLFont.micro)
-                .foregroundStyle(SLColor.textMuted)
+            Text(L10n.t(
+                "composer.segment.position",
+                SLFormat.number(index + 1),
+                SLFormat.number(viewModel.segments.count)
+            ))
+            .font(SLFont.micro)
+            .foregroundStyle(SLColor.textMuted)
 
             Spacer(minLength: 0)
 
@@ -170,8 +175,8 @@ public struct ComposerSheetScreen: View {
                         .foregroundStyle(SLColor.textMuted)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Remove post \(index + 1)"))
-                .accessibilityHint(Text("Deletes this post from the thread"))
+                .accessibilityLabel(Text(L10n.t("composer.segment.remove.a11yLabel", SLFormat.number(index + 1))))
+                .accessibilityHint(Text(L10n.t("composer.segment.remove.a11yHint")))
             }
         }
     }
@@ -184,7 +189,7 @@ public struct ComposerSheetScreen: View {
             HStack(spacing: SLSpacing.sm) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 16))
-                Text("Add another post")
+                Text(L10n.t("composer.segment.add"))
                     .font(SLFont.caption)
             }
             .foregroundStyle(SLColor.primary)
@@ -194,16 +199,16 @@ public struct ComposerSheetScreen: View {
         .buttonStyle(.plain)
         .disabled(!viewModel.metrics(at: viewModel.segments.count - 1).canPost)
         .opacity(viewModel.metrics(at: viewModel.segments.count - 1).canPost ? 1 : 0.4)
-        .accessibilityLabel(Text("Add another post to the thread"))
-        .accessibilityHint(Text("Each post is published in order, replying to the one before it"))
+        .accessibilityLabel(Text(L10n.t("composer.segment.add.a11yLabel")))
+        .accessibilityHint(Text(L10n.t("composer.segment.add.a11yHint")))
     }
 
     private func placeholder(for index: Int) -> String {
-        if index > 0 { return "Continue the thread…" }
+        if index > 0 { return L10n.t("composer.placeholder.continueThread") }
         switch viewModel.context {
-        case .newPost: return "What's happening?"
-        case let .reply(post): return "Reply to \(post.author.atHandle)"
-        case .quote: return "Add your thoughts"
+        case .newPost: return L10n.t("composer.placeholder.newPost")
+        case let .reply(post): return L10n.t("composer.placeholder.replyTo", post.author.atHandle)
+        case .quote: return L10n.t("composer.placeholder.quote")
         }
     }
 
@@ -211,7 +216,7 @@ public struct ComposerSheetScreen: View {
 
     private func quotedSection(_ post: Post) -> some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("QUOTING")
+            Text(L10n.t("composer.quote.sectionHeader"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -220,7 +225,7 @@ public struct ComposerSheetScreen: View {
             QuotedPostCard(post: post, onTap: {})
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text("Quoting \(post.author.displayName)"))
+        .accessibilityLabel(Text(L10n.t("composer.quote.a11yLabel", post.author.displayName)))
     }
 
     // MARK: - Partial failure
@@ -242,7 +247,7 @@ public struct ComposerSheetScreen: View {
                 .fill(SLColor.warning.opacity(0.1))
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("Thread partly posted. \(message)"))
+        .accessibilityLabel(Text(L10n.t("composer.thread.partialBanner.a11yLabel", message)))
     }
 }
 
@@ -276,12 +281,24 @@ public struct ComposerSheetHost: View {
 /// `TextEditor` rather than a multi-line `TextField` so the caret stays put as
 /// the draft grows past a few lines, with the system background stripped so the
 /// composer's own surface shows through.
+///
+/// The editor follows **what is being typed**, not what the app is set to. An
+/// Arabic sentence written on an English phone is right-aligned with its caret,
+/// its placeholder and its full stop on the correct end from the first strong
+/// character onward; an empty draft borrows the interface's direction until
+/// there is something to read a direction from.
 @MainActor
 struct ComposerEditor: View {
 
     @Binding var text: String
     let placeholder: String
     let isFocused: Bool
+
+    /// Recomputed on every keystroke, which is the point: the frame has to flip
+    /// the moment the first Arabic — or first Latin — character lands.
+    private var direction: TextDirection {
+        TextDirection.resolve(languageCode: nil, text: text)
+    }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -300,9 +317,12 @@ struct ComposerEditor: View {
                 .foregroundStyle(SLColor.textPrimary)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 96)
-                .accessibilityLabel(Text("Post text"))
-                .accessibilityHint(Text("Write your post. \(ComposerConstants.characterLimit) characters maximum"))
+                .accessibilityLabel(Text(L10n.t("composer.editor.a11yLabel")))
+                .accessibilityHint(Text(L10n.plural("composer.editor.a11yHint", ComposerConstants.characterLimit)))
         }
+        // Applied to the pair, so `.topLeading` puts the placeholder where the
+        // caret actually is and the two never sit on opposite edges.
+        .slContentDirection(direction)
         .padding(SLSpacing.sm)
         .background(SLColor.surface1)
         .clipShape(RoundedRectangle(cornerRadius: SLRadius.md))
@@ -331,6 +351,9 @@ struct ComposerCharacterRing: View {
                     .font(SLFont.micro)
                     .monospacedDigit()
                     .foregroundStyle(tint)
+                    // A budget with a minus sign in front of it once it is
+                    // breached: clock-style, left-to-right in both languages.
+                    .slContentDirection(.leftToRight)
             }
 
             ZStack {
@@ -345,7 +368,7 @@ struct ComposerCharacterRing: View {
             .animation(.easeOut(duration: 0.15), value: metrics.progress)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Character count"))
+        .accessibilityLabel(Text(L10n.t("composer.counter.a11yLabel")))
         .accessibilityValue(Text(metrics.accessibilityValue))
     }
 
@@ -382,10 +405,15 @@ struct MentionSuggestionList: View {
 
                             VStack(alignment: .leading, spacing: 1) {
                                 HStack(spacing: SLSpacing.xs) {
+                                    // Somebody's own name reads in its own
+                                    // direction, whatever the app is set to.
                                     Text(user.displayName)
                                         .font(SLFont.caption)
                                         .foregroundStyle(SLColor.textPrimary)
                                         .lineLimit(1)
+                                        .slContentDirection(
+                                            TextDirection.resolve(languageCode: nil, text: user.displayName)
+                                        )
                                     if user.isVerified {
                                         SLVerifiedBadge(size: 12, isPulsing: false)
                                     }
@@ -394,6 +422,7 @@ struct MentionSuggestionList: View {
                                 Text(user.atHandle)
                                     .font(SLFont.micro)
                                     .foregroundStyle(SLColor.textMuted)
+                                    .slContentDirection(.leftToRight)
                             }
 
                             Spacer(minLength: 0)
@@ -403,8 +432,12 @@ struct MentionSuggestionList: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Mention \(user.displayName), \(user.atHandle)"))
-                    .accessibilityHint(Text("Inserts this handle into your post"))
+                    .accessibilityLabel(Text(L10n.t(
+                        "composer.mention.row.a11yLabel",
+                        user.displayName,
+                        user.atHandle
+                    )))
+                    .accessibilityHint(Text(L10n.t("composer.mention.row.a11yHint")))
 
                     if user.id != viewModel.mentionSuggestions.last?.id {
                         SLDivider()

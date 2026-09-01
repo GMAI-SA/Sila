@@ -31,39 +31,40 @@ struct PasswordChangeSheet: View {
 
     private var form: some View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
-            Text("Changing your password signs every device out — this one included. "
-                 + "That is the point: a password change is what you do when you think "
-                 + "a session isn't yours.")
+            Text(L10n.t("account.password.intro"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             SLTextField(
-                "Current password",
+                L10n.t("account.field.currentPassword.label"),
                 text: $viewModel.passwordCurrent,
-                placeholder: "The one you use now",
+                placeholder: L10n.t("account.password.current.placeholder"),
                 isSecure: true,
                 contentType: .password,
-                accessibilityHint: "Proves this is your account, not just an unlocked phone"
+                accessibilityHint: L10n.t("account.password.current.hint")
             )
 
             SLTextField(
-                "New password",
+                L10n.t("account.password.new.label"),
                 text: $viewModel.passwordNew,
-                placeholder: "At least \(AccountLimits.minimumPasswordLength) characters",
+                placeholder: L10n.plural(
+                    "account.password.new.placeholder",
+                    AccountLimits.minimumPasswordLength
+                ),
                 isSecure: true,
                 contentType: .newPassword,
-                accessibilityHint: "The password you want from now on"
+                accessibilityHint: L10n.t("account.password.new.hint")
             )
 
             SLTextField(
-                "Repeat new password",
+                L10n.t("account.password.repeat.label"),
                 text: $viewModel.passwordRepeat,
-                placeholder: "The same again",
+                placeholder: L10n.t("account.password.repeat.placeholder"),
                 isSecure: true,
                 contentType: .newPassword,
                 error: viewModel.passwordValidationError,
-                accessibilityHint: "Typed twice so a slip does not lock you out"
+                accessibilityHint: L10n.t("account.password.repeat.hint")
             )
 
             if let error = viewModel.passwordError {
@@ -71,11 +72,11 @@ struct PasswordChangeSheet: View {
             }
 
             SLButton(
-                "Change password",
+                L10n.t("account.password.submit"),
                 variant: .primary,
                 isLoading: viewModel.isChangingPassword,
                 isEnabled: viewModel.canChangePassword,
-                accessibilityHint: "Replaces your password and signs every device out",
+                accessibilityHint: L10n.t("account.password.submit.hint"),
                 asyncAction: { await viewModel.changePassword() }
             )
         }
@@ -85,15 +86,15 @@ struct PasswordChangeSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
             SLEmptyState(
                 icon: "checkmark.shield.fill",
-                title: "Password changed",
+                title: L10n.t("account.password.changed.title"),
                 subtitle: viewModel.passwordChangeOutcome,
                 tint: SLColor.secondary
             )
 
             SLButton(
-                "Sign out now",
+                L10n.t("account.password.signOutNow"),
                 variant: .secondary,
-                accessibilityHint: "Ends this session so you can sign in with the new password",
+                accessibilityHint: L10n.t("account.password.signOutNow.hint"),
                 action: {
                     viewModel.presentedSheet = nil
                     viewModel.signOut()
@@ -101,10 +102,10 @@ struct PasswordChangeSheet: View {
             )
 
             SLButton(
-                "Stay signed in for now",
+                L10n.t("account.password.staySignedIn"),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Closes this sheet without ending the session",
+                accessibilityHint: L10n.t("account.password.staySignedIn.hint"),
                 action: { viewModel.presentedSheet = nil }
             )
         }
@@ -144,42 +145,45 @@ struct EmailChangeSheet: View {
 
     private var entry: some View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
-            Text("You sign in with \(viewModel.account?.email ?? "this address"). "
-                 + "Sila will email a six-digit code to the **new** address — not to this "
-                 + "one — because the only thing worth proving here is that you can read "
-                 + "the mailbox you are moving to.")
+            Text(L10n.t(
+                "account.email.intro",
+                viewModel.account?.email ?? L10n.t("account.email.intro.thisAddress")
+            ))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             SLTextField(
-                "Current password",
+                L10n.t("account.field.currentPassword.label"),
                 text: $viewModel.emailPassword,
-                placeholder: "Your password",
+                placeholder: L10n.t("account.field.currentPassword.placeholder"),
                 isSecure: true,
                 contentType: .password,
-                accessibilityHint: "Required: an unlocked phone must not be enough to move an account"
+                accessibilityHint: L10n.t("account.email.password.hint")
             )
 
+            // An address is Latin text with a `@` and dots in it; laid out
+            // right-to-left the domain ends up before the local part.
             SLTextField(
-                "New email",
+                L10n.t("account.email.new.label"),
                 text: $viewModel.emailNew,
                 placeholder: "you@newaddress.com",
                 keyboard: .emailAddress,
                 contentType: .emailAddress,
-                accessibilityHint: "The address the confirmation code will be sent to"
+                accessibilityHint: L10n.t("account.email.new.hint")
             )
+            .slContentDirection(.leftToRight)
 
             if let error = viewModel.emailError {
                 errorBox(error)
             }
 
             SLButton(
-                "Send code to the new address",
+                L10n.t("account.email.send"),
                 variant: .primary,
                 isLoading: viewModel.isWorkingOnEmail,
                 isEnabled: viewModel.canRequestEmailChange,
-                accessibilityHint: "Emails a six-digit code to the address you typed above",
+                accessibilityHint: L10n.t("account.email.send.hint"),
                 asyncAction: { await viewModel.requestEmailChange() }
             )
         }
@@ -189,15 +193,15 @@ struct EmailChangeSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
             SLCard {
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
-                    Text("CODE SENT TO")
+                    Text(L10n.t("account.email.code.sentTo"))
                         .font(SLFont.micro)
                         .tracking(0.8)
                         .foregroundStyle(SLColor.textSecondary)
                     Text(address)
                         .font(SLFont.mono)
                         .foregroundStyle(SLColor.textPrimary)
-                    Text("Not to your current address. Your email does not change until "
-                         + "the code is accepted, so you can still sign in with the old one.")
+                        .slContentDirection(.leftToRight)
+                    Text(L10n.t("account.email.code.note"))
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -205,33 +209,39 @@ struct EmailChangeSheet: View {
             }
             .accessibilityElement(children: .combine)
 
+            // A one-time code is digits. It is typed and read left-to-right.
             SLTextField(
-                "Code",
+                L10n.t("account.email.code.label"),
                 text: $viewModel.emailCode,
                 placeholder: String(repeating: "0", count: AppConfig.otpLength),
                 keyboard: .numberPad,
                 contentType: .oneTimeCode,
-                accessibilityHint: "The \(AppConfig.otpLength) digits emailed to \(address)"
+                accessibilityHint: L10n.plural(
+                    "account.email.code.hint",
+                    AppConfig.otpLength,
+                    address
+                )
             )
+            .slContentDirection(.leftToRight)
 
             if let error = viewModel.emailError {
                 errorBox(error)
             }
 
             SLButton(
-                "Confirm new email",
+                L10n.t("account.email.confirm"),
                 variant: .primary,
                 isLoading: viewModel.isWorkingOnEmail,
                 isEnabled: viewModel.canConfirmEmailChange,
-                accessibilityHint: "Moves your account to \(address)",
+                accessibilityHint: L10n.t("account.email.confirm.hint", address),
                 asyncAction: { await viewModel.confirmEmailChange() }
             )
 
             SLButton(
-                "Use a different address",
+                L10n.t("account.email.useDifferent"),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Discards this code and starts again",
+                accessibilityHint: L10n.t("account.email.useDifferent.hint"),
                 action: { viewModel.resetEmailChange() }
             )
         }
@@ -241,14 +251,14 @@ struct EmailChangeSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
             SLEmptyState(
                 icon: "envelope.badge.shield.half.filled",
-                title: "Email changed",
-                subtitle: "You now sign in with \(address). Your old address no longer works.",
+                title: L10n.t("account.email.done.title"),
+                subtitle: L10n.t("account.email.done.subtitle", address),
                 tint: SLColor.secondary
             )
             SLButton(
-                "Done",
+                L10n.t("common.done"),
                 variant: .primary,
-                accessibilityHint: "Closes this sheet",
+                accessibilityHint: L10n.t("account.email.done.hint"),
                 action: {
                     viewModel.resetEmailChange()
                     viewModel.presentedSheet = nil
@@ -277,7 +287,7 @@ struct PhoneSheet: View {
             VStack(alignment: .leading, spacing: SLSpacing.lg) {
                 SLCard {
                     VStack(alignment: .leading, spacing: SLSpacing.xs) {
-                        Text("NOT A VERIFICATION")
+                        Text(L10n.t("account.phone.notAVerification"))
                             .font(SLFont.micro)
                             .tracking(0.8)
                             .foregroundStyle(SLColor.warning)
@@ -285,8 +295,7 @@ struct PhoneSheet: View {
                             .font(SLFont.body)
                             .foregroundStyle(SLColor.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Your country flag and your verified badge come from identity "
-                             + "verification, and a phone number cannot change either of them.")
+                        Text(L10n.t("account.phone.badgeNote"))
                             .font(SLFont.micro)
                             .foregroundStyle(SLColor.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -296,53 +305,57 @@ struct PhoneSheet: View {
 
                 if let current = viewModel.displayPhone {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("ON FILE")
+                        Text(L10n.t("account.phone.onFile"))
                             .font(SLFont.micro)
                             .tracking(0.8)
                             .foregroundStyle(SLColor.textSecondary)
+                        // `+966 501 234 567` is one left-to-right run. Mirrored,
+                        // the `+` lands at the end and the groups read backwards.
                         Text(current)
                             .font(SLFont.mono)
                             .foregroundStyle(SLColor.textPrimary)
+                            .slContentDirection(.leftToRight)
                     }
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel(Text("Number on file, unverified: \(current)"))
+                    .accessibilityLabel(Text(L10n.t("account.phone.onFile.a11y", current)))
                 }
 
                 SLTextField(
-                    "Current password",
+                    L10n.t("account.field.currentPassword.label"),
                     text: $viewModel.phonePassword,
-                    placeholder: "Your password",
+                    placeholder: L10n.t("account.field.currentPassword.placeholder"),
                     isSecure: true,
                     contentType: .password,
-                    accessibilityHint: "Required for any change to your account details"
+                    accessibilityHint: L10n.t("account.phone.password.hint")
                 )
 
                 SLTextField(
-                    "Phone number",
+                    L10n.t("account.phone.field.label"),
                     text: $viewModel.phoneDraft,
                     placeholder: "+966501234567",
                     keyboard: .phonePad,
                     contentType: .telephoneNumber,
                     error: viewModel.phoneError,
-                    accessibilityHint: "International format, starting with a plus and a country code"
+                    accessibilityHint: L10n.t("account.phone.field.hint")
                 )
+                .slContentDirection(.leftToRight)
 
                 SLButton(
-                    "Save number",
+                    L10n.t("account.phone.save"),
                     variant: .primary,
                     isLoading: viewModel.isSavingPhone,
                     isEnabled: viewModel.canSavePhone,
-                    accessibilityHint: "Stores this number as a contact detail. It is not verified.",
+                    accessibilityHint: L10n.t("account.phone.save.hint"),
                     asyncAction: { await viewModel.savePhone() }
                 )
 
                 if viewModel.hasPhone {
                     SLButton(
-                        "Remove the number on file",
+                        L10n.t("account.phone.remove"),
                         variant: .ghost,
                         size: .compact,
                         isEnabled: !viewModel.phonePassword.isEmpty && !viewModel.isSavingPhone,
-                        accessibilityHint: "Deletes your contact number. Also needs your password.",
+                        accessibilityHint: L10n.t("account.phone.remove.hint"),
                         asyncAction: { await viewModel.removePhone() }
                     )
                 }
@@ -386,16 +399,16 @@ struct DeleteAccountSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 SLTextField(
-                    "Current password",
+                    L10n.t("account.field.currentPassword.label"),
                     text: $viewModel.deletion.currentPassword,
-                    placeholder: "Your password",
+                    placeholder: L10n.t("account.field.currentPassword.placeholder"),
                     isSecure: true,
                     contentType: .password,
-                    accessibilityHint: "Proves this is your account before anything is deleted"
+                    accessibilityHint: L10n.t("account.delete.password.hint")
                 )
 
                 SLTextField(
-                    "Type \(DeletionConfirmation.requiredWord)",
+                    L10n.t("account.delete.typeWord.label", DeletionConfirmation.requiredWord),
                     text: $viewModel.deletion.typedWord,
                     placeholder: DeletionConfirmation.requiredWord,
                     // Deliberately **not** `.characters`. Auto-capitalising would
@@ -403,8 +416,10 @@ struct DeleteAccountSheet: View {
                     // the whole reason this field exists is that typing the word
                     // has to be a deliberate act rather than a reflex.
                     autocapitalization: .never,
-                    accessibilityHint: "Type the word \(DeletionConfirmation.requiredWord) in "
-                        + "capital letters, exactly, to confirm"
+                    accessibilityHint: L10n.t(
+                        "account.delete.typeWord.hint",
+                        DeletionConfirmation.requiredWord
+                    )
                 )
 
                 if let reason = viewModel.deletionBlockingReason {
@@ -412,7 +427,7 @@ struct DeleteAccountSheet: View {
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textMuted)
                         .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityLabel(Text("Not ready yet. \(reason)"))
+                        .accessibilityLabel(Text(L10n.t("account.delete.notReady.a11y", reason)))
                 }
 
                 if let error = viewModel.deletionError {
@@ -420,19 +435,21 @@ struct DeleteAccountSheet: View {
                 }
 
                 SLButton(
-                    "Delete my account",
+                    L10n.t("account.delete.confirmButton"),
                     variant: .destructive,
                     isLoading: viewModel.isDeleting,
                     isEnabled: viewModel.canConfirmDeletion,
-                    accessibilityHint: "Deactivates your account now and schedules it for "
-                        + "deletion in \(DeletionDisclosure.graceDays) days",
+                    accessibilityHint: L10n.plural(
+                        "account.delete.confirmButton.hint",
+                        DeletionDisclosure.graceDays
+                    ),
                     asyncAction: { await viewModel.requestDeletion() }
                 )
 
                 SLButton(
-                    "Keep my account",
+                    L10n.t("account.delete.keepButton"),
                     variant: .ghost,
-                    accessibilityHint: "Closes this without deleting anything",
+                    accessibilityHint: L10n.t("account.delete.keepButton.hint"),
                     action: { viewModel.presentedSheet = nil }
                 )
             }
@@ -446,7 +463,7 @@ struct DeleteAccountSheet: View {
 
     private var consequences: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            Text("What happens when you confirm")
+            Text(L10n.t("account.delete.consequences.header"))
                 .font(SLFont.bodyEmphasis)
                 .foregroundStyle(SLColor.textPrimary)
                 .accessibilityAddTraits(.isHeader)
@@ -510,9 +527,9 @@ struct AccountRecoveryScreen: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            SLBadge("Scheduled for deletion", style: .danger, icon: "clock.badge.exclamationmark")
+            SLBadge(L10n.t("account.recovery.badge"), style: .danger, icon: "clock.badge.exclamationmark")
 
-            Text("This account is being deleted")
+            Text(L10n.t("account.recovery.title"))
                 .font(SLFont.displayM)
                 .foregroundStyle(SLColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -532,18 +549,17 @@ struct AccountRecoveryScreen: View {
     /// days is the thing they are actually asking.
     private var countdown: String {
         guard let days = viewModel.daysUntilPurge() else {
-            return "Everything is still here, and cancelling below brings it all back."
+            return L10n.t("account.recovery.countdown.unknown")
         }
         if days <= 0 {
-            return "The deletion runs today. Cancelling now still works, but not for much longer."
+            return L10n.t("account.recovery.countdown.today")
         }
-        return "Everything is still here for another \(days) day\(days == 1 ? "" : "s"). "
-            + "Cancel below and your posts, follows and settings come back exactly as they were."
+        return L10n.plural("account.recovery.countdown.days", days)
     }
 
     private var whatIsHappening: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            Text("Right now")
+            Text(L10n.t("account.recovery.currentState.header"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -575,13 +591,13 @@ struct AccountRecoveryScreen: View {
 
     /// The facts about the current state, held here so they are asserted in
     /// tests rather than left to drift.
-    static let currentState = [
-        "Your posts are hidden from every feed, search result and thread, and your "
-            + "profile does not resolve.",
-        "Nothing else on Sila works while this is pending — that is why this is the "
-            + "only screen you can reach.",
-        "Nothing has been destroyed. Cancelling restores all of it."
-    ]
+    static var currentState: [String] {
+        [
+            L10n.t("account.recovery.currentState.posts"),
+            L10n.t("account.recovery.currentState.scope"),
+            L10n.t("account.recovery.currentState.reversible")
+        ]
+    }
 
     private var cancelAction: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
@@ -590,10 +606,10 @@ struct AccountRecoveryScreen: View {
             }
 
             SLButton(
-                "Cancel deletion",
+                L10n.t("account.recovery.cancelDeletion"),
                 variant: .primary,
                 isLoading: viewModel.isCancellingDeletion,
-                accessibilityHint: "Restores your account, your posts and your settings immediately",
+                accessibilityHint: L10n.t("account.recovery.cancelDeletion.hint"),
                 asyncAction: { await viewModel.cancelDeletion() }
             )
         }
@@ -601,17 +617,16 @@ struct AccountRecoveryScreen: View {
 
     private var signOut: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("If you meant to leave, there is nothing more to do. The deletion "
-                 + "finishes on its own.")
+            Text(L10n.t("account.recovery.signOut.note"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
 
             SLButton(
-                "Sign out",
+                L10n.t("common.signOut"),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Leaves the app. The deletion stays scheduled.",
+                accessibilityHint: L10n.t("account.recovery.signOut.hint"),
                 action: { viewModel.signOut() }
             )
         }
@@ -644,10 +659,10 @@ func errorBox(_ text: String) -> some View {
 @MainActor
 func closeButton(_ viewModel: AccountViewModel) -> some ToolbarContent {
     ToolbarItem(placement: .topBarLeading) {
-        Button("Cancel") { viewModel.presentedSheet = nil }
+        Button(L10n.t("common.cancel")) { viewModel.presentedSheet = nil }
             .foregroundStyle(SLColor.textSecondary)
-            .accessibilityLabel(Text("Cancel"))
-            .accessibilityHint(Text("Closes this form without changing anything"))
+            .accessibilityLabel(Text(L10n.t("common.cancel")))
+            .accessibilityHint(Text(L10n.t("account.sheet.cancel.hint")))
     }
 }
 

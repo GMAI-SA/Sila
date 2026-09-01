@@ -38,7 +38,11 @@ public struct AccountScreen: View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .tnScreenBackground()
-            .tnNavigationBar(title: viewModel.route == .recovery ? "Account deletion" : "Account")
+            .tnNavigationBar(
+                title: viewModel.route == .recovery
+                    ? L10n.t("account.nav.deletionTitle")
+                    : L10n.t("account.nav.title")
+            )
             .toolbar {
                 if let onClose {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -46,10 +50,10 @@ public struct AccountScreen: View {
                         // in a sheet would be its own kind of dead end, and
                         // leaving is not the same as giving up the cancel —
                         // reopening Account brings them straight back here.
-                        Button("Done") { onClose() }
+                        Button(L10n.t("common.done")) { onClose() }
                             .foregroundStyle(SLColor.primary)
-                            .accessibilityLabel(Text("Done"))
-                            .accessibilityHint(Text("Closes account settings"))
+                            .accessibilityLabel(Text(L10n.t("common.done")))
+                            .accessibilityHint(Text(L10n.t("account.done.hint")))
                     }
                 }
             }
@@ -93,10 +97,10 @@ public struct AccountScreen: View {
             ScrollView {
                 SLEmptyState(
                     icon: "wifi.exclamationmark",
-                    title: "Couldn't load your account",
+                    title: L10n.t("account.load.error.title"),
                     subtitle: error,
                     tint: SLColor.danger,
-                    actionTitle: "Try again",
+                    actionTitle: L10n.t("account.load.retry"),
                     action: { Task { await viewModel.reload() } }
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -129,7 +133,7 @@ public struct AccountScreen: View {
         }
         .padding(.top, SLSpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityLabel(Text("Loading your account"))
+        .accessibilityLabel(Text(L10n.t("account.loading.a11y")))
     }
 
     // MARK: - Identity
@@ -147,9 +151,18 @@ public struct AccountScreen: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: SLSpacing.sm) {
-                        Text(viewModel.account?.displayName ?? "No name set")
+                        // A display name is the user's own text: an English name
+                        // inside an Arabic interface still reads left to right,
+                        // and the fallback sentence follows the interface.
+                        Text(viewModel.account?.displayName ?? L10n.t("account.identity.noName"))
                             .font(SLFont.bodyEmphasis)
                             .foregroundStyle(SLColor.textPrimary)
+                            .slContentDirection(
+                                TextDirection.resolve(
+                                    languageCode: nil,
+                                    text: viewModel.account?.displayName
+                                )
+                            )
 
                         // The one badge on this screen, and it comes from
                         // identity verification. Nothing else here borrows it.
@@ -157,9 +170,12 @@ public struct AccountScreen: View {
                     }
 
                     if let handle = viewModel.account?.atHandle {
+                        // `@aziz_sa` is a Latin token. Laid out right-to-left the
+                        // `@` jumps to the wrong end of it.
                         Text(handle)
                             .font(SLFont.caption)
                             .foregroundStyle(SLColor.textSecondary)
+                            .slContentDirection(.leftToRight)
                     }
 
                     Text(viewModel.account?.email ?? "")
@@ -167,6 +183,7 @@ public struct AccountScreen: View {
                         .foregroundStyle(SLColor.textMuted)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
+                        .slContentDirection(.leftToRight)
                 }
 
                 Spacer(minLength: 0)
@@ -179,7 +196,7 @@ public struct AccountScreen: View {
 
     private var pictureSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("PROFILE PICTURE")
+            sectionHeader(L10n.t("account.section.picture"))
 
             // Stated up front, not tucked under a chevron: one of these facts is
             // that a photo carries where it was taken, and nobody reads
@@ -199,7 +216,11 @@ public struct AccountScreen: View {
                     matching: .images,
                     photoLibrary: .shared()
                 ) {
-                    Text(viewModel.account?.avatarPath == nil ? "Choose photo" : "Replace photo")
+                    Text(L10n.t(
+                        viewModel.account?.avatarPath == nil
+                            ? "account.picture.choose"
+                            : "account.picture.replace"
+                    ))
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textPrimary)
                         .frame(maxWidth: .infinity)
@@ -213,18 +234,19 @@ public struct AccountScreen: View {
                 }
                 .disabled(viewModel.isWorkingOnAvatar)
                 .opacity(viewModel.isWorkingOnAvatar ? 0.45 : 1)
-                .accessibilityLabel(Text("Choose a profile picture"))
-                .accessibilityHint(Text(
-                    "Opens your photo library. Images over 5 megabytes are refused before uploading."
-                ))
+                .accessibilityLabel(Text(L10n.t("account.picture.choose.a11yLabel")))
+                .accessibilityHint(Text(L10n.plural(
+                    "account.picture.choose.a11yHint",
+                    AvatarUpload.maximumBytes / (1024 * 1024)
+                )))
 
                 if viewModel.account?.avatarPath != nil {
                     SLButton(
-                        "Remove",
+                        L10n.t("account.picture.remove"),
                         variant: .ghost,
                         size: .compact,
                         isEnabled: !viewModel.isWorkingOnAvatar,
-                        accessibilityHint: "Deletes your profile picture from Sila",
+                        accessibilityHint: L10n.t("account.picture.remove.hint"),
                         asyncAction: { await viewModel.removeAvatar() }
                     )
                     .frame(width: 100)
@@ -232,7 +254,7 @@ public struct AccountScreen: View {
             }
 
             if viewModel.isWorkingOnAvatar {
-                Text("Uploading…")
+                Text(L10n.t("account.picture.uploading"))
                     .font(SLFont.micro)
                     .foregroundStyle(SLColor.textMuted)
             }
@@ -254,36 +276,53 @@ public struct AccountScreen: View {
 
     private var profileSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("PROFILE")
+            sectionHeader(L10n.t("account.section.profile"))
 
+            // The name and the bio are the user's own writing, so both fields
+            // follow what is being typed into them rather than the interface.
             SLTextField(
-                "Display name",
+                L10n.t("account.profile.displayName.label"),
                 text: $viewModel.profileDraft.displayName,
-                placeholder: "The name people see",
+                placeholder: L10n.t("account.profile.displayName.placeholder"),
                 autocapitalization: .words,
-                accessibilityHint: "The name shown beside your posts"
+                accessibilityHint: L10n.t("account.profile.displayName.hint")
+            )
+            .slContentDirection(
+                TextDirection.resolve(languageCode: nil, text: viewModel.profileDraft.displayName)
             )
 
+            // A handle is `[a-z0-9_]`. It is typed and read left-to-right in
+            // every interface language; the example is not translated copy.
             SLTextField(
-                "Handle",
+                L10n.t("account.profile.handle.label"),
                 text: $viewModel.profileDraft.handle,
                 placeholder: "aziz_sa",
-                accessibilityHint: "Three to twenty characters of lowercase letters, numbers and underscores"
+                accessibilityHint: L10n.t("account.profile.handle.hint")
             )
+            .slContentDirection(.leftToRight)
 
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
                 SLTextField(
-                    "Bio",
+                    L10n.t("account.profile.bio.label"),
                     text: $viewModel.profileDraft.bio,
-                    placeholder: "A line or two about you",
+                    placeholder: L10n.t("account.profile.bio.placeholder"),
                     autocapitalization: .sentences,
-                    accessibilityHint: "Up to \(AccountLimits.maximumBioLength) characters shown on your profile"
+                    accessibilityHint: L10n.plural(
+                        "account.profile.bio.hint",
+                        AccountLimits.maximumBioLength
+                    )
+                )
+                .slContentDirection(
+                    TextDirection.resolve(languageCode: nil, text: viewModel.profileDraft.bio)
                 )
 
-                Text("\(viewModel.bioRemaining) characters left")
+                Text(L10n.plural("account.profile.bio.remaining", viewModel.bioRemaining))
                     .font(SLFont.micro)
                     .foregroundStyle(viewModel.bioRemaining < 0 ? SLColor.danger : SLColor.textMuted)
-                    .accessibilityLabel(Text("\(viewModel.bioRemaining) characters left in your bio"))
+                    .accessibilityLabel(Text(L10n.plural(
+                        "account.profile.bio.remaining.a11y",
+                        viewModel.bioRemaining
+                    )))
             }
 
             if let error = viewModel.profileValidationError ?? viewModel.profileError {
@@ -291,7 +330,11 @@ public struct AccountScreen: View {
             }
 
             HStack(spacing: SLSpacing.md) {
-                Text(viewModel.hasProfileChanges ? "Unsaved changes" : "Everything here is saved")
+                Text(L10n.t(
+                    viewModel.hasProfileChanges
+                        ? "account.profile.status.unsaved"
+                        : "account.profile.status.saved"
+                ))
                     .font(SLFont.caption)
                     .foregroundStyle(
                         viewModel.hasProfileChanges ? SLColor.warning : SLColor.textSecondary
@@ -301,23 +344,23 @@ public struct AccountScreen: View {
 
                 if viewModel.hasProfileChanges {
                     SLButton(
-                        "Discard",
+                        L10n.t("account.profile.discard"),
                         variant: .ghost,
                         size: .compact,
                         isEnabled: !viewModel.isSavingProfile,
-                        accessibilityHint: "Restores the profile Sila has stored",
+                        accessibilityHint: L10n.t("account.profile.discard.hint"),
                         action: { viewModel.discardProfileChanges() }
                     )
                     .frame(width: 92)
                 }
 
                 SLButton(
-                    "Save",
+                    L10n.t("common.save"),
                     variant: .primary,
                     size: .compact,
                     isLoading: viewModel.isSavingProfile,
                     isEnabled: viewModel.canSaveProfile,
-                    accessibilityHint: "Sends your name, handle and bio to Sila",
+                    accessibilityHint: L10n.t("account.profile.save.hint"),
                     asyncAction: { await viewModel.saveProfile() }
                 )
                 .frame(width: 104)
@@ -329,16 +372,17 @@ public struct AccountScreen: View {
 
     private var contactSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("CONTACT")
+            sectionHeader(L10n.t("account.section.contact"))
 
             settingsRow(
                 icon: "envelope",
-                title: "Email",
+                title: L10n.t("account.email.row.title"),
                 value: viewModel.account?.email ?? "—",
-                detail: "The address you sign in with. Changing it needs your password "
-                    + "and a code sent to the new address.",
-                actionLabel: "Change",
-                hint: "Opens the two-step email change"
+                // An address never reverses, whatever the interface is doing.
+                valueDirection: .leftToRight,
+                detail: L10n.t("account.email.row.detail"),
+                actionLabel: L10n.t("account.email.row.action"),
+                hint: L10n.t("account.email.row.hint")
             ) {
                 viewModel.presentedSheet = .email
             }
@@ -356,11 +400,20 @@ public struct AccountScreen: View {
     private var phoneRow: some View {
         settingsRow(
             icon: "phone",
-            title: "Phone number",
-            value: viewModel.displayPhone ?? "Not set",
+            title: L10n.t("account.phone.row.title"),
+            value: viewModel.displayPhone ?? L10n.t("account.phone.row.empty"),
+            // An E.164 number is a run of digits behind a `+`. Rendered
+            // right-to-left the plus lands after the number and the grouping
+            // reads backwards, so a stored number is pinned; the "Not set"
+            // sentence is interface copy and follows the interface.
+            valueDirection: viewModel.displayPhone == nil
+                ? (L10n.isRightToLeft ? .rightToLeft : .leftToRight)
+                : .leftToRight,
             detail: PhoneNumber.unverifiedCaption,
-            actionLabel: viewModel.hasPhone ? "Change" : "Add",
-            hint: "Opens the contact number form, which needs your password"
+            actionLabel: L10n.t(
+                viewModel.hasPhone ? "account.phone.row.change" : "account.phone.row.add"
+            ),
+            hint: L10n.t("account.phone.row.hint")
         ) {
             viewModel.phoneDraft = viewModel.account?.phone ?? ""
             viewModel.presentedSheet = .phone
@@ -371,15 +424,15 @@ public struct AccountScreen: View {
 
     private var securitySection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("SECURITY")
+            sectionHeader(L10n.t("account.section.security"))
 
             settingsRow(
                 icon: "lock",
-                title: "Password",
+                title: L10n.t("account.password.row.title"),
                 value: "••••••••",
-                detail: "Changing it signs every device out, including this one.",
-                actionLabel: "Change",
-                hint: "Opens the password change form"
+                detail: L10n.t("account.password.row.detail"),
+                actionLabel: L10n.t("account.password.row.action"),
+                hint: L10n.t("account.password.row.hint")
             ) {
                 viewModel.presentedSheet = .password
             }
@@ -390,18 +443,15 @@ public struct AccountScreen: View {
 
     private var dataSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("YOUR DATA")
+            sectionHeader(L10n.t("account.section.data"))
 
             SLCard {
                 VStack(alignment: .leading, spacing: SLSpacing.sm) {
-                    Text("Download everything")
+                    Text(L10n.t("account.export.title"))
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(SLColor.textPrimary)
 
-                    Text("Your account, every post you have written, your topic settings "
-                         + "and who you follow, as a JSON file. Automatic topic labels are "
-                         + "left out and the file says so: they are guesses Sila made about "
-                         + "your posts, not anything you wrote.")
+                    Text(L10n.t("account.export.detail"))
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -412,23 +462,27 @@ public struct AccountScreen: View {
 
                     HStack(spacing: SLSpacing.md) {
                         SLButton(
-                            viewModel.exportFile == nil ? "Download" : "Download again",
+                            L10n.t(
+                                viewModel.exportFile == nil
+                                    ? "account.export.download"
+                                    : "account.export.downloadAgain"
+                            ),
                             variant: .secondary,
                             size: .compact,
                             isLoading: viewModel.isExporting,
-                            accessibilityHint: "Fetches a copy of everything Sila holds about you",
+                            accessibilityHint: L10n.t("account.export.download.hint"),
                             asyncAction: { await viewModel.exportAccount() }
                         )
 
                         if let file = viewModel.exportFile {
                             ShareLink(item: file) {
-                                Text("Save or share")
+                                Text(L10n.t("account.export.share"))
                                     .font(SLFont.caption)
                                     .foregroundStyle(SLColor.primary)
                                     .frame(height: 40)
                             }
-                            .accessibilityLabel(Text("Save or share your data export"))
-                            .accessibilityHint(Text("Opens the share sheet with the downloaded file"))
+                            .accessibilityLabel(Text(L10n.t("account.export.share.a11yLabel")))
+                            .accessibilityHint(Text(L10n.t("account.export.share.hint")))
                         }
                     }
                 }
@@ -440,7 +494,7 @@ public struct AccountScreen: View {
 
     private var dangerSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("DELETE ACCOUNT")
+            sectionHeader(L10n.t("account.section.delete"))
 
             SLCard {
                 VStack(alignment: .leading, spacing: SLSpacing.sm) {
@@ -455,11 +509,10 @@ public struct AccountScreen: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     SLButton(
-                        "Delete account…",
+                        L10n.t("account.delete.open"),
                         variant: .destructive,
                         size: .compact,
-                        accessibilityHint: "Opens the deletion form, which explains what happens "
-                            + "and asks for your password",
+                        accessibilityHint: L10n.t("account.delete.open.hint"),
                         action: { viewModel.presentedSheet = .delete }
                     )
                     .padding(.top, SLSpacing.xs)
@@ -486,10 +539,18 @@ public struct AccountScreen: View {
 
     // MARK: - Building blocks
 
+    /// One settings row: an icon, a label, the value, and the control that
+    /// changes it.
+    ///
+    /// - Parameter valueDirection: Which way the *value* reads. The label, the
+    ///   caption and the button follow the interface; an email address or an
+    ///   E.164 number does not, and pinning it here is the whole reason this is
+    ///   a parameter rather than an assumption.
     private func settingsRow(
         icon: String,
         title: String,
         value: String,
+        valueDirection: TextDirection? = nil,
         detail: String,
         actionLabel: String,
         hint: String,
@@ -514,6 +575,10 @@ public struct AccountScreen: View {
                             .foregroundStyle(SLColor.textPrimary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
+                            .slContentDirection(
+                                valueDirection
+                                    ?? (L10n.isRightToLeft ? .rightToLeft : .leftToRight)
+                            )
                     }
 
                     Spacer(minLength: 0)

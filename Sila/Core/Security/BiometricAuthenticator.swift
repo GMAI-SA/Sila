@@ -8,10 +8,10 @@ public enum BiometryKind: Equatable, Sendable {
     /// Human-readable name used in button labels and prompts.
     public var displayName: String {
         switch self {
-        case .none: return "Biometrics"
-        case .touchID: return "Touch ID"
-        case .faceID: return "Face ID"
-        case .opticID: return "Optic ID"
+        case .none: return L10n.t("biometrics.kind.generic")
+        case .touchID: return L10n.t("biometrics.kind.touchID")
+        case .faceID: return L10n.t("biometrics.kind.faceID")
+        case .opticID: return L10n.t("biometrics.kind.opticID")
         }
     }
 
@@ -60,19 +60,19 @@ public struct LocalAuthenticationBiometricAuthenticator: BiometricAuthenticating
 
     public func authenticate(reason: String) async throws {
         let context = LAContext()
-        context.localizedFallbackTitle = "Use Passcode"
+        context.localizedFallbackTitle = L10n.t("biometrics.usePasscode")
 
         var policyError: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &policyError) else {
             throw APIError.biometricFailed(
-                policyError?.localizedDescription ?? "Biometric sign-in isn't available on this device."
+                policyError?.localizedDescription ?? L10n.t("biometrics.error.unavailable")
             )
         }
 
         do {
             let success = try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)
             guard success else {
-                throw APIError.biometricFailed("Biometric sign-in was not completed.")
+                throw APIError.biometricFailed(L10n.t("biometrics.error.notCompleted"))
             }
         } catch let error as LAError {
             throw APIError.biometricFailed(Self.message(for: error))
@@ -86,13 +86,13 @@ public struct LocalAuthenticationBiometricAuthenticator: BiometricAuthenticating
     private static func message(for error: LAError) -> String {
         switch error.code {
         case .userCancel, .appCancel, .systemCancel:
-            return "Biometric sign-in was cancelled."
+            return L10n.t("biometrics.error.cancelled")
         case .userFallback:
-            return "Enter your password to continue."
+            return L10n.t("biometrics.error.userFallback")
         case .biometryNotEnrolled:
-            return "No biometrics are enrolled on this device."
+            return L10n.t("biometrics.error.notEnrolled")
         case .biometryLockout:
-            return "Biometrics are locked. Unlock your device with its passcode first."
+            return L10n.t("biometrics.error.lockout")
         default:
             return error.localizedDescription
         }
@@ -115,7 +115,7 @@ public struct StubBiometricAuthenticator: BiometricAuthenticating {
 
     public func authenticate(reason: String) async throws {
         guard shouldSucceed else {
-            throw APIError.biometricFailed("Biometric sign-in was cancelled.")
+            throw APIError.biometricFailed(L10n.t("biometrics.error.cancelled"))
         }
     }
 }

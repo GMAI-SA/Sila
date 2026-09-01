@@ -46,6 +46,8 @@ public final class AppContainer {
     public let notificationsService: NotificationsServiceProtocol
     /// Live voice rooms — listing, joining, hosting.
     public let roomsService: RoomsServiceProtocol
+    /// `GET /languages` — the `rtl` flag that decides which way a post reads.
+    public let languageService: LanguageServiceProtocol
     /// Whether the app should be showing nothing but the suspension screen.
     ///
     /// Constructed **before** the network client and handed to it, so every
@@ -75,7 +77,8 @@ public final class AppContainer {
         profileService: ProfileServiceProtocol? = nil,
         safetyService: SafetyServiceProtocol? = nil,
         notificationsService: NotificationsServiceProtocol? = nil,
-        roomsService: RoomsServiceProtocol? = nil
+        roomsService: RoomsServiceProtocol? = nil,
+        languageService: LanguageServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -246,7 +249,29 @@ public final class AppContainer {
             )
         }
 
+        // Mocked alongside the feed: a mock launch renders mock posts, and the
+        // direction those posts are laid out in has to be decided the same way
+        // it is in production or the UI tests prove nothing about RTL.
+        if let languageService {
+            self.languageService = languageService
+        } else if flags.useMockFeed {
+            self.languageService = LanguageServiceMock()
+        } else {
+            self.languageService = LanguageService(network: network, tokens: tokens)
+        }
+
         self.router = AppRouter()
+    }
+
+    /// Fills ``LanguageDirectory/shared`` from the server.
+    ///
+    /// Deliberately failure-tolerant and deliberately not awaited by anything
+    /// that renders: the direction of a post has a correct answer without this
+    /// call — the Unicode bidirectional algorithm run over the text — and a
+    /// feed that waited for `/languages` before drawing would be a feed that a
+    /// dropped connection leaves blank.
+    public func loadLanguages() async {
+        _ = try? await languageService.fetchLanguages()
     }
 
     /// A fresh media transport for one room.

@@ -45,12 +45,12 @@ public struct SplashScreen: View {
                     .font(.system(size: 44, weight: .semibold))
                     .foregroundStyle(SLColor.brandGradient)
 
-                Text("Sila")
+                Text(L10n.t("auth.brand.wordmark"))
                     .font(SLFont.displayXL)
                     .tracking(-0.5)
                     .foregroundStyle(SLColor.textPrimary)
 
-                Text("Every human is real")
+                Text(L10n.t("auth.splash.tagline"))
                     .font(SLFont.caption)
                     .tracking(1.4)
                     .textCase(.uppercase)
@@ -60,8 +60,8 @@ public struct SplashScreen: View {
             .offset(y: wordmarkOffset)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Sila is starting"))
-        .accessibilityHint(Text("Checking whether you are already signed in"))
+        .accessibilityLabel(Text(L10n.t("auth.splash.a11yLabel")))
+        .accessibilityHint(Text(L10n.t("auth.splash.a11yHint")))
         .task {
             startAnimation()
             // Probe the keychain while the wordmark animates in, then hold the

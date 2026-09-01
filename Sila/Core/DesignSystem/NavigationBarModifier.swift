@@ -42,12 +42,12 @@ public struct SLNavigationBarModifier: ViewModifier {
                 if let onBack, showsBackButton {
                     ToolbarItem(placement: .topBarLeading) {
                         Button(action: onBack) {
-                            Image(systemName: "chevron.left")
+                            Image(systemName: "chevron.backward")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(SLColor.primary)
                         }
-                        .accessibilityLabel(Text("Back"))
-                        .accessibilityHint(Text("Returns to the previous screen"))
+                        .accessibilityLabel(Text(L10n.t("common.back")))
+                        .accessibilityHint(Text(L10n.t("ds.navigationBar.backHint")))
                     }
                 }
             }

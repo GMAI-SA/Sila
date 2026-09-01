@@ -26,12 +26,12 @@ public struct LegalDocumentSheet: View {
                 if let url = document.url {
                     LegalWebView(url: url)
                         .accessibilityLabel(Text(document.title))
-                        .accessibilityHint(Text("Scroll to read the full document"))
+                        .accessibilityHint(Text(L10n.t("auth.legal.read.hint")))
                 } else {
                     SLEmptyState(
                         icon: "doc.text.magnifyingglass",
-                        title: "Document unavailable",
-                        subtitle: "We couldn't load the \(document.title). Please try again later."
+                        title: L10n.t("auth.legal.unavailable.title"),
+                        subtitle: L10n.t("auth.legal.unavailable.subtitle", document.title)
                     )
                 }
             }
@@ -39,10 +39,10 @@ public struct LegalDocumentSheet: View {
             .tnNavigationBar(title: document.title)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done", action: onClose)
+                    Button(L10n.t("common.done"), action: onClose)
                         .foregroundStyle(SLColor.primary)
-                        .accessibilityLabel(Text("Done"))
-                        .accessibilityHint(Text("Closes the \(document.title)"))
+                        .accessibilityLabel(Text(L10n.t("common.done")))
+                        .accessibilityHint(Text(L10n.t("auth.legal.close.hint", document.title)))
                 }
             }
         }

@@ -1,0 +1,42 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSFaceIDUsageDescription" : {
+      "comment" : "System Face ID prompt, shown the first time biometric sign-in is offered.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تسجيل الدخول بـ Face ID"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with Face ID"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "System microphone prompt, shown the first time the user takes the microphone in a voice room.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تستخدم سِلة المايك فقط عندما تأخذ المايك في غرفة صوتية. الاستماع لا يحتاج إليه أبدًا، ولا تُسجَّل الغرف إطلاقًا، ولا يُخزَّن أي شيء تقوله."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sila uses your microphone only when you take the microphone in a voice room. Listening never needs it, rooms are never recorded, and nothing you say is stored."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

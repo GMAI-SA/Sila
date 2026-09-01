@@ -60,7 +60,7 @@ public enum VoiceEngineError: Error, Equatable, Sendable {
         case .microphoneDenied:
             return RoomCopy.microphoneDenied
         case .notPermittedToPublish:
-            return "You're listening to this room, so there is no microphone to turn on."
+            return L10n.t("rooms.voice.notPermittedToPublish")
         case let .transport(message):
             return message
         }

@@ -169,8 +169,8 @@ public final class ComposerViewModel {
         scopeOptions.first { $0.scope == scope }
             ?? ScopeOption(
                 scope: scope,
-                title: "International",
-                subtitle: "Any verified account, anywhere, can reply.",
+                title: L10n.t("composer.scope.international.title"),
+                subtitle: L10n.t("composer.scope.international.subtitle"),
                 icon: "globe",
                 isAvailable: true
             )
@@ -342,7 +342,7 @@ public final class ComposerViewModel {
             focusedIndex = 0
             continuationId = report.continuationId
             partialFailureMessage = report.summary
-            toast = .warning(report.summary ?? "Part of your thread was posted.")
+            toast = .warning(report.summary ?? L10n.t("composer.thread.partialFallback"))
             analytics.track(.postPartiallyFailed, properties: [
                 "posted": String(report.posted.count),
                 "total": String(report.totalSegments)
@@ -389,9 +389,9 @@ public final class ComposerViewModel {
     private func message(for error: APIError) -> String {
         switch error.code {
         case .unverified:
-            return "Only verified humans can post. Everyone can read Sila — finish identity verification to speak."
+            return L10n.t("composer.error.unverified")
         case .invalidScope:
-            return "That audience isn't available for this post. Pick another and try again."
+            return L10n.t("composer.error.invalidScope")
         default:
             return error.userMessage
         }

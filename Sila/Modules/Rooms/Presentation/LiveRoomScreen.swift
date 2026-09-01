@@ -70,7 +70,7 @@ public struct LiveRoomScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
         .navigationBarBackButtonHidden(true)
-        .tnNavigationBar(title: "Room")
+        .tnNavigationBar(title: L10n.t("rooms.live.nav.title"))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -79,10 +79,12 @@ public struct LiveRoomScreen: View {
                         onLeave()
                     }
                 } label: {
-                    Label("Leave", systemImage: "chevron.left")
+                    // `.backward`, not `.left`: the back chevron has to point at
+                    // the edge the user came from, which swaps in Arabic.
+                    Label(L10n.t("rooms.live.leave"), systemImage: "chevron.backward")
                         .foregroundStyle(SLColor.primary)
                 }
-                .accessibilityLabel(Text("Leave room"))
+                .accessibilityLabel(Text(L10n.t("rooms.live.leave.a11yLabel")))
                 .accessibilityHint(Text(RoomCopy.leaveHint))
             }
         }
@@ -108,12 +110,16 @@ public struct LiveRoomScreen: View {
             if hasLeft { onLeave() }
         }
         .confirmationDialog(
-            "End this room?",
+            Text(L10n.t("rooms.live.end.confirmTitle")),
             isPresented: $viewModel.isConfirmingEnd,
             titleVisibility: .visible
         ) {
-            Button("End room", role: .destructive) { Task { await viewModel.endRoom() } }
-            Button("Keep it open", role: .cancel) { viewModel.isConfirmingEnd = false }
+            Button(L10n.t("rooms.live.end.confirmButton"), role: .destructive) {
+                Task { await viewModel.endRoom() }
+            }
+            Button(L10n.t("rooms.live.end.cancelButton"), role: .cancel) {
+                viewModel.isConfirmingEnd = false
+            }
         } message: {
             Text(RoomCopy.endRoomWarning)
         }
@@ -124,10 +130,15 @@ public struct LiveRoomScreen: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            // The host's own words: laid out in the title's direction, not the
+            // interface's.
             Text(viewModel.room.title)
                 .font(SLFont.displayM)
                 .foregroundStyle(SLColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
+                .slContentDirection(
+                    TextDirection.resolve(languageCode: nil, text: viewModel.room.title)
+                )
 
             HStack(spacing: SLSpacing.sm) {
                 SLChip(
@@ -174,10 +185,10 @@ public struct LiveRoomScreen: View {
 
     private var stage: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            sectionHeader("On the microphone", count: viewModel.speakers.count)
+            sectionHeader(L10n.t("rooms.live.stage.header"), count: viewModel.speakers.count)
 
             if viewModel.speakers.isEmpty {
-                Text("Nobody is speaking yet.")
+                Text(L10n.t("rooms.live.stage.empty"))
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textMuted)
             } else {
@@ -190,10 +201,10 @@ public struct LiveRoomScreen: View {
 
     private var audience: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            sectionHeader("Listening", count: viewModel.listeners.count)
+            sectionHeader(L10n.t("rooms.live.audience.header"), count: viewModel.listeners.count)
 
             if viewModel.listeners.isEmpty {
-                Text("Nobody is listening yet.")
+                Text(L10n.t("rooms.live.audience.empty"))
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textMuted)
             } else {
@@ -211,7 +222,7 @@ public struct LiveRoomScreen: View {
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
             Spacer(minLength: 0)
-            Text("\(count)")
+            Text(SLFormat.number(count))
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
         }
@@ -245,6 +256,12 @@ public struct LiveRoomScreen: View {
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(SLColor.textPrimary)
                         .lineLimit(1)
+                        .slContentDirection(
+                            TextDirection.resolve(
+                                languageCode: nil,
+                                text: participant.user.displayName
+                            )
+                        )
                     if participant.user.isVerified {
                         SLVerifiedBadge(size: 12, isPulsing: false)
                     }
@@ -299,13 +316,13 @@ public struct LiveRoomScreen: View {
                     Button(role: .destructive) {
                         Task { await viewModel.remove(actions) }
                     } label: {
-                        Label("Remove from this room", systemImage: "person.slash")
+                        Label(L10n.t("rooms.live.hostMenu.remove"), systemImage: "person.slash")
                     }
                     .disabled(actions.isBusy)
                 }
             } header: {
                 // The sentence that stops a removal being read as a block.
-                Text("Removing someone applies to this room only. It isn't a block.")
+                Text(L10n.t("rooms.live.hostMenu.header"))
             }
         } label: {
             Image(systemName: "slider.horizontal.3")
@@ -315,8 +332,8 @@ public struct LiveRoomScreen: View {
                 .contentShape(Rectangle())
         }
         .menuOrder(.fixed)
-        .accessibilityLabel(Text("Host controls for \(actions.target.name)"))
-        .accessibilityHint(Text("Invite to speak, move to listeners, or remove from this room"))
+        .accessibilityLabel(Text(L10n.t("rooms.live.hostMenu.a11yLabel", actions.target.name)))
+        .accessibilityHint(Text(L10n.t("rooms.live.hostMenu.a11yHint")))
     }
 
     private var notRecorded: some View {
@@ -351,10 +368,13 @@ public struct LiveRoomScreen: View {
 
             HStack(spacing: SLSpacing.md) {
                 SLButton(
-                    "Leave",
+                    L10n.t("rooms.live.leave"),
                     variant: .ghost,
                     size: .compact,
-                    icon: "rectangle.portrait.and.arrow.right",
+                    // `.forward` rather than `.right`: the door the arrow points
+                    // out of is on the other side in Arabic, and
+                    // `rectangle.portrait.and.arrow.right` does not mirror.
+                    icon: "rectangle.portrait.and.arrow.forward",
                     isLoading: viewModel.isLeaving,
                     accessibilityHint: RoomCopy.leaveHint,
                     asyncAction: {
@@ -379,12 +399,12 @@ public struct LiveRoomScreen: View {
 
                 if viewModel.isHost {
                     SLButton(
-                        "End",
+                        L10n.t("rooms.live.end"),
                         variant: .destructive,
                         size: .compact,
                         icon: "stop.circle",
                         isLoading: viewModel.isEnding,
-                        accessibilityHint: "Ends the room for everybody. It cannot be reopened.",
+                        accessibilityHint: L10n.t("rooms.live.end.a11yHint"),
                         action: { viewModel.requestEnd() }
                     )
                 }
@@ -402,6 +422,12 @@ public struct LiveRoomScreen: View {
         }
     }
 
+    /// The server's refusal when there is one, otherwise the plain fact that
+    /// listening needs no microphone.
+    private var listeningExplanation: String {
+        viewModel.speakRefusal ?? RoomCopy.listeningSubtitle
+    }
+
     /// What a listener is told: that they are hearing everything, that no
     /// microphone is involved, and — when the server sent one — exactly why.
     private var listeningState: some View {
@@ -417,18 +443,22 @@ public struct LiveRoomScreen: View {
             }
 
             // The server's sentence, verbatim, when there is one — otherwise
-            // the plain fact that listening needs no microphone.
-            Text(viewModel.speakRefusal ?? RoomCopy.listeningSubtitle)
+            // the plain fact that listening needs no microphone. The server
+            // wrote it, so it is laid out in its own direction.
+            Text(listeningExplanation)
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .slContentDirection(
+                    TextDirection.resolve(languageCode: nil, text: listeningExplanation)
+                )
         }
         .padding(SLSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.primary.opacity(0.08)))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(
-            RoomCopy.listeningTitle + ". " + (viewModel.speakRefusal ?? RoomCopy.listeningSubtitle)
+            L10n.t("rooms.live.listening.a11yLabel", RoomCopy.listeningTitle, listeningExplanation)
         ))
     }
 }

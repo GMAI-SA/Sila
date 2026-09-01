@@ -55,12 +55,14 @@ public struct CreateRoomSheet: View {
                 }
 
                 SLButton(
-                    viewModel.isScheduled ? "Schedule room" : "Start room",
+                    viewModel.isScheduled
+                        ? L10n.t("rooms.create.scheduleButton")
+                        : L10n.t("rooms.create.startButton"),
                     isLoading: viewModel.isCreating,
                     isEnabled: viewModel.canCreate,
                     accessibilityHint: viewModel.isScheduled
-                        ? "Puts the room on the list with a start time"
-                        : "Opens the room now and takes you into it",
+                        ? L10n.t("rooms.create.scheduleButton.a11yHint")
+                        : L10n.t("rooms.create.startButton.a11yHint"),
                     asyncAction: { await create() }
                 )
             }
@@ -71,7 +73,7 @@ public struct CreateRoomSheet: View {
         .tnNavigationBar(title: RoomCopy.createTitle)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel", action: onClose)
+                Button(L10n.t("common.cancel"), action: onClose)
                     .foregroundStyle(SLColor.textSecondary)
             }
         }
@@ -91,16 +93,22 @@ public struct CreateRoomSheet: View {
     private var titleField: some View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
             SLTextField(
-                "Title",
+                L10n.t("rooms.create.titleFieldLabel"),
                 text: $viewModel.title,
                 placeholder: RoomCopy.titlePlaceholder,
                 autocapitalization: .sentences,
                 error: viewModel.titleError,
-                accessibilityHint: "Names the room. People decide whether to join from this."
+                accessibilityHint: L10n.t("rooms.create.titleField.a11yHint")
             )
             .focused($isTitleFocused)
+            // The title is the host's own words; the field follows what they
+            // are typing rather than the interface's language.
+            .slContentDirection(TextDirection.resolve(languageCode: nil, text: viewModel.title))
 
-            Text("\(max(0, viewModel.remainingTitleCharacters)) characters left")
+            Text(L10n.plural(
+                "rooms.create.charactersLeft",
+                max(0, viewModel.remainingTitleCharacters)
+            ))
                 .font(SLFont.micro)
                 .foregroundStyle(
                     viewModel.remainingTitleCharacters < 0 ? SLColor.danger : SLColor.textMuted
@@ -113,7 +121,7 @@ public struct CreateRoomSheet: View {
     /// hunt for.
     private var topicPicker: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("TOPIC")
+            Text(L10n.t("rooms.create.topicHeader"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -123,7 +131,7 @@ public struct CreateRoomSheet: View {
             } else if viewModel.topics.isEmpty {
                 // Says what is missing rather than pretending there is nothing
                 // to choose. The room can still be opened.
-                Text("Sila's topic list didn't load. You can open the room without one.")
+                Text(L10n.t("rooms.create.topicsFailed"))
                     .font(SLFont.micro)
                     .foregroundStyle(SLColor.textMuted)
             } else {
@@ -144,17 +152,17 @@ public struct CreateRoomSheet: View {
     private var audiencePicker: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             HStack(spacing: SLSpacing.sm) {
-                Text("WHO CAN SPEAK")
+                Text(L10n.t("rooms.create.whoCanSpeak"))
                     .font(SLFont.micro)
                     .tracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
                 Spacer(minLength: 0)
-                Text("Everyone can listen")
+                Text(L10n.t("rooms.create.everyoneCanListen"))
                     .font(SLFont.micro)
                     .foregroundStyle(SLColor.textMuted)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(Text("Who can speak. Everyone can listen to the room either way."))
+            .accessibilityLabel(Text(L10n.t("rooms.create.audience.a11yLabel")))
 
             VStack(spacing: SLSpacing.sm) {
                 ForEach(viewModel.scopeOptions) { option in
@@ -173,7 +181,7 @@ public struct CreateRoomSheet: View {
     private var schedule: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Toggle(isOn: $viewModel.isScheduled) {
-                Text("Schedule for later")
+                Text(L10n.t("rooms.create.scheduleToggle"))
                     .font(SLFont.body)
                     .foregroundStyle(SLColor.textPrimary)
             }
@@ -182,7 +190,7 @@ public struct CreateRoomSheet: View {
 
             if viewModel.isScheduled {
                 DatePicker(
-                    "Starts",
+                    L10n.t("rooms.create.startsLabel"),
                     selection: $viewModel.scheduledFor,
                     in: Date()...,
                     displayedComponents: [.date, .hourAndMinute]
@@ -201,7 +209,7 @@ public struct CreateRoomSheet: View {
 
     private var stageSize: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("STAGE SIZE")
+            Text(L10n.t("rooms.create.stageSizeHeader"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -209,16 +217,16 @@ public struct CreateRoomSheet: View {
             HStack(spacing: SLSpacing.sm) {
                 ForEach(RoomConstants.speakerLimits, id: \.self) { limit in
                     SLChip(
-                        "\(limit)",
+                        SLFormat.number(limit),
                         isSelected: viewModel.maxSpeakers == limit,
-                        accessibilityHint: "Allows up to \(limit) people on the microphone at once",
+                        accessibilityHint: L10n.plural("rooms.create.stageSize.a11yHint", limit),
                         onTap: { viewModel.maxSpeakers = limit }
                     )
                 }
                 Spacer(minLength: 0)
             }
 
-            Text("How many people can be on the microphone at once. There is no limit on listeners.")
+            Text(L10n.t("rooms.create.stageSize.explanation"))
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)

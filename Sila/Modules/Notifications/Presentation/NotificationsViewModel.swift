@@ -13,16 +13,16 @@ public enum NotificationFilter: String, CaseIterable, Identifiable, Hashable, Se
     /// Segment label.
     public var title: String {
         switch self {
-        case .all: return "All"
-        case .unread: return "Unread"
+        case .all: return L10n.t("notifications.filter.all")
+        case .unread: return L10n.t("notifications.filter.unread")
         }
     }
 
     /// Accessibility hint for the segmented control.
     public var accessibilityHint: String {
         switch self {
-        case .all: return "Shows every notification"
-        case .unread: return "Shows only notifications you haven't read"
+        case .all: return L10n.t("notifications.filter.all.hint")
+        case .unread: return L10n.t("notifications.filter.unread.hint")
         }
     }
 }
@@ -300,7 +300,7 @@ public final class NotificationsViewModel {
             // The excerpt already told the user this post was gone; the toast
             // is what confirms the tap did something rather than nothing.
             toast = wrapped.code == .postNotFound
-                ? .info("That post is no longer available.")
+                ? .info(L10n.t("notifications.open.postGone"))
                 : .error(wrapped.userMessage)
             return nil
         }

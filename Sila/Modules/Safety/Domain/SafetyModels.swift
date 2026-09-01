@@ -186,15 +186,15 @@ public enum ReportReason: String, CaseIterable, Sendable, Hashable, Codable, Ide
     /// The row's label in the picker.
     public var title: String {
         switch self {
-        case .spam: return "Spam"
-        case .harassment: return "Harassment or bullying"
-        case .hateSpeech: return "Hate speech"
-        case .violence: return "Violence or threats"
-        case .sexualContent: return "Sexual content"
-        case .selfHarm: return "Self-harm or suicide"
-        case .impersonation: return "Impersonation"
-        case .illegal: return "Something illegal"
-        case .other: return "Something else"
+        case .spam: return L10n.t("safety.reason.spam.title")
+        case .harassment: return L10n.t("safety.reason.harassment.title")
+        case .hateSpeech: return L10n.t("safety.reason.hateSpeech.title")
+        case .violence: return L10n.t("safety.reason.violence.title")
+        case .sexualContent: return L10n.t("safety.reason.sexualContent.title")
+        case .selfHarm: return L10n.t("safety.reason.selfHarm.title")
+        case .impersonation: return L10n.t("safety.reason.impersonation.title")
+        case .illegal: return L10n.t("safety.reason.illegal.title")
+        case .other: return L10n.t("safety.reason.other.title")
         }
     }
 
@@ -204,24 +204,23 @@ public enum ReportReason: String, CaseIterable, Sendable, Hashable, Codable, Ide
     public var detail: String {
         switch self {
         case .spam:
-            return "Repetitive, automated or unsolicited posting."
+            return L10n.t("safety.reason.spam.detail")
         case .harassment:
-            return "Targeted abuse, threats or a pile-on aimed at someone."
+            return L10n.t("safety.reason.harassment.detail")
         case .hateSpeech:
-            return "Attacks on people for who they are — nationality, religion, "
-                + "race, gender or disability."
+            return L10n.t("safety.reason.hateSpeech.detail")
         case .violence:
-            return "Threats of violence, or content that celebrates or incites it."
+            return L10n.t("safety.reason.violence.detail")
         case .sexualContent:
-            return "Sexual material, or anything sexual involving someone who may be a child."
+            return L10n.t("safety.reason.sexualContent.detail")
         case .selfHarm:
-            return "Someone may be about to hurt themselves."
+            return L10n.t("safety.reason.selfHarm.detail")
         case .impersonation:
-            return "Pretending to be another person, a business or an organisation."
+            return L10n.t("safety.reason.impersonation.detail")
         case .illegal:
-            return "Fraud, trafficking, or anything else against the law."
+            return L10n.t("safety.reason.illegal.detail")
         case .other:
-            return "None of the above. Tell Sila what is wrong in your own words."
+            return L10n.t("safety.reason.other.detail")
         }
     }
 
@@ -296,8 +295,8 @@ public enum ReportSubject: Equatable, Sendable, Hashable {
     /// What the sheet says it is reporting.
     public var headline: String {
         switch self {
-        case let .post(_, author, _): return "Report this post by \(author.name)"
-        case let .account(target): return "Report \(target.name)"
+        case let .post(_, author, _): return L10n.t("safety.report.headline.post", author.name)
+        case let .account(target): return L10n.t("safety.report.headline.account", target.name)
         }
     }
 
@@ -657,14 +656,18 @@ public struct Report: Decodable, Equatable, Sendable, Identifiable {
 
     /// What the receipt says it was about.
     public var subjectDescription: String {
-        if postId != nil { return "A post" }
+        if postId != nil { return L10n.t("safety.report.subject.post") }
         if let userHandle { return "@\(userHandle)" }
-        return "A report"
+        return L10n.t("safety.report.subject.report")
     }
 
     /// The status with a capital letter, for a badge.
     public var statusLabel: String {
-        guard let first = status.first else { return "Open" }
+        guard let first = status.first else { return L10n.t("safety.report.status.open") }
+        // The server's own word, capitalised. Not translated: a status this
+        // client does not recognise is still the server's statement about the
+        // report, and inventing an Arabic equivalent for a value we cannot
+        // enumerate would put a word in the reviewer's mouth.
         return String(first).uppercased() + status.dropFirst()
     }
 }
@@ -758,14 +761,14 @@ public struct BlockConfirmation: Equatable, Sendable, Identifiable {
     }
 
     /// The question at the top of the dialog.
-    public var title: String { "Block \(target.name)?" }
+    public var title: String { L10n.t("safety.block.confirm.title", target.name) }
 
     /// The consequences, in the order they matter. Held here rather than in the
     /// view so a test can prove all four are said.
     public var consequences: [String] { SafetyCopy.blockConsequences(for: target) }
 
     /// The label on the button that does it.
-    public var confirmTitle: String { "Block" }
+    public var confirmTitle: String { L10n.t("safety.action.block") }
 }
 
 // MARK: - Suspension
@@ -796,11 +799,11 @@ public enum AppealStatus: String, Sendable, Equatable, Hashable {
     /// What the screen says about it.
     public var label: String {
         switch self {
-        case .pending: return "Waiting to be read"
-        case .reviewing: return "Being reviewed"
-        case .upheld: return "Upheld — the suspension is being lifted"
-        case .rejected: return "Rejected — the suspension stands"
-        case .unknown: return "Submitted"
+        case .pending: return L10n.t("safety.appeal.status.pending")
+        case .reviewing: return L10n.t("safety.appeal.status.reviewing")
+        case .upheld: return L10n.t("safety.appeal.status.upheld")
+        case .rejected: return L10n.t("safety.appeal.status.rejected")
+        case .unknown: return L10n.t("safety.appeal.status.unknown")
         }
     }
 }
@@ -972,86 +975,68 @@ public enum SafetyCopy {
     /// for consent to something it has not described.
     public static func blockConsequences(for target: SafetyTarget) -> [String] {
         [
-            "You stop seeing each other. \(target.name)'s posts and replies leave your "
-                + "feeds, your search results and every thread you open — and yours leave theirs.",
-            "Any follow between you is severed, both ways. If you follow each other, "
-                + "both follows are removed.",
-            "Unblocking later does not put them back. Neither of you would be following "
-                + "the other again; you would each have to follow again from scratch.",
-            "\(target.name) is not told. Sila sends no notification and shows them no "
-                + "message about this."
+            L10n.t("safety.block.consequence.visibility", target.name),
+            L10n.t("safety.block.consequence.follows"),
+            L10n.t("safety.block.consequence.notRestored"),
+            L10n.t("safety.block.consequence.silent", target.name)
         ]
     }
 
     /// The line under the confirmation's buttons.
-    public static let blockReversible =
-        "You can unblock from Settings → Safety at any time."
+    public static var blockReversible: String { L10n.t("safety.block.reversible") }
 
     /// The toast after a block.
     public static func blocked(_ target: SafetyTarget) -> String {
-        "Blocked \(target.name). Their posts are gone from your feeds, any follow "
-            + "between you is removed, and they were not told."
+        L10n.t("safety.block.toast", target.name)
     }
 
     /// The toast after an unblock. Says what did **not** come back, because the
     /// alternative is somebody assuming their follow was restored and quietly
     /// losing an account they cared about.
     public static func unblocked(_ target: SafetyTarget) -> String {
-        "Unblocked \(target.name). Following is not restored — follow them again if "
-            + "you want their posts back."
+        L10n.t("safety.unblock.toast", target.name)
     }
 
     // MARK: Mute
 
     /// The one line that has to be next to every mute control.
-    public static let muteIsSilent =
-        "Muting is silent. The other person is never told, nothing changes for them, "
-            + "and you stay following each other if you did."
+    public static var muteIsSilent: String { L10n.t("safety.mute.isSilent") }
 
     /// What muting actually does, for the list screen and the menu's hint.
-    public static let muteEffect =
-        "Their posts and replies stop appearing in your feeds. You can still open "
-            + "their profile and read them there, and they can still see and reply to you."
+    public static var muteEffect: String { L10n.t("safety.mute.effect") }
 
     /// The toast after a mute.
     public static func muted(_ target: SafetyTarget) -> String {
-        "Muted \(target.name). Their posts won't appear in your feeds. They are not told."
+        L10n.t("safety.mute.toast", target.name)
     }
 
     /// The toast after an unmute.
     public static func unmuted(_ target: SafetyTarget) -> String {
-        "Unmuted \(target.name). Their posts can appear in your feeds again."
+        L10n.t("safety.unmute.toast", target.name)
     }
 
     // MARK: Report
 
     /// The line at the top of the reason picker.
-    public static let reportIntro =
-        "Pick the closest match. A human reviews every report, and what you choose "
-            + "decides who reads it first."
+    public static var reportIntro: String { L10n.t("safety.report.intro") }
 
     /// Said next to the submit button, every time.
-    public static let reportIsSilent =
-        "Reporting is confidential. The account you report is never shown who "
-            + "reported them."
+    public static var reportIsSilent: String { L10n.t("safety.report.isSilent") }
 
     /// What Sila will and will not promise about the outcome.
-    public static let reportOutcome =
-        "Sila reviews every report. Not every report leads to something being "
-            + "removed, and you will not always be told what happened."
+    public static var reportOutcome: String { L10n.t("safety.report.outcome") }
 
     /// The heading on the ordinary confirmation.
-    public static let reportReceivedTitle = "Report received"
+    public static var reportReceivedTitle: String { L10n.t("safety.report.received.title") }
 
     /// The body of the ordinary confirmation.
     public static func reportReceivedBody(id: String) -> String {
-        let reference = id.isEmpty ? "" : " Your reference is \(id)."
-        return "A reviewer will read this.\(reference) You can see everything you have "
-            + "reported under Settings → Safety."
+        let reference = id.isEmpty ? "" : L10n.t("safety.report.received.reference", id)
+        return L10n.t("safety.report.received.body", reference)
     }
 
     /// The heading on the care-first outcome.
-    public static let supportTitle = "Thank you for telling us"
+    public static var supportTitle: String { L10n.t("safety.support.title") }
 
     /// The body of the care-first outcome when the server supplied no words of
     /// its own.
@@ -1059,67 +1044,44 @@ public enum SafetyCopy {
     /// Deliberately contains **no phone numbers**. This client does not know
     /// which country the person in trouble is in, and a helpline invented on the
     /// device is a wrong number handed to somebody in an emergency.
-    public static let supportFallbackMessage =
-        "Sila's reviewers look at self-harm reports first.\n\n"
-            + "If you think someone is in immediate danger, contact your local emergency "
-            + "services now — Sila cannot call anyone on your behalf.\n\n"
-            + "If it is you who is struggling, please tell somebody you trust today."
+    public static var supportFallbackMessage: String { L10n.t("safety.support.fallbackMessage") }
 
     /// The reassurance under the care-first outcome.
-    public static let supportPrivacy =
-        "The person you reported is not told that you reported them."
+    public static var supportPrivacy: String { L10n.t("safety.support.privacy") }
 
     /// What to do next, offered rather than pushed. Someone reporting self-harm
     /// is usually trying to help a person, not remove them, so the block and
     /// mute controls are secondary here and phrased as a choice.
-    public static let supportNextSteps =
-        "You do not have to stop following or seeing them. If you would rather step "
-            + "back for now, muting is silent and reversible."
+    public static var supportNextSteps: String { L10n.t("safety.support.nextSteps") }
 
     // MARK: Suspension
 
     /// The heading on the suspension screen.
-    public static let suspendedTitle = "Your account is suspended"
+    public static var suspendedTitle: String { L10n.t("safety.suspended.title") }
 
     /// Said when the server gave no reason. It does not invent one.
-    public static let suspendedNoReason =
-        "Sila did not attach a reason to this suspension. The appeal below reaches a "
-            + "human who can see the full record."
+    public static var suspendedNoReason: String { L10n.t("safety.suspended.noReason") }
 
     /// What an indefinite suspension means, said plainly rather than left blank.
-    public static let suspendedIndefinite =
-        "This suspension has no end date. It does not expire on its own — an appeal "
-            + "is the only thing that changes it."
+    public static var suspendedIndefinite: String { L10n.t("safety.suspended.indefinite") }
 
     /// What is and is not reachable while suspended.
-    public static let suspendedScope =
-        "Nothing else on Sila works while this is in place. Your posts are hidden, "
-            + "and this screen and the appeal are the only things you can reach."
+    public static var suspendedScope: String { L10n.t("safety.suspended.scope") }
 
     /// The label above the appeal box.
-    public static let appealPrompt =
-        "You get one appeal per suspension. Say what you think happened and why it "
-            + "should be reconsidered."
+    public static var appealPrompt: String { L10n.t("safety.appeal.prompt") }
 
     /// Confirmation once an appeal is in.
-    public static let appealSubmitted =
-        "Your appeal is with a reviewer. There is nothing else to send — one appeal "
-            + "per suspension is all Sila accepts, and a second would not be read."
+    public static var appealSubmitted: String { L10n.t("safety.appeal.submitted") }
 
     // MARK: Lists
 
     /// The explanation at the top of the blocked list.
-    public static let blockedListCaption =
-        "You and these accounts cannot see each other. None of them were told, and "
-            + "unblocking does not restore any follow that was severed."
+    public static var blockedListCaption: String { L10n.t("safety.list.blocked.caption") }
 
     /// The explanation at the top of the muted list.
-    public static let mutedListCaption =
-        "These accounts do not appear in your feeds. None of them were told, and "
-            + "nothing else about your relationship changed."
+    public static var mutedListCaption: String { L10n.t("safety.list.muted.caption") }
 
     /// The explanation at the top of the reports list.
-    public static let reportsListCaption =
-        "Everything you have reported, and where each one has got to. The accounts "
-            + "involved are never shown who reported them."
+    public static var reportsListCaption: String { L10n.t("safety.list.reports.caption") }
 }

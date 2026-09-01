@@ -82,9 +82,9 @@ public enum TopicStance: String, CaseIterable, Identifiable, Hashable, Sendable 
     /// Button label.
     public var title: String {
         switch self {
-        case .interested: return "Interested"
-        case .muted: return "Muted"
-        case .none: return "No opinion"
+        case .interested: return L10n.t("preferences.stance.interested")
+        case .muted: return L10n.t("preferences.stance.muted")
+        case .none: return L10n.t("preferences.stance.none")
         }
     }
 
@@ -92,11 +92,11 @@ public enum TopicStance: String, CaseIterable, Identifiable, Hashable, Sendable 
     public var accessibilityHint: String {
         switch self {
         case .interested:
-            return "Counts this topic towards your International feed when the topic filter is on"
+            return L10n.t("preferences.stance.interested.hint")
         case .muted:
-            return "Hides posts labelled with this topic from your International feed, even when the filter is off"
+            return L10n.t("preferences.stance.muted.hint")
         case .none:
-            return "Records no opinion about this topic"
+            return L10n.t("preferences.stance.none.hint")
         }
     }
 }
@@ -355,11 +355,11 @@ public enum CountryEntryError: Error, Equatable, Sendable {
     public var message: String {
         switch self {
         case .empty:
-            return "Type a two-letter country code first."
+            return L10n.t("preferences.country.error.empty")
         case .notACountry:
-            return "That isn't a country code. Use two letters, like SA or JP."
+            return L10n.t("preferences.country.error.notACountry")
         case .alreadyMuted:
-            return "That country is already muted."
+            return L10n.t("preferences.country.error.alreadyMuted")
         }
     }
 }
@@ -397,9 +397,14 @@ public enum MutedCountries {
     }
 
     /// `"Japan (JP)"`, or just the code when the device has no name for it.
+    ///
+    /// The name comes from the *reading* language rather than from a table in
+    /// this app: `Locale` already knows every region in every language Sila
+    /// ships, and a hard-coded English list would put "Japan" in an Arabic
+    /// screen forever. The code stays untranslated — `JP` is `JP` everywhere.
     public static func displayName(_ code: String) -> String {
-        guard let name = CountryCode.name(code) else { return code }
-        return "\(name) (\(code))"
+        guard let name = CountryCode.name(code, locale: L10n.locale) else { return code }
+        return L10n.t("preferences.country.displayName", name, code)
     }
 }
 
@@ -423,23 +428,24 @@ public enum PreferencesSummary {
 
         guard preferences.narrowsToInterests else {
             if hidden.isEmpty {
-                return "Your International feed shows everything."
+                return L10n.t("preferences.summary.everything")
             }
-            return "Your International feed shows everything except \(list(hidden))."
+            return L10n.t("preferences.summary.everythingExcept", list(hidden))
         }
 
+        // The count is inside the sentence's grammar, so the whole sentence is
+        // the plural entry rather than a counted fragment glued into a frame:
+        // Arabic agrees the noun, the adjective and the verb with the number,
+        // and none of that survives being assembled out of two catalog strings.
         let count = preferences.interests.count
-        let topics = "\(count) topic\(count == 1 ? "" : "s") you chose"
-        var sentence: String
-        if preferences.showUntaggedPosts {
-            sentence = "Your International feed shows posts about \(topics), "
-                + "plus posts that haven't been labelled yet."
-        } else {
-            sentence = "Your International feed shows only posts about \(topics); "
-                + "posts that haven't been labelled yet are hidden."
-        }
+        var sentence = L10n.plural(
+            preferences.showUntaggedPosts
+                ? "preferences.summary.narrowed.withUntagged"
+                : "preferences.summary.narrowed.taggedOnly",
+            count
+        )
         if !hidden.isEmpty {
-            sentence += " It also hides \(list(hidden))."
+            sentence += " " + L10n.t("preferences.summary.alsoHides", list(hidden))
         }
         return sentence
     }
@@ -448,9 +454,7 @@ public enum PreferencesSummary {
     /// - Parameter preferences: The settings to check.
     public static func unusedFilterWarning(for preferences: FeedPreferences) -> String? {
         guard preferences.isFilterOnButUnused else { return nil }
-        return "This switch is on, but you haven't marked any topic as Interested — "
-            + "so nothing is being filtered and your International feed still shows "
-            + "everything. Mark at least one topic Interested below, or turn this off."
+        return L10n.t("preferences.summary.unusedFilterWarning")
     }
 
     /// The clauses describing what is hidden, in a fixed order.
@@ -458,19 +462,23 @@ public enum PreferencesSummary {
         var clauses: [String] = []
         let topics = preferences.mutedTopics.count
         if topics > 0 {
-            clauses.append("posts about \(topics) muted topic\(topics == 1 ? "" : "s")")
+            clauses.append(L10n.plural("preferences.summary.hidden.topics", topics))
         }
         let countries = preferences.mutedCountries.count
         if countries > 0 {
-            clauses.append("posts from \(countries) muted \(countries == 1 ? "country" : "countries")")
+            clauses.append(L10n.plural("preferences.summary.hidden.countries", countries))
         }
         return clauses
     }
 
     /// `["a"]` → `"a"`, `["a", "b"]` → `"a and b"`.
+    ///
+    /// Both the separator and the conjunction are catalog strings: Arabic
+    /// separates with `،` and joins with a `و` that carries no space after it.
     private static func list(_ parts: [String]) -> String {
         guard parts.count > 1 else { return parts.first ?? "" }
-        return parts.dropLast().joined(separator: ", ") + " and \(parts[parts.count - 1])"
+        let leading = parts.dropLast().joined(separator: L10n.t("preferences.summary.list.separator"))
+        return L10n.t("preferences.summary.list.pair", leading, parts[parts.count - 1])
     }
 }
 

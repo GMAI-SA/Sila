@@ -147,7 +147,7 @@ public final class CreateRoomViewModel {
     /// it, and the reason is the whole argument for verifying an identity.
     public func select(_ option: ScopeOption) {
         guard option.isAvailable else {
-            toast = .info(option.unavailableReason ?? "That audience isn't available to you yet.")
+            toast = .info(option.unavailableReason ?? L10n.t("rooms.create.audienceUnavailable"))
             return
         }
         scope = option.scope

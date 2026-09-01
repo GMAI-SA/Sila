@@ -52,9 +52,9 @@ public struct SLProgressBar: View {
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.3), value: value)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(label ?? "Progress"))
-        .accessibilityHint(Text("Shows completion as a percentage"))
-        .accessibilityValue(Text("\(Int(value * 100)) percent"))
+        .accessibilityLabel(Text(label ?? L10n.t("ds.progressBar.defaultLabel")))
+        .accessibilityHint(Text(L10n.t("ds.progressBar.hint")))
+        .accessibilityValue(Text(L10n.t("ds.progressBar.percentValue", SLFormat.number(Int(value * 100)))))
     }
 
     /// Erased so the track can be either a solid tint or the brand gradient.

@@ -63,8 +63,8 @@ public struct SLBadge: View {
         .clipShape(Capsule())
         .overlay(Capsule().strokeBorder(style.tint.opacity(0.35), lineWidth: 1))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(text) badge"))
-        .accessibilityHint(Text("Status indicator"))
+        .accessibilityLabel(Text(L10n.t("ds.badge.label", text)))
+        .accessibilityHint(Text(L10n.t("ds.badge.hint")))
     }
 }
 

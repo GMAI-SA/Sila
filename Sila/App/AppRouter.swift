@@ -96,8 +96,8 @@ public final class AppRouter {
         /// Sheet title.
         public var title: String {
             switch self {
-            case .terms: return "Terms of Service"
-            case .privacy: return "Privacy Policy"
+            case .terms: return L10n.t("app.legal.terms")
+            case .privacy: return L10n.t("app.legal.privacy")
             }
         }
 

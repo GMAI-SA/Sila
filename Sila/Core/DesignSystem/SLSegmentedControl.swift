@@ -92,8 +92,13 @@ public struct SLSegmentedControl<Item: Hashable & Identifiable>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // The item's own id, not its title. A UI test that located a segment by
+        // its label would be testing English and would fail the moment the app
+        // ran in Arabic — which is the one run where the layout most needs
+        // checking.
+        .accessibilityIdentifier("segment.\(item.id)")
         .accessibilityLabel(Text(title(item)))
-        .accessibilityHint(Text(accessibilityHint(item) ?? "Switches to the \(title(item)) view"))
+        .accessibilityHint(Text(accessibilityHint(item) ?? L10n.t("ds.segmentedControl.defaultHint", title(item))))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }

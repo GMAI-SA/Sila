@@ -52,13 +52,17 @@ public struct SLTabBarItem<Tab: Hashable>: Identifiable, Sendable where Tab: Sen
     /// count cannot widen the slot.
     var badgeText: String? {
         guard let badge, badge > 0 else { return nil }
-        return badge > 99 ? "99+" : String(badge)
+        return badge > 99 ? "99+" : SLFormat.number(badge)
     }
 
     /// What VoiceOver adds after the label, e.g. `"3 unread"`.
+    ///
+    /// Counted through ``L10n/plural(_:_:_:)`` rather than a `== 1` ternary:
+    /// English has two forms here and Arabic has six, and the ternary only ever
+    /// knew about the first two.
     var badgeAccessibilityValue: String? {
         guard let badge, badge > 0 else { return nil }
-        return badge == 1 ? "1 unread" : "\(badge) unread"
+        return L10n.plural("ds.tabBar.unreadCount", badge)
     }
 }
 
@@ -78,6 +82,9 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
     private let onAction: (String) -> Void
 
     @Namespace private var indicator
+    /// The badge is hung off the corner of the icon with a hard `x` offset,
+    /// which is the one thing in this file SwiftUI will not mirror for us.
+    @Environment(\.layoutDirection) private var layoutDirection
 
     /// Creates a tab bar.
     /// - Parameters:
@@ -152,6 +159,7 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("tab.\(item.id)")
         .accessibilityLabel(Text(item.label))
         .accessibilityValue(Text(item.badgeAccessibilityValue ?? ""))
         .accessibilityHint(Text(item.hint))
@@ -161,6 +169,11 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
     /// The unread bubble. Hidden from VoiceOver because the same number is
     /// already the slot's accessibility value — announcing it twice is how a
     /// badge turns into a stutter.
+    ///
+    /// The offset is negated right-to-left. `offset(x:)` is a raw translation
+    /// in view space, so a positive `x` means "further right" in every
+    /// language — left as it was, an Arabic build would hang the badge off the
+    /// wrong corner, across the neighbouring tab.
     private func badge(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .bold))
@@ -169,7 +182,7 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
             .padding(.vertical, 1)
             .background(Capsule().fill(SLColor.secondary))
             .overlay(Capsule().strokeBorder(SLColor.surface1, lineWidth: 1.5))
-            .offset(x: 14, y: -10)
+            .offset(x: layoutDirection == .rightToLeft ? -14 : 14, y: -10)
             .accessibilityHidden(true)
     }
 
@@ -201,6 +214,7 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("tab.\(item.id)")
         .accessibilityLabel(Text(item.label))
         .accessibilityHint(Text(item.hint))
     }

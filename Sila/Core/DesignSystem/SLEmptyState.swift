@@ -75,7 +75,7 @@ public struct SLEmptyState: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(Text([title, subtitle].compactMap { $0 }.joined(separator: ". ")))
-            .accessibilityHint(Text("Status message"))
+            .accessibilityHint(Text(L10n.t("ds.emptyState.hint")))
 
             if let actionTitle, let action {
                 SLButton(actionTitle, variant: .secondary, size: .compact, action: action)

@@ -48,14 +48,14 @@ public struct SafetyListsScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
-        .tnNavigationBar(title: "Safety")
+        .tnNavigationBar(title: L10n.t("safety.lists.navTitle"))
         .toolbar {
             if let onClose {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { onClose() }
+                    Button(L10n.t("common.done")) { onClose() }
                         .foregroundStyle(SLColor.primary)
-                        .accessibilityLabel(Text("Done"))
-                        .accessibilityHint(Text("Closes your safety lists"))
+                        .accessibilityLabel(Text(L10n.t("common.done")))
+                        .accessibilityHint(Text(L10n.t("safety.lists.done.hint")))
                 }
             }
         }
@@ -73,10 +73,10 @@ public struct SafetyListsScreen: View {
             ScrollView {
                 SLEmptyState(
                     icon: "wifi.exclamationmark",
-                    title: "Couldn't load your safety lists",
+                    title: L10n.t("safety.lists.error.title"),
                     subtitle: error,
                     tint: SLColor.danger,
-                    actionTitle: "Try again",
+                    actionTitle: L10n.t("safety.lists.error.retry"),
                     action: { Task { await viewModel.reload() } }
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -109,7 +109,7 @@ public struct SafetyListsScreen: View {
         }
         .padding(.top, SLSpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityLabel(Text("Loading your safety lists"))
+        .accessibilityLabel(Text(L10n.t("safety.lists.loading.a11y")))
     }
 
     /// The line under the tab that says what this list is — and, for two of the
@@ -130,18 +130,16 @@ public struct SafetyListsScreen: View {
         if viewModel.blocked.isEmpty {
             SLEmptyState(
                 icon: "hand.raised",
-                title: "Nobody is blocked",
-                subtitle: "When you block someone they appear here, and you can undo it "
-                    + "from this list at any time.",
+                title: L10n.t("safety.lists.blocked.empty.title"),
+                subtitle: L10n.t("safety.lists.blocked.empty.subtitle"),
                 tint: SLColor.textSecondary
             )
         } else {
             ForEach(viewModel.blocked) { relation in
                 personRow(
                     relation,
-                    actionTitle: "Unblock",
-                    hint: "Lets you and \(relation.user.displayName) see each other again. "
-                        + "It does not restore any follow that was severed.",
+                    actionTitle: L10n.t("safety.action.unblock.short"),
+                    hint: L10n.t("safety.lists.blocked.row.hint", relation.user.displayName),
                     action: { await viewModel.unblock(relation) }
                 )
             }
@@ -155,7 +153,7 @@ public struct SafetyListsScreen: View {
         if viewModel.muted.isEmpty {
             SLEmptyState(
                 icon: "speaker.slash",
-                title: "Nobody is muted",
+                title: L10n.t("safety.lists.muted.empty.title"),
                 subtitle: SafetyCopy.muteEffect,
                 tint: SLColor.textSecondary
             )
@@ -163,9 +161,8 @@ public struct SafetyListsScreen: View {
             ForEach(viewModel.muted) { relation in
                 personRow(
                     relation,
-                    actionTitle: "Unmute",
-                    hint: "Lets \(relation.user.displayName)'s posts back into your feeds. "
-                        + "They are not told either way.",
+                    actionTitle: L10n.t("safety.action.unmute.short"),
+                    hint: L10n.t("safety.lists.muted.row.hint", relation.user.displayName),
                     action: { await viewModel.unmute(relation) }
                 )
             }
@@ -241,9 +238,8 @@ public struct SafetyListsScreen: View {
         if viewModel.reports.isEmpty {
             SLEmptyState(
                 icon: "flag",
-                title: "You haven't reported anything",
-                subtitle: "Reports you file show up here with their status, so you can see "
-                    + "what happened to each one.",
+                title: L10n.t("safety.lists.reports.empty.title"),
+                subtitle: L10n.t("safety.lists.reports.empty.subtitle"),
                 tint: SLColor.textSecondary
             )
         } else {
@@ -257,7 +253,7 @@ public struct SafetyListsScreen: View {
         SLCard(padding: SLSpacing.md) {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
                 HStack(spacing: SLSpacing.sm) {
-                    Text(report.reason?.title ?? "Reported")
+                    Text(report.reason?.title ?? L10n.t("safety.report.row.fallbackTitle"))
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(SLColor.textPrimary)
                         .lineLimit(1)
@@ -286,10 +282,12 @@ public struct SafetyListsScreen: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(
-            "\(report.reason?.title ?? "Report") about \(report.subjectDescription). "
-                + "\(report.statusLabel)."
-        ))
+        .accessibilityLabel(Text(L10n.t(
+            "safety.report.row.a11yLabel",
+            report.reason?.title ?? L10n.t("safety.report.row.a11yFallbackReason"),
+            report.subjectDescription,
+            report.statusLabel
+        )))
     }
 
     /// A colour for a status this client does not own the vocabulary of.

@@ -13,22 +13,26 @@ public enum TopicListFilter: String, CaseIterable, Identifiable, Hashable, Senda
     public var id: String { rawValue }
 
     /// Segment label, without the count.
+    ///
+    /// Keyed separately from ``TopicStance/title`` even where the English is
+    /// the same word: one names a slice of a list, the other is the button that
+    /// puts a topic into it, and Arabic does not spell those the same way.
     public var title: String {
         switch self {
-        case .all: return "All"
-        case .interested: return "Interested"
-        case .muted: return "Muted"
-        case .noOpinion: return "No opinion"
+        case .all: return L10n.t("preferences.topicFilter.all")
+        case .interested: return L10n.t("preferences.topicFilter.interested")
+        case .muted: return L10n.t("preferences.topicFilter.muted")
+        case .noOpinion: return L10n.t("preferences.topicFilter.noOpinion")
         }
     }
 
     /// Accessibility hint for the segmented control.
     public var accessibilityHint: String {
         switch self {
-        case .all: return "Shows every topic"
-        case .interested: return "Shows only topics you marked interested"
-        case .muted: return "Shows only topics you muted"
-        case .noOpinion: return "Shows only topics you have no opinion about"
+        case .all: return L10n.t("preferences.topicFilter.all.hint")
+        case .interested: return L10n.t("preferences.topicFilter.interested.hint")
+        case .muted: return L10n.t("preferences.topicFilter.muted.hint")
+        case .noOpinion: return L10n.t("preferences.topicFilter.noOpinion.hint")
         }
     }
 
@@ -144,9 +148,17 @@ public final class PreferencesViewModel {
     }
 
     /// Segment label with its count, e.g. `"Muted (1)"`.
+    ///
+    /// The number is displayed rather than grammatical — nothing in the label
+    /// agrees with it — so it is formatted and substituted as a string.
     public func title(for filter: TopicListFilter) -> String {
-        guard let stance = filter.stance else { return "\(filter.title) (\(topics.count))" }
-        return "\(filter.title) (\(count(of: stance)))"
+        let total: Int
+        if let stance = filter.stance {
+            total = count(of: stance)
+        } else {
+            total = topics.count
+        }
+        return L10n.t("preferences.topicFilter.titleWithCount", filter.title, SLFormat.number(total))
     }
 
     // MARK: - Loading
@@ -263,7 +275,7 @@ public final class PreferencesViewModel {
             saved = confirmed
             draft = confirmed
             unknownTopicIds = []
-            toast = .success("Preferences saved.")
+            toast = .success(L10n.t("preferences.save.confirmation"))
             if changedFiltering {
                 // Every field on this screen feeds the International query, so
                 // any accepted change makes a loaded page stale.
@@ -273,7 +285,7 @@ public final class PreferencesViewModel {
             // The edits stay exactly where they were. Resetting them would lose
             // work in order to make the screen agree with the server.
             saveError = APIError.wrapping(error).userMessage
-            toast = .error(saveError ?? "Couldn't save your preferences.")
+            toast = .error(saveError ?? L10n.t("preferences.save.failed"))
             analytics.track(.preferencesSaveFailed, properties: [
                 "code": (error as? APIError)?.code?.rawValue ?? "transport"
             ])

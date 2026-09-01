@@ -55,7 +55,7 @@ public struct SuspensionScreen: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            SLBadge("Suspended", style: .danger, icon: "exclamationmark.octagon.fill")
+            SLBadge(L10n.t("safety.suspended.badge"), style: .danger, icon: "exclamationmark.octagon.fill")
 
             Text(SafetyCopy.suspendedTitle)
                 .font(SLFont.displayL)
@@ -79,7 +79,7 @@ public struct SuspensionScreen: View {
     private var reasonCard: some View {
         SLCard {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
-                Text(viewModel.hasServerReason ? "WHY" : "NO REASON GIVEN")
+                Text(L10n.t(viewModel.hasServerReason ? "safety.suspended.whyHeader" : "safety.suspended.noReasonHeader"))
                     .font(SLFont.micro)
                     .tracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
@@ -100,11 +100,11 @@ public struct SuspensionScreen: View {
                             .fixedSize(horizontal: false, vertical: true)
 
                         SLButton(
-                            "Check again",
+                            L10n.t("safety.suspended.checkAgain"),
                             variant: .ghost,
                             size: .compact,
                             isLoading: viewModel.isLoading,
-                            accessibilityHint: "Re-reads your suspension from Sila",
+                            accessibilityHint: L10n.t("safety.suspended.checkAgain.hint"),
                             asyncAction: { await viewModel.reload() }
                         )
                         .frame(width: 140)
@@ -120,7 +120,7 @@ public struct SuspensionScreen: View {
 
     private var whatIsHappening: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("Right now")
+            Text(L10n.t("safety.suspended.rightNowHeader"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -155,7 +155,7 @@ public struct SuspensionScreen: View {
 
     private var appealForm: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            Text("APPEAL")
+            Text(L10n.t("safety.appeal.header"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -167,18 +167,25 @@ public struct SuspensionScreen: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             SLTextField(
-                "Your appeal",
+                L10n.t("safety.appeal.field.label"),
                 text: $viewModel.appealMessage,
-                placeholder: "What you think happened, and why it should be reconsidered",
+                placeholder: L10n.t("safety.appeal.field.placeholder"),
                 autocapitalization: .sentences,
-                accessibilityHint: "One appeal per suspension, up to "
-                    + "\(SafetyLimits.maximumAppealLength) characters. A human reads it."
+                accessibilityHint: L10n.plural(
+                    "safety.appeal.field.hint",
+                    SafetyLimits.maximumAppealLength
+                )
+            )
+            // The appeal is the suspended person's own account of what
+            // happened, written in whichever language they think in.
+            .slContentDirection(
+                TextDirection.resolve(languageCode: nil, text: viewModel.appealMessage)
             )
 
-            Text("\(viewModel.appealRemaining) characters left")
+            Text(L10n.plural("safety.appeal.charactersLeft", viewModel.appealRemaining))
                 .font(SLFont.micro)
                 .foregroundStyle(viewModel.appealRemaining < 0 ? SLColor.danger : SLColor.textMuted)
-                .accessibilityLabel(Text("\(viewModel.appealRemaining) characters left"))
+                .accessibilityLabel(Text(L10n.plural("safety.appeal.charactersLeft", viewModel.appealRemaining)))
 
             if let error = viewModel.appealError {
                 errorBox(error)
@@ -192,11 +199,11 @@ public struct SuspensionScreen: View {
             }
 
             SLButton(
-                "Send appeal",
+                L10n.t("safety.appeal.send"),
                 variant: .primary,
                 isLoading: viewModel.isSubmittingAppeal,
                 isEnabled: viewModel.canSubmitAppeal,
-                accessibilityHint: "Sends your appeal to a human reviewer. You get one per suspension.",
+                accessibilityHint: L10n.t("safety.appeal.send.hint"),
                 asyncAction: { await viewModel.submitAppeal() }
             )
         }
@@ -206,7 +213,7 @@ public struct SuspensionScreen: View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
             SLEmptyState(
                 icon: "envelope.badge.shield.half.filled",
-                title: "Appeal sent",
+                title: L10n.t("safety.appeal.sent.title"),
                 subtitle: viewModel.appealReceipt(),
                 tint: SLColor.secondary
             )
@@ -217,17 +224,16 @@ public struct SuspensionScreen: View {
 
     private var signOut: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("Signing out changes nothing about the suspension. It will still be "
-                 + "here when you sign back in.")
+            Text(L10n.t("safety.suspended.signOut.note"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
 
             SLButton(
-                "Sign out",
+                L10n.t("common.signOut"),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Ends your session and returns to the welcome screen",
+                accessibilityHint: L10n.t("auth.signOut.hint"),
                 action: { viewModel.signOut() }
             )
         }

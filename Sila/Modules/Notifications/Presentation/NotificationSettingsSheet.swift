@@ -26,14 +26,14 @@ public struct NotificationSettingsSheet: View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .tnScreenBackground()
-            .tnNavigationBar(title: "Notification settings")
+            .tnNavigationBar(title: L10n.t("notifications.settings.title"))
             .toolbar {
                 if let onClose {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") { onClose() }
+                        Button(L10n.t("common.done")) { onClose() }
                             .foregroundStyle(SLColor.primary)
-                            .accessibilityLabel(Text("Done"))
-                            .accessibilityHint(Text("Closes notification settings"))
+                            .accessibilityLabel(Text(L10n.t("common.done")))
+                            .accessibilityHint(Text(L10n.t("notifications.settings.done.hint")))
                     }
                 }
             }
@@ -51,7 +51,7 @@ public struct NotificationSettingsSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(.top, SLSpacing.lg)
-            .accessibilityLabel(Text("Loading your notification settings"))
+            .accessibilityLabel(Text(L10n.t("notifications.settings.loading.accessibility")))
         // Only a failed *load* replaces the switches. A failed write keeps them
         // on screen — the toast already said what went wrong, and the switch
         // has already sprung back to what the server holds.
@@ -59,10 +59,10 @@ public struct NotificationSettingsSheet: View {
             ScrollView {
                 SLEmptyState(
                     icon: "wifi.exclamationmark",
-                    title: "Couldn't load your notification settings",
+                    title: L10n.t("notifications.settings.error.title"),
                     subtitle: error,
                     tint: SLColor.danger,
-                    actionTitle: "Try again",
+                    actionTitle: L10n.t("notifications.settings.error.retry"),
                     action: { Task { await viewModel.reload() } }
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -77,8 +77,10 @@ public struct NotificationSettingsSheet: View {
                         PreferenceToggleRow(
                             title: kind.settingTitle,
                             detail: kind.settingDetail,
-                            accessibilityHint: "Shows or hides \(kind.settingTitle.lowercased()) "
-                                + "in your notifications list",
+                            accessibilityHint: L10n.t(
+                                "notifications.settings.toggle.hint",
+                                kind.settingTitle.lowercased()
+                            ),
                             isOn: Binding(
                                 get: { viewModel.preferences.isEnabled(kind) },
                                 set: { value in
@@ -110,7 +112,7 @@ public struct NotificationSettingsSheet: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(SLColor.primary)
                         .accessibilityHidden(true)
-                    Text("What these do")
+                    Text(L10n.t("notifications.settings.explanation.title"))
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(SLColor.textPrimary)
                 }

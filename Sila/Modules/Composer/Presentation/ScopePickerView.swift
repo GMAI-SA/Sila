@@ -23,17 +23,17 @@ struct ScopePickerSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             HStack(spacing: SLSpacing.sm) {
-                Text("WHO CAN REPLY")
+                Text(L10n.t("composer.scope.sectionHeader"))
                     .font(SLFont.micro)
                     .tracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
                 Spacer(minLength: 0)
-                Text("Everyone can read it")
+                Text(L10n.t("composer.scope.everyoneCanRead"))
                     .font(SLFont.micro)
                     .foregroundStyle(SLColor.textMuted)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(Text("Who can reply. Everyone can read this post either way."))
+            .accessibilityLabel(Text(L10n.t("composer.scope.section.a11yLabel")))
 
             VStack(spacing: SLSpacing.sm) {
                 ForEach(viewModel.scopeOptions) { option in
@@ -65,10 +65,17 @@ struct ScopeOptionRow: View {
                     .frame(width: 22)
 
                 VStack(alignment: .leading, spacing: 2) {
+                    // A country name is content: it comes from the locale, and
+                    // a Latin one ("Saudi Arabia", "France") sitting in an
+                    // Arabic list needs its own direction or the flag emoji
+                    // ends up on the wrong side of the words.
                     Text(option.title)
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(option.isAvailable ? SLColor.textPrimary : SLColor.textMuted)
                         .lineLimit(1)
+                        .slContentDirection(
+                            TextDirection.resolve(languageCode: nil, text: option.title)
+                        )
 
                     Text(option.unavailableReason ?? option.subtitle)
                         .font(SLFont.micro)
@@ -109,8 +116,8 @@ struct ScopeOptionRow: View {
         .accessibilityLabel(Text(option.accessibilityLabel))
         .accessibilityHint(Text(
             option.isAvailable
-                ? "Limits replies to this audience"
-                : "Unavailable. Selecting it explains why"
+                ? L10n.t("composer.scope.row.a11yHint")
+                : L10n.t("composer.scope.row.a11yHintUnavailable")
         ))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }

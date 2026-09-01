@@ -192,27 +192,27 @@ public struct MainTabView: View {
         // were started from — a block's whole job is to make that row disappear.
         .safetyPresentation(safety)
         .confirmationDialog(
-            "Delete this post?",
+            L10n.t("feed.delete.confirm.title"),
             isPresented: Binding(
                 get: { deletion.pending != nil },
                 set: { if !$0 { deletion.cancel() } }
             ),
             titleVisibility: .visible
         ) {
-            Button("Delete", role: .destructive) { Task { await deletion.confirm() } }
-            Button("Keep", role: .cancel) { deletion.cancel() }
+            Button(L10n.t("common.delete"), role: .destructive) { Task { await deletion.confirm() } }
+            Button(L10n.t("feed.delete.confirm.keep"), role: .cancel) { deletion.cancel() }
         } message: {
             // States what is actually lost. There is no undo on the server.
-            Text("This removes it from every feed, thread and search result. It cannot be undone.")
+            Text(L10n.t("feed.delete.confirm.message"))
         }
         .alert(
-            "Could not delete",
+            L10n.t("feed.delete.failed.title"),
             isPresented: Binding(
                 get: { deletion.error != nil },
                 set: { if !$0 { deletion.clearError() } }
             )
         ) {
-            Button("OK", role: .cancel) { deletion.clearError() }
+            Button(L10n.t("common.ok"), role: .cancel) { deletion.clearError() }
         } message: {
             Text(deletion.error ?? "")
         }
@@ -395,7 +395,7 @@ public struct MainTabView: View {
     /// Opens the composer, or says why it is not there.
     private func openComposer() {
         guard container.flags.composer else {
-            stub("Composing posts")
+            stub(StubFeature.composing)
             return
         }
         container.analytics.track(.composerOpened, properties: ["context": "new"])
@@ -442,7 +442,7 @@ public struct MainTabView: View {
                     safetyMenu: safetyMenu(for:),
                     ownPost: ownPostMenu(for:)
                 )
-                .tnNavigationBar(title: "Sila")
+                .tnNavigationBar(title: L10n.t("feed.home.navTitle"))
                 .navigationDestination(for: FeedRoute.self) { route in
                     destination(for: route)
                 }
@@ -463,7 +463,7 @@ public struct MainTabView: View {
                     safetyMenu: safetyMenu(for:),
                     ownPost: ownPostMenu(for:)
                 )
-                .tnNavigationBar(title: "Explore")
+                .tnNavigationBar(title: L10n.t("search.navTitle"))
                 .navigationDestination(for: FeedRoute.self) { route in
                     destination(for: route)
                 }
@@ -498,7 +498,7 @@ public struct MainTabView: View {
                     onOpenProfile: openProfile,
                     onOpenSettings: {
                         guard container.flags.preferences else {
-                            stub("Notification settings")
+                            stub(StubFeature.notificationSettings)
                             return
                         }
                         isShowingNotificationSettings = true
@@ -580,7 +580,7 @@ public struct MainTabView: View {
     /// `"@aziz"`, or the neutral title when the session carries no handle.
     private var profileTitle: String {
         guard let handle = container.session.user?.handle, !handle.isEmpty else {
-            return "Profile"
+            return L10n.t("feed.tab.profile.label")
         }
         return "@\(handle)"
     }
@@ -652,7 +652,7 @@ public struct MainTabView: View {
     /// tab's history.
     private func openRoomProfile(_ handle: String) {
         guard container.flags.profile else {
-            stub("Profiles")
+            stub(StubFeature.profiles)
             return
         }
         let component = Handle.pathComponent(handle)
@@ -718,12 +718,12 @@ public struct MainTabView: View {
     /// screen, and a mention that was never a handle is not a missing account.
     private func openProfile(_ handle: String) {
         guard container.flags.profile else {
-            stub("Profiles")
+            stub(StubFeature.profiles)
             return
         }
         let component = Handle.pathComponent(handle)
         guard !component.isEmpty else {
-            container.router.show(.info("That doesn't look like a Sila handle."))
+            container.router.show(.info(L10n.t("feed.profile.invalidHandle")))
             return
         }
         container.analytics.track(.profileOpened, properties: ["handle": component])
@@ -797,24 +797,24 @@ public struct MainTabView: View {
         var items: [SLTabBarItem<Tab>] = [
             SLTabBarItem(
                 id: "home", icon: "house", selectedIcon: "house.fill",
-                label: "Home", hint: "Shows your four feeds", kind: .tab(.home)
+                label: L10n.t("feed.tab.home.label"), hint: L10n.t("feed.tab.home.hint"), kind: .tab(.home)
             ),
             SLTabBarItem(
                 id: "explore", icon: "magnifyingglass", selectedIcon: "magnifyingglass",
-                label: "Explore", hint: "Search posts and people, and see what is trending", kind: .tab(.explore)
+                label: L10n.t("feed.tab.explore.label"), hint: L10n.t("feed.tab.explore.hint"), kind: .tab(.explore)
             ),
             SLTabBarItem(
                 id: "compose", icon: "plus",
-                label: "Post",
+                label: L10n.t("feed.tab.compose.label"),
                 hint: container.flags.composer
-                    ? "Opens the composer"
-                    : "Writing posts arrives in a later release",
+                    ? L10n.t("feed.tab.compose.hint")
+                    : L10n.t("feed.tab.compose.disabledHint"),
                 kind: .action
             ),
             SLTabBarItem(
                 id: "notifications", icon: "bell", selectedIcon: "bell.fill",
-                label: "Alerts",
-                hint: "Follows, likes, reposts, replies and mentions",
+                label: L10n.t("feed.tab.notifications.label"),
+                hint: L10n.t("feed.tab.notifications.hint"),
                 kind: .tab(.notifications),
                 // The server's count, straight from the last response. Nothing
                 // here recounts rows: the badge and the list have to agree, and
@@ -823,7 +823,7 @@ public struct MainTabView: View {
             ),
             SLTabBarItem(
                 id: "profile", icon: "person", selectedIcon: "person.fill",
-                label: "Profile", hint: "Your profile, your posts and your account settings", kind: .tab(.profile)
+                label: L10n.t("feed.tab.profile.label"), hint: L10n.t("feed.tab.profile.hint"), kind: .tab(.profile)
             )
         ]
         // Inserted rather than appended, so Rooms sits beside the compose
@@ -833,8 +833,8 @@ public struct MainTabView: View {
             items.insert(
                 SLTabBarItem(
                     id: "rooms", icon: "waveform", selectedIcon: "waveform.circle.fill",
-                    label: "Rooms",
-                    hint: "Live voice rooms. Anyone can listen to any room",
+                    label: L10n.t("feed.tab.rooms.label"),
+                    hint: L10n.t("feed.tab.rooms.hint"),
                     kind: .tab(.rooms)
                 ),
                 at: 3
@@ -847,7 +847,43 @@ public struct MainTabView: View {
     /// verification wall's stub does: record the intent, tell the user plainly.
     private func stub(_ feature: String) {
         container.analytics.track(.featureStubShown, properties: ["feature": feature])
-        container.router.show(.info("\(feature) arrives in a later release."))
+        container.router.show(.info(L10n.t("feed.stub.comingSoon", StubFeature.displayName(feature))))
+    }
+
+    /// The features that still answer with a stub, and the copy each one shows.
+    ///
+    /// The raw strings are **analytics identifiers** and go on the wire, so they
+    /// stay English and stay stable. The sentence a user reads is looked up
+    /// separately — which is the whole reason this is a lookup rather than the
+    /// interpolation it used to be, where the analytics value *was* the copy and
+    /// translating one would have silently renamed the other.
+    enum StubFeature {
+        static let composing = "Composing posts"
+        static let notificationSettings = "Notification settings"
+        static let profiles = "Profiles"
+        static let notInterested = "Not interested"
+        static let report = "Report"
+        static let replying = "Replying"
+        static let quotePosts = "Quote posts"
+        static let hashtagSearch = "Hashtag search"
+        static let identityVerification = "Identity verification"
+
+        static func displayName(_ identifier: String) -> String {
+            switch identifier {
+            case composing: return L10n.t("feed.stub.name.composing")
+            case notificationSettings: return L10n.t("feed.stub.name.notificationSettings")
+            case profiles: return L10n.t("feed.stub.name.profiles")
+            case notInterested: return L10n.t("feed.stub.name.notInterested")
+            case report: return L10n.t("feed.stub.name.report")
+            case replying: return L10n.t("feed.stub.name.replying")
+            case quotePosts: return L10n.t("feed.stub.name.quotePosts")
+            case hashtagSearch: return L10n.t("feed.stub.name.hashtagSearch")
+            case identityVerification: return L10n.t("feed.stub.name.identityVerification")
+            // A stub added later without a matching key still says something
+            // truthful, in English, rather than rendering a key.
+            default: return identifier
+            }
+        }
     }
 }
 
@@ -892,7 +928,7 @@ struct ProfileStubScreen: View {
             )
 
             VStack(spacing: SLSpacing.xs) {
-                Text(user?.displayName ?? "Your account")
+                Text(user?.displayName ?? L10n.t("feed.profileOff.fallbackName"))
                     .font(SLFont.displayM)
                     .foregroundStyle(SLColor.textPrimary)
 
@@ -900,22 +936,20 @@ struct ProfileStubScreen: View {
                     Text(email)
                         .font(SLFont.mono)
                         .foregroundStyle(SLColor.textMuted)
-                        .accessibilityLabel(Text("Signed in as \(email)"))
+                        .accessibilityLabel(Text(L10n.t("feed.profileOff.signedInAs", email)))
                 }
 
                 if user?.verificationStatus == .verified {
-                    SLBadge("Verified", style: .verified, icon: "checkmark.seal.fill")
+                    SLBadge(L10n.t("feed.profileOff.verifiedBadge"), style: .verified, icon: "checkmark.seal.fill")
                 }
             }
 
             if let onOpenAccount {
                 settingsEntry(
                     icon: "person.text.rectangle",
-                    title: "Account",
-                    detail: "Your name, handle, picture, email, password — and how to "
-                        + "download or delete everything.",
-                    hint: "Opens your profile details, sign-in credentials, data export "
-                        + "and account deletion",
+                    title: L10n.t("feed.profileOff.account.title"),
+                    detail: L10n.t("feed.profileOff.account.detail"),
+                    hint: L10n.t("feed.profileOff.account.hint"),
                     open: onOpenAccount
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -924,10 +958,9 @@ struct ProfileStubScreen: View {
             if let onOpenPreferences {
                 settingsEntry(
                     icon: "slider.horizontal.3",
-                    title: "Feed preferences",
-                    detail: "Topics, muted topics and muted countries — and how posts get labelled.",
-                    hint: "Opens topic interests, muted topics and muted countries, and "
-                        + "explains how posts are labelled",
+                    title: L10n.t("feed.profileOff.preferences.title"),
+                    detail: L10n.t("feed.profileOff.preferences.detail"),
+                    hint: L10n.t("feed.profileOff.preferences.hint"),
                     open: onOpenPreferences
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -936,11 +969,9 @@ struct ProfileStubScreen: View {
             if let onOpenSafety {
                 settingsEntry(
                     icon: "hand.raised",
-                    title: "Safety",
-                    detail: "Who you've blocked, who you've muted, and what you've reported. "
-                        + "None of them were told.",
-                    hint: "Opens your blocked and muted accounts, each undoable in place, "
-                        + "and the reports you have filed",
+                    title: L10n.t("feed.profileOff.safety.title"),
+                    detail: L10n.t("feed.profileOff.safety.detail"),
+                    hint: L10n.t("feed.profileOff.safety.hint"),
                     open: onOpenSafety
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -948,19 +979,19 @@ struct ProfileStubScreen: View {
 
             SLEmptyState(
                 icon: "person.crop.square",
-                title: "Profiles are switched off",
-                subtitle: "Public profile pages — follower counts, post history and how others see you — are turned off in this build. Your name, handle, bio and picture are editable now under Account. Nothing here is guessed in the meantime.",
+                title: L10n.t("feed.profileOff.empty.title"),
+                subtitle: L10n.t("feed.profileOff.empty.subtitle"),
                 tint: SLColor.textSecondary,
-                actionTitle: "Tell me when it lands",
-                action: { onStub("Profiles") }
+                actionTitle: L10n.t("feed.profileOff.empty.action"),
+                action: { onStub(MainTabView.StubFeature.profiles) }
             )
             .padding(.horizontal, SLSpacing.lg)
 
             SLButton(
-                "Sign out",
+                L10n.t("common.signOut"),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Ends your session and returns to the welcome screen",
+                accessibilityHint: L10n.t("auth.signOut.hint"),
                 action: onSignOut
             )
             .padding(.horizontal, SLSpacing.xxl)

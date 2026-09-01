@@ -52,8 +52,8 @@ public struct SLVerifiedBadge: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Verified human"))
-        .accessibilityHint(Text("This account passed government ID and liveness verification"))
+        .accessibilityLabel(Text(L10n.t("ds.verifiedBadge.label")))
+        .accessibilityHint(Text(L10n.t("ds.verifiedBadge.hint")))
     }
 }
 

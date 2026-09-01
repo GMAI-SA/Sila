@@ -48,18 +48,22 @@ public enum ComposerContext: Identifiable, Hashable, Sendable {
     /// Screen title.
     public var title: String {
         switch self {
-        case .newPost: return "New Post"
-        case .reply: return "Reply"
-        case .quote: return "Quote"
+        case .newPost: return L10n.t("composer.title.newPost")
+        case .reply: return L10n.t("composer.title.reply")
+        case .quote: return L10n.t("composer.title.quote")
         }
     }
 
     /// Label on the confirm button.
+    ///
+    /// Deliberately not the same keys as ``title``: English says "Reply" for
+    /// both the heading and the button, Arabic says الرد for one and رد for the
+    /// other.
     public var actionTitle: String {
         switch self {
-        case .newPost: return "Post"
-        case .reply: return "Reply"
-        case .quote: return "Post"
+        case .newPost: return L10n.t("composer.action.post")
+        case .reply: return L10n.t("composer.action.reply")
+        case .quote: return L10n.t("composer.action.post")
         }
     }
 }

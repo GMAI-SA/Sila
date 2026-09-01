@@ -41,19 +41,19 @@ public struct ReportSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
         .scrollDismissesKeyboard(.immediately)
-        .tnNavigationBar(title: viewModel.isShowingSupport ? "Support" : "Report")
+        .tnNavigationBar(title: L10n.t(viewModel.isShowingSupport ? "safety.report.nav.support" : "safety.report.nav.report"))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button(viewModel.isEditing ? "Cancel" : "Done") { viewModel.close() }
+                Button(L10n.t(viewModel.isEditing ? "common.cancel" : "common.done")) { viewModel.close() }
                     .foregroundStyle(
                         viewModel.isEditing ? SLColor.textSecondary : SLColor.primary
                     )
-                    .accessibilityLabel(Text(viewModel.isEditing ? "Cancel" : "Done"))
-                    .accessibilityHint(Text(
+                    .accessibilityLabel(Text(L10n.t(viewModel.isEditing ? "common.cancel" : "common.done")))
+                    .accessibilityHint(Text(L10n.t(
                         viewModel.isEditing
-                            ? "Closes this without reporting anything"
-                            : "Closes this screen"
-                    ))
+                            ? "safety.report.close.editingHint"
+                            : "safety.report.close.hint"
+                    )))
             }
         }
     }
@@ -97,16 +97,15 @@ public struct ReportSheet: View {
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel(Text("Not ready yet. \(blocking)"))
+                    .accessibilityLabel(Text(L10n.t("safety.report.notReady.a11y", blocking)))
             }
 
             SLButton(
-                "Submit report",
+                L10n.t("safety.report.submit"),
                 variant: .primary,
                 isLoading: viewModel.isSubmitting,
                 isEnabled: viewModel.canSubmit,
-                accessibilityHint: "Sends this to a Sila reviewer. "
-                    + "\(viewModel.target.name) is not told.",
+                accessibilityHint: L10n.t("safety.report.submit.hint", viewModel.target.name),
                 asyncAction: { await viewModel.submit() }
             )
         }
@@ -117,7 +116,7 @@ public struct ReportSheet: View {
     private var subjectCard: some View {
         SLCard {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
-                Text("REPORTING")
+                Text(L10n.t("safety.report.subjectHeader"))
                     .font(SLFont.micro)
                     .tracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
@@ -142,7 +141,7 @@ public struct ReportSheet: View {
 
     private var reasonPicker: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("WHAT IS WRONG?")
+            Text(L10n.t("safety.report.reasonHeader"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -159,10 +158,10 @@ public struct ReportSheet: View {
         return SLCard(
             padding: SLSpacing.md,
             isHighlighted: isSelected,
-            accessibilityLabel: "\(reason.title). \(reason.detail)",
-            accessibilityHint: isSelected
-                ? "Selected. Tap again to clear it."
-                : "Chooses this as the reason",
+            accessibilityLabel: L10n.t("safety.report.reason.a11yLabel", reason.title, reason.detail),
+            accessibilityHint: L10n.t(isSelected
+                ? "safety.report.reason.selectedHint"
+                : "safety.report.reason.hint"),
             onTap: { viewModel.select(reason) }
         ) {
             HStack(alignment: .top, spacing: SLSpacing.md) {
@@ -196,22 +195,32 @@ public struct ReportSheet: View {
     private var detailField: some View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
             SLTextField(
-                viewModel.requiresDetail ? "What is wrong (required)" : "Anything else (optional)",
+                L10n.t(viewModel.requiresDetail
+                    ? "safety.report.detail.requiredLabel"
+                    : "safety.report.detail.optionalLabel"),
                 text: $viewModel.draft.detail,
-                placeholder: viewModel.requiresDetail
-                    ? "Describe what you are reporting"
-                    : "Only if it helps a reviewer",
+                placeholder: L10n.t(viewModel.requiresDetail
+                    ? "safety.report.detail.requiredPlaceholder"
+                    : "safety.report.detail.optionalPlaceholder"),
                 autocapitalization: .sentences,
                 error: viewModel.validationError,
-                accessibilityHint: viewModel.requiresDetail
-                    ? "Required for this reason. Up to \(SafetyLimits.maximumDetailLength) characters."
-                    : "Optional. Up to \(SafetyLimits.maximumDetailLength) characters."
+                accessibilityHint: L10n.plural(
+                    viewModel.requiresDetail
+                        ? "safety.report.detail.requiredHint"
+                        : "safety.report.detail.optionalHint",
+                    SafetyLimits.maximumDetailLength
+                )
+            )
+            // The report is the reporter's own words, in whichever language
+            // they are writing them.
+            .slContentDirection(
+                TextDirection.resolve(languageCode: nil, text: viewModel.draft.detail)
             )
 
-            Text("\(viewModel.detailRemaining) characters left")
+            Text(L10n.plural("safety.report.detail.remaining", viewModel.detailRemaining))
                 .font(SLFont.micro)
                 .foregroundStyle(viewModel.detailRemaining < 0 ? SLColor.danger : SLColor.textMuted)
-                .accessibilityLabel(Text("\(viewModel.detailRemaining) characters left"))
+                .accessibilityLabel(Text(L10n.plural("safety.report.detail.remaining", viewModel.detailRemaining)))
         }
     }
 
@@ -245,9 +254,9 @@ public struct ReportSheet: View {
             nextSteps
 
             SLButton(
-                "Done",
+                L10n.t("common.done"),
                 variant: .primary,
-                accessibilityHint: "Closes this screen",
+                accessibilityHint: L10n.t("safety.report.close.hint"),
                 action: { viewModel.close() }
             )
         }
@@ -307,9 +316,9 @@ public struct ReportSheet: View {
             softNextSteps
 
             SLButton(
-                "Done",
+                L10n.t("common.done"),
                 variant: .primary,
-                accessibilityHint: "Closes this screen",
+                accessibilityHint: L10n.t("safety.report.close.hint"),
                 action: { viewModel.close() }
             )
         }
@@ -342,7 +351,7 @@ public struct ReportSheet: View {
                                     .font(SLFont.bodyEmphasis)
                                     .foregroundStyle(SLColor.secondary)
                             }
-                            .accessibilityLabel(Text("Call \(resource.name) on \(phone)"))
+                            .accessibilityLabel(Text(L10n.t("safety.support.call.a11yLabel", resource.name, phone)))
                         } else {
                             Text(phone)
                                 .font(SLFont.mono)
@@ -353,11 +362,11 @@ public struct ReportSheet: View {
 
                     if let url = resource.url {
                         Link(destination: url) {
-                            Label("Open", systemImage: "arrow.up.right.square")
+                            Label(L10n.t("safety.support.open"), systemImage: "arrow.up.right.square")
                                 .font(SLFont.caption)
                                 .foregroundStyle(SLColor.primary)
                         }
-                        .accessibilityLabel(Text("Open \(resource.name)"))
+                        .accessibilityLabel(Text(L10n.t("safety.support.open.a11yLabel", resource.name)))
                     }
 
                     Spacer(minLength: 0)
@@ -370,14 +379,14 @@ public struct ReportSheet: View {
     /// The two follow-ups on the receipt screen — offered plainly.
     private var nextSteps: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("If you would rather not see them")
+            Text(L10n.t("safety.report.nextSteps.header"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityAddTraits(.isHeader)
 
             SLButton(
-                "Mute \(viewModel.target.atHandle)",
+                L10n.t("safety.menu.mute", viewModel.target.atHandle),
                 variant: .secondary,
                 size: .compact,
                 accessibilityHint: SafetyCopy.muteEffect + " " + SafetyCopy.muteIsSilent,
@@ -385,10 +394,10 @@ public struct ReportSheet: View {
             )
 
             SLButton(
-                "Block \(viewModel.target.atHandle)…",
+                L10n.t("safety.menu.block", viewModel.target.atHandle),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Asks you to confirm first, and says what a block removes.",
+                accessibilityHint: L10n.t("safety.menu.block.hint"),
                 action: { viewModel.blockFromOutcome() }
             )
         }
@@ -402,7 +411,7 @@ public struct ReportSheet: View {
     private var softNextSteps: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             SLButton(
-                "Mute \(viewModel.target.atHandle)",
+                L10n.t("safety.menu.mute", viewModel.target.atHandle),
                 variant: .secondary,
                 size: .compact,
                 accessibilityHint: SafetyCopy.muteEffect + " " + SafetyCopy.muteIsSilent,
@@ -410,10 +419,10 @@ public struct ReportSheet: View {
             )
 
             SLButton(
-                "Block \(viewModel.target.atHandle)…",
+                L10n.t("safety.menu.block", viewModel.target.atHandle),
                 variant: .ghost,
                 size: .compact,
-                accessibilityHint: "Asks you to confirm first, and says what a block removes.",
+                accessibilityHint: L10n.t("safety.menu.block.hint"),
                 action: { viewModel.blockFromOutcome() }
             )
         }

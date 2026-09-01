@@ -109,7 +109,7 @@ private struct CardAccessibility: ViewModifier {
                 .accessibilityElement(children: .combine)
                 .accessibilityAddTraits(.isButton)
                 .accessibilityLabel(Text(label ?? ""))
-                .accessibilityHint(Text(hint ?? "Opens this item"))
+                .accessibilityHint(Text(hint ?? L10n.t("ds.card.defaultHint")))
         } else {
             content
         }

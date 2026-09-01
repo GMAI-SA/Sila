@@ -22,10 +22,10 @@ public enum AccountSheet: String, Identifiable, Hashable, Sendable {
     /// Sheet title.
     public var title: String {
         switch self {
-        case .password: return "Change password"
-        case .email: return "Change email"
-        case .phone: return "Contact number"
-        case .delete: return "Delete account"
+        case .password: return L10n.t("account.sheet.password.title")
+        case .email: return L10n.t("account.sheet.email.title")
+        case .phone: return L10n.t("account.sheet.phone.title")
+        case .delete: return L10n.t("account.sheet.delete.title")
         }
     }
 }
@@ -245,13 +245,13 @@ public final class AccountViewModel {
     public var passwordValidationError: String? {
         if passwordNew.isEmpty && passwordRepeat.isEmpty { return nil }
         if passwordNew.count < AccountLimits.minimumPasswordLength {
-            return "Passwords are at least \(AccountLimits.minimumPasswordLength) characters."
+            return L10n.plural("account.password.error.tooShort", AccountLimits.minimumPasswordLength)
         }
         if passwordNew.count > AccountLimits.maximumPasswordLength {
-            return "Passwords are at most \(AccountLimits.maximumPasswordLength) characters."
+            return L10n.plural("account.password.error.tooLong", AccountLimits.maximumPasswordLength)
         }
         if !passwordRepeat.isEmpty && passwordNew != passwordRepeat {
-            return "Those two don't match."
+            return L10n.t("account.password.error.mismatch")
         }
         return nil
     }
@@ -316,13 +316,13 @@ public final class AccountViewModel {
 
         do {
             adopt(try await service.updateProfile(update))
-            toast = .success("Profile saved.")
+            toast = .success(L10n.t("account.profile.toast.saved"))
         } catch {
             guard !handledDeactivation(error) else { return }
             // The edits stay where they are: throwing away someone's work to
             // make a screen agree with the server is the worse failure.
             profileError = APIError.wrapping(error).userMessage
-            toast = .error(profileError ?? "Couldn't save your profile.")
+            toast = .error(profileError ?? L10n.t("account.profile.toast.saveFailed"))
         }
     }
 
@@ -360,11 +360,11 @@ public final class AccountViewModel {
 
         do {
             adopt(try await service.uploadAvatar(AvatarImage(data: data)))
-            toast = .success("Picture updated. Location data was removed.")
+            toast = .success(L10n.t("account.avatar.toast.updated"))
         } catch {
             guard !handledDeactivation(error) else { return }
             avatarError = APIError.wrapping(error).userMessage
-            toast = .error(avatarError ?? "Couldn't set that picture.")
+            toast = .error(avatarError ?? L10n.t("account.avatar.toast.uploadFailed"))
         }
     }
 
@@ -377,11 +377,11 @@ public final class AccountViewModel {
 
         do {
             adopt(try await service.removeAvatar())
-            toast = .success("Picture removed.")
+            toast = .success(L10n.t("account.avatar.toast.removed"))
         } catch {
             guard !handledDeactivation(error) else { return }
             avatarError = APIError.wrapping(error).userMessage
-            toast = .error(avatarError ?? "Couldn't remove your picture.")
+            toast = .error(avatarError ?? L10n.t("account.avatar.toast.removeFailed"))
         }
     }
 
@@ -417,9 +417,7 @@ public final class AccountViewModel {
     /// the current access token expires. Saying so is better than letting
     /// somebody be dropped to the sign-in screen an hour later with no idea why.
     public var passwordChangeOutcome: String {
-        "Your password is changed. Every signed-in device was signed out — "
-            + "including this one, which will ask for your new password the next "
-            + "time it refreshes the session."
+        L10n.t("account.password.outcome")
     }
 
     // MARK: - Email
@@ -457,7 +455,7 @@ public final class AccountViewModel {
             adopt(try await service.confirmEmailChange(newEmail: address, code: emailCode))
             emailStage = .confirmed(address: address)
             emailCode = ""
-            toast = .success("You now sign in with \(address).")
+            toast = .success(L10n.t("account.email.toast.changed", address))
         } catch {
             guard !handledDeactivation(error) else { return }
             let wrapped = APIError.wrapping(error)
@@ -470,9 +468,7 @@ public final class AccountViewModel {
                 emailStage = .entry
                 emailNew = ""
                 emailCode = ""
-                emailError = "Somebody else claimed \(address) while your code was in the "
-                    + "inbox, so the change was not made. Your address is unchanged. "
-                    + "Try a different one."
+                emailError = L10n.t("account.email.error.claimedWhileWaiting", address)
             }
         }
     }
@@ -495,7 +491,7 @@ public final class AccountViewModel {
         case let .failure(reason):
             phoneError = reason.message
         case let .success(number):
-            await writePhone(number, successMessage: "Contact number saved. It is not verified.")
+            await writePhone(number, successMessage: L10n.t("account.phone.toast.saved"))
         }
     }
 
@@ -506,7 +502,7 @@ public final class AccountViewModel {
     /// be subtractive.
     public func removePhone() async {
         guard !phonePassword.isEmpty, !isSavingPhone else { return }
-        await writePhone(nil, successMessage: "Contact number removed.")
+        await writePhone(nil, successMessage: L10n.t("account.phone.toast.removed"))
     }
 
     private func writePhone(_ number: String?, successMessage: String) async {
@@ -541,7 +537,7 @@ public final class AccountViewModel {
         } catch {
             guard !handledDeactivation(error) else { return }
             exportError = APIError.wrapping(error).userMessage
-            toast = .error(exportError ?? "Couldn't download your data.")
+            toast = .error(exportError ?? L10n.t("account.export.toast.failed"))
         }
     }
 
@@ -603,7 +599,7 @@ public final class AccountViewModel {
             profileDraft = ProfileDraft(account: restored)
             deletionSchedule = nil
             route = restored.isPendingDeletion ? .recovery : .settings
-            toast = .success("Your account is back. Nothing was lost.")
+            toast = .success(L10n.t("account.recovery.toast.restored"))
         } catch {
             let wrapped = APIError.wrapping(error)
             if wrapped.code == .notPendingDeletion {
@@ -612,7 +608,7 @@ public final class AccountViewModel {
                 // reported as one rather than as a failure.
                 await reload()
                 if route == .recovery { route = .settings }
-                toast = .success("This account is not scheduled for deletion.")
+                toast = .success(L10n.t("account.recovery.toast.nothingToCancel"))
                 return
             }
             recoveryError = wrapped.userMessage

@@ -195,36 +195,44 @@ public enum ProfileCopy {
     /// The note under the timeline heading. Always shown, including when the
     /// list is empty — the exclusion is a fact about the list, not about
     /// whether it happens to have rows today.
-    public static let timelineScope =
-        "Top-level posts only. Replies stay in the threads they belong to, so "
-        + "they are not listed here and are not counted above."
+    ///
+    /// Computed rather than stored: a `static let` resolves once, on first
+    /// access, and would then keep answering in whichever language happened to
+    /// be installed at that moment.
+    public static var timelineScope: String { L10n.t("profile.timeline.scope") }
 
     /// The empty timeline.
-    public static let emptyTimelineTitle = "No posts yet"
+    public static var emptyTimelineTitle: String { L10n.t("profile.timeline.empty.title") }
 
     /// What an empty timeline means, given the exclusion above.
     /// - Parameter name: The account's display name.
     public static func emptyTimelineSubtitle(for name: String) -> String {
-        "\(name) hasn't started a thread yet. Replies aren't shown here, so a "
-            + "conversation they only joined won't appear."
+        L10n.t("profile.timeline.empty.subtitle", name)
     }
 
     /// The 404 dead end. Deliberately not phrased as a failure, and offered
     /// with no Retry — the handle will not start existing because somebody
     /// pressed a button.
-    public static let unavailableTitle = "This account isn't available"
+    public static var unavailableTitle: String { L10n.t("profile.unavailable.title") }
 
     /// - Parameter handle: The handle that was asked for, without the `@`.
     public static func unavailableSubtitle(for handle: String) -> String {
-        let named = handle.isEmpty ? "That handle" : "@\(handle)"
-        return "\(named) doesn't belong to an active Sila account. It may have "
-            + "been deleted, or the handle may have changed."
+        // A handle is never translated; the branch that has none names the slot
+        // instead, and that sentence is.
+        let named = handle.isEmpty ? L10n.t("profile.unavailable.handleFallback") : "@\(handle)"
+        return L10n.t("profile.unavailable.subtitle", named)
     }
 
     /// Label for the follow control.
+    ///
+    /// Two keys rather than one with a branch inside it: Arabic states a
+    /// relationship it is already in differently from the one it is asked to
+    /// start, and a ternary inside a single string cannot say both.
     /// - Parameter isFollowing: The current relationship.
     public static func followTitle(isFollowing: Bool) -> String {
-        isFollowing ? "Following" : "Follow"
+        isFollowing
+            ? L10n.t("profile.follow.button.following")
+            : L10n.t("profile.follow.button.follow")
     }
 
     /// What activating the follow control does.
@@ -233,8 +241,8 @@ public enum ProfileCopy {
     ///   - name: The account's display name.
     public static func followHint(isFollowing: Bool, name: String) -> String {
         isFollowing
-            ? "Stops showing \(name)'s posts in your Following feed"
-            : "Shows \(name)'s posts in your Following feed"
+            ? L10n.t("profile.follow.hint.unfollow", name)
+            : L10n.t("profile.follow.hint.follow", name)
     }
 }
 

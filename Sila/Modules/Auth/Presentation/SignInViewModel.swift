@@ -59,13 +59,13 @@ public final class SignInViewModel {
     /// Inline error under the email field.
     public var emailError: String? {
         guard didAttemptSubmit else { return nil }
-        return EmailValidator.isValid(email) ? nil : "Enter a valid email address."
+        return EmailValidator.isValid(email) ? nil : L10n.t("auth.error.invalidEmail")
     }
 
     /// Inline error under the password field.
     public var passwordError: String? {
         guard didAttemptSubmit else { return nil }
-        return password.isEmpty ? "Enter your password." : nil
+        return password.isEmpty ? L10n.t("auth.signIn.error.passwordEmpty") : nil
     }
 
     /// Whether the Sign In button is tappable.
@@ -82,7 +82,9 @@ public final class SignInViewModel {
     }
 
     /// Label for that button, e.g. "Sign in with Face ID".
-    public var biometricButtonTitle: String { "Sign in with \(biometry.displayName)" }
+    public var biometricButtonTitle: String {
+        L10n.t("auth.signIn.biometric.button", biometry.displayName)
+    }
 
     // MARK: Actions
 
@@ -121,7 +123,7 @@ public final class SignInViewModel {
             toast = .error(error.userMessage)
         } catch {
             password = ""
-            toast = .error("Something went wrong. Please try again.")
+            toast = .error(L10n.t("common.somethingWentWrong"))
         }
     }
 
@@ -136,7 +138,7 @@ public final class SignInViewModel {
         } catch let error as APIError {
             toast = .error(error.userMessage)
         } catch {
-            toast = .error("\(biometry.displayName) sign-in didn't work. Use your password.")
+            toast = .error(L10n.t("auth.signIn.biometric.failed", biometry.displayName))
         }
     }
 
@@ -182,7 +184,7 @@ public final class ForgotPasswordViewModel {
     /// Inline error under the email field.
     public var emailError: String? {
         guard didAttemptSubmit else { return nil }
-        return EmailValidator.isValid(email) ? nil : "Enter a valid email address."
+        return EmailValidator.isValid(email) ? nil : L10n.t("auth.error.invalidEmail")
     }
 
     /// Whether Send is tappable.
@@ -203,7 +205,7 @@ public final class ForgotPasswordViewModel {
         } catch let error as APIError {
             toast = .error(error.userMessage)
         } catch {
-            toast = .error("We couldn't send a reset code. Please try again.")
+            toast = .error(L10n.t("auth.forgotPassword.error.sendFailed"))
         }
     }
 

@@ -252,6 +252,15 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public let id: UUID
     public let author: UserSummary
     public let text: String
+    /// BCP-47 code for the language ``text`` is written in, as detected
+    /// server-side at write time — `"ar"`, `"en"`, or `nil` when the server
+    /// could not tell (a post that is only numbers and emoji has no language).
+    ///
+    /// This is what decides which way the post is laid out. The alternative —
+    /// laying every post out in the *interface's* direction — mangles exactly
+    /// the content this network is made of: an Arabic post read by somebody
+    /// whose phone is in English, and the English quote inside it.
+    public let language: String?
     public let createdAt: Date
     /// Who may reply to this thread.
     public let scope: PostScope
@@ -281,6 +290,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         author: UserSummary,
         text: String,
         createdAt: Date,
+        language: String? = nil,
         scope: PostScope = .international,
         scopeCountry: String? = nil,
         scopeRegion: String? = nil,
@@ -293,6 +303,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         self.id = id
         self.author = author
         self.text = text
+        self.language = Post.normalisedLanguage(language)
         self.createdAt = createdAt
         self.scope = scope
         self.scopeCountry = CountryCode.normalised(scopeCountry) ?? scopeCountry
@@ -305,8 +316,19 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, author, text, createdAt, scope, scopeCountry, scopeRegion
+        case id, author, text, language, createdAt, scope, scopeCountry, scopeRegion
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
+    }
+
+    /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
+    /// direction is a property of the script, not of the country.
+    /// An empty string decodes as `nil` — "the server does not know" and "the
+    /// server sent a blank" are the same fact, and both mean *look at the text*.
+    static func normalisedLanguage(_ raw: String?) -> String? {
+        guard let raw else { return nil }
+        let base = String(raw.split(whereSeparator: { $0 == "-" || $0 == "_" }).first ?? "")
+            .lowercased()
+        return base.isEmpty ? nil : base
     }
 
     /// Tolerant decoder.
@@ -325,6 +347,9 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         }
         author = try container.decode(UserSummary.self, forKey: .author)
         text = (try? container.decode(String.self, forKey: .text)) ?? ""
+        language = Post.normalisedLanguage(
+            (try? container.decodeIfPresent(String.self, forKey: .language)) ?? nil
+        )
         createdAt = (try? container.decode(Date.self, forKey: .createdAt)) ?? Date()
         scope = (try? container.decode(PostScope.self, forKey: .scope)) ?? .international
         let rawScopeCountry = (try? container.decodeIfPresent(String.self, forKey: .scopeCountry)) ?? nil
@@ -350,6 +375,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             author: author,
             text: text,
             createdAt: createdAt,
+            language: language,
             scope: scope,
             scopeCountry: scopeCountry,
             scopeRegion: scopeRegion,
@@ -431,10 +457,10 @@ public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
     /// Segmented-control label.
     public var title: String {
         switch self {
-        case .forYou: return "For You"
-        case .following: return "Following"
-        case .myCountry: return "My Country"
-        case .international: return "International"
+        case .forYou: return L10n.t("feed.tab.forYou")
+        case .following: return L10n.t("feed.tab.following")
+        case .myCountry: return L10n.t("feed.tab.myCountry")
+        case .international: return L10n.t("feed.tab.international")
         }
     }
 
@@ -451,10 +477,10 @@ public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
     /// Accessibility hint for the segmented control.
     public var accessibilityHint: String {
         switch self {
-        case .forYou: return "Shows posts ranked for you"
-        case .following: return "Shows posts from accounts you follow, newest first"
-        case .myCountry: return "Shows posts from verified accounts in your country"
-        case .international: return "Shows posts open to verified accounts worldwide"
+        case .forYou: return L10n.t("feed.tab.forYou.hint")
+        case .following: return L10n.t("feed.tab.following.hint")
+        case .myCountry: return L10n.t("feed.tab.myCountry.hint")
+        case .international: return L10n.t("feed.tab.international.hint")
         }
     }
 }

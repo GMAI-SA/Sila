@@ -36,16 +36,16 @@ public final class ExploreViewModel {
         /// Segmented-control label.
         public var title: String {
             switch self {
-            case .posts: return "Posts"
-            case .people: return "People"
+            case .posts: return L10n.t("search.tab.posts")
+            case .people: return L10n.t("search.tab.people")
             }
         }
 
         /// Accessibility hint for the segmented control.
         public var accessibilityHint: String {
             switch self {
-            case .posts: return "Shows posts whose text matches your search"
-            case .people: return "Shows accounts whose handle or name matches your search"
+            case .posts: return L10n.t("search.tab.posts.a11yHint")
+            case .people: return L10n.t("search.tab.people.a11yHint")
             }
         }
     }

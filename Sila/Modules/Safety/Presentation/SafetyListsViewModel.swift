@@ -10,9 +10,9 @@ public enum SafetyListTab: String, CaseIterable, Identifiable, Sendable, Hashabl
     /// Segmented-control label.
     public var title: String {
         switch self {
-        case .blocked: return "Blocked"
-        case .muted: return "Muted"
-        case .reports: return "Reports"
+        case .blocked: return L10n.t("safety.tab.blocked")
+        case .muted: return L10n.t("safety.tab.muted")
+        case .reports: return L10n.t("safety.tab.reports")
         }
     }
 
@@ -28,9 +28,9 @@ public enum SafetyListTab: String, CaseIterable, Identifiable, Sendable, Hashabl
     /// Accessibility hint for the segmented control.
     public var accessibilityHint: String {
         switch self {
-        case .blocked: return "Shows accounts you have blocked, each with an unblock button"
-        case .muted: return "Shows accounts you have muted, each with an unmute button"
-        case .reports: return "Shows everything you have reported and where each one has got to"
+        case .blocked: return L10n.t("safety.tab.blocked.hint")
+        case .muted: return L10n.t("safety.tab.muted.hint")
+        case .reports: return L10n.t("safety.tab.reports.hint")
         }
     }
 }

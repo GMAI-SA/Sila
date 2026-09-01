@@ -60,17 +60,23 @@ public struct PendingVerificationWallScreen: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     if let reason = viewModel.rejectionReason {
+                        // The reviewer wrote this, not us: it can arrive in
+                        // either language and has to read in its own.
                         Text(reason)
                             .font(SLFont.caption)
                             .foregroundStyle(SLColor.danger)
                             .multilineTextAlignment(.center)
                             .padding(.top, SLSpacing.xs)
+                            .environment(
+                                \.layoutDirection,
+                                TextDirection.resolve(languageCode: nil, text: reason).layoutDirection
+                            )
                     }
                 }
                 .padding(.horizontal, SLSpacing.lg)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(Text(spokenSummary))
-                .accessibilityHint(Text("Your account is limited until identity verification is complete"))
+                .accessibilityHint(Text(L10n.t("auth.wall.a11yHint")))
 
                 if let submitted = viewModel.submittedText {
                     SLCard(padding: SLSpacing.md) {
@@ -131,27 +137,27 @@ public struct PendingVerificationWallScreen: View {
                 SLButton(
                     title,
                     variant: .primary,
-                    accessibilityHint: "Opens the identity verification steps"
+                    accessibilityHint: L10n.t("auth.wall.startVerification.hint")
                 ) {
                     viewModel.startVerification()
                 }
             }
 
             SLButton(
-                "Check status",
+                L10n.t("auth.wall.checkStatus"),
                 variant: .secondary,
                 isLoading: viewModel.isRefreshing,
-                accessibilityHint: "Re-checks whether a reviewer has made a decision"
+                accessibilityHint: L10n.t("auth.wall.checkStatus.hint")
             ) {
                 Task { await viewModel.refresh() }
             }
 
             SLButton(
-                "Sign out",
+                L10n.t("common.signOut"),
                 variant: .ghost,
                 size: .compact,
                 isLoading: isSigningOut,
-                accessibilityHint: "Ends your session and returns to the welcome screen"
+                accessibilityHint: L10n.t("auth.signOut.hint")
             ) {
                 isSigningOut = true
                 onSignOut()

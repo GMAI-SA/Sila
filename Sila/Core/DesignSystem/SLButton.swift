@@ -134,9 +134,9 @@ public struct SLButton: View {
                 .onEnded { _ in isPressed = false }
         )
         .accessibilityLabel(Text(title))
-        .accessibilityHint(Text(accessibilityHintText ?? "Activates \(title)"))
+        .accessibilityHint(Text(accessibilityHintText ?? L10n.t("ds.button.defaultHint", title)))
         .accessibilityAddTraits(.isButton)
-        .accessibilityValue(isLoading ? Text("Working") : Text(""))
+        .accessibilityValue(isLoading ? Text(L10n.t("ds.button.loadingValue")) : Text(""))
     }
 
     @ViewBuilder

@@ -88,7 +88,7 @@ public final class SuspensionViewModel {
     public var expiryText: String {
         guard let suspension else { return SafetyCopy.suspendedIndefinite }
         guard let until = suspension.until else { return SafetyCopy.suspendedIndefinite }
-        return "This suspension lifts on \(Self.dateFormatter.string(from: until))."
+        return L10n.t("safety.suspended.liftsOn", SLFormat.date(until))
     }
 
     /// `true` when there is no end date.
@@ -108,11 +108,15 @@ public final class SuspensionViewModel {
     public func appealReceipt(now: Date = Date()) -> String {
         guard let appeal else { return SafetyCopy.appealSubmitted }
         guard let submitted = appeal.submittedAt else {
-            return "\(appeal.status.label). \(SafetyCopy.appealSubmitted)"
+            return L10n.t("safety.appeal.receipt.noDate", appeal.status.label, SafetyCopy.appealSubmitted)
         }
         _ = now
-        return "Sent \(Self.dateFormatter.string(from: submitted)) — \(appeal.status.label). "
-            + SafetyCopy.appealSubmitted
+        return L10n.t(
+            "safety.appeal.receipt",
+            SLFormat.date(submitted),
+            appeal.status.label,
+            SafetyCopy.appealSubmitted
+        )
     }
 
     /// Whether the appeal may be sent.
@@ -124,10 +128,10 @@ public final class SuspensionViewModel {
     public var appealValidationError: String? {
         let trimmed = appealMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.count > SafetyLimits.maximumAppealLength {
-            return "Appeals are at most \(SafetyLimits.maximumAppealLength) characters."
+            return L10n.plural("safety.appeal.error.tooLong", SafetyLimits.maximumAppealLength)
         }
         if trimmed.count < SafetyLimits.minimumAppealLength {
-            return "Say what you think happened — an empty appeal gives a reviewer nothing to weigh."
+            return L10n.t("safety.appeal.error.empty")
         }
         return nil
     }
@@ -182,7 +186,7 @@ public final class SuspensionViewModel {
             suspension = (suspension ?? Suspension(suspended: true)).adopting(receipt)
             appealMessage = ""
             analytics.track(.appealSubmitted)
-            toast = .success("Your appeal is in. A human will read it.")
+            toast = .success(L10n.t("safety.appeal.toast.sent"))
         } catch {
             let wrapped = APIError.wrapping(error)
             if wrapped.code == .alreadyAppealed {
@@ -193,7 +197,7 @@ public final class SuspensionViewModel {
                 suspension = (suspension ?? Suspension(suspended: true))
                     .adopting(SuspensionAppeal(submittedAt: nil, status: .pending))
                 appealMessage = ""
-                toast = .info("You had already appealed. That one still stands.")
+                toast = .info(L10n.t("safety.appeal.toast.alreadyOnFile"))
                 return
             }
             appealError = wrapped.userMessage
@@ -205,10 +209,4 @@ public final class SuspensionViewModel {
         onSignOut?()
     }
 
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .none
-        return formatter
-    }()
 }

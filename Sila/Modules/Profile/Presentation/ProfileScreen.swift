@@ -199,10 +199,10 @@ public struct ProfileScreen: View {
                 VStack(spacing: SLSpacing.lg) {
                     SLEmptyState(
                         icon: "wifi.exclamationmark",
-                        title: "Couldn't load this profile",
+                        title: L10n.t("profile.error.title"),
                         subtitle: message,
                         tint: SLColor.danger,
-                        actionTitle: "Try again",
+                        actionTitle: L10n.t("profile.action.tryAgain"),
                         action: { Task { await viewModel.reload() } }
                     )
                     ownerSection
@@ -225,7 +225,7 @@ public struct ProfileScreen: View {
         }
         .padding(.top, SLSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityLabel(Text("Loading this profile"))
+        .accessibilityLabel(Text(L10n.t("profile.loading.accessibilityLabel")))
     }
 
     // MARK: - Timeline
@@ -251,15 +251,15 @@ public struct ProfileScreen: View {
                         }
                     }
                     .padding(.vertical, SLSpacing.lg)
-                    .accessibilityLabel(Text("Loading posts"))
+                    .accessibilityLabel(Text(L10n.t("profile.timeline.loading.accessibilityLabel")))
 
                 } else if let error = viewModel.postsError {
                     SLEmptyState(
                         icon: "wifi.exclamationmark",
-                        title: "Couldn't load these posts",
+                        title: L10n.t("profile.timeline.error.title"),
                         subtitle: error,
                         tint: SLColor.danger,
-                        actionTitle: "Try again",
+                        actionTitle: L10n.t("profile.action.tryAgain"),
                         action: { Task { await viewModel.reload(isRefresh: true) } }
                     )
                     .padding(.horizontal, SLSpacing.lg)
@@ -290,9 +290,9 @@ public struct ProfileScreen: View {
                             .tint(SLColor.primary)
                             .frame(maxWidth: .infinity)
                             .padding(SLSpacing.xl)
-                            .accessibilityLabel(Text("Loading more posts"))
+                            .accessibilityLabel(Text(L10n.t("profile.timeline.loadingMore.accessibilityLabel")))
                     } else if !viewModel.hasMore {
-                        Text("That's every post here.")
+                        Text(L10n.t("profile.timeline.end"))
                             .font(SLFont.caption)
                             .foregroundStyle(SLColor.textMuted)
                             .frame(maxWidth: .infinity)
@@ -315,19 +315,20 @@ public struct ProfileScreen: View {
         VStack(spacing: SLSpacing.md) {
             SLEmptyState(
                 icon: "hand.raised.fill",
-                title: "You blocked \(viewModel.profile?.displayName ?? viewModel.handle)",
-                subtitle: "Neither of you can see the other's posts, and any follow between "
-                    + "you was removed. They were not told.",
+                title: L10n.t(
+                    "profile.blocked.title",
+                    viewModel.profile?.displayName ?? viewModel.handle
+                ),
+                subtitle: L10n.t("profile.blocked.subtitle"),
                 tint: SLColor.textSecondary
             )
 
             if let unblock = headerSafety?.onUnblock {
                 SLButton(
-                    "Unblock",
+                    L10n.t("safety.action.unblock.short"),
                     variant: .secondary,
                     size: .compact,
-                    accessibilityHint: "Lets you see each other again. It does not restore "
-                        + "any follow that was severed.",
+                    accessibilityHint: L10n.t("safety.unblock.hint"),
                     // Only asks for the unblock. The timeline comes back when the
                     // app's safety model says the block is gone — see
                     // ``syncBlockState(_:)`` — rather than on a hopeful reload
@@ -360,7 +361,7 @@ public struct ProfileScreen: View {
 
     private var timelineHeading: some View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
-            Text("POSTS")
+            Text(L10n.t("profile.timeline.heading"))
                 .font(SLFont.micro)
                 .tracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
@@ -409,10 +410,17 @@ public struct ProfileScreen: View {
 
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
                     HStack(spacing: SLSpacing.sm) {
+                        // A display name is written by the person it belongs to,
+                        // so it is laid out in its own direction rather than the
+                        // interface's — an Arabic name in an English UI still
+                        // reads right-to-left.
                         Text(profile.displayName)
                             .font(SLFont.displayM)
                             .foregroundStyle(SLColor.textPrimary)
                             .lineLimit(2)
+                            .slContentDirection(
+                                TextDirection.resolve(languageCode: nil, text: profile.displayName)
+                            )
 
                         if profile.user.isVerified {
                             SLVerifiedBadge(size: 20, isPulsing: false)
@@ -447,20 +455,20 @@ public struct ProfileScreen: View {
                     // between a mute and a block on this screen — and it says,
                     // where the user can read it, that the mute is not announced.
                     if viewModel.isMuted && !viewModel.isBlocked {
-                        SLBadge("Muted", style: .neutral, icon: "speaker.slash.fill")
+                        SLBadge(L10n.t("profile.badge.muted"), style: .neutral, icon: "speaker.slash.fill")
                             .padding(.top, SLSpacing.xs)
-                            .accessibilityLabel(Text(
-                                "You have muted this account. Their posts are hidden from "
-                                    + "your feeds. They were not told."
-                            ))
+                            .accessibilityLabel(Text(L10n.t("profile.badge.muted.accessibilityLabel")))
                     }
                 }
 
                 if let bio = profile.bio {
+                    // The bio is the person's own words; it follows them, not
+                    // the app's language.
                     Text(bio)
                         .font(SLFont.body)
                         .foregroundStyle(SLColor.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .slContentDirection(TextDirection.resolve(languageCode: nil, text: bio))
                 }
 
                 counts(profile)
@@ -474,7 +482,7 @@ public struct ProfileScreen: View {
     /// "Verified since March 2026", or `nil` when the account is not verified.
     private func verifiedSince(_ profile: Profile) -> String? {
         guard profile.user.isVerified, let date = profile.user.verifiedSince else { return nil }
-        return "Verified since \(Self.monthFormatter.string(from: date))"
+        return L10n.t("profile.verifiedSince", SLFormat.monthAndYear(date))
     }
 
     /// The three counters.
@@ -484,26 +492,34 @@ public struct ProfileScreen: View {
     /// promise the backend cannot keep.
     private func counts(_ profile: Profile) -> some View {
         HStack(spacing: SLSpacing.xl) {
-            count(profile.postCount, label: profile.postCount == 1 ? "Post" : "Posts")
-            count(profile.followerCount, label: profile.followerCount == 1 ? "Follower" : "Followers")
-            count(profile.followingCount, label: "Following")
+            count(profile.postCount, labelKey: "profile.count.posts", spokenKey: "profile.count.posts.accessibility")
+            count(profile.followerCount, labelKey: "profile.count.followers", spokenKey: "profile.count.followers.accessibility")
+            count(profile.followingCount, labelKey: "profile.count.following", spokenKey: "profile.count.following.accessibility")
             Spacer(minLength: 0)
         }
         .padding(.top, SLSpacing.xs)
     }
 
-    private func count(_ value: Int, label: String) -> some View {
+    /// One counter: an abbreviated number beside its noun.
+    ///
+    /// Both keys are plurals, and both are selected by `value`. English needs
+    /// two forms and gets away with a ternary; Arabic needs six, and "2
+    /// followers" and "11 followers" take different words from each other and
+    /// from "3 followers". The visible label is separate from the spoken one
+    /// because the visible number is abbreviated ("1.2K") and the spoken one
+    /// must not be.
+    private func count(_ value: Int, labelKey: String, spokenKey: String) -> some View {
         HStack(spacing: SLSpacing.xs) {
-            Text(PostCardView.count(value))
+            Text(SLFormat.compactCount(value))
                 .font(SLFont.bodyEmphasis)
                 .monospacedDigit()
                 .foregroundStyle(SLColor.textPrimary)
-            Text(label)
+            Text(L10n.plural(labelKey, value))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(value) \(label.lowercased())"))
+        .accessibilityLabel(Text(L10n.plural(spokenKey, value)))
     }
 
     /// Follow / Following, or the route into the existing editor when the
@@ -523,11 +539,11 @@ public struct ProfileScreen: View {
             .frame(width: 132)
         } else if let onOpenAccount = ownerActions.onOpenAccount {
             SLButton(
-                "Edit profile",
+                L10n.t("profile.editProfile"),
                 variant: .secondary,
                 size: .compact,
                 icon: "square.and.pencil",
-                accessibilityHint: "Opens your name, handle, bio and picture in account settings",
+                accessibilityHint: L10n.t("profile.editProfile.hint"),
                 action: onOpenAccount
             )
             .frame(width: 148)
@@ -550,11 +566,9 @@ public struct ProfileScreen: View {
                 if let open = ownerActions.onOpenAccount {
                     settingsEntry(
                         icon: "person.text.rectangle",
-                        title: "Account",
-                        detail: "Your name, handle, picture, email, password — and how to "
-                            + "download or delete everything.",
-                        hint: "Opens your profile details, sign-in credentials, data export "
-                            + "and account deletion",
+                        title: L10n.t("feed.profileOff.account.title"),
+                        detail: L10n.t("feed.profileOff.account.detail"),
+                        hint: L10n.t("feed.profileOff.account.hint"),
                         open: open
                     )
                 }
@@ -562,10 +576,9 @@ public struct ProfileScreen: View {
                 if let open = ownerActions.onOpenPreferences {
                     settingsEntry(
                         icon: "slider.horizontal.3",
-                        title: "Feed preferences",
-                        detail: "Topics, muted topics and muted countries — and how posts get labelled.",
-                        hint: "Opens topic interests, muted topics and muted countries, and "
-                            + "explains how posts are labelled",
+                        title: L10n.t("feed.profileOff.preferences.title"),
+                        detail: L10n.t("feed.profileOff.preferences.detail"),
+                        hint: L10n.t("feed.profileOff.preferences.hint"),
                         open: open
                     )
                 }
@@ -573,21 +586,19 @@ public struct ProfileScreen: View {
                 if let open = ownerActions.onOpenSafety {
                     settingsEntry(
                         icon: "hand.raised",
-                        title: "Safety",
-                        detail: "Who you've blocked, who you've muted, and what you've reported. "
-                            + "None of them were told.",
-                        hint: "Opens your blocked and muted accounts, each undoable in place, "
-                            + "and the reports you have filed",
+                        title: L10n.t("feed.profileOff.safety.title"),
+                        detail: L10n.t("feed.profileOff.safety.detail"),
+                        hint: L10n.t("feed.profileOff.safety.hint"),
                         open: open
                     )
                 }
 
                 if let signOut = ownerActions.onSignOut {
                     SLButton(
-                        "Sign out",
+                        L10n.t("common.signOut"),
                         variant: .ghost,
                         size: .compact,
-                        accessibilityHint: "Ends your session and returns to the welcome screen",
+                        accessibilityHint: L10n.t("auth.signOut.hint"),
                         action: signOut
                     )
                     .padding(.top, SLSpacing.xs)
@@ -647,11 +658,11 @@ public struct ProfileScreen: View {
             onLike: { post in Task { await viewModel.toggleLike(post) } },
             onRepost: { post in Task { await viewModel.toggleRepost(post) } },
             onBookmark: { post in Task { await viewModel.toggleBookmark(post) } },
-            onReply: { post in compose(.reply(to: post), fallback: "Replying") },
+            onReply: { post in compose(.reply(to: post), fallback: MainTabView.StubFeature.replying) },
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
-            onQuote: { post in compose(.quote(post), fallback: "Quote posts") },
+            onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { _ in onStub("Hashtag search") },
+            onHashtag: { _ in onStub(MainTabView.StubFeature.hashtagSearch) },
             onOpenQuoted: onOpenPost,
             // Every author on this page is the person whose profile it is,
             // except inside a quote card — so this only ever navigates
@@ -666,11 +677,6 @@ public struct ProfileScreen: View {
         )
     }
 
-    private static let monthFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.setLocalizedDateFormatFromTemplate("MMMM y")
-        return formatter
-    }()
 }
 
 // MARK: - Host

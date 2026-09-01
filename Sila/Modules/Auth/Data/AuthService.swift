@@ -83,14 +83,14 @@ public final class AuthService: AuthServiceProtocol {
 
     public func signInBiometric() async throws -> TokenPair {
         guard let email = await store.biometricEmail() else {
-            throw APIError.biometricFailed("No saved Sila sign-in on this device.")
+            throw APIError.biometricFailed(L10n.t("auth.biometric.error.noSavedSignIn"))
         }
         guard let token = await store.token() else {
-            throw APIError.biometricFailed("Your saved session has expired. Sign in with your password.")
+            throw APIError.biometricFailed(L10n.t("auth.biometric.error.sessionExpired"))
         }
 
         try await biometrics.authenticate(
-            reason: "Sign in to Sila as \(email)"
+            reason: L10n.t("auth.biometric.prompt", email)
         )
 
         let pair = try await refreshToken(token)

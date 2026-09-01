@@ -30,7 +30,7 @@ public struct SafetyMenu: View {
         } header: {
             // The one line that has to be readable before either silent action
             // is taken, rather than confessed in a toast afterwards.
-            Text("Blocking and muting are silent — \(actions.target.name) is never told.")
+            Text(L10n.t("safety.menu.silentHeader", actions.target.name))
         }
     }
 
@@ -40,12 +40,9 @@ public struct SafetyMenu: View {
     /// like one discourages the reports a platform most needs.
     private var reportButton: some View {
         Button(action: actions.onReport) {
-            Label("Report…", systemImage: "flag")
+            Label(L10n.t("safety.menu.report"), systemImage: "flag")
         }
-        .accessibilityHint(Text(
-            "Opens a list of reasons. Reporting is confidential — "
-                + "\(actions.target.name) is never shown who reported them."
-        ))
+        .accessibilityHint(Text(L10n.t("safety.menu.report.hint", actions.target.name)))
     }
 
     /// Mute or unmute. One tap either way, and the label says which.
@@ -53,13 +50,13 @@ public struct SafetyMenu: View {
     private var muteButton: some View {
         if actions.isMuted {
             Button(action: actions.onUnmute) {
-                Label("Unmute \(actions.target.atHandle)", systemImage: "speaker.wave.2")
+                Label(L10n.t("safety.menu.unmute", actions.target.atHandle), systemImage: "speaker.wave.2")
             }
             .disabled(actions.isBusy)
-            .accessibilityHint(Text("Lets their posts back into your feeds. They are not told."))
+            .accessibilityHint(Text(L10n.t("safety.menu.unmute.hint")))
         } else {
             Button(action: actions.onMute) {
-                Label("Mute \(actions.target.atHandle)", systemImage: "speaker.slash")
+                Label(L10n.t("safety.menu.mute", actions.target.atHandle), systemImage: "speaker.slash")
             }
             .disabled(actions.isBusy || actions.isBlocked)
             .accessibilityHint(Text(SafetyCopy.muteEffect + " " + SafetyCopy.muteIsSilent))
@@ -75,20 +72,16 @@ public struct SafetyMenu: View {
     private var blockButton: some View {
         if actions.isBlocked {
             Button(action: actions.onUnblock) {
-                Label("Unblock \(actions.target.atHandle)", systemImage: "hand.raised.slash")
+                Label(L10n.t("safety.menu.unblock", actions.target.atHandle), systemImage: "hand.raised.slash")
             }
             .disabled(actions.isBusy)
-            .accessibilityHint(Text(
-                "Lets you see each other again. It does not restore any follow that was severed."
-            ))
+            .accessibilityHint(Text(L10n.t("safety.unblock.hint")))
         } else {
             Button(role: .destructive, action: actions.onBlock) {
-                Label("Block \(actions.target.atHandle)…", systemImage: "hand.raised")
+                Label(L10n.t("safety.menu.block", actions.target.atHandle), systemImage: "hand.raised")
             }
             .disabled(actions.isBusy)
-            .accessibilityHint(Text(
-                "Asks you to confirm first, and says what a block removes."
-            ))
+            .accessibilityHint(Text(L10n.t("safety.menu.block.hint")))
         }
     }
 }
@@ -133,8 +126,8 @@ public struct SafetyMenuButton: View {
         }
         .menuOrder(.fixed)
         .simultaneousGesture(TapGesture().onEnded { onOpen?() })
-        .accessibilityLabel(Text("More options for \(actions.target.name)"))
-        .accessibilityHint(Text("Report, mute or block this account"))
+        .accessibilityLabel(Text(L10n.t("safety.menu.button.a11yLabel", actions.target.name)))
+        .accessibilityHint(Text(L10n.t("safety.menu.button.a11yHint")))
     }
 }
 
@@ -157,14 +150,14 @@ struct BlockConfirmationModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content.alert(
-            confirmation?.title ?? "Block this account?",
+            confirmation?.title ?? L10n.t("safety.block.confirm.fallbackTitle"),
             isPresented: Binding(
                 get: { confirmation != nil },
                 set: { if !$0 { confirmation = nil } }
             ),
             presenting: confirmation
         ) { pending in
-            Button("Cancel", role: .cancel) { onCancel() }
+            Button(L10n.t("common.cancel"), role: .cancel) { onCancel() }
             Button(pending.confirmTitle, role: .destructive) { onConfirm() }
         } message: { pending in
             // All four consequences, verbatim from the domain, plus the line

@@ -181,119 +181,119 @@ public enum APIError: Error, Equatable, Sendable {
         case let .api(code, message, _):
             switch code {
             case .emailTaken:
-                return "That email already has a Sila account. Try signing in instead."
+                return L10n.t("error.emailTaken")
             case .invalidCredentials:
-                return "That email and password don't match."
+                return L10n.t("error.invalidCredentials")
             case .otpInvalid:
-                return "That code isn't right. Check the digits and try again."
+                return L10n.t("error.otpInvalid")
             case .otpExpired:
-                return "That code has expired. Request a new one."
+                return L10n.t("error.otpExpired")
             case .otpAttemptsExceeded:
-                return "Too many incorrect attempts. Request a new code."
+                return L10n.t("error.otpAttemptsExceeded")
             case .emailUnverified:
-                return "Confirm your email address to continue."
+                return L10n.t("error.emailUnverified")
             case .rateLimited:
-                return "Too many requests. Wait a moment and try again."
+                return L10n.t("error.rateLimited")
             case .unauthorized:
-                return "Your session has ended. Please sign in again."
+                return L10n.t("error.sessionEnded")
             case .postNotFound:
-                return "That post is no longer available."
+                return L10n.t("error.postNotFound")
             case .replyNotAllowed:
                 // The card and the detail screen show the specific
                 // `reply_block_reason`; this is the fallback if one slips past.
-                return "You can't reply to this thread."
+                return L10n.t("error.replyNotAllowed")
             case .noCountry:
-                return "Your country flag comes from identity verification. Verify to unlock My Country."
+                return L10n.t("error.noCountry")
             case .textTooLong:
-                return "That post is longer than \(FeedConstants.maximumPostLength) characters."
+                return L10n.plural("error.textTooLong", FeedConstants.maximumPostLength)
             case .notPostAuthor:
-                return "You can only delete your own posts."
+                return L10n.t("error.notPostAuthor")
             case .handleTaken:
-                return "That handle is already taken."
+                return L10n.t("error.handleTaken")
             case .invalidHandle:
-                return "Handles are 3–20 characters of letters, numbers and underscores."
+                return L10n.t("error.invalidHandle")
             case .selfFollow:
-                return "You can't follow yourself."
+                return L10n.t("error.selfFollow")
             case .userNotFound:
                 // Phrased as a fact about the handle, not as a failure of the
                 // request: there is nothing to retry, and the profile screen
                 // shows this without a Try Again button for that reason.
-                return "This account isn't available."
+                return L10n.t("error.userNotFound")
             case .unverified:
-                return "Only verified humans can post. Everyone can read Sila — finish identity verification to speak."
+                return L10n.t("error.unverified")
             case .invalidScope:
-                return "That audience isn't available for this post."
+                return L10n.t("error.invalidScope")
             case .queryTooShort:
-                return "Type at least \(SearchConstants.minimumQueryLength) characters to search."
+                return L10n.plural("error.queryTooShort", SearchConstants.minimumQueryLength)
             case .unknownTopic:
                 // The whole PUT is rejected, so nothing was stored — say that
                 // rather than leaving the user unsure what got through.
-                return "Sila's topic list has changed, so nothing was saved. Reload this screen and try again."
+                return L10n.t("error.unknownTopic")
             case .invalidCountry:
-                return "Country codes are two letters, like SA or JP."
+                return L10n.t("error.invalidCountry")
             case .invalidImage:
-                return "That file couldn't be read as an image. Pick a photo instead."
+                return L10n.t("error.invalidImage")
             case .imageTooLarge:
-                return "That image is too big. Pick one under 5 MB."
+                return L10n.t("error.imageTooLarge")
             case .invalidPhone:
-                return "Use international format, starting with a plus and a country code — for example +966501234567."
+                return L10n.t("error.invalidPhone")
             case .passwordUnchanged:
-                return "That is already your password. Choose a different one."
+                return L10n.t("error.passwordUnchanged")
             case .emailUnchanged:
-                return "That is already your email address."
+                return L10n.t("error.emailUnchanged")
             case .confirmationRequired:
-                return "Type DELETE exactly to confirm."
+                return L10n.t("error.confirmationRequired")
             case .notPendingDeletion:
-                return "This account isn't scheduled for deletion."
+                return L10n.t("error.notPendingDeletion")
             case .accountDeactivated:
                 // Shown only if this ever reaches a screen: the deactivation
                 // monitor is meant to route it to the recovery screen first.
-                return "This account is scheduled for deletion. Cancel the deletion to use it again."
+                return L10n.t("error.accountDeactivated")
             case .selfBlock:
-                return "You can't block yourself."
+                return L10n.t("error.selfBlock")
             case .selfMute:
-                return "You can't mute yourself."
+                return L10n.t("error.selfMute")
             case .selfReport:
-                return "You can't report yourself."
+                return L10n.t("error.selfReport")
             case .invalidReason:
-                return "Sila's list of reasons has changed, so nothing was sent. Reopen this form and try again."
+                return L10n.t("error.invalidReason")
             case .blocked:
                 // Says a block exists, never who made it. Turning a safety tool
                 // into a notification is exactly what nobody signed up for.
-                return "You can't reply here. There's a block between you and this account."
+                return L10n.t("error.blocked")
             case .accountSuspended:
                 // Shown only if this ever reaches a screen: the suspension
                 // monitor is meant to route it to the suspension screen first.
-                return "This account is suspended."
+                return L10n.t("error.accountSuspended")
             case .alreadyAppealed:
-                return "You've already appealed this suspension. One appeal is all Sila accepts."
+                return L10n.t("error.alreadyAppealed")
             case .scopeNotAllowed:
                 // Says exactly what is refused. The room itself is still open —
                 // scope governs the microphone, never the door.
-                return "You can listen to this room, but its audience means you can't speak in it."
+                return L10n.t("error.scopeNotAllowed")
             case .removedFromRoom:
                 return RoomCopy.removedFromRoom
             case .roomEnded:
                 return RoomCopy.roomEnded
             case .notRoomHost:
-                return "Only the room's host can do that."
+                return L10n.t("error.notRoomHost")
             case .stageFull:
                 return RoomCopy.stageFull
             case .cannotDemoteHost:
                 return RoomCopy.cannotDemoteHost
             case .notFound:
-                return "That room is no longer available."
+                return L10n.t("error.roomNotFound")
             case .unknown:
-                return message.isEmpty ? "Something went wrong. Please try again." : message
+                return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }
         case let .http(status, message):
-            return message.isEmpty ? "Request failed (\(status))." : message
+            return message.isEmpty ? L10n.t("error.httpStatus", SLFormat.number(status)) : message
         case .decoding:
-            return "We couldn't read the server's response. Please try again."
+            return L10n.t("error.decoding")
         case let .transport(message):
-            return "Network problem: \(message)"
+            return L10n.t("error.transport", message)
         case .unauthenticated:
-            return "Your session has ended. Please sign in again."
+            return L10n.t("error.sessionEnded")
         case let .biometricFailed(message):
             return message
         }

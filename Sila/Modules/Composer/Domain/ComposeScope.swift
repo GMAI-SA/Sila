@@ -22,14 +22,22 @@ public enum GeoRegion: String, CaseIterable, Identifiable, Sendable, Hashable {
     public var wireValue: String { rawValue }
 
     /// Short label for the picker row.
-    public var title: String { rawValue }
+    ///
+    /// Localised: the abbreviation is copy, ``wireValue`` is the wire value.
+    public var title: String {
+        switch self {
+        case .gcc: return L10n.t("composer.scope.region.gcc.title")
+        case .mena: return L10n.t("composer.scope.region.mena.title")
+        case .eu: return L10n.t("composer.scope.region.eu.title")
+        }
+    }
 
     /// What the abbreviation stands for.
     public var expandedName: String {
         switch self {
-        case .gcc: return "Gulf Cooperation Council"
-        case .mena: return "Middle East & North Africa"
-        case .eu: return "European Union"
+        case .gcc: return L10n.t("composer.scope.region.gcc.name")
+        case .mena: return L10n.t("composer.scope.region.mena.name")
+        case .eu: return L10n.t("composer.scope.region.eu.name")
         }
     }
 
@@ -172,7 +180,10 @@ public struct ComposerAuthor: Equatable, Sendable {
     public var hasCountryBadge: Bool { countryCode != nil }
 
     /// The author's country name, when it has one.
-    public var countryName: String? { CountryCode.name(countryCode) }
+    ///
+    /// Named in the *interface's* language rather than the device's, so an
+    /// Arabic build says المملكة العربية السعودية even on an English phone.
+    public var countryName: String? { CountryCode.name(countryCode, locale: L10n.locale) }
 
     /// The author's flag emoji, when it has one.
     public var countryFlag: String? { CountryCode.flag(countryCode) }
@@ -226,7 +237,8 @@ public struct ScopeOption: Identifiable, Equatable, Sendable {
         self.icon = icon
         self.isAvailable = isAvailable
         self.unavailableReason = unavailableReason
-        self.accessibilityLabel = accessibilityLabel ?? "\(title). \(unavailableReason ?? subtitle)"
+        self.accessibilityLabel = accessibilityLabel
+            ?? L10n.t("composer.scope.option.a11yLabel", title, unavailableReason ?? subtitle)
     }
 }
 
@@ -262,37 +274,39 @@ public enum ScopePicker {
     private static func internationalOption(for author: ComposerAuthor) -> ScopeOption {
         ScopeOption(
             scope: .international,
-            title: "International",
-            subtitle: "Any verified account, anywhere, can reply.",
+            title: L10n.t("composer.scope.international.title"),
+            subtitle: L10n.t("composer.scope.international.subtitle"),
             icon: "globe",
             isAvailable: true,
-            accessibilityLabel: "International. Any verified account anywhere can reply."
+            accessibilityLabel: L10n.t("composer.scope.international.a11yLabel")
         )
     }
 
     private static func countryOption(for author: ComposerAuthor) -> ScopeOption {
         guard let code = author.countryCode,
               let flag = CountryCode.flag(code),
-              let name = CountryCode.name(code) else {
+              // The country's name in the interface's language, never the
+              // device's — an Arabic build must not label the row in English.
+              let name = CountryCode.name(code, locale: L10n.locale) else {
             // The badge is missing. Say what it is and where it comes from —
             // it is earned by verification, never by an IP address or a locale.
             return ScopeOption(
                 scope: .country(""),
-                title: "My Country",
-                subtitle: "Only accounts verified in your country can reply.",
+                title: L10n.t("composer.scope.myCountry.title"),
+                subtitle: L10n.t("composer.scope.myCountry.subtitle"),
                 icon: "flag",
                 isAvailable: false,
-                unavailableReason: "Your country flag comes from identity verification. Once your ID is verified, you can open threads only your compatriots can reply to.",
-                accessibilityLabel: "My Country, unavailable. Your country flag comes from identity verification."
+                unavailableReason: L10n.t("composer.scope.myCountry.unavailableReason"),
+                accessibilityLabel: L10n.t("composer.scope.myCountry.a11yLabel")
             )
         }
         return ScopeOption(
             scope: .country(code),
-            title: "\(flag) \(name)",
-            subtitle: "Only \(name)-verified accounts can reply.",
+            title: L10n.t("composer.scope.country.title", flag, name),
+            subtitle: L10n.t("composer.scope.country.subtitle", name),
             icon: "flag.fill",
             isAvailable: true,
-            accessibilityLabel: "\(name) only. Only accounts verified in \(name) can reply."
+            accessibilityLabel: L10n.t("composer.scope.country.a11yLabel", name, name)
         )
     }
 
@@ -305,20 +319,23 @@ public enum ScopePicker {
             } else if let name = author.countryName {
                 // Opening a thread you could not reply in is a trap, so the
                 // option is offered and explained rather than silently dropped.
-                reason = "\(name) isn't in \(region.title), and a \(region.title) thread can only be replied to from inside the region."
+                reason = L10n.t(
+                    "composer.scope.region.outsideReason",
+                    name, region.title, region.title
+                )
             } else {
-                reason = "Regional threads need a verified country. Yours appears once your ID is verified."
+                reason = L10n.t("composer.scope.region.noCountryReason")
             }
             return ScopeOption(
                 scope: .region(region),
                 title: region.title,
-                subtitle: "Verified accounts across \(region.expandedName) can reply.",
+                subtitle: L10n.t("composer.scope.region.subtitle", region.expandedName),
                 icon: "map.fill",
                 isAvailable: isMember,
                 unavailableReason: reason,
                 accessibilityLabel: isMember
-                    ? "\(region.expandedName). Verified accounts across the region can reply."
-                    : "\(region.expandedName), unavailable. \(reason ?? "")"
+                    ? L10n.t("composer.scope.region.a11yLabel", region.expandedName)
+                    : L10n.t("composer.scope.region.a11yLabelUnavailable", region.expandedName, reason ?? "")
             )
         }
     }

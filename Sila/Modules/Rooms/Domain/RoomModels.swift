@@ -71,18 +71,18 @@ public enum RoomRole: String, Sendable, Hashable, Decodable, CaseIterable {
     /// Section heading in the participant list.
     public var sectionTitle: String {
         switch self {
-        case .host: return "Host"
-        case .speaker: return "Speakers"
-        case .listener: return "Listening"
+        case .host: return L10n.t("rooms.role.section.host")
+        case .speaker: return L10n.t("rooms.role.section.speakers")
+        case .listener: return L10n.t("rooms.role.section.listening")
         }
     }
 
     /// One-word label under a participant's avatar.
     public var badgeTitle: String {
         switch self {
-        case .host: return "Host"
-        case .speaker: return "Speaker"
-        case .listener: return "Listener"
+        case .host: return L10n.t("rooms.role.badge.host")
+        case .speaker: return L10n.t("rooms.role.badge.speaker")
+        case .listener: return L10n.t("rooms.role.badge.listener")
         }
     }
 }
@@ -290,15 +290,15 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     /// The whole card as one line for VoiceOver.
     public var accessibilityDescription: String {
         var parts = [title, scopePresentation.accessibilityLabel]
-        if let topicLabel { parts.append("Topic: \(topicLabel)") }
-        parts.append("Hosted by \(host.displayName)")
+        if let topicLabel { parts.append(L10n.t("rooms.card.a11y.topic", topicLabel)) }
+        parts.append(L10n.t("rooms.card.a11y.hostedBy", host.displayName))
         switch status {
         case .live:
-            parts.append("Live now. " + attendanceSummary)
+            parts.append(L10n.t("rooms.card.a11y.liveNow", attendanceSummary))
         case .scheduled:
             parts.append(RoomCopy.scheduledFor(scheduledFor))
         case .ended, .unknown:
-            parts.append("This room has ended.")
+            parts.append(L10n.t("rooms.card.a11y.ended"))
         }
         if isRemoved { parts.append(RoomCopy.removedFromRoom) }
         return parts.joined(separator: ". ")
@@ -570,34 +570,34 @@ public enum RoomCopy {
     /// Present on the in-room screen itself rather than behind an info button:
     /// the moment somebody needs to know a room is not recorded is the moment
     /// before they say something.
-    public static let neverRecorded =
-        "Rooms are never recorded. There is no replay, no transcript and no file — "
-        + "when this room ends, what was said in it is gone."
+    ///
+    /// Computed rather than stored: a `static let` is evaluated once, on first
+    /// touch, and would freeze whichever language happened to be active then.
+    /// Every member of this enum is computed for that reason.
+    public static var neverRecorded: String { L10n.t("rooms.copy.neverRecorded") }
 
     /// The short form, for a chip.
-    public static let neverRecordedShort = "Not recorded"
+    public static var neverRecordedShort: String { L10n.t("rooms.copy.neverRecordedShort") }
 
     // MARK: Listening
 
     /// The heading of the listener state.
-    public static let listeningTitle = "You're listening"
+    public static var listeningTitle: String { L10n.t("rooms.listening.title") }
 
     /// What listening means, said without apology.
     ///
     /// It names the fact that no microphone is involved, which is the reason
     /// this app never asks a listener for permission to use one.
-    public static let listeningSubtitle =
-        "You can hear everything. Your microphone is not in use and Sila hasn't asked for it."
+    public static var listeningSubtitle: String { L10n.t("rooms.listening.subtitle") }
 
     /// Shown when the server refused speaking but sent no sentence of its own.
-    public static let speakRefusalFallback =
-        "You can listen to this room, but you can't speak in it."
+    public static var speakRefusalFallback: String { L10n.t("rooms.speak.refusalFallback") }
 
     /// The refusal for a room that is not live yet — or not any more.
     public static func notLiveYet(_ room: VoiceRoom) -> String {
         switch room.status {
         case .scheduled:
-            return "This room hasn't started. \(scheduledFor(room.scheduledFor))"
+            return L10n.t("rooms.notLiveYet.scheduled", scheduledFor(room.scheduledFor))
         case .ended, .unknown:
             return roomEnded
         case .live:
@@ -612,162 +612,157 @@ public enum RoomCopy {
     /// A removal is one host's decision about one room. It does not hide
     /// anybody's posts, it does not sever a follow, and it does not travel to
     /// the next room — all of which a block does. Calling it a block would tell
-    /// somebody they had been punished far more broadly than they had.
-    public static let removedFromRoom =
-        "The host removed you from this room. That applies to this room only — "
-        + "it isn't a block, nothing about your account has changed, and you can "
-        + "still open or join any other room."
+    /// somebody they had been punished far more broadly than they had. The
+    /// Arabic says إخراج / أخرجك from *this room* and never حظر.
+    public static var removedFromRoom: String { L10n.t("rooms.removed.body") }
 
     /// The title above it.
-    public static let removedTitle = "You were removed from this room"
+    public static var removedTitle: String { L10n.t("rooms.removed.title") }
 
     /// The toast when a host removes somebody.
     /// - Parameter name: Who was removed.
     public static func removed(_ name: String) -> String {
-        "\(name) was removed from this room. They can still join other rooms."
+        L10n.t("rooms.removed.toast", name)
     }
 
     // MARK: Ending
 
     /// A room that is over.
-    public static let roomEnded =
-        "This room has ended. Nothing was recorded, so there's nothing to catch up on."
+    public static var roomEnded: String { L10n.t("rooms.ended.body") }
 
     /// The confirmation in front of ending a room.
-    public static let endRoomWarning =
-        "Everybody is disconnected straight away and the room can't be reopened. "
-        + "Nothing was recorded, so there is nothing to keep."
+    public static var endRoomWarning: String { L10n.t("rooms.end.warning") }
 
     // MARK: Attendance
 
     /// `"3 speaking · 41 listening"`.
+    ///
+    /// Both halves are plurals rather than an `== 1` ternary: Arabic has six
+    /// categories and a ternary gets four of them wrong. The `·` separator is
+    /// the same in both languages.
     public static func attendance(speakers: Int, listeners: Int) -> String {
-        let speaking = speakers == 1 ? "1 speaking" : "\(speakers) speaking"
-        let listening = listeners == 1 ? "1 listening" : "\(listeners) listening"
+        let speaking = L10n.plural("rooms.attendance.speaking", speakers)
+        let listening = L10n.plural("rooms.attendance.listening", listeners)
         return "\(speaking) · \(listening)"
     }
 
     /// When a scheduled room starts, in words.
     public static func scheduledFor(_ date: Date?) -> String {
-        guard let date else { return "No start time yet." }
-        if date.timeIntervalSinceNow <= 0 { return "Due to start." }
-        return "Starts \(RelativeTime.accessible(date))."
+        guard let date else { return L10n.t("rooms.scheduled.noStartTime") }
+        if date.timeIntervalSinceNow <= 0 { return L10n.t("rooms.scheduled.dueToStart") }
+        return L10n.t("rooms.scheduled.starts", RelativeTime.accessible(date))
     }
 
     // MARK: Empty states
 
-    public static let emptyLiveTitle = "No rooms live right now"
+    public static var emptyLiveTitle: String { L10n.t("rooms.empty.live.title") }
 
-    public static let emptyLiveSubtitle =
-        "A room is a live conversation between verified people. Anyone can listen "
-        + "to any room; who may speak depends on the room's audience. "
-        + "Start one and see who turns up."
+    public static var emptyLiveSubtitle: String { L10n.t("rooms.empty.live.subtitle") }
 
-    public static let emptyScheduledTitle = "Nothing scheduled"
+    public static var emptyScheduledTitle: String { L10n.t("rooms.empty.scheduled.title") }
 
-    public static let emptySearchTitle = "No rooms matched"
+    public static var emptySearchTitle: String { L10n.t("rooms.empty.search.title") }
 
+    /// The query sits inside the quote marks, so `String(format:)` can isolate
+    /// an Arabic query typed into an English UI (and the reverse) without the
+    /// closing quote sliding to the wrong end of the sentence.
     public static func emptySearchSubtitle(_ query: String) -> String {
-        "Nothing live or scheduled matches “\(query)”. Titles and topics are what get searched."
+        L10n.t("rooms.empty.search.subtitle", query)
     }
 
-    public static let searchTooShortTitle = "Keep typing"
+    public static var searchTooShortTitle: String { L10n.t("rooms.search.tooShort.title") }
 
-    public static let searchTooShortSubtitle =
-        "Type at least \(RoomConstants.minimumQueryLength) characters to search rooms."
+    /// Counts characters, so it is a plural — and computed, so a language
+    /// change at runtime reaches it.
+    public static var searchTooShortSubtitle: String {
+        L10n.plural("rooms.search.tooShort.subtitle", RoomConstants.minimumQueryLength)
+    }
 
     // MARK: The microphone
 
     /// The label on the control that takes the microphone.
-    public static let takeMic = "Unmute"
+    public static var takeMic: String { L10n.t("rooms.mic.take") }
     /// And the one that puts it down.
-    public static let dropMic = "Mute"
+    public static var dropMic: String { L10n.t("rooms.mic.drop") }
 
     /// What unmuting actually does, including the part about permission.
     ///
     /// Says the permission prompt is coming *before* it appears, because a
     /// system dialog that arrives unannounced is one people deny by reflex.
-    public static let takeMicHint =
-        "Turns your microphone on so the room can hear you. "
-        + "iOS asks for microphone permission the first time."
+    public static var takeMicHint: String { L10n.t("rooms.mic.takeHint") }
 
-    public static let dropMicHint = "Turns your microphone off. The room can no longer hear you."
+    public static var dropMicHint: String { L10n.t("rooms.mic.dropHint") }
 
     /// Shown when the person denied microphone access at the system level.
-    public static let microphoneDenied =
-        "Sila can't reach your microphone. Turn it on in Settings › Sila › Microphone "
-        + "to speak — you can keep listening either way."
+    ///
+    /// The Settings path is spelled the way iOS itself spells it in each
+    /// language; the `›` separators are neutral characters and mirror on their
+    /// own inside a right-to-left paragraph.
+    public static var microphoneDenied: String { L10n.t("rooms.mic.denied") }
 
     // MARK: Host controls
 
-    public static let inviteToMic = "Invite to speak"
+    public static var inviteToMic: String { L10n.t("rooms.host.inviteToMic") }
 
     public static func invited(_ name: String) -> String {
-        "\(name) can speak now."
+        L10n.t("rooms.host.invitedToast", name)
     }
 
-    public static let takeMicBack = "Move to listeners"
+    public static var takeMicBack: String { L10n.t("rooms.host.takeMicBack") }
 
     public static func demoted(_ name: String) -> String {
-        "\(name) is listening again. They were not removed."
+        L10n.t("rooms.host.demotedToast", name)
     }
 
     /// What the demoted person is told. Says plainly that they are still here,
     /// because being moved off a stage and being thrown out of a room feel
     /// identical from the inside if nobody says which happened.
-    public static let youWereDemoted =
-        "You're listening again. You're still in the room, and you weren't removed."
+    public static var youWereDemoted: String { L10n.t("rooms.youWereDemoted") }
 
     /// What the promoted person is told.
-    public static let youCanSpeakNow = "You can speak now. Unmute when you're ready."
+    public static var youCanSpeakNow: String { L10n.t("rooms.youCanSpeakNow") }
 
     /// The reason a host cannot demote themselves.
-    public static let cannotDemoteHost =
-        "You're the host. Hand the room over by ending it — there is no way to step off your own stage."
+    public static var cannotDemoteHost: String { L10n.t("rooms.host.cannotDemoteHost") }
 
     /// The stage is full.
-    public static let stageFull =
-        "The stage is full. Move somebody to listeners first."
+    public static var stageFull: String { L10n.t("rooms.host.stageFull") }
 
     // MARK: Creating
 
-    public static let createTitle = "Start a room"
+    public static var createTitle: String { L10n.t("rooms.create.title") }
 
     /// The sentence at the top of the create sheet.
     ///
     /// States the asymmetry once, plainly, because it is the thing people get
     /// wrong: the audience picker is about *speaking*, and every room is open
     /// to every listener regardless of what is chosen there.
-    public static let createExplanation =
-        "Everyone on Sila can listen to your room. The audience you pick decides "
-        + "who may take the microphone."
+    public static var createExplanation: String { L10n.t("rooms.create.explanation") }
 
-    public static let titlePlaceholder = "What is this room about?"
+    public static var titlePlaceholder: String { L10n.t("rooms.create.titlePlaceholder") }
 
-    public static let titleMissing = "Give the room a title so people know what they're joining."
+    public static var titleMissing: String { L10n.t("rooms.create.titleMissing") }
 
+    /// - Parameter count: The length of the title that was typed. The sentence
+    ///   counts the *overshoot*, which is what the plural agrees with.
     public static func titleTooLong(_ count: Int) -> String {
-        "That title is \(count - RoomConstants.maximumTitleLength) characters over the limit."
+        L10n.plural("rooms.create.titleTooLong", count - RoomConstants.maximumTitleLength)
     }
 
     /// The scheduling row's explanation.
-    public static let scheduleExplanation =
-        "Leave this off to open the room now. Scheduling it puts it on the list "
-        + "with a start time; nobody can speak in it until you open it."
+    public static var scheduleExplanation: String { L10n.t("rooms.create.scheduleExplanation") }
 
     // MARK: Joining
 
     /// The unverified refusal, which is about posting rights, not about hearing.
-    public static let unverifiedCannotOpen =
-        "Only verified humans can open a room. Everyone can listen to one — "
-        + "finish identity verification to host."
+    public static var unverifiedCannotOpen: String { L10n.t("rooms.join.unverifiedCannotOpen") }
 
     /// What a listener sees while the media connection is being made.
-    public static let connecting = "Connecting to the room…"
+    public static var connecting: String { L10n.t("rooms.connection.connecting") }
 
     /// A connection that dropped and is coming back.
-    public static let reconnecting = "Reconnecting…"
+    public static var reconnecting: String { L10n.t("rooms.connection.reconnecting") }
 
     /// What "Leave" does.
-    public static let leaveHint = "Leaves the room and disconnects your audio."
+    public static var leaveHint: String { L10n.t("rooms.leave.hint") }
 }

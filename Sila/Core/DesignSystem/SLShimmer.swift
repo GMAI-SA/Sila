@@ -15,6 +15,10 @@ public struct SLShimmer: ViewModifier {
 
     private let isActive: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The sweep travels along the reading direction, so it has to know which
+    /// one is in force — neither `offset(x:)` nor a gradient's unit points
+    /// mirror themselves.
+    @Environment(\.layoutDirection) private var layoutDirection
     @State private var phase: CGFloat = -1
 
     /// - Parameter isActive: When `false` the modifier is a no-op.
@@ -26,7 +30,7 @@ public struct SLShimmer: ViewModifier {
         if !isActive {
             content
         } else if reduceMotion {
-            content.opacity(0.6).accessibilityLabel(Text("Loading"))
+            content.opacity(0.6).accessibilityLabel(Text(L10n.t("ds.shimmer.loading")))
         } else {
             content
                 .overlay { sweep.mask { content } }
@@ -36,8 +40,8 @@ public struct SLShimmer: ViewModifier {
                     }
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text("Loading"))
-                .accessibilityHint(Text("Content is still being fetched"))
+                .accessibilityLabel(Text(L10n.t("ds.shimmer.loading")))
+                .accessibilityHint(Text(L10n.t("ds.shimmer.hint")))
         }
     }
 
@@ -50,12 +54,25 @@ public struct SLShimmer: ViewModifier {
                     SLColor.textPrimary.opacity(0.05),
                     .clear
                 ],
-                startPoint: .leading,
-                endPoint: .trailing
+                startPoint: gradientStart,
+                endPoint: gradientEnd
             )
             .frame(width: geo.size.width * 0.7)
-            .offset(x: phase * geo.size.width)
+            .offset(x: isRightToLeft ? -phase * geo.size.width : phase * geo.size.width)
         }
+    }
+
+    private var isRightToLeft: Bool { layoutDirection == .rightToLeft }
+
+    /// Explicit unit points rather than `.leading` / `.trailing`: the gradient's
+    /// stops are asymmetric (the bright band sits near the start), so the whole
+    /// sweep — band and travel alike — has to be mirrored together.
+    private var gradientStart: UnitPoint {
+        isRightToLeft ? UnitPoint(x: 1, y: 0.5) : UnitPoint(x: 0, y: 0.5)
+    }
+
+    private var gradientEnd: UnitPoint {
+        isRightToLeft ? UnitPoint(x: 0, y: 0.5) : UnitPoint(x: 1, y: 0.5)
     }
 }
 

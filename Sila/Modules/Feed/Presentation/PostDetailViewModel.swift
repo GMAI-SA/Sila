@@ -233,6 +233,6 @@ public final class PostDetailViewModel {
     }
 
     private func userMessage(for error: Error) -> String {
-        (error as? APIError)?.userMessage ?? "Something went wrong. Pull to refresh."
+        (error as? APIError)?.userMessage ?? L10n.t("feed.error.pullToRefresh")
     }
 }

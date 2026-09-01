@@ -22,6 +22,10 @@ public struct PreferencesScreen: View {
 
     @FocusState private var isCountryFieldFocused: Bool
 
+    /// Chips are placed by a custom ``Layout``, and a custom layout is handed
+    /// raw coordinates rather than mirrored ones — see ``SLFlowLayout``.
+    @Environment(\.layoutDirection) private var layoutDirection
+
     /// - Parameters:
     ///   - viewModel: Owns the draft, the stored copy and the difference.
     ///   - onClose: Dismisses the screen. `nil` hides the Done button, for a
@@ -41,14 +45,14 @@ public struct PreferencesScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
-        .tnNavigationBar(title: "Feed preferences")
+        .tnNavigationBar(title: L10n.t("preferences.title"))
         .toolbar {
             if let onClose {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { onClose() }
+                    Button(L10n.t("common.done")) { onClose() }
                         .foregroundStyle(SLColor.primary)
-                        .accessibilityLabel(Text("Done"))
-                        .accessibilityHint(Text("Closes feed preferences"))
+                        .accessibilityLabel(Text(L10n.t("common.done")))
+                        .accessibilityHint(Text(L10n.t("preferences.done.hint")))
                 }
             }
         }
@@ -66,10 +70,10 @@ public struct PreferencesScreen: View {
             ScrollView {
                 SLEmptyState(
                     icon: "wifi.exclamationmark",
-                    title: "Couldn't load your preferences",
+                    title: L10n.t("preferences.error.title"),
                     subtitle: error,
                     tint: SLColor.danger,
-                    actionTitle: "Try again",
+                    actionTitle: L10n.t("preferences.error.retry"),
                     action: { Task { await viewModel.reload() } }
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -102,7 +106,7 @@ public struct PreferencesScreen: View {
         }
         .padding(.top, SLSpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityLabel(Text("Loading your feed preferences"))
+        .accessibilityLabel(Text(L10n.t("preferences.loading.accessibility")))
     }
 
     // MARK: - The disclosure
@@ -119,7 +123,7 @@ public struct PreferencesScreen: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(SLColor.primary)
                         .accessibilityHidden(true)
-                    Text("How topics are decided")
+                    Text(L10n.t("preferences.disclosure.title"))
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(SLColor.textPrimary)
                 }
@@ -138,21 +142,21 @@ public struct PreferencesScreen: View {
 
     /// The exact wording of the AI-tagging disclosure.
     ///
-    /// Held as a constant so it is asserted in tests: this sentence is the
-    /// screen's obligation, not decoration, and it must not drift.
-    static let taggingDisclosure = """
-        Every post is automatically labelled by topic by software running on \
-        Sila's servers, and that software is sometimes wrong. The labels \
-        are never shown on the post itself — these settings are the only thing \
-        they are used for.
-        """
+    /// Held in one place so it is asserted in tests: this sentence is the
+    /// screen's obligation, not decoration, and it must not drift — in either
+    /// language. The Arabic says the same four things: labelling is automatic,
+    /// it happens on Sila's servers, it is sometimes wrong, and the labels are
+    /// used for nothing but this screen.
+    static var taggingDisclosure: String { L10n.t("preferences.disclosure.body") }
 
     // MARK: - The live summary
 
     private var summaryCard: some View {
         SLCard(isHighlighted: viewModel.hasUnsavedChanges) {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
-                Text(viewModel.summaryIsInEffect ? "IN EFFECT NOW" : "NOT SAVED YET")
+                Text(L10n.t(viewModel.summaryIsInEffect
+                    ? "preferences.summary.inEffect"
+                    : "preferences.summary.notSaved"))
                     .font(SLFont.micro)
                     .tracking(0.8)
                     .foregroundStyle(
@@ -165,17 +169,17 @@ public struct PreferencesScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 if !viewModel.summaryIsInEffect {
-                    Text("This is what your feed will do once you save.")
+                    Text(L10n.t("preferences.summary.afterSaving"))
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
                 }
 
                 if !viewModel.unknownTopicIds.isEmpty {
                     Text(
-                        "\(viewModel.unknownTopicIds.count) stored topic choice"
-                        + "\(viewModel.unknownTopicIds.count == 1 ? "" : "s") "
-                        + "no longer exists in Sila's topic list, so it is not shown here "
-                        + "and will be dropped the next time you save."
+                        L10n.plural(
+                            "preferences.summary.unknownTopics",
+                            viewModel.unknownTopicIds.count
+                        )
                     )
                     .font(SLFont.micro)
                     .foregroundStyle(SLColor.warning)
@@ -190,14 +194,12 @@ public struct PreferencesScreen: View {
 
     private var internationalSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("INTERNATIONAL FEED")
+            sectionHeader(L10n.t("preferences.section.international"))
 
             PreferenceToggleRow(
-                title: "Filter International by my interests",
-                detail: "Applies to the International feed only. Following, My Country "
-                    + "and For You are already narrowed by a country or by the accounts "
-                    + "you follow, so topics are not applied to them.",
-                accessibilityHint: "Narrows the International feed to the topics you marked interested",
+                title: L10n.t("preferences.filter.title"),
+                detail: L10n.t("preferences.filter.detail"),
+                accessibilityHint: L10n.t("preferences.filter.hint"),
                 isOn: Binding(
                     get: { viewModel.draft.filterInternationalByInterests },
                     set: { viewModel.setFilterEnabled($0) }
@@ -209,9 +211,9 @@ public struct PreferencesScreen: View {
             }
 
             PreferenceToggleRow(
-                title: "Show posts that haven't been labelled",
+                title: L10n.t("preferences.untagged.title"),
                 detail: untaggedDetail,
-                accessibilityHint: "Keeps posts with no topic label in your filtered International feed",
+                accessibilityHint: L10n.t("preferences.untagged.hint"),
                 isOn: Binding(
                     get: { viewModel.draft.showUntaggedPosts },
                     set: { viewModel.setShowUntaggedPosts($0) }
@@ -221,11 +223,9 @@ public struct PreferencesScreen: View {
     }
 
     private var untaggedDetail: String {
-        let base = "Labelling happens after a post is published, so a new post may have "
-            + "no topic yet. This decides whether those posts still reach you."
+        let base = L10n.t("preferences.untagged.detail")
         guard !viewModel.draft.showUntaggedPostsHasEffect else { return base }
-        return base + " It changes nothing right now, because nothing is narrowing "
-            + "your International feed to topics."
+        return base + " " + L10n.t("preferences.untagged.detail.noEffect")
     }
 
     private func warningBox(_ text: String) -> some View {
@@ -251,10 +251,9 @@ public struct PreferencesScreen: View {
 
     private var topicsSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("TOPICS")
+            sectionHeader(L10n.t("preferences.section.topics"))
 
-            Text("Interested counts a topic towards the filter above. Muted hides posts "
-                 + "about it from International whether or not that filter is on.")
+            Text(L10n.t("preferences.topics.explanation"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -267,7 +266,7 @@ public struct PreferencesScreen: View {
             )
 
             if viewModel.visibleTopics.isEmpty {
-                Text("No topics in this list yet.")
+                Text(L10n.t("preferences.topics.emptySlice"))
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textMuted)
                     .padding(.vertical, SLSpacing.lg)
@@ -300,33 +299,33 @@ public struct PreferencesScreen: View {
 
     private var countriesSection: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            sectionHeader("MUTED COUNTRIES")
+            sectionHeader(L10n.t("preferences.section.mutedCountries"))
 
-            Text("Hides posts by accounts whose verified country is one of these — from "
-                 + "the International feed, whether or not the topic filter is on. It "
-                 + "matches the verified country badge, so it cannot be faked with a VPN.")
+            Text(L10n.t("preferences.countries.explanation"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(alignment: .bottom, spacing: SLSpacing.sm) {
                 SLTextField(
-                    "Country code",
+                    L10n.t("preferences.countries.field.label"),
                     text: $viewModel.countryDraft,
+                    // An ISO code, not a word: the same two letters in both
+                    // languages, so it is not translated.
                     placeholder: "JP",
                     autocapitalization: .characters,
                     error: viewModel.countryError,
-                    accessibilityHint: "Two-letter ISO country code, such as S A for Saudi Arabia",
+                    accessibilityHint: L10n.t("preferences.countries.field.hint"),
                     submitLabel: .done,
                     onSubmit: { viewModel.addCountry() }
                 )
                 .focused($isCountryFieldFocused)
 
                 SLButton(
-                    "Add",
+                    L10n.t("preferences.countries.add"),
                     variant: .secondary,
                     size: .compact,
-                    accessibilityHint: "Adds this country to the muted list",
+                    accessibilityHint: L10n.t("preferences.countries.add.hint"),
                     action: {
                         viewModel.addCountry()
                         isCountryFieldFocused = false
@@ -338,7 +337,7 @@ public struct PreferencesScreen: View {
             }
 
             if viewModel.draft.mutedCountries.isEmpty {
-                Text("No countries muted.")
+                Text(L10n.t("preferences.countries.emptyList"))
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textMuted)
             } else {
@@ -347,7 +346,7 @@ public struct PreferencesScreen: View {
                         SLChip(
                             countryChipTitle(code),
                             isSelected: false,
-                            accessibilityHint: "Muted country",
+                            accessibilityHint: L10n.t("preferences.countries.chip.hint"),
                             onRemove: { viewModel.removeCountry(code) }
                         )
                     }
@@ -373,7 +372,7 @@ public struct PreferencesScreen: View {
                         .foregroundStyle(SLColor.danger)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityLabel(Text("Save failed. \(error) Your changes are still here."))
+                        .accessibilityLabel(Text(L10n.t("preferences.save.failed.a11yLabel", error)))
                 }
 
                 HStack(spacing: SLSpacing.md) {
@@ -388,23 +387,23 @@ public struct PreferencesScreen: View {
 
                     if viewModel.hasUnsavedChanges {
                         SLButton(
-                            "Discard",
+                            L10n.t("preferences.discard"),
                             variant: .ghost,
                             size: .compact,
                             isEnabled: !viewModel.isSaving,
-                            accessibilityHint: "Throws away your unsaved changes and restores your stored settings",
+                            accessibilityHint: L10n.t("preferences.discard.hint"),
                             action: { viewModel.discardChanges() }
                         )
                         .frame(width: 96)
                     }
 
                     SLButton(
-                        "Save",
+                        L10n.t("common.save"),
                         variant: .primary,
                         size: .compact,
                         isLoading: viewModel.isSaving,
                         isEnabled: viewModel.hasUnsavedChanges,
-                        accessibilityHint: "Sends these settings to Sila and applies them to your International feed",
+                        accessibilityHint: L10n.t("preferences.save.hint"),
                         asyncAction: { await viewModel.save() }
                     )
                     .frame(width: 110)
@@ -423,10 +422,10 @@ public struct PreferencesScreen: View {
 
     /// Never says "saved" for something that is not stored on the server.
     private var statusText: String {
-        if viewModel.isSaving { return "Saving…" }
-        if viewModel.hasUnsavedChanges { return "Unsaved changes" }
-        if viewModel.saveError != nil { return "Not saved" }
-        return "Everything here is saved"
+        if viewModel.isSaving { return L10n.t("preferences.status.saving") }
+        if viewModel.hasUnsavedChanges { return L10n.t("preferences.status.unsaved") }
+        if viewModel.saveError != nil { return L10n.t("preferences.status.notSaved") }
+        return L10n.t("preferences.status.saved")
     }
 
     private func sectionHeader(_ text: String) -> some View {

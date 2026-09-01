@@ -101,13 +101,13 @@ public struct HomeScreen: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(SLColor.primary)
 
-                    Text("Topics and muted countries")
+                    Text(L10n.t("feed.preferencesBar.label"))
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
 
                     Spacer(minLength: 0)
 
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(SLColor.textMuted)
                 }
@@ -116,8 +116,8 @@ public struct HomeScreen: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text("Feed preferences"))
-            .accessibilityHint(Text("Opens the topic and muted-country settings that filter this feed"))
+            .accessibilityLabel(Text(L10n.t("feed.preferencesBar.a11yLabel")))
+            .accessibilityHint(Text(L10n.t("feed.preferencesBar.hint")))
         }
     }
 
@@ -146,9 +146,9 @@ public struct HomeScreen: View {
                         ProgressView()
                             .tint(SLColor.primary)
                             .padding(SLSpacing.xl)
-                            .accessibilityLabel(Text("Loading more posts"))
+                            .accessibilityLabel(Text(L10n.t("feed.loadingMore")))
                     } else if !state.hasMore && state.isPopulated {
-                        Text("You're all caught up.")
+                        Text(L10n.t("feed.endOfFeed"))
                             .font(SLFont.caption)
                             .foregroundStyle(SLColor.textMuted)
                             .padding(SLSpacing.xl)
@@ -168,7 +168,7 @@ public struct HomeScreen: View {
             }
         }
         .padding(.top, SLSpacing.lg)
-        .accessibilityLabel(Text("Loading your feed"))
+        .accessibilityLabel(Text(L10n.t("feed.loading")))
     }
 
     @ViewBuilder
@@ -180,11 +180,11 @@ public struct HomeScreen: View {
             // retry until verification completes.
             SLEmptyState(
                 icon: "flag.slash",
-                title: "No verified country yet",
-                subtitle: "My Country shows posts from your verified compatriots. Your country flag comes from your verified identity — never from your IP address — so it appears once verification completes.",
+                title: L10n.t("feed.noCountry.title"),
+                subtitle: L10n.t("feed.noCountry.subtitle"),
                 tint: SLColor.secondary,
-                actionTitle: "How verification works",
-                action: { onStub("Identity verification") }
+                actionTitle: L10n.t("feed.noCountry.action"),
+                action: { onStub(MainTabView.StubFeature.identityVerification) }
             )
             .padding(.horizontal, SLSpacing.lg)
 
@@ -200,10 +200,10 @@ public struct HomeScreen: View {
         case let .failed(message):
             SLEmptyState(
                 icon: "wifi.exclamationmark",
-                title: "Couldn't load this feed",
+                title: L10n.t("feed.error.title"),
                 subtitle: message,
                 tint: SLColor.danger,
-                actionTitle: "Try again",
+                actionTitle: L10n.t("feed.error.retry"),
                 action: { Task { await viewModel.refresh(tab) } }
             )
             .padding(.horizontal, SLSpacing.lg)
@@ -221,19 +221,19 @@ public struct HomeScreen: View {
 
     private func emptyTitle(for tab: FeedTab) -> String {
         switch tab {
-        case .following: return "You're not following anyone yet"
-        case .myCountry: return "Nothing from your country yet"
-        case .international: return "No international posts yet"
-        case .forYou: return "Nothing to show yet"
+        case .following: return L10n.t("feed.empty.following.title")
+        case .myCountry: return L10n.t("feed.empty.myCountry.title")
+        case .international: return L10n.t("feed.empty.international.title")
+        case .forYou: return L10n.t("feed.empty.forYou.title")
         }
     }
 
     private func emptySubtitle(for tab: FeedTab) -> String {
         switch tab {
-        case .following: return "Posts from accounts you follow appear here, newest first."
-        case .myCountry: return "Posts from verified accounts in your country will appear here."
-        case .international: return "Threads open to verified accounts worldwide will appear here."
-        case .forYou: return "As Sila learns what you read, this feed fills up."
+        case .following: return L10n.t("feed.empty.following.subtitle")
+        case .myCountry: return L10n.t("feed.empty.myCountry.subtitle")
+        case .international: return L10n.t("feed.empty.international.subtitle")
+        case .forYou: return L10n.t("feed.empty.forYou.subtitle")
         }
     }
 
@@ -254,11 +254,11 @@ public struct HomeScreen: View {
             onLike: { post in Task { await viewModel.toggleLike(post) } },
             onRepost: { post in Task { await viewModel.toggleRepost(post) } },
             onBookmark: { post in Task { await viewModel.toggleBookmark(post) } },
-            onReply: { post in compose(.reply(to: post), fallback: "Replying") },
+            onReply: { post in compose(.reply(to: post), fallback: MainTabView.StubFeature.replying) },
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
-            onQuote: { post in compose(.quote(post), fallback: "Quote posts") },
+            onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { _ in onStub("Hashtag search") },
+            onHashtag: { _ in onStub(MainTabView.StubFeature.hashtagSearch) },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

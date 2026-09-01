@@ -104,7 +104,7 @@ public struct PostDetailScreen: View {
             composerBar
         }
         .tnScreenBackground()
-        .tnNavigationBar(title: "Post")
+        .tnNavigationBar(title: L10n.t("post.detail.navTitle"))
         .task { await viewModel.load() }
         // `load()` re-reads the post, and `viewer.can_reply` is computed per
         // request — so the bar adopts the fresh permission rather than the one
@@ -142,7 +142,7 @@ public struct PostDetailScreen: View {
 
     private func parentContext(_ parent: Post) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Replying to")
+            Text(L10n.t("post.detail.replyingTo"))
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
                 .padding(.horizontal, SLSpacing.lg)
@@ -172,14 +172,14 @@ public struct PostDetailScreen: View {
                 }
             }
             .padding(.vertical, SLSpacing.lg)
-            .accessibilityLabel(Text("Loading replies"))
+            .accessibilityLabel(Text(L10n.t("post.detail.loadingReplies")))
 
         } else if viewModel.replies.isEmpty {
             SLEmptyState(
                 icon: "bubble.left",
-                title: "No replies yet",
+                title: L10n.t("post.detail.noReplies.title"),
                 subtitle: viewModel.replyPermission.blockedMessage
-                    ?? "Be the first verified human to reply.",
+                    ?? L10n.t("post.detail.noReplies.subtitle"),
                 tint: SLColor.textSecondary
             )
             .padding(.vertical, SLSpacing.xxl)
@@ -197,7 +197,7 @@ public struct PostDetailScreen: View {
                     .tint(SLColor.primary)
                     .frame(maxWidth: .infinity)
                     .padding(SLSpacing.xl)
-                    .accessibilityLabel(Text("Loading more replies"))
+                    .accessibilityLabel(Text(L10n.t("post.detail.loadingMoreReplies")))
             }
         }
     }
@@ -239,11 +239,11 @@ public struct PostDetailScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(SLColor.surface1)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(Text("Replies restricted. \(message)"))
+                .accessibilityLabel(Text(L10n.t("post.detail.repliesRestricted.a11yLabel", message)))
 
             } else {
                 HStack(spacing: SLSpacing.md) {
-                    Text("Reply to \(viewModel.post.author.atHandle)")
+                    Text(L10n.t("post.detail.replyTo", viewModel.post.author.atHandle))
                         .font(SLFont.body)
                         .foregroundStyle(SLColor.textMuted)
                         .lineLimit(1)
@@ -251,11 +251,11 @@ public struct PostDetailScreen: View {
                     Spacer(minLength: 0)
 
                     SLButton(
-                        "Reply",
+                        L10n.t("post.reply.label"),
                         variant: .primary,
                         size: .compact,
-                        accessibilityHint: "Opens the reply composer",
-                        action: { onStub("Replying") }
+                        accessibilityHint: L10n.t("post.detail.openComposer.hint"),
+                        action: { onStub(MainTabView.StubFeature.replying) }
                     )
                     .frame(width: 92)
                 }
@@ -264,7 +264,7 @@ public struct PostDetailScreen: View {
                 .frame(maxWidth: .infinity)
                 .background(SLColor.surface1)
                 .contentShape(Rectangle())
-                .onTapGesture { onStub("Replying") }
+                .onTapGesture { onStub(MainTabView.StubFeature.replying) }
                 .accessibilityElement(children: .contain)
             }
         }
@@ -287,11 +287,11 @@ public struct PostDetailScreen: View {
             onLike: { post in Task { await viewModel.toggleLike(post) } },
             onRepost: { post in Task { await viewModel.toggleRepost(post) } },
             onBookmark: { post in Task { await viewModel.toggleBookmark(post) } },
-            onReply: { post in compose(.reply(to: post), fallback: "Replying") },
+            onReply: { post in compose(.reply(to: post), fallback: MainTabView.StubFeature.replying) },
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
-            onQuote: { post in compose(.quote(post), fallback: "Quote posts") },
+            onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { _ in onStub("Hashtag search") },
+            onHashtag: { _ in onStub(MainTabView.StubFeature.hashtagSearch) },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

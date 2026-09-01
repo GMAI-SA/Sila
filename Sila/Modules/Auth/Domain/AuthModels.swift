@@ -211,9 +211,9 @@ public enum OTPPurpose: String, Codable, Sendable {
     /// Headline shown on the OTP screen.
     public var screenTitle: String {
         switch self {
-        case .register: return "Confirm your email"
-        case .login: return "Verify it's you"
-        case .reset: return "Reset your password"
+        case .register: return L10n.t("auth.otp.navTitle.register")
+        case .login: return L10n.t("auth.otp.navTitle.login")
+        case .reset: return L10n.t("auth.otp.navTitle.reset")
         }
     }
 }

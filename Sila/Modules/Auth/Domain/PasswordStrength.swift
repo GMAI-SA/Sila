@@ -68,10 +68,10 @@ public enum PasswordStrength: Int, Comparable, CaseIterable, Sendable {
     /// Short label shown next to the meter.
     public var title: String {
         switch self {
-        case .weak: return "Weak"
-        case .fair: return "Fair"
-        case .good: return "Good"
-        case .strong: return "Strong"
+        case .weak: return L10n.t("auth.password.strength.weak")
+        case .fair: return L10n.t("auth.password.strength.fair")
+        case .good: return L10n.t("auth.password.strength.good")
+        case .strong: return L10n.t("auth.password.strength.strong")
         }
     }
 
@@ -92,9 +92,9 @@ public enum PasswordStrength: Int, Comparable, CaseIterable, Sendable {
     public var advice: String {
         switch self {
         case .weak:
-            return "Use at least \(Self.minimumLength) characters."
+            return L10n.plural("auth.password.advice.tooShort", Self.minimumLength)
         case .fair:
-            return "Add a capital letter, a number or a symbol."
+            return L10n.t("auth.password.advice.addVariety")
         case .good, .strong:
             return ""
         }

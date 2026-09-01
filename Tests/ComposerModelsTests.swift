@@ -63,7 +63,14 @@ final class ComposerModelsTests: XCTestCase {
         XCTAssertFalse(metrics.canPost)
         XCTAssertEqual(metrics.counterText, "-1")
         XCTAssertEqual(metrics.progress, 1, "The ring stays full rather than overflowing")
-        XCTAssertEqual(metrics.accessibilityValue, "1 characters over the 280 character limit")
+        // Was "1 characters" before the counter went through the catalog: the
+        // old string interpolated the number into a hard-coded plural noun, so
+        // English never agreed at a count of one and Arabic could not have
+        // agreed at any count. Asserted for a fixed locale, because the whole
+        // point of the change is that the sentence is now language-dependent.
+        L10n.use("en")
+        defer { L10n.use(nil) }
+        XCTAssertEqual(metrics.accessibilityValue, "1 character over the 280 character limit")
     }
 
     func testTheLimitMatchesTheContract() {

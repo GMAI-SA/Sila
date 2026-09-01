@@ -184,7 +184,7 @@ extension LiveKitVoiceEngine: RoomDelegate {
     nonisolated public func room(_ room: LiveKit.Room, didFailToConnectWithError error: LiveKitError?) {
         Task { @MainActor [weak self] in
             self?.connection = .failed(
-                error?.localizedDescription ?? "Sila couldn't reach the room's audio."
+                error?.localizedDescription ?? L10n.t("rooms.voice.connectFailed")
             )
         }
     }

@@ -57,7 +57,7 @@ public struct ReplyComposerBar: View {
         .padding(.vertical, SLSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("Replies restricted. \(message)"))
+        .accessibilityLabel(Text(L10n.t("composer.reply.blocked.a11yLabel", message)))
     }
 
     // MARK: - Composer
@@ -73,7 +73,10 @@ public struct ReplyComposerBar: View {
             HStack(alignment: .bottom, spacing: SLSpacing.md) {
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
                     if isExpanded, let handle = viewModel.context.replyTarget?.author.atHandle {
-                        Text("Replying to \(handle)")
+                        // The handle is a Latin run inside an Arabic sentence;
+                        // `String(format:)` isolates it so the "@" stays glued
+                        // to the name instead of drifting to the far end.
+                        Text(L10n.t("composer.reply.replyingTo", handle))
                             .font(SLFont.micro)
                             .foregroundStyle(SLColor.textMuted)
                             .accessibilityHidden(true)
@@ -91,8 +94,10 @@ public struct ReplyComposerBar: View {
                     .foregroundStyle(SLColor.textPrimary)
                     .lineLimit(1...5)
                     .focused($isFocused)
-                    .accessibilityLabel(Text("Reply text"))
-                    .accessibilityHint(Text("Write a reply. \(ComposerConstants.characterLimit) characters maximum"))
+                    // Follows the reply being typed, not the app's language.
+                    .slContentDirection(draftDirection)
+                    .accessibilityLabel(Text(L10n.t("composer.reply.editor.a11yLabel")))
+                    .accessibilityHint(Text(L10n.plural("composer.reply.editor.a11yHint", ComposerConstants.characterLimit)))
                 }
 
                 if isExpanded {
@@ -100,12 +105,12 @@ public struct ReplyComposerBar: View {
                 }
 
                 SLButton(
-                    "Reply",
+                    L10n.t("composer.action.reply"),
                     variant: .primary,
                     size: .compact,
                     isLoading: viewModel.isPosting,
                     isEnabled: viewModel.canPost,
-                    accessibilityHint: "Publishes your reply to this thread",
+                    accessibilityHint: L10n.t("composer.reply.send.a11yHint"),
                     asyncAction: {
                         await viewModel.post()
                         isFocused = false
@@ -128,8 +133,17 @@ public struct ReplyComposerBar: View {
     }
 
     private var placeholder: String {
-        guard let handle = viewModel.context.replyTarget?.author.atHandle else { return "Post your reply" }
-        return "Reply to \(handle)"
+        guard let handle = viewModel.context.replyTarget?.author.atHandle else {
+            return L10n.t("composer.placeholder.postYourReply")
+        }
+        return L10n.t("composer.placeholder.replyTo", handle)
+    }
+
+    /// The direction of the reply as it is being written — re-read on every
+    /// keystroke so an Arabic reply on an English phone flips as soon as the
+    /// first letter lands, and an empty field simply follows the interface.
+    private var draftDirection: TextDirection {
+        TextDirection.resolve(languageCode: nil, text: viewModel.text(at: 0))
     }
 }
 

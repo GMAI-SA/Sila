@@ -52,48 +52,49 @@ public struct SignInScreen: View {
                 header
 
                 SLTextField(
-                    "Email",
+                    L10n.t("auth.field.email.label"),
                     text: $viewModel.email,
-                    placeholder: "you@example.com",
+                    placeholder: L10n.t("auth.field.email.placeholder"),
                     keyboard: .emailAddress,
                     contentType: .username,
                     error: viewModel.emailError,
-                    accessibilityHint: "The email address on your Sila account",
+                    accessibilityHint: L10n.t("auth.field.email.accountHint"),
                     submitLabel: .next,
                     onSubmit: { focus = .password }
                 )
                 .focused($focus, equals: .email)
 
                 SLTextField(
-                    "Password",
+                    L10n.t("auth.field.password.label"),
                     text: $viewModel.password,
-                    placeholder: "Your password",
+                    placeholder: L10n.t("auth.signIn.password.placeholder"),
                     isSecure: true,
                     contentType: .password,
                     error: viewModel.passwordError,
-                    accessibilityHint: "The password for your Sila account",
+                    accessibilityHint: L10n.t("auth.signIn.password.hint"),
                     submitLabel: .go,
                     onSubmit: { Task { await submit() } }
                 )
                 .focused($focus, equals: .password)
 
                 SLButton(
-                    "Sign In",
+                    L10n.t("auth.signIn.submit"),
                     variant: .primary,
                     isLoading: viewModel.isSubmitting,
                     isEnabled: viewModel.canSubmit,
-                    accessibilityHint: "Signs you in with your email and password"
+                    accessibilityHint: L10n.t("auth.signIn.submit.hint")
                 ) {
                     Task { await submit() }
                 }
+                .accessibilityIdentifier("signIn.submit")
 
                 HStack {
                     Spacer()
                     SLButton(
-                        "Forgot password?",
+                        L10n.t("auth.signIn.forgotPassword"),
                         variant: .ghost,
                         size: .compact,
-                        accessibilityHint: "Sends a six digit code so you can reset your password",
+                        accessibilityHint: L10n.t("auth.signIn.forgotPassword.hint"),
                         action: onForgotPassword
                     )
                     .frame(maxWidth: 200)
@@ -102,13 +103,13 @@ public struct SignInScreen: View {
 
                 if viewModel.showsBiometricButton {
                     VStack(spacing: SLSpacing.md) {
-                        SLDivider(text: "or")
+                        SLDivider(text: L10n.t("auth.signIn.divider.or"))
                         SLButton(
                             viewModel.biometricButtonTitle,
                             variant: .secondary,
                             icon: viewModel.biometry.symbolName,
                             isLoading: viewModel.isAuthenticatingBiometrically,
-                            accessibilityHint: "Unlocks your saved Sila session using \(viewModel.biometry.displayName)"
+                            accessibilityHint: L10n.t("auth.signIn.biometric.hint", viewModel.biometry.displayName)
                         ) {
                             Task { await biometricSignIn() }
                         }
@@ -124,17 +125,17 @@ public struct SignInScreen: View {
         .scrollDismissesKeyboard(.interactively)
         .animation(.easeInOut(duration: 0.2), value: viewModel.showsBiometricButton)
         .tnScreenBackground()
-        .tnNavigationBar(title: "Sign In")
+        .tnNavigationBar(title: L10n.t("auth.signIn.navTitle"))
         .tnToast($viewModel.toast)
         .task { await viewModel.loadBiometricState() }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("Welcome back")
+            Text(L10n.t("auth.signIn.title"))
                 .font(SLFont.displayL)
                 .foregroundStyle(SLColor.textPrimary)
-            Text("Sign in to your verified Sila account.")
+            Text(L10n.t("auth.signIn.subtitle"))
                 .font(SLFont.bodyLight)
                 .foregroundStyle(SLColor.textSecondary)
         }
@@ -191,10 +192,10 @@ public struct ForgotPasswordScreen: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
             VStack(alignment: .leading, spacing: SLSpacing.sm) {
-                Text("Reset your password")
+                Text(L10n.t("auth.forgotPassword.title"))
                     .font(SLFont.displayL)
                     .foregroundStyle(SLColor.textPrimary)
-                Text("We'll email a six-digit code to the address on your account.")
+                Text(L10n.t("auth.forgotPassword.subtitle"))
                     .font(SLFont.bodyLight)
                     .foregroundStyle(SLColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -202,23 +203,23 @@ public struct ForgotPasswordScreen: View {
             .accessibilityElement(children: .combine)
 
             SLTextField(
-                "Email",
+                L10n.t("auth.field.email.label"),
                 text: $viewModel.email,
-                placeholder: "you@example.com",
+                placeholder: L10n.t("auth.field.email.placeholder"),
                 keyboard: .emailAddress,
                 contentType: .username,
                 error: viewModel.emailError,
-                accessibilityHint: "The email address on your Sila account",
+                accessibilityHint: L10n.t("auth.field.email.accountHint"),
                 submitLabel: .go,
                 onSubmit: { Task { await submit() } }
             )
 
             SLButton(
-                "Send Code",
+                L10n.t("auth.forgotPassword.submit"),
                 variant: .primary,
                 isLoading: viewModel.isSubmitting,
                 isEnabled: viewModel.canSubmit,
-                accessibilityHint: "Emails you a six digit password reset code"
+                accessibilityHint: L10n.t("auth.forgotPassword.submit.hint")
             ) {
                 Task { await submit() }
             }
@@ -229,7 +230,7 @@ public struct ForgotPasswordScreen: View {
         .padding(.top, SLSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .tnScreenBackground()
-        .tnNavigationBar(title: "Forgot Password")
+        .tnNavigationBar(title: L10n.t("auth.forgotPassword.navTitle"))
         .tnToast($viewModel.toast)
     }
 

@@ -70,7 +70,9 @@ public final class OTPVerificationViewModel {
 
     /// Label for the resend control, including the countdown when running.
     public var resendTitle: String {
-        resendCountdown > 0 ? "Resend in \(resendCountdown)s" : "Resend code"
+        resendCountdown > 0
+            ? L10n.plural("auth.otp.resendIn", resendCountdown)
+            : L10n.t("auth.otp.resend")
     }
 
     /// Address with the local part partly masked, for on-screen display.
@@ -224,7 +226,7 @@ public final class OTPVerificationViewModel {
                 stopCountdown()
             }
         } catch {
-            errorMessage = "Something went wrong. Please try again."
+            errorMessage = L10n.t("common.somethingWentWrong")
             reset()
         }
     }
@@ -240,11 +242,11 @@ public final class OTPVerificationViewModel {
             let result = try await service.sendOTP(email: email, purpose: purpose)
             reset()
             startCountdown(from: result.resendAfterSeconds)
-            toast = .success("A new code is on its way to \(maskedEmail).")
+            toast = .success(L10n.t("auth.otp.resent", maskedEmail))
         } catch let error as APIError {
             toast = .error(error.userMessage)
         } catch {
-            toast = .error("We couldn't send a new code. Please try again.")
+            toast = .error(L10n.t("auth.otp.resendFailed"))
         }
     }
 

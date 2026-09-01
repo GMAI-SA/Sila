@@ -195,7 +195,7 @@ public struct PostCardView: View {
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(Text(authorAccessibilityLabel))
-            .accessibilityHint(Text("Opens \(post.author.displayName)'s profile"))
+            .accessibilityHint(Text(L10n.t("post.author.openProfile.hint", post.author.displayName)))
 
             Spacer(minLength: 0)
 
@@ -213,7 +213,7 @@ public struct PostCardView: View {
     /// What VoiceOver reads for the author control, without the post's text.
     private var authorAccessibilityLabel: String {
         var parts = [post.author.displayName]
-        if post.author.isVerified { parts.append("verified") }
+        if post.author.isVerified { parts.append(L10n.t("post.author.verified.accessibility")) }
         if let label = CountryCode.accessibilityLabel(post.author.countryCode) { parts.append(label) }
         parts.append(post.author.atHandle)
         parts.append(RelativeTime.accessible(post.createdAt))
@@ -250,7 +250,9 @@ public struct PostCardView: View {
                 Text(RelativeTime.short(post.createdAt))
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textSecondary)
-                    .accessibilityLabel(Text("Posted \(RelativeTime.accessible(post.createdAt))"))
+                    .accessibilityLabel(
+                        Text(L10n.t("post.time.posted.accessibility", RelativeTime.accessible(post.createdAt)))
+                    )
             }
         }
     }
@@ -282,12 +284,19 @@ public struct PostCardView: View {
 
     // MARK: - Body text
 
+    /// The post's own words, laid out in the post's own direction.
+    ///
+    /// **Not** the interface's direction. An Arabic post read on an English
+    /// phone still has to start at the right margin, wrap from the right, and
+    /// keep its full stop on the correct end — and the English post quoted
+    /// underneath it still has to do the opposite. Forcing `.leading` here was
+    /// the one line that made every Arabic post in the feed read wrong.
     private var postText: some View {
         Text(attributedText)
             .font(style == .detail ? SLFont.displayM : SLFont.body)
             .foregroundStyle(SLColor.textPrimary)
             .fixedSize(horizontal: false, vertical: true)
-            .multilineTextAlignment(.leading)
+            .slContentDirection(of: post)
             .environment(\.openURL, OpenURLAction { url in
                 guard let entity = PostEntityLink.parse(url) else { return .systemAction }
                 switch entity {
@@ -330,14 +339,20 @@ public struct PostCardView: View {
     @ViewBuilder
     private var detailFooter: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text(Self.absoluteFormatter.string(from: post.createdAt))
+            Text(SLFormat.dateTime(post.createdAt))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textMuted)
 
             if post.metrics.views > 0 {
-                Text("\(Self.count(post.metrics.views)) views")
-                    .font(SLFont.caption)
-                    .foregroundStyle(SLColor.textMuted)
+                Text(
+                    L10n.plural(
+                        "post.views.count",
+                        post.metrics.views,
+                        SLFormat.compactCount(post.metrics.views)
+                    )
+                )
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textMuted)
             }
 
             if let message = ReplyPermission.make(for: post).blockedMessage {
@@ -372,8 +387,8 @@ public struct PostCardView: View {
                 count: post.metrics.reposts,
                 isOn: post.viewer.reposted,
                 tint: SLColor.secondary,
-                label: post.viewer.reposted ? "Undo repost" : "Repost",
-                hint: post.viewer.reposted ? "Removes your repost" : "Shares this post to your followers",
+                label: L10n.t(post.viewer.reposted ? "post.repost.undo.label" : "post.repost.label"),
+                hint: L10n.t(post.viewer.reposted ? "post.repost.undo.hint" : "post.repost.hint"),
                 action: { actions.onRepost(post) }
             )
 
@@ -384,8 +399,8 @@ public struct PostCardView: View {
                 count: post.metrics.bookmarks,
                 isOn: post.viewer.bookmarked,
                 tint: SLColor.primary,
-                label: post.viewer.bookmarked ? "Remove bookmark" : "Bookmark",
-                hint: post.viewer.bookmarked ? "Removes this post from your bookmarks" : "Saves this post to your bookmarks",
+                label: L10n.t(post.viewer.bookmarked ? "post.bookmark.remove.label" : "post.bookmark.label"),
+                hint: L10n.t(post.viewer.bookmarked ? "post.bookmark.remove.hint" : "post.bookmark.hint"),
                 action: { actions.onBookmark(post) }
             )
 
@@ -396,8 +411,8 @@ public struct PostCardView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel(Text("Share"))
-            .accessibilityHint(Text("Opens the share sheet with this post's text"))
+            .accessibilityLabel(Text(L10n.t("common.share")))
+            .accessibilityHint(Text(L10n.t("post.share.hint")))
         }
         .padding(.top, SLSpacing.xs)
     }
@@ -415,7 +430,7 @@ public struct PostCardView: View {
                 Image(systemName: permission.canReply ? "bubble.left" : "bubble.left.slash")
                     .font(.system(size: 14))
                 if post.metrics.replies > 0 {
-                    Text(Self.count(post.metrics.replies)).font(SLFont.micro)
+                    Text(SLFormat.compactCount(post.metrics.replies)).font(SLFont.micro)
                 }
             }
             .foregroundStyle(permission.canReply ? SLColor.textSecondary : SLColor.textMuted)
@@ -423,8 +438,8 @@ public struct PostCardView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(permission.canReply ? "Reply" : "Replies restricted"))
-        .accessibilityHint(Text(permission.blockedMessage ?? "Writes a reply to this post"))
+        .accessibilityLabel(Text(L10n.t(permission.canReply ? "post.reply.label" : "post.reply.restricted.label")))
+        .accessibilityHint(Text(permission.blockedMessage ?? L10n.t("post.reply.hint")))
     }
 
     private var likeButton: some View {
@@ -440,7 +455,7 @@ public struct PostCardView: View {
                     .font(.system(size: 14))
                     .scaleEffect(post.viewer.liked ? likeScale : 1)
                 if post.metrics.likes > 0 {
-                    Text(Self.count(post.metrics.likes)).font(SLFont.micro)
+                    Text(SLFormat.compactCount(post.metrics.likes)).font(SLFont.micro)
                 }
             }
             .foregroundStyle(post.viewer.liked ? SLColor.danger : SLColor.textSecondary)
@@ -448,9 +463,9 @@ public struct PostCardView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(post.viewer.liked ? "Unlike" : "Like"))
-        .accessibilityValue(Text("\(post.metrics.likes) likes"))
-        .accessibilityHint(Text(post.viewer.liked ? "Removes your like" : "Likes this post"))
+        .accessibilityLabel(Text(L10n.t(post.viewer.liked ? "post.like.undo.label" : "post.like.label")))
+        .accessibilityValue(Text(L10n.plural("post.likes.count.accessibility", post.metrics.likes)))
+        .accessibilityHint(Text(L10n.t(post.viewer.liked ? "post.like.undo.hint" : "post.like.hint")))
     }
 
     private func engagementButton(
@@ -475,7 +490,7 @@ public struct PostCardView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
-        .accessibilityValue(Text("\(count)"))
+        .accessibilityValue(Text(SLFormat.number(count)))
         .accessibilityHint(Text(hint))
     }
 
@@ -486,29 +501,29 @@ public struct PostCardView: View {
         Button {
             actions.onQuote(post)
         } label: {
-            Label("Quote", systemImage: "quote.bubble")
+            Label(L10n.t("post.menu.quote"), systemImage: "quote.bubble")
         }
 
         Button {
             actions.onBookmark(post)
         } label: {
-            Label(post.viewer.bookmarked ? "Remove Bookmark" : "Bookmark", systemImage: "bookmark")
+            Label(L10n.t(post.viewer.bookmarked ? "post.menu.removeBookmark" : "post.menu.bookmark"), systemImage: "bookmark")
         }
 
         Button {
             UIPasteboard.general.string = post.text
         } label: {
-            Label("Copy Text", systemImage: "doc.on.doc")
+            Label(L10n.t("post.menu.copyText"), systemImage: "doc.on.doc")
         }
 
         ShareLink(item: shareText) {
-            Label("Share", systemImage: "square.and.arrow.up")
+            Label(L10n.t("common.share"), systemImage: "square.and.arrow.up")
         }
 
         Button {
-            actions.onStub("Not interested")
+            actions.onStub(MainTabView.StubFeature.notInterested)
         } label: {
-            Label("Not Interested", systemImage: "hand.thumbsdown")
+            Label(L10n.t("post.menu.notInterested"), systemImage: "hand.thumbsdown")
         }
 
         // Your own post offers Delete; everybody else's offers the safety
@@ -516,7 +531,7 @@ public struct PostCardView: View {
         // somebody else's words.
         if let own = actions.ownPost?(post) {
             Button(role: .destructive, action: own.onDelete) {
-                Label("Delete Post", systemImage: "trash")
+                Label(L10n.t("post.menu.delete"), systemImage: "trash")
             }
         } else if let safety = actions.safetyMenu?(post) {
             SafetyMenu(actions: safety)
@@ -524,9 +539,9 @@ public struct PostCardView: View {
             // The pre-safety fallback, kept so a surface with no safety backend
             // still says what it cannot do rather than hiding Report entirely.
             Button(role: .destructive) {
-                actions.onStub("Report")
+                actions.onStub(MainTabView.StubFeature.report)
             } label: {
-                Label("Report", systemImage: "flag")
+                Label(L10n.t("post.menu.report"), systemImage: "flag")
             }
         }
     }
@@ -536,12 +551,12 @@ public struct PostCardView: View {
     /// What the share sheet carries. No permalink is fabricated — the backend
     /// does not expose a public post URL yet.
     private var shareText: String {
-        "\(post.author.displayName) (\(post.author.atHandle)) on Sila:\n\n\(post.text)"
+        L10n.t("post.share.body", post.author.displayName, post.author.atHandle, post.text)
     }
 
     private var accessibilitySummary: String {
         var parts = [post.author.displayName]
-        if post.author.isVerified { parts.append("verified") }
+        if post.author.isVerified { parts.append(L10n.t("post.author.verified.accessibility")) }
         if let label = CountryCode.accessibilityLabel(post.author.countryCode) { parts.append(label) }
         parts.append(post.author.atHandle)
         parts.append(RelativeTime.accessible(post.createdAt))
@@ -588,8 +603,8 @@ struct QuotedPostCard: View {
     var body: some View {
         SLCard(
             padding: SLSpacing.md,
-            accessibilityLabel: "Quoted post by \(post.author.displayName)",
-            accessibilityHint: "Opens the quoted post",
+            accessibilityLabel: L10n.t("post.quoted.accessibility", post.author.displayName),
+            accessibilityHint: L10n.t("post.quoted.hint"),
             onTap: onTap
         ) {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
@@ -624,6 +639,10 @@ struct QuotedPostCard: View {
                     .foregroundStyle(SLColor.textSecondary)
                     .lineLimit(4)
                     .fixedSize(horizontal: false, vertical: true)
+                    // The quoted post is somebody else's writing and has its
+                    // own language, which is routinely not the language of the
+                    // post quoting it.
+                    .slContentDirection(of: post)
             }
         }
     }

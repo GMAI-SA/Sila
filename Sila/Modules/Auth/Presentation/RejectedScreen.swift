@@ -49,14 +49,14 @@ public struct RejectedScreen: View {
                 .accessibilityHidden(true)
 
                 VStack(spacing: SLSpacing.sm) {
-                    SLBadge("Rejected", style: .danger)
+                    SLBadge(L10n.t("auth.wall.badge.rejected"), style: .danger)
 
-                    Text("Verification declined")
+                    Text(L10n.t("auth.rejected.title"))
                         .font(SLFont.displayL)
                         .foregroundStyle(SLColor.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("We couldn't verify your identity, so this account is locked. If you believe this was a mistake, you can appeal.")
+                    Text(L10n.t("auth.rejected.message"))
                         .font(SLFont.bodyLight)
                         .foregroundStyle(SLColor.textSecondary)
                         .multilineTextAlignment(.center)
@@ -68,37 +68,42 @@ public struct RejectedScreen: View {
                 if let reason, !reason.isEmpty {
                     SLCard(padding: SLSpacing.lg) {
                         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-                            Text("Reason given")
+                            Text(L10n.t("auth.rejected.reasonLabel"))
                                 .font(SLFont.micro)
                                 .tracking(0.8)
                                 .foregroundStyle(SLColor.textMuted)
+                            // Written by a reviewer, in whichever language they
+                            // reviewed in — so it reads in its own direction.
                             Text(reason)
                                 .font(SLFont.body)
                                 .foregroundStyle(SLColor.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
+                                .slContentDirection(
+                                    TextDirection.resolve(languageCode: nil, text: reason)
+                                )
                         }
                     }
                     .padding(.horizontal, SLSpacing.lg)
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel(Text("Reason given. \(reason)"))
-                    .accessibilityHint(Text("The reviewer's explanation for the decision"))
+                    .accessibilityLabel(Text(L10n.t("auth.rejected.reason.a11yLabel", reason)))
+                    .accessibilityHint(Text(L10n.t("auth.rejected.reason.hint")))
                 }
 
                 VStack(spacing: SLSpacing.md) {
                     SLButton(
-                        "Appeal this decision",
+                        L10n.t("auth.rejected.appeal"),
                         variant: .primary,
                         icon: "envelope",
-                        accessibilityHint: "Opens your mail app with an appeal addressed to the Sila review team"
+                        accessibilityHint: L10n.t("auth.rejected.appeal.hint")
                     ) {
                         openAppeal()
                     }
 
                     SLButton(
-                        "Sign out",
+                        L10n.t("common.signOut"),
                         variant: .ghost,
                         size: .compact,
-                        accessibilityHint: "Ends your session and returns to the welcome screen",
+                        accessibilityHint: L10n.t("auth.signOut.hint"),
                         action: onSignOut
                     )
                 }
@@ -116,12 +121,12 @@ public struct RejectedScreen: View {
     private func openAppeal() {
         analytics.track(.appealOpened)
         guard let url = appealURL else {
-            toast = .error("We couldn't open your mail app. Write to \(AppConfig.appealEmail).")
+            toast = .error(L10n.t("auth.rejected.appeal.noMailApp", AppConfig.appealEmail))
             return
         }
         openURL(url) { accepted in
             if !accepted {
-                toast = .error("No mail app is set up. Write to \(AppConfig.appealEmail).")
+                toast = .error(L10n.t("auth.rejected.appeal.noMailConfigured", AppConfig.appealEmail))
             }
         }
     }
@@ -131,17 +136,21 @@ public struct RejectedScreen: View {
         components.scheme = "mailto"
         components.path = AppConfig.appealEmail
         components.queryItems = [
-            URLQueryItem(name: "subject", value: "Sila verification appeal"),
+            URLQueryItem(name: "subject", value: L10n.t("auth.rejected.appeal.subject")),
             URLQueryItem(name: "body", value: appealBody)
         ]
         return components.url
     }
 
     private var appealBody: String {
-        var lines = ["I'd like to appeal the verification decision on my Sila account."]
-        if let email { lines.append(contentsOf: ["", "Account email: \(email)"]) }
-        if let reason, !reason.isEmpty { lines.append("Reason given: \(reason)") }
-        lines.append(contentsOf: ["", "Why I think this was a mistake:", ""])
+        var lines = [L10n.t("auth.rejected.appeal.bodyIntro")]
+        if let email {
+            lines.append(contentsOf: ["", L10n.t("auth.rejected.appeal.bodyEmail", email)])
+        }
+        if let reason, !reason.isEmpty {
+            lines.append(L10n.t("auth.rejected.appeal.bodyReason", reason))
+        }
+        lines.append(contentsOf: ["", L10n.t("auth.rejected.appeal.bodyPrompt"), ""])
         return lines.joined(separator: "\n")
     }
 }

@@ -30,29 +30,29 @@ public struct WallPresentation: Equatable, Sendable {
         case .unstarted:
             return WallPresentation(
                 icon: "person.badge.shield.checkmark",
-                title: "Verify your identity",
-                message: "Sila only admits verified humans. Scan your government ID and complete a short liveness check — it takes about three minutes.",
-                badgeText: "Action Required",
+                title: L10n.t("auth.wall.unstarted.title"),
+                message: L10n.t("auth.wall.unstarted.message"),
+                badgeText: L10n.t("auth.wall.badge.actionRequired"),
                 badgeStyle: .warning,
-                primaryActionTitle: "Start Verification",
+                primaryActionTitle: L10n.t("auth.wall.unstarted.action"),
                 showsProcessingAnimation: false
             )
         case .inProgress:
             return WallPresentation(
                 icon: "hourglass.bottomhalf.filled",
-                title: "Finish your verification",
-                message: "You started verifying but didn't finish. Pick up where you left off — nothing you submitted has been lost.",
-                badgeText: "Action Required",
+                title: L10n.t("auth.wall.inProgress.title"),
+                message: L10n.t("auth.wall.inProgress.message"),
+                badgeText: L10n.t("auth.wall.badge.actionRequired"),
                 badgeStyle: .warning,
-                primaryActionTitle: "Continue Verification",
+                primaryActionTitle: L10n.t("auth.wall.inProgress.action"),
                 showsProcessingAnimation: false
             )
         case .pendingReview:
             return WallPresentation(
                 icon: "hourglass",
-                title: "Under review",
-                message: "Your documents are with our reviewers. Most decisions land within a few hours; you'll get an email either way.",
-                badgeText: "Under Review",
+                title: L10n.t("auth.wall.pendingReview.title"),
+                message: L10n.t("auth.wall.pendingReview.message"),
+                badgeText: L10n.t("auth.wall.badge.underReview"),
                 badgeStyle: .verified,
                 primaryActionTitle: nil,
                 showsProcessingAnimation: true
@@ -60,21 +60,21 @@ public struct WallPresentation: Equatable, Sendable {
         case .verified:
             return WallPresentation(
                 icon: "checkmark.seal.fill",
-                title: "You're verified",
-                message: "Welcome to Sila. Every account you'll see here belongs to a real, verified human.",
-                badgeText: "Verified",
+                title: L10n.t("auth.wall.verified.title"),
+                message: L10n.t("auth.wall.verified.message"),
+                badgeText: L10n.t("auth.wall.badge.verified"),
                 badgeStyle: .verified,
-                primaryActionTitle: "Enter Sila",
+                primaryActionTitle: L10n.t("auth.wall.verified.action"),
                 showsProcessingAnimation: false
             )
         case .rejected:
             return WallPresentation(
                 icon: "xmark.octagon.fill",
-                title: "Verification declined",
-                message: "We couldn't verify your identity from what you submitted.",
-                badgeText: "Rejected",
+                title: L10n.t("auth.wall.rejected.title"),
+                message: L10n.t("auth.wall.rejected.message"),
+                badgeText: L10n.t("auth.wall.badge.rejected"),
                 badgeStyle: .danger,
-                primaryActionTitle: "Appeal",
+                primaryActionTitle: L10n.t("auth.wall.rejected.action"),
                 showsProcessingAnimation: false
             )
         }
@@ -121,7 +121,7 @@ public final class VerificationWallViewModel {
     /// Human-readable submission timestamp, when known.
     public var submittedText: String? {
         guard let submittedAt = report?.submittedAt else { return nil }
-        return "Submitted \(Self.relativeFormatter.localizedString(for: submittedAt, relativeTo: Date()))"
+        return L10n.t("auth.wall.submittedAt", SLFormat.relative(submittedAt))
     }
 
     /// Rejection reason from the API, when present.
@@ -140,7 +140,7 @@ public final class VerificationWallViewModel {
         } catch let error as APIError {
             toast = .error(error.userMessage)
         } catch {
-            toast = .error("We couldn't check your status. Pull to try again.")
+            toast = .error(L10n.t("auth.wall.error.statusCheckFailed"))
         }
     }
 
@@ -150,12 +150,6 @@ public final class VerificationWallViewModel {
     /// and tells the user plainly rather than pretending to navigate.
     public func startVerification() {
         analytics.track(.verificationStarted, properties: ["status": status.rawValue])
-        toast = .info("Identity verification arrives in the next release.")
+        toast = .info(L10n.t("auth.wall.verificationComingSoon"))
     }
-
-    private static let relativeFormatter: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return formatter
-    }()
 }

@@ -56,21 +56,21 @@ public final class RegisterViewModel {
     public var emailError: String? {
         if let serverEmailError { return serverEmailError }
         guard didAttemptSubmit else { return nil }
-        return EmailValidator.isValid(email) ? nil : "Enter a valid email address."
+        return EmailValidator.isValid(email) ? nil : L10n.t("auth.error.invalidEmail")
     }
 
     /// Inline error under the password field.
     public var passwordError: String? {
         guard didAttemptSubmit else { return nil }
-        if password.isEmpty { return "Choose a password." }
+        if password.isEmpty { return L10n.t("auth.register.error.passwordEmpty") }
         return passwordStrength.isAcceptable ? nil : passwordStrength.advice
     }
 
     /// Inline error under the confirmation field.
     public var confirmError: String? {
         guard didAttemptSubmit else { return nil }
-        if confirmPassword.isEmpty { return "Re-enter your password." }
-        return confirmPassword == password ? nil : "Passwords don't match."
+        if confirmPassword.isEmpty { return L10n.t("auth.register.error.confirmEmpty") }
+        return confirmPassword == password ? nil : L10n.t("auth.register.error.passwordMismatch")
     }
 
     /// Whether every field currently passes validation.
@@ -120,7 +120,7 @@ public final class RegisterViewModel {
         } catch let error as APIError {
             handle(error)
         } catch {
-            toast = .error("Something went wrong. Please try again.")
+            toast = .error(L10n.t("common.somethingWentWrong"))
         }
     }
 
@@ -132,7 +132,7 @@ public final class RegisterViewModel {
 
     private func handle(_ error: APIError) {
         if error.code == .emailTaken {
-            serverEmailError = "That email already has a Sila account."
+            serverEmailError = L10n.t("auth.register.error.emailTaken")
         }
         toast = .error(error.userMessage)
     }

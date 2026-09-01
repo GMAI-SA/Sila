@@ -27,10 +27,10 @@ public struct SLToastMessage: Identifiable, Equatable, Sendable {
 
         var spokenPrefix: String {
             switch self {
-            case .success: return "Success"
-            case .error: return "Error"
-            case .warning: return "Warning"
-            case .info: return "Notice"
+            case .success: return L10n.t("ds.toast.success")
+            case .error: return L10n.t("ds.toast.error")
+            case .warning: return L10n.t("ds.toast.warning")
+            case .info: return L10n.t("ds.toast.info")
             }
         }
     }
@@ -102,8 +102,8 @@ public struct SLToast: View {
         .padding(.horizontal, SLSpacing.lg)
         .onTapGesture(perform: onDismiss)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("\(message.kind.spokenPrefix). \(message.text)"))
-        .accessibilityHint(Text("Double tap to dismiss this message"))
+        .accessibilityLabel(Text(L10n.t("ds.toast.spoken", message.kind.spokenPrefix, message.text)))
+        .accessibilityHint(Text(L10n.t("ds.toast.dismissHint")))
         .accessibilityAddTraits(.isButton)
     }
 }

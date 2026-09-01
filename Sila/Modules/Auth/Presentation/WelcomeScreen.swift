@@ -46,12 +46,12 @@ public struct WelcomeScreen: View {
                 VStack(spacing: SLSpacing.lg) {
                     SLVerifiedBadge(size: 56)
 
-                    Text("Sila")
+                    Text(L10n.t("auth.brand.wordmark"))
                         .font(SLFont.displayXL)
                         .tracking(-0.5)
                         .foregroundStyle(SLColor.textPrimary)
 
-                    Text("The only social network where every human is real.")
+                    Text(L10n.t("auth.welcome.tagline"))
                         .font(SLFont.displayM)
                         .foregroundStyle(SLColor.textSecondary)
                         .multilineTextAlignment(.center)
@@ -59,30 +59,32 @@ public struct WelcomeScreen: View {
                         .padding(.horizontal, SLSpacing.lg)
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(Text("Sila. The only social network where every human is real."))
+                .accessibilityLabel(Text(L10n.t("auth.welcome.a11yLabel")))
 
                 Spacer()
 
                 VStack(spacing: SLSpacing.md) {
                     SLButton(
-                        "Create Account",
+                        L10n.t("auth.welcome.createAccount"),
                         variant: .primary,
-                        accessibilityHint: "Starts registration with your email address",
+                        accessibilityHint: L10n.t("auth.welcome.createAccount.hint"),
                         action: onCreateAccount
                     )
+                    .accessibilityIdentifier("welcome.createAccount")
 
                     SLButton(
-                        "Sign In",
+                        L10n.t("auth.welcome.signIn"),
                         variant: .secondary,
-                        accessibilityHint: "Signs in to an existing Sila account",
+                        accessibilityHint: L10n.t("auth.welcome.signIn.hint"),
                         action: onSignIn
                     )
+                    .accessibilityIdentifier("welcome.signIn")
 
-                    Text("Requires government ID verification")
+                    Text(L10n.t("auth.welcome.finePrint"))
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textMuted)
                         .padding(.top, SLSpacing.xs)
-                        .accessibilityLabel(Text("Fine print: creating an account requires government ID verification"))
+                        .accessibilityLabel(Text(L10n.t("auth.welcome.finePrint.a11yLabel")))
                 }
                 .padding(.horizontal, SLSpacing.lg)
                 .padding(.bottom, SLSpacing.xl)

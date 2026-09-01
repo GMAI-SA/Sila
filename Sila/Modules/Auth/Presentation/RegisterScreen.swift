@@ -40,13 +40,13 @@ public struct RegisterScreen: View {
                 header
 
                 SLTextField(
-                    "Email",
+                    L10n.t("auth.field.email.label"),
                     text: $viewModel.email,
-                    placeholder: "you@example.com",
+                    placeholder: L10n.t("auth.field.email.placeholder"),
                     keyboard: .emailAddress,
                     contentType: .username,
                     error: viewModel.emailError,
-                    accessibilityHint: "The address we will send your six digit confirmation code to",
+                    accessibilityHint: L10n.t("auth.register.email.hint"),
                     submitLabel: .next,
                     onSubmit: { focus = .password }
                 )
@@ -54,13 +54,13 @@ public struct RegisterScreen: View {
 
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
                     SLTextField(
-                        "Password",
+                        L10n.t("auth.field.password.label"),
                         text: $viewModel.password,
-                        placeholder: "At least \(PasswordStrength.minimumLength) characters",
+                        placeholder: L10n.plural("auth.register.password.placeholder", PasswordStrength.minimumLength),
                         isSecure: true,
                         contentType: .newPassword,
                         error: viewModel.passwordError,
-                        accessibilityHint: "Choose a password with at least eight characters",
+                        accessibilityHint: L10n.t("auth.register.password.hint"),
                         submitLabel: .next,
                         onSubmit: { focus = .confirm }
                     )
@@ -79,24 +79,24 @@ public struct RegisterScreen: View {
                 .animation(.easeInOut(duration: 0.2), value: viewModel.showsStrengthMeter)
 
                 SLTextField(
-                    "Confirm password",
+                    L10n.t("auth.register.confirmPassword.label"),
                     text: $viewModel.confirmPassword,
-                    placeholder: "Type it again",
+                    placeholder: L10n.t("auth.register.confirmPassword.placeholder"),
                     isSecure: true,
                     contentType: .newPassword,
                     error: viewModel.confirmError,
-                    accessibilityHint: "Re-enter the same password to confirm it",
+                    accessibilityHint: L10n.t("auth.register.confirmPassword.hint"),
                     submitLabel: .go,
                     onSubmit: { Task { await submit() } }
                 )
                 .focused($focus, equals: .confirm)
 
                 SLButton(
-                    "Send Code",
+                    L10n.t("auth.register.submit"),
                     variant: .primary,
                     isLoading: viewModel.isSubmitting,
                     isEnabled: viewModel.canSubmit,
-                    accessibilityHint: "Creates your account and emails you a six digit code"
+                    accessibilityHint: L10n.t("auth.register.submit.hint")
                 ) {
                     Task { await submit() }
                 }
@@ -111,7 +111,7 @@ public struct RegisterScreen: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .tnScreenBackground()
-        .tnNavigationBar(title: "Create Account")
+        .tnNavigationBar(title: L10n.t("auth.register.navTitle"))
         .tnToast($viewModel.toast)
         .sheet(item: Binding(
             get: { router.presentedLegalDocument },
@@ -126,10 +126,10 @@ public struct RegisterScreen: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text("Create your account")
+            Text(L10n.t("auth.register.title"))
                 .font(SLFont.displayL)
                 .foregroundStyle(SLColor.textPrimary)
-            Text("We'll email you a six-digit code to confirm the address. Identity verification comes next.")
+            Text(L10n.t("auth.register.subtitle"))
                 .font(SLFont.bodyLight)
                 .foregroundStyle(SLColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -141,16 +141,16 @@ public struct RegisterScreen: View {
     private var legalFinePrint: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             SLDivider()
-            Text("By continuing you agree to our")
+            Text(L10n.t("auth.register.legalIntro"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textMuted)
             HStack(spacing: SLSpacing.md) {
-                SLButton("Terms of Service", variant: .ghost, size: .compact,
-                         accessibilityHint: "Opens the Terms of Service") {
+                SLButton(L10n.t("auth.register.terms"), variant: .ghost, size: .compact,
+                         accessibilityHint: L10n.t("auth.register.terms.hint")) {
                     router.present(.terms)
                 }
-                SLButton("Privacy Policy", variant: .ghost, size: .compact,
-                         accessibilityHint: "Opens the Privacy Policy") {
+                SLButton(L10n.t("auth.register.privacy"), variant: .ghost, size: .compact,
+                         accessibilityHint: L10n.t("auth.register.privacy.hint")) {
                     router.present(.privacy)
                 }
             }

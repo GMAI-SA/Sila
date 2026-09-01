@@ -47,7 +47,7 @@ public struct RoomsScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
-        .tnNavigationBar(title: "Rooms")
+        .tnNavigationBar(title: L10n.t("rooms.nav.title"))
         .toolbar {
             if let onCreate {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -79,7 +79,7 @@ public struct RoomsScreen: View {
                     get: { viewModel.query },
                     set: { viewModel.updateQuery($0) }
                 ),
-                prompt: Text("Search rooms").foregroundStyle(SLColor.textMuted)
+                prompt: Text(L10n.t("rooms.search.placeholder")).foregroundStyle(SLColor.textMuted)
             )
             .font(SLFont.body)
             .foregroundStyle(SLColor.textPrimary)
@@ -88,8 +88,11 @@ public struct RoomsScreen: View {
             .submitLabel(.search)
             .focused($isSearchFocused)
             .onSubmit { viewModel.updateQuery(viewModel.query, immediately: true) }
-            .accessibilityLabel(Text("Search rooms"))
-            .accessibilityHint(Text("Searches room titles and topics, live and scheduled"))
+            // A room title is content, and somebody searching for "قهوة" in an
+            // English build must see what they typed read right-to-left.
+            .slContentDirection(TextDirection.resolve(languageCode: nil, text: viewModel.query))
+            .accessibilityLabel(Text(L10n.t("rooms.search.placeholder")))
+            .accessibilityHint(Text(L10n.t("rooms.search.a11yHint")))
 
             if viewModel.isSearchActive {
                 Button {
@@ -101,7 +104,7 @@ public struct RoomsScreen: View {
                         .foregroundStyle(SLColor.textMuted)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Clear search"))
+                .accessibilityLabel(Text(L10n.t("rooms.search.clear")))
             }
         }
         .padding(.horizontal, SLSpacing.md)
@@ -162,10 +165,10 @@ public struct RoomsScreen: View {
                     case let .failed(message):
                         SLEmptyState(
                             icon: "wifi.exclamationmark",
-                            title: "Couldn't load rooms",
+                            title: L10n.t("rooms.error.title"),
                             subtitle: message,
                             tint: SLColor.danger,
-                            actionTitle: "Try again",
+                            actionTitle: L10n.t("rooms.error.retry"),
                             action: { Task { await viewModel.reload() } }
                         )
                         .padding(.top, SLSpacing.xl)
@@ -198,7 +201,11 @@ public struct RoomsScreen: View {
     @ViewBuilder
     private var rooms: some View {
         if !viewModel.visibleLive.isEmpty {
-            sectionHeader(viewModel.isSearchActive ? "Results" : "Live now")
+            sectionHeader(
+                viewModel.isSearchActive
+                    ? L10n.t("rooms.section.results")
+                    : L10n.t("rooms.section.liveNow")
+            )
             ForEach(viewModel.visibleLive) { room in
                 RoomCardView(
                     room: room,
@@ -210,7 +217,7 @@ public struct RoomsScreen: View {
         }
 
         if !viewModel.visibleScheduled.isEmpty {
-            sectionHeader("Scheduled")
+            sectionHeader(L10n.t("rooms.section.scheduled"))
                 .padding(.top, SLSpacing.sm)
             ForEach(viewModel.visibleScheduled) { room in
                 RoomCardView(
@@ -244,7 +251,7 @@ public struct RoomsScreen: View {
         }
         .padding(.top, SLSpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityLabel(Text("Loading rooms"))
+        .accessibilityLabel(Text(L10n.t("rooms.loading.a11y")))
     }
 
     private func open(_ room: VoiceRoom) {
@@ -276,11 +283,13 @@ struct RoomCardView: View {
             VStack(alignment: .leading, spacing: SLSpacing.sm) {
                 header
 
+                // The host wrote this title. An Arabic room listed in an English
+                // build still reads right-to-left, and the reverse.
                 Text(room.title)
                     .font(SLFont.bodyEmphasis)
                     .foregroundStyle(SLColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
+                    .slContentDirection(TextDirection.resolve(languageCode: nil, text: room.title))
 
                 host
 
@@ -292,7 +301,7 @@ struct RoomCardView: View {
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
                         .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.leading)
+                        .slContentDirection(TextDirection.resolve(languageCode: nil, text: refusal))
                 }
             }
         }
@@ -303,8 +312,8 @@ struct RoomCardView: View {
         .accessibilityLabel(Text(room.accessibilityDescription))
         .accessibilityHint(Text(
             room.status.isJoinable
-                ? "Opens the room. Anyone can listen."
-                : "This room isn't open yet."
+                ? L10n.t("rooms.card.a11yHint.open")
+                : L10n.t("rooms.card.a11yHint.notOpen")
         ))
     }
 
@@ -335,7 +344,13 @@ struct RoomCardView: View {
             Circle()
                 .fill(room.status == .live ? SLColor.danger : SLColor.textMuted)
                 .frame(width: 6, height: 6)
-            Text(room.status == .live ? "LIVE" : room.status == .scheduled ? "SOON" : "ENDED")
+            Text(
+                room.status == .live
+                    ? L10n.t("rooms.status.live")
+                    : room.status == .scheduled
+                        ? L10n.t("rooms.status.soon")
+                        : L10n.t("rooms.status.ended")
+            )
                 .font(.system(size: 10, weight: .bold))
                 .tracking(0.6)
                 .foregroundStyle(room.status == .live ? SLColor.danger : SLColor.textMuted)
@@ -363,6 +378,9 @@ struct RoomCardView: View {
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)
                 .lineLimit(1)
+                .slContentDirection(
+                    TextDirection.resolve(languageCode: nil, text: room.host.displayName)
+                )
             if room.host.isVerified {
                 SLVerifiedBadge(size: 11, isPulsing: false)
             }

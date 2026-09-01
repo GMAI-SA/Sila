@@ -79,7 +79,7 @@ public struct ExploreScreen: View {
                 .accessibilityHidden(true)
 
             TextField(
-                "Search Sila",
+                L10n.t("search.field.placeholder"),
                 text: Binding(
                     get: { viewModel.query },
                     set: { viewModel.updateQuery($0) }
@@ -91,9 +91,12 @@ public struct ExploreScreen: View {
             .autocorrectionDisabled()
             .submitLabel(.search)
             .focused($isFieldFocused)
+            // A query is content: typing عبدالعزيز on an English phone has to
+            // right-align, caret and all, from the first letter.
+            .slContentDirection(TextDirection.resolve(languageCode: nil, text: viewModel.query))
             .onSubmit { viewModel.updateQuery(viewModel.query, immediately: true) }
-            .accessibilityLabel(Text("Search Sila"))
-            .accessibilityHint(Text("Searches posts and people. Type at least two characters"))
+            .accessibilityLabel(Text(L10n.t("search.field.a11yLabel")))
+            .accessibilityHint(Text(L10n.t("search.field.a11yHint")))
 
             if !viewModel.query.isEmpty {
                 Button {
@@ -103,15 +106,15 @@ public struct ExploreScreen: View {
                         .foregroundStyle(SLColor.textMuted)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Clear search"))
-                .accessibilityHint(Text("Empties the search field and shows trending tags"))
+                .accessibilityLabel(Text(L10n.t("search.field.clear.a11yLabel")))
+                .accessibilityHint(Text(L10n.t("search.field.clear.a11yHint")))
             }
 
             if viewModel.isSearching {
                 ProgressView()
                     .controlSize(.small)
                     .tint(SLColor.primary)
-                    .accessibilityLabel(Text("Searching"))
+                    .accessibilityLabel(Text(L10n.t("search.status.searching")))
             }
         }
         .padding(.horizontal, SLSpacing.lg)
@@ -153,7 +156,7 @@ public struct ExploreScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: SLSpacing.sm) {
-                    Text("TRENDING NOW")
+                    Text(L10n.t("search.trending.sectionHeader"))
                         .font(SLFont.micro)
                         .tracking(0.8)
                         .foregroundStyle(SLColor.textSecondary)
@@ -161,7 +164,7 @@ public struct ExploreScreen: View {
                 }
                 .padding(.horizontal, SLSpacing.lg)
                 .padding(.bottom, SLSpacing.sm)
-                .accessibilityLabel(Text("Trending now, counted across recent posts"))
+                .accessibilityLabel(Text(L10n.t("search.trending.section.a11yLabel")))
 
                 if viewModel.isLoadingTrending {
                     VStack(spacing: SLSpacing.lg) {
@@ -171,12 +174,12 @@ public struct ExploreScreen: View {
                         }
                     }
                     .padding(.top, SLSpacing.sm)
-                    .accessibilityLabel(Text("Loading trending tags"))
+                    .accessibilityLabel(Text(L10n.t("search.trending.loading.a11yLabel")))
 
                 } else if let error = viewModel.trendingError {
                     SLEmptyState(
                         icon: "wifi.exclamationmark",
-                        title: "Couldn't load trending",
+                        title: L10n.t("search.trending.failed.title"),
                         subtitle: error,
                         tint: SLColor.danger
                     )
@@ -186,8 +189,8 @@ public struct ExploreScreen: View {
                 } else if viewModel.trending.isEmpty {
                     SLEmptyState(
                         icon: "number",
-                        title: "Nothing trending yet",
-                        subtitle: "Tags are counted across the most recent posts. As people start using hashtags, they show up here.",
+                        title: L10n.t("search.trending.empty.title"),
+                        subtitle: L10n.t("search.trending.empty.subtitle"),
                         tint: SLColor.textSecondary
                     )
                     .padding(.horizontal, SLSpacing.lg)
@@ -199,7 +202,7 @@ public struct ExploreScreen: View {
                         SLDivider()
                     }
 
-                    Text("Counted across the most recent posts — not an all-time ranking.")
+                    Text(L10n.t("search.trending.footnote"))
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
                         .padding(SLSpacing.lg)
@@ -215,26 +218,36 @@ public struct ExploreScreen: View {
             isFieldFocused = false
         } label: {
             HStack(spacing: SLSpacing.md) {
-                Text("\(rank)")
+                // A rank is a position, not a quantity: left-to-right in both
+                // languages, like a chart placing.
+                Text(SLFormat.number(rank))
                     .font(SLFont.caption)
                     .monospacedDigit()
                     .foregroundStyle(SLColor.textMuted)
                     .frame(width: 20, alignment: .leading)
+                    .slContentDirection(.leftToRight)
 
                 VStack(alignment: .leading, spacing: 2) {
+                    // A hashtag is written by whoever coined it — #الرياض and
+                    // #riyadh sit in the same list and read opposite ways.
                     Text(tag.hashtag)
                         .font(SLFont.bodyEmphasis)
                         .foregroundStyle(SLColor.textPrimary)
                         .lineLimit(1)
+                        .slContentDirection(
+                            TextDirection.resolve(languageCode: nil, text: tag.hashtag)
+                        )
 
-                    Text("\(tag.postCount) \(tag.postCount == 1 ? "post" : "posts")")
+                    Text(L10n.plural("search.trending.postCount", tag.postCount))
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textSecondary)
                 }
 
                 Spacer(minLength: 0)
 
-                Image(systemName: "chevron.right")
+                // `.forward`, not `.right`: the disclosure has to point at the
+                // edge the row opens toward, which flips in Arabic.
+                Image(systemName: "chevron.forward")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(SLColor.textMuted)
             }
@@ -244,8 +257,13 @@ public struct ExploreScreen: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(tag.hashtag), \(tag.postCount) recent posts, number \(rank)"))
-        .accessibilityHint(Text("Searches for this tag"))
+        .accessibilityLabel(Text(L10n.t(
+            "search.trending.row.a11yLabel",
+            tag.hashtag,
+            L10n.plural("search.trending.row.a11yPostCount", tag.postCount),
+            SLFormat.number(rank)
+        )))
+        .accessibilityHint(Text(L10n.t("search.trending.row.a11yHint")))
     }
 
     // MARK: - Results
@@ -267,7 +285,7 @@ public struct ExploreScreen: View {
                         ProgressView()
                             .tint(SLColor.primary)
                             .padding(SLSpacing.xl)
-                            .accessibilityLabel(Text("Loading more results"))
+                            .accessibilityLabel(Text(L10n.t("search.results.loadingMore.a11yLabel")))
                     }
                 }
             }
@@ -294,37 +312,41 @@ public struct ExploreScreen: View {
         case .queryTooShort:
             SLEmptyState(
                 icon: "character.cursor.ibeam",
-                title: "Keep typing",
-                subtitle: "Search needs at least \(SearchConstants.minimumQueryLength) characters.",
+                title: L10n.t("search.empty.tooShort.title"),
+                subtitle: L10n.plural("search.empty.tooShort.subtitle", SearchConstants.minimumQueryLength),
                 tint: SLColor.textSecondary
             )
 
         case let .failed(message):
             SLEmptyState(
                 icon: "wifi.exclamationmark",
-                title: "Search failed",
+                title: L10n.t("search.empty.failed.title"),
                 subtitle: message,
                 tint: SLColor.danger,
-                actionTitle: "Try again",
+                actionTitle: L10n.t("search.empty.failed.action"),
                 action: { viewModel.updateQuery(viewModel.query, immediately: true) }
             )
 
         case .noResults, .idle:
             SLEmptyState(
                 icon: "magnifyingglass",
-                title: "No results",
+                title: L10n.t("search.empty.noResults.title"),
                 subtitle: noResultsSubtitle,
                 tint: SLColor.textSecondary
             )
         }
     }
 
+    /// The query is quoted back at the user inside a sentence — the one place
+    /// on this screen where their own text lands in the middle of ours, so it
+    /// goes through `String(format:)` and gets isolated rather than dragging
+    /// the closing quote mark to the wrong end.
     private var noResultsSubtitle: String {
         switch viewModel.tab {
         case .posts:
-            return "No post contains “\(viewModel.query)”. Search matches the words in a post, not their meaning."
+            return L10n.t("search.empty.noResults.posts", viewModel.query)
         case .people:
-            return "No handle or display name matches “\(viewModel.query)”."
+            return L10n.t("search.empty.noResults.people", viewModel.query)
         }
     }
 
@@ -338,7 +360,7 @@ public struct ExploreScreen: View {
             }
             .padding(.top, SLSpacing.lg)
         }
-        .accessibilityLabel(Text("Searching"))
+        .accessibilityLabel(Text(L10n.t("search.status.searching")))
     }
 
     // MARK: - Card wiring
@@ -355,7 +377,7 @@ public struct ExploreScreen: View {
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in
                 guard let onCompose else {
-                    onStub("Quote posts")
+                    onStub(MainTabView.StubFeature.quotePosts)
                     return
                 }
                 onCompose(.quote(post))
@@ -399,10 +421,16 @@ struct PersonResultRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: SLSpacing.xs) {
+                        // Somebody's display name is theirs, not ours: an
+                        // Arabic name in an English result list and a Latin
+                        // name in an Arabic one each read their own way.
                         Text(user.displayName)
                             .font(SLFont.bodyEmphasis)
                             .foregroundStyle(SLColor.textPrimary)
                             .lineLimit(1)
+                            .slContentDirection(
+                                TextDirection.resolve(languageCode: nil, text: user.displayName)
+                            )
 
                         if user.isVerified {
                             SLVerifiedBadge(size: 14, isPulsing: false)
@@ -411,10 +439,13 @@ struct PersonResultRow: View {
                         SLCountryBadge(countryCode: user.countryCode)
                     }
 
+                    // Handles are always Latin; pinning the direction keeps the
+                    // "@" attached to the front of the name in an Arabic row.
                     Text(user.atHandle)
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
                         .lineLimit(1)
+                        .slContentDirection(.leftToRight)
                 }
 
                 Spacer(minLength: 0)
@@ -426,13 +457,15 @@ struct PersonResultRow: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(accessibilityLabel))
-        .accessibilityHint(Text("Opens this account's profile"))
+        .accessibilityHint(Text(L10n.t("search.person.row.a11yHint")))
     }
 
     private var accessibilityLabel: String {
         var parts = [user.displayName]
-        if user.isVerified { parts.append("verified") }
-        if let country = CountryCode.accessibilityLabel(user.countryCode) { parts.append(country) }
+        if user.isVerified { parts.append(L10n.t("search.person.row.a11yVerified")) }
+        if let country = CountryCode.accessibilityLabel(user.countryCode, locale: L10n.locale) {
+            parts.append(country)
+        }
         parts.append(user.atHandle)
         return parts.joined(separator: ". ")
     }

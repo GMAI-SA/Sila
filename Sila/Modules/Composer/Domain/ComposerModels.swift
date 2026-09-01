@@ -144,15 +144,21 @@ public struct ComposerTextMetrics: Equatable, Sendable {
     /// matters. A permanent "280" is noise.
     public var counterText: String? {
         guard isNearLimit || isOverLimit else { return nil }
-        return String(remaining)
+        // A budget, not a quantity of anything: it reads left-to-right in both
+        // languages, which is why the view pins its direction.
+        return SLFormat.number(remaining)
     }
 
     /// What VoiceOver reads for the counter.
     public var accessibilityValue: String {
         if isOverLimit {
-            return "\(-remaining) characters over the \(ComposerConstants.characterLimit) character limit"
+            return L10n.t(
+                "composer.counter.a11yOver",
+                L10n.plural("composer.counter.a11yOverCount", -remaining),
+                SLFormat.number(ComposerConstants.characterLimit)
+            )
         }
-        return "\(remaining) characters remaining"
+        return L10n.plural("composer.counter.a11yRemaining", remaining)
     }
 }
 
@@ -253,9 +259,14 @@ public struct ThreadPostReport: Sendable, Equatable {
     /// where the composer simply closes.
     public var summary: String? {
         guard let error else {
-            return posted.count > 1 ? "Posted your thread — \(posted.count) posts." : nil
+            return posted.count > 1 ? L10n.plural("composer.thread.posted", posted.count) : nil
         }
         guard !posted.isEmpty else { return error.userMessage }
-        return "Posted \(posted.count) of \(totalSegments). \(error.userMessage) The rest is still here — tap Post to continue the thread."
+        return L10n.t(
+            "composer.thread.partialSummary",
+            SLFormat.number(posted.count),
+            SLFormat.number(totalSegments),
+            error.userMessage
+        )
     }
 }

@@ -253,13 +253,20 @@ public struct ProfileDraft: Equatable, Sendable {
     public var validationError: String? {
         let clean = normalised
         if clean.displayName.count > AccountLimits.maximumDisplayNameLength {
-            return "Display names are at most \(AccountLimits.maximumDisplayNameLength) characters."
+            return L10n.plural(
+                "account.profile.error.displayNameTooLong",
+                AccountLimits.maximumDisplayNameLength
+            )
         }
         if clean.bio.count > AccountLimits.maximumBioLength {
-            return "Bios are at most \(AccountLimits.maximumBioLength) characters."
+            return L10n.plural("account.profile.error.bioTooLong", AccountLimits.maximumBioLength)
         }
         if !clean.handle.isEmpty, !Handle.isValid(clean.handle) {
-            return "Handles are 3–20 characters of letters, numbers and underscores."
+            return L10n.t(
+                "account.profile.error.handleInvalid",
+                SLFormat.number(AccountLimits.handleLengthRange.lowerBound),
+                SLFormat.number(AccountLimits.handleLengthRange.upperBound)
+            )
         }
         return nil
     }
@@ -293,10 +300,11 @@ public enum PhoneEntryError: Error, Equatable, Sendable {
     public var message: String {
         switch self {
         case .empty:
-            return "Type a number, or remove the one on file."
+            return L10n.t("account.phone.error.empty")
         case .notE164:
-            return "Use international format, starting with a plus and a country "
-                + "code — for example +966501234567."
+            // The example number is a shape, not copy: it stays in Latin digits
+            // and reads left-to-right in either language.
+            return L10n.t("account.phone.error.notE164", "+966501234567")
         }
     }
 }
@@ -371,9 +379,11 @@ public enum PhoneNumber {
     /// Constant, and never derived from the wire's `phone_verified`: if the
     /// server ever started sending `true` without an SMS provider behind it,
     /// this build would still not call the number verified.
-    public static let unverifiedCaption =
-        "Contact detail only. Sila has not checked that this number is yours — "
-        + "there is no SMS confirmation, so it is not part of your verified identity."
+    ///
+    /// Computed rather than stored so it follows the language the interface is
+    /// currently rendering in; a `static let` would freeze whichever language
+    /// happened to be installed the first time anything touched this type.
+    public static var unverifiedCaption: String { L10n.t("account.phone.unverifiedCaption") }
 }
 
 // MARK: - Avatars
@@ -418,14 +428,16 @@ public enum AvatarRejection: Error, Equatable, Sendable {
     public var message: String {
         switch self {
         case .empty:
-            return "That photo couldn't be read. Pick another one."
+            return L10n.t("account.avatar.error.unreadable")
         case let .tooLarge(bytes):
+            // Both sizes are rendered before they are substituted, so the
+            // sentence carries two `%@`s rather than a `%.1f` and a `%d` that a
+            // translator would have to keep in the right order.
             let megabytes = Double(bytes) / (1024 * 1024)
-            return String(
-                format: "That photo is %.1f MB. Profile pictures must be under %d MB — "
-                    + "pick a smaller one, or crop it first.",
-                megabytes,
-                AvatarUpload.maximumBytes / (1024 * 1024)
+            return L10n.t(
+                "account.avatar.error.tooLarge",
+                String(format: "%.1f", megabytes),
+                SLFormat.number(AvatarUpload.maximumBytes / (1024 * 1024))
             )
         }
     }
@@ -447,11 +459,19 @@ public enum AvatarUpload {
     /// facts about the user's privacy and not housekeeping: a phone photo
     /// carries the coordinates it was taken at, and "set a photo" is not a
     /// sentence anybody reads as "publish where I was standing".
-    public static let processingDisclosure =
-        "Sila re-encodes your picture on the server: it is cropped square, resized "
-        + "to 512×512 and saved as a new JPEG. Location data and every other EXIF "
-        + "tag your camera attached is dropped in the process — the original file "
-        + "is never stored or served."
+    ///
+    /// The pixel dimensions are formatted rather than written into the sentence,
+    /// so the translation cannot quietly disagree with the server's actual crop.
+    public static var processingDisclosure: String {
+        L10n.t(
+            "account.avatar.processingDisclosure",
+            SLFormat.number(outputEdgePixels),
+            SLFormat.number(outputEdgePixels)
+        )
+    }
+
+    /// The square the server resizes every avatar down to, in pixels.
+    public static let outputEdgePixels = 512
 
     /// Checks an image against the client-side limits.
     /// - Parameter data: The picked bytes.
@@ -691,15 +711,19 @@ public struct DeletionConfirmation: Equatable, Sendable {
     }
 
     /// What is still missing, for the hint under the button, or `nil`.
+    ///
+    /// ``requiredWord`` is substituted rather than translated. It is the value
+    /// the server compares against, so the Arabic sentence names the same Latin
+    /// word the user has to type.
     public var blockingReason: String? {
         if currentPassword.isEmpty && typedWord != Self.requiredWord {
-            return "Enter your password and type \(Self.requiredWord) to continue."
+            return L10n.t("account.delete.blocked.passwordAndWord", Self.requiredWord)
         }
         if currentPassword.isEmpty {
-            return "Enter your current password to continue."
+            return L10n.t("account.delete.blocked.password")
         }
         if typedWord != Self.requiredWord {
-            return "Type \(Self.requiredWord) in capitals, exactly, to continue."
+            return L10n.t("account.delete.blocked.word", Self.requiredWord)
         }
         return nil
     }
@@ -767,38 +791,33 @@ public enum DeletionDisclosure {
     public static let graceDays = 30
 
     /// Effect one: the account stops working straight away.
-    public static let immediate =
-        "Your account is deactivated the moment you confirm. To everyone else on "
-        + "Sila it is already gone."
+    public static var immediate: String { L10n.t("account.delete.effect.immediate") }
 
     /// Effect two: every device is signed out.
-    public static let sessions =
-        "Every session is signed out, on this device and every other one. Signing "
-        + "back in is what you would do to undo this."
+    public static var sessions: String { L10n.t("account.delete.effect.sessions") }
 
     /// Effect three: the posts disappear from everywhere.
-    public static let posts =
-        "Your posts leave every feed, every search result and every thread, and "
-        + "your profile stops resolving."
+    public static var posts: String { L10n.t("account.delete.effect.posts") }
 
     /// Effect four: it is reversible, and for how long.
-    public static let recoverable =
-        "Nothing is destroyed for \(graceDays) days. Sign in during that time and "
-        + "choose Cancel deletion and everything comes back exactly as it was."
+    ///
+    /// The grace period is a counted noun, so it goes through the plural rules
+    /// rather than into the sentence: Arabic says يومًا for thirty days and أيام
+    /// for three, and this number is a server constant that may change.
+    public static var recoverable: String {
+        L10n.plural("account.delete.effect.recoverable", graceDays)
+    }
 
     /// Effect five: after the grace period it is final.
-    public static let permanent =
-        "After \(graceDays) days your account, your posts, your reactions, your "
-        + "follows and your settings are deleted outright. Posts are deleted, not "
-        + "anonymised. That cannot be undone."
+    public static var permanent: String {
+        L10n.plural("account.delete.effect.permanent", graceDays)
+    }
 
     /// The four consequences the confirmation screen must state, in order.
-    public static let consequences = [immediate, sessions, posts, recoverable]
+    public static var consequences: [String] { [immediate, sessions, posts, recoverable] }
 
     /// The nudge shown above the button — export first, it costs nothing.
-    public static let exportFirst =
-        "Download a copy of your data first if you want to keep it. It takes a "
-        + "moment and you cannot ask for it afterwards."
+    public static var exportFirst: String { L10n.t("account.delete.exportFirst") }
 }
 
 // MARK: - Where the user should be

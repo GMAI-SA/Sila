@@ -103,7 +103,7 @@ public struct SLAvatar: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(accessibilityText))
-        .accessibilityHint(Text("Profile picture"))
+        .accessibilityHint(Text(L10n.t("ds.avatar.hint")))
     }
 
     @ViewBuilder
@@ -136,8 +136,8 @@ public struct SLAvatar: View {
     }
 
     private var accessibilityText: String {
-        let who = displayName ?? "User \(initials)"
-        return isVerified ? "\(who), verified" : who
+        let who = displayName ?? L10n.t("ds.avatar.fallbackName", initials)
+        return isVerified ? L10n.t("ds.avatar.verifiedLabel", who) : who
     }
 }
 

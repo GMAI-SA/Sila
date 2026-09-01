@@ -44,11 +44,11 @@ public struct OTPVerificationScreen: View {
             errorSlot
 
             SLButton(
-                "Verify",
+                L10n.t("auth.otp.verify"),
                 variant: .primary,
                 isLoading: viewModel.isVerifying,
                 isEnabled: viewModel.isComplete,
-                accessibilityHint: "Submits the six digit code"
+                accessibilityHint: L10n.t("auth.otp.verify.hint")
             ) {
                 Task { await verify() }
             }
@@ -79,11 +79,11 @@ public struct OTPVerificationScreen: View {
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(SLColor.primary)
 
-            Text("Enter your code")
+            Text(L10n.t("auth.otp.title"))
                 .font(SLFont.displayL)
                 .foregroundStyle(SLColor.textPrimary)
 
-            Text("We sent a \(AppConfig.otpLength)-digit code to \(viewModel.maskedEmail).")
+            Text(L10n.plural("auth.otp.subtitle", AppConfig.otpLength, viewModel.maskedEmail))
                 .font(SLFont.bodyLight)
                 .foregroundStyle(SLColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -91,7 +91,7 @@ public struct OTPVerificationScreen: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            Text("Enter your code. We sent a \(AppConfig.otpLength) digit code to \(viewModel.maskedEmail).")
+            Text(L10n.plural("auth.otp.a11yLabel", AppConfig.otpLength, viewModel.maskedEmail))
         )
     }
 
@@ -106,12 +106,25 @@ public struct OTPVerificationScreen: View {
                     onBackspace: { viewModel.backspace(at: index) },
                     onTap: { viewModel.focus(index) }
                 )
-                .accessibilityLabel(Text("Digit \(index + 1) of \(AppConfig.otpLength)"))
-                .accessibilityHint(Text("Enter one digit of your emailed confirmation code"))
-                .accessibilityValue(Text(viewModel.digits[index].isEmpty ? "Empty" : viewModel.digits[index]))
+                .accessibilityLabel(Text(L10n.t(
+                    "auth.otp.digit.a11yLabel",
+                    SLFormat.number(index + 1),
+                    SLFormat.number(AppConfig.otpLength)
+                )))
+                .accessibilityHint(Text(L10n.t("auth.otp.digit.hint")))
+                .accessibilityValue(Text(
+                    viewModel.digits[index].isEmpty
+                        ? L10n.t("auth.otp.digit.empty")
+                        : viewModel.digits[index]
+                ))
             }
         }
         .frame(maxWidth: .infinity)
+        // A six-digit code is a number, and a number reads left to right in
+        // every language. Left to itself the HStack mirrors under Arabic and
+        // box 1 lands on the right, so the code the user types back to us is
+        // the code they were emailed, reversed.
+        .environment(\.layoutDirection, .leftToRight)
     }
 
     private var errorSlot: some View {
@@ -133,13 +146,13 @@ public struct OTPVerificationScreen: View {
                 isLoading: viewModel.isResending,
                 isEnabled: viewModel.canResend,
                 accessibilityHint: viewModel.canResend
-                    ? "Sends a fresh six digit code to your email"
-                    : "Available once the countdown reaches zero"
+                    ? L10n.t("auth.otp.resend.hint")
+                    : L10n.t("auth.otp.resend.waitingHint")
             ) {
                 Task { await viewModel.resend() }
             }
 
-            Text("Check your spam folder if it doesn't arrive.")
+            Text(L10n.t("auth.otp.spamHint"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textMuted)
         }
@@ -213,6 +226,10 @@ struct OTPDigitField: UIViewRepresentable {
         field.keyboardType = .numberPad
         field.textContentType = .oneTimeCode
         field.textAlignment = .center
+        // The box holds one Western digit, never a word: pinning the semantic
+        // direction keeps the caret and the glyph where they belong when the
+        // app is running in Arabic.
+        field.semanticContentAttribute = .forceLeftToRight
         field.tintColor = UIColor(SLColor.primary)
         field.textColor = UIColor(SLColor.textPrimary)
         field.font = .monospacedDigitSystemFont(ofSize: 26, weight: .semibold)

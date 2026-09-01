@@ -1,5 +1,65 @@
 import Foundation
 
+/// What a scope is being described *for*.
+///
+/// A whole-sentence selector rather than a noun to splice in. Arabic will not
+/// accept an English word dropped into the middle of an Arabic sentence, and the
+/// grammar around the word changes with it — "غرفة دولية" and "سلسلة دولية"
+/// agree differently with what follows. So each subject picks a sentence that
+/// was written as a sentence, in every language.
+public enum ScopeSubject: Equatable, Sendable, CaseIterable {
+
+    /// A post and its replies.
+    case thread
+    /// A voice room. The scope governs who may **speak**; everyone may listen.
+    case room
+
+    /// "International thread. Any verified account can reply."
+    var internationalKey: String {
+        self == .room
+            ? "post.scope.international.room.accessibility"
+            : "post.scope.international.thread.accessibility"
+    }
+
+    /// The chip when the server said "country" but sent no usable code.
+    var countryFallbackLabelKey: String {
+        self == .room ? "post.scope.country.room.label" : "post.scope.country.thread.label"
+    }
+
+    /// "Country thread. Only verified accounts in Saudi Arabia can reply."
+    var countryKey: String {
+        self == .room
+            ? "post.scope.country.room.accessibility"
+            : "post.scope.country.thread.accessibility"
+    }
+
+    /// The same sentence with no country to name.
+    var countryUnknownKey: String {
+        self == .room
+            ? "post.scope.country.room.unknownAccessibility"
+            : "post.scope.country.thread.unknownAccessibility"
+    }
+
+    /// The chip when the server said "region" but sent no usable one.
+    var regionFallbackLabelKey: String {
+        self == .room ? "post.scope.region.room.label" : "post.scope.region.thread.label"
+    }
+
+    /// "Regional thread. Only verified accounts in GCC can reply."
+    var regionKey: String {
+        self == .room
+            ? "post.scope.region.room.accessibility"
+            : "post.scope.region.thread.accessibility"
+    }
+
+    /// The same sentence with no region to name.
+    var regionUnknownKey: String {
+        self == .room
+            ? "post.scope.region.room.unknownAccessibility"
+            : "post.scope.region.thread.unknownAccessibility"
+    }
+}
+
 /// How a post's scope renders on a card.
 ///
 /// A value type, so "what does a 🇸🇦 country thread say on the card?" is a pure
@@ -25,29 +85,27 @@ public struct ScopePresentation: Equatable, Sendable {
     /// Split out from ``make(for:)`` so a voice room — which carries the same
     /// three wire fields and means the same thing by them — renders the same
     /// chip as a post rather than growing a second vocabulary for one idea.
-    /// The noun differs, because a room is not a thread: see ``noun``.
+    /// What differs is the whole sentence, not one word in it: see
+    /// ``ScopeSubject``.
     /// - Parameters:
     ///   - scope: The `scope` field.
     ///   - country: `scope_country`, when the scope carries one.
     ///   - region: `scope_region`, when the scope carries one.
-    ///   - noun: What the thing being scoped is called — `"thread"` for a post,
-    ///     `"room"` for a voice room. Only ever read by VoiceOver.
-    ///   - verb: What the scope governs — `"reply"` for a post, `"speak"` for a
-    ///     room. This is the load-bearing word: in a room the scope decides who
-    ///     may **speak**, and everybody may still listen.
+    ///   - subject: What is being scoped. A room's scope decides who may
+    ///     **speak**, and everybody may still listen — which is a different
+    ///     sentence, not a substituted verb.
     public static func make(
         scope: PostScope,
         country: String?,
         region: String?,
-        noun: String = "thread",
-        verb: String = "reply"
+        subject: ScopeSubject = .thread
     ) -> ScopePresentation {
         switch scope {
         case .international:
             return ScopePresentation(
                 icon: "globe",
-                label: "International",
-                accessibilityLabel: "International \(noun). Any verified account can \(verb)."
+                label: L10n.t("post.scope.international.label"),
+                accessibilityLabel: L10n.t(subject.internationalKey)
             )
 
         case .country:
@@ -57,16 +115,16 @@ public struct ScopePresentation: Equatable, Sendable {
             case let (flag?, name?):
                 return ScopePresentation(
                     icon: "flag.fill",
-                    label: "\(flag) \(name) only",
-                    accessibilityLabel: "Country \(noun). Only verified accounts in \(name) can \(verb)."
+                    label: L10n.t("post.scope.country.label", flag, name),
+                    accessibilityLabel: L10n.t(subject.countryKey, name)
                 )
             default:
                 // The server said "country" but gave us no usable code. Say so
                 // plainly rather than inventing a flag.
                 return ScopePresentation(
                     icon: "flag.fill",
-                    label: "Country \(noun)",
-                    accessibilityLabel: "Country \(noun). Only verified accounts in that country can \(verb)."
+                    label: L10n.t(subject.countryFallbackLabelKey),
+                    accessibilityLabel: L10n.t(subject.countryUnknownKey)
                 )
             }
 
@@ -75,16 +133,41 @@ public struct ScopePresentation: Equatable, Sendable {
             if let region, !region.isEmpty {
                 return ScopePresentation(
                     icon: "map.fill",
-                    label: "\(region) region",
-                    accessibilityLabel: "Regional \(noun). Only verified accounts in \(region) can \(verb)."
+                    label: L10n.t("post.scope.region.label", region),
+                    accessibilityLabel: L10n.t(subject.regionKey, region)
                 )
             }
             return ScopePresentation(
                 icon: "map.fill",
-                label: "Regional \(noun)",
-                accessibilityLabel: "Regional \(noun). Only verified accounts in that region can \(verb)."
+                label: L10n.t(subject.regionFallbackLabelKey),
+                accessibilityLabel: L10n.t(subject.regionUnknownKey)
             )
         }
+    }
+
+    /// The pre-``ScopeSubject`` spelling, kept so ``VoiceRoom`` and its tests
+    /// compile unchanged.
+    ///
+    /// Deliberately has **no** default arguments: that is what keeps
+    /// `make(scope:country:region:)` unambiguously the modern overload.
+    /// - Parameters:
+    ///   - noun: `"room"` selects ``ScopeSubject/room``; anything else is a
+    ///     thread. The word itself is no longer interpolated anywhere — it only
+    ///     picks which pre-written sentence to read.
+    ///   - verb: Ignored. The verb is part of the sentence the subject selects.
+    public static func make(
+        scope: PostScope,
+        country: String?,
+        region: String?,
+        noun: String,
+        verb: String
+    ) -> ScopePresentation {
+        make(
+            scope: scope,
+            country: country,
+            region: region,
+            subject: noun.lowercased() == "room" ? .room : .thread
+        )
     }
 }
 
@@ -128,21 +211,21 @@ public struct ReplyPermission: Equatable, Sendable {
         switch reason {
         case .countryMismatch:
             if let flag = CountryCode.flag(scopeCountry), let name = CountryCode.name(scopeCountry) {
-                return "Only \(flag) \(name)-verified accounts can reply to this thread."
+                return L10n.t("post.reply.blocked.country", flag, name)
             }
-            return "Only accounts verified in this thread's country can reply."
+            return L10n.t("post.reply.blocked.countryUnknown")
 
         case .regionMismatch:
             if let region = scopeRegion?.uppercased(), !region.isEmpty {
-                return "Only accounts verified in the \(region) region can reply to this thread."
+                return L10n.t("post.reply.blocked.region", region)
             }
-            return "Only accounts verified in this thread's region can reply."
+            return L10n.t("post.reply.blocked.regionUnknown")
 
         case .unverified:
-            return "Verify your identity to reply. Everyone can read Sila; only verified humans can post."
+            return L10n.t("post.reply.blocked.unverified")
 
         case .unknown, .none:
-            return "You can't reply to this thread."
+            return L10n.t("post.reply.blocked.unknown")
         }
     }
 }
@@ -161,45 +244,36 @@ public enum RelativeTime {
     ///   - reference: "Now". Defaults to the current time.
     /// - Returns: `"now"`, `"45s"`, `"12m"`, `"2h"`, `"3d"`, `"5w"`, or an
     ///   absolute date such as `"12 Aug 2025"` beyond a year.
+    ///
+    /// The unit letters are copy, not punctuation: Arabic abbreviates these as
+    /// `ث د س ي أ`, and a timestamp reading `"2h"` under an Arabic post is the
+    /// one place a reader notices the app was translated everywhere except here.
     public static func short(_ date: Date, relativeTo reference: Date = Date()) -> String {
         let seconds = reference.timeIntervalSince(date)
 
         // A clock skew that puts the post in the future reads as "now", not "-3s".
-        guard seconds >= 1 else { return "now" }
+        guard seconds >= 1 else { return L10n.t("post.time.now") }
 
         switch seconds {
         case ..<60:
-            return "\(Int(seconds))s"
+            return L10n.t("post.time.seconds", SLFormat.number(Int(seconds)))
         case ..<3_600:
-            return "\(Int(seconds / 60))m"
+            return L10n.t("post.time.minutes", SLFormat.number(Int(seconds / 60)))
         case ..<86_400:
-            return "\(Int(seconds / 3_600))h"
+            return L10n.t("post.time.hours", SLFormat.number(Int(seconds / 3_600)))
         case ..<604_800:
-            return "\(Int(seconds / 86_400))d"
+            return L10n.t("post.time.days", SLFormat.number(Int(seconds / 86_400)))
         case ..<31_536_000:
-            return "\(Int(seconds / 604_800))w"
+            return L10n.t("post.time.weeks", SLFormat.number(Int(seconds / 604_800)))
         default:
-            return absoluteFormatter.string(from: date)
+            return SLFormat.date(date)
         }
     }
 
-    /// The long form VoiceOver reads, e.g. `"2 hours ago"`.
+    /// The long form VoiceOver reads, e.g. `"2 hours ago"` / `"قبل ساعتين"`.
     public static func accessible(_ date: Date, relativeTo reference: Date = Date()) -> String {
-        relativeFormatter.localizedString(for: date, relativeTo: reference)
+        SLFormat.relative(date, to: reference)
     }
-
-    private static let absoluteFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter
-    }()
-
-    private static let relativeFormatter: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return formatter
-    }()
 }
 
 /// The three inline entities the feed highlights inside post text.

@@ -71,12 +71,12 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     /// Plural label for the settings list.
     public var settingTitle: String {
         switch self {
-        case .follow: return "New followers"
-        case .like: return "Likes"
-        case .repost: return "Reposts"
-        case .reply: return "Replies"
-        case .mention: return "Mentions"
-        case .unknown: return "Other"
+        case .follow: return L10n.t("notifications.kind.follow.title")
+        case .like: return L10n.t("notifications.kind.like.title")
+        case .repost: return L10n.t("notifications.kind.repost.title")
+        case .reply: return L10n.t("notifications.kind.reply.title")
+        case .mention: return L10n.t("notifications.kind.mention.title")
+        case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
 
@@ -88,17 +88,17 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     public var settingDetail: String {
         switch self {
         case .follow:
-            return "Someone following you."
+            return L10n.t("notifications.kind.follow.detail")
         case .like:
-            return "Someone liking one of your posts. Usually the noisiest of the five."
+            return L10n.t("notifications.kind.like.detail")
         case .repost:
-            return "Someone reposting you."
+            return L10n.t("notifications.kind.repost.detail")
         case .reply:
-            return "Someone replying to a thread you wrote."
+            return L10n.t("notifications.kind.reply.detail")
         case .mention:
-            return "Someone putting your handle in a post."
+            return L10n.t("notifications.kind.mention.detail")
         case .unknown:
-            return "Anything else."
+            return L10n.t("notifications.kind.unknown.detail")
         }
     }
 }
@@ -199,11 +199,11 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     public var accessibilityDescription: String {
         var parts = [sentence, RelativeTime.accessible(createdAt)]
         if let excerpt = postExcerpt {
-            parts.append("Post: \(excerpt)")
+            parts.append(L10n.t("notifications.row.accessibility.post", excerpt))
         } else if postWasDeleted {
             parts.append(NotificationCopy.deletedPost)
         }
-        parts.append(read ? "Read" : "Unread")
+        parts.append(L10n.t(read ? "notifications.row.accessibility.read" : "notifications.row.accessibility.unread"))
         return parts.joined(separator: ". ")
     }
 }
@@ -395,95 +395,95 @@ public enum NotificationCopy {
     ///   - kind: What happened.
     ///   - actor: The display name of whoever did it.
     public static func sentence(_ kind: NotificationKind, actor: String) -> String {
-        let name = actor.isEmpty ? "Someone" : actor
+        let name = actor.isEmpty ? L10n.t("notifications.sentence.someone") : actor
         switch kind {
-        case .follow: return "\(name) followed you"
-        case .like: return "\(name) liked your post"
-        case .repost: return "\(name) reposted you"
-        case .reply: return "\(name) replied to you"
-        case .mention: return "\(name) mentioned you"
+        case .follow: return L10n.t("notifications.sentence.follow", name)
+        case .like: return L10n.t("notifications.sentence.like", name)
+        case .repost: return L10n.t("notifications.sentence.repost", name)
+        case .reply: return L10n.t("notifications.sentence.reply", name)
+        case .mention: return L10n.t("notifications.sentence.mention", name)
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.
-        case .unknown: return "\(name) did something this version of Sila can't describe"
+        case .unknown: return L10n.t("notifications.sentence.unknown", name)
         }
     }
 
     /// Shown in place of the excerpt when the post behind a row is gone.
-    public static let deletedPost = "That post has been deleted."
+    public static var deletedPost: String { L10n.t("notifications.row.deletedPost") }
 
     /// What tapping a row does.
     public static func openHint(_ kind: NotificationKind) -> String {
-        kind.isAboutAPost ? "Opens the post this is about" : "Opens this person's profile"
+        L10n.t(kind.isAboutAPost ? "notifications.row.openHint.post" : "notifications.row.openHint.profile")
     }
 
     /// The empty list.
-    public static let emptyTitle = "Nothing yet"
+    public static var emptyTitle: String { L10n.t("notifications.empty.title") }
 
     /// Why an empty list is not a broken one.
-    public static let emptySubtitle =
-        "Follows, likes, reposts, replies and mentions land here. "
-        + "Nobody is told when you read them."
+    public static var emptySubtitle: String { L10n.t("notifications.empty.subtitle") }
 
     /// The empty *unread* list, which is a different fact from an empty list.
-    public static let emptyUnreadTitle = "You're all caught up"
+    public static var emptyUnreadTitle: String { L10n.t("notifications.emptyUnread.title") }
 
     /// - Parameter total: How many notifications exist in the All tab.
+    ///
+    /// A plural entry rather than a `total > 0` ternary: the two sentences are
+    /// the `zero` category and the rest, which is a distinction the catalog can
+    /// make in six Arabic forms and a Swift `if` cannot make in any.
     public static func emptyUnreadSubtitle(total: Int) -> String {
-        total > 0
-            ? "Nothing unread. Switch to All to see everything again."
-            : "Nothing unread, and nothing older either."
+        L10n.plural("notifications.emptyUnread.subtitle", total)
     }
 
     /// The counter above the list.
+    ///
+    /// Counted copy, so it goes through the catalog's plural rules. `0` is not
+    /// a count here at all — it is a different sentence, carried by the `zero`
+    /// category.
     /// - Parameter unread: The server's unread count.
     public static func unreadSummary(_ unread: Int) -> String {
-        switch unread {
-        case 0: return "Nothing unread"
-        case 1: return "1 unread"
-        default: return "\(unread) unread"
-        }
+        L10n.plural("notifications.unread.summary", unread)
     }
 
     /// What "Mark all read" does, said in a way that does not imply anybody
     /// else can see the result.
-    public static let markAllHint =
-        "Marks every notification as read. Nobody is told, and it cannot be undone."
+    public static var markAllHint: String { L10n.t("notifications.markAll.hint") }
 
     /// Confirmation after a successful mark-all.
+    ///
+    /// `0` is the `zero` category and says something else entirely — nothing
+    /// was left to mark, rather than "0 notifications marked".
     /// - Parameter count: How many the **server** says it flipped.
     public static func markedAll(_ count: Int) -> String {
-        switch count {
-        case 0: return "Nothing left to mark."
-        case 1: return "1 notification marked as read."
-        default: return "\(count) notifications marked as read."
-        }
+        L10n.plural("notifications.markAll.confirmation", count)
     }
 
     /// The settings sheet's explanation.
     ///
     /// Says exactly what is known — these switches govern this list — and
     /// promises nothing about push, which Sila does not send.
-    public static let settingsExplanation =
-        "These decide what shows up in your notifications list. Turning one off "
-        + "stops that kind appearing here; it does not stop anybody following, "
-        + "liking or replying, and they are never told what you switched off."
+    public static var settingsExplanation: String { L10n.t("notifications.settings.explanation") }
 
     /// The line under the settings list, summarising what is off.
     /// - Parameter preferences: The stored map.
     public static func settingsSummary(_ preferences: NotificationPreferences) -> String {
         let off = preferences.silenced
-        guard !off.isEmpty else { return "Every kind of notification reaches you." }
+        guard !off.isEmpty else { return L10n.t("notifications.settings.summary.nothingSilenced") }
         let names = off.map { $0.settingTitle.lowercased() }
-        return "Hidden from your list: \(list(names))."
+        return L10n.t("notifications.settings.summary.hidden", list(names))
     }
 
+    /// Joins names the way the reading language joins them — the conjunction
+    /// and the separator are both catalog strings, because Arabic writes
+    /// "أ وب" with no space before the و and separates with `،`.
     private static func list(_ items: [String]) -> String {
         switch items.count {
         case 0: return ""
         case 1: return items[0]
-        case 2: return "\(items[0]) and \(items[1])"
-        default: return items.dropLast().joined(separator: ", ") + " and " + (items.last ?? "")
+        case 2: return L10n.t("notifications.settings.summary.listPair", items[0], items[1])
+        default:
+            let leading = items.dropLast().joined(separator: L10n.t("notifications.settings.summary.listSeparator"))
+            return L10n.t("notifications.settings.summary.listPair", leading, items.last ?? "")
         }
     }
 }

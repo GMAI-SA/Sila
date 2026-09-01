@@ -49,16 +49,16 @@ public enum CountryCode {
 
     /// The country's name in the user's language.
     /// - Returns: e.g. `"Saudi Arabia"`, or `nil` for an unrecognised code.
-    public static func name(_ code: String?, locale: Locale = .current) -> String? {
+    public static func name(_ code: String?, locale: Locale? = nil) -> String? {
         guard let code = normalised(code) else { return nil }
-        return locale.localizedString(forRegionCode: code)
+        return (locale ?? L10n.locale).localizedString(forRegionCode: code)
     }
 
     /// What VoiceOver should say for a verified country flag.
     /// - Returns: e.g. `"Identity verified in Saudi Arabia"`, or `nil`.
-    public static func accessibilityLabel(_ code: String?, locale: Locale = .current) -> String? {
+    public static func accessibilityLabel(_ code: String?, locale: Locale? = nil) -> String? {
         guard let code = normalised(code) else { return nil }
-        return "Identity verified in \(name(code, locale: locale) ?? code)"
+        return L10n.t("ds.countryBadge.label", name(code, locale: locale) ?? code)
     }
 }
 

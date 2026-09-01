@@ -25,6 +25,10 @@ public struct NotificationsScreen: View {
     private let onOpenProfile: (@MainActor (String) -> Void)?
     private let onOpenSettings: (@MainActor () -> Void)?
 
+    /// The kind marker is nudged outwards from the avatar by hand, and a raw
+    /// `x` offset does not mirror. Read the direction and negate it.
+    @Environment(\.layoutDirection) private var layoutDirection
+
     /// - Parameters:
     ///   - viewModel: Owns the list, the cursor and the server's unread count.
     ///   - onOpenPost: Pushes a post's thread. `nil` makes post rows inert,
@@ -59,7 +63,7 @@ public struct NotificationsScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
-        .tnNavigationBar(title: "Notifications")
+        .tnNavigationBar(title: L10n.t("notifications.title"))
         .toolbar {
             if let onOpenSettings {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -68,8 +72,8 @@ public struct NotificationsScreen: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(SLColor.primary)
                     }
-                    .accessibilityLabel(Text("Notification settings"))
-                    .accessibilityHint(Text("Chooses which kinds of notification reach this list"))
+                    .accessibilityLabel(Text(L10n.t("notifications.settings.title")))
+                    .accessibilityHint(Text(L10n.t("notifications.settings.open.hint")))
                 }
             }
         }
@@ -87,10 +91,10 @@ public struct NotificationsScreen: View {
             ScrollView {
                 SLEmptyState(
                     icon: "wifi.exclamationmark",
-                    title: "Couldn't load your notifications",
+                    title: L10n.t("notifications.error.title"),
                     subtitle: error,
                     tint: SLColor.danger,
-                    actionTitle: "Try again",
+                    actionTitle: L10n.t("notifications.error.retry"),
                     action: { Task { await viewModel.reload() } }
                 )
                 .padding(.horizontal, SLSpacing.lg)
@@ -132,7 +136,7 @@ public struct NotificationsScreen: View {
         }
         .padding(.top, SLSpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityLabel(Text("Loading your notifications"))
+        .accessibilityLabel(Text(L10n.t("notifications.loading.accessibility")))
     }
 
     // MARK: - Header
@@ -155,7 +159,7 @@ public struct NotificationsScreen: View {
 
             if viewModel.unreadCount > 0 {
                 SLButton(
-                    "Mark all read",
+                    L10n.t("notifications.markAll.button"),
                     variant: .secondary,
                     size: .compact,
                     isLoading: viewModel.isMarkingAll,
@@ -209,11 +213,19 @@ public struct NotificationsScreen: View {
                     )
 
                     kindMarker(notification.kind)
-                        .offset(x: 4, y: 4)
+                        // `.bottomTrailing` mirrors on its own; the nudge that
+                        // pushes the marker off the avatar's corner does not.
+                        .offset(x: layoutDirection == .rightToLeft ? -4 : 4, y: 4)
                 }
 
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
                     HStack(alignment: .firstTextBaseline, spacing: SLSpacing.xs) {
+                        // The sentence is interface copy with somebody's
+                        // display name substituted into it, so it stays in the
+                        // interface's direction; `String(format:)` isolates the
+                        // name when its direction differs. Forcing the whole
+                        // line into the name's direction would flip the copy
+                        // around it.
                         Text(notification.sentence)
                             .font(SLFont.body)
                             .foregroundStyle(SLColor.textPrimary)
@@ -293,6 +305,11 @@ public struct NotificationsScreen: View {
                 .foregroundStyle(SLColor.textSecondary)
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
+                // Somebody else's words. A notification carries no `language`
+                // for the post it quotes, so the direction is read out of the
+                // excerpt itself — an Arabic excerpt in an English list still
+                // starts on the right.
+                .slContentDirection(TextDirection.resolve(languageCode: nil, text: excerpt))
         } else if notification.postWasDeleted {
             // The row stays. Dropping it would quietly edit somebody's history
             // to make a list tidier, and the event still happened.

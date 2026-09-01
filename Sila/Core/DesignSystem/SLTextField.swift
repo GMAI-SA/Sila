@@ -93,7 +93,7 @@ public struct SLTextField: View {
                     .focused($isFocused)
                     .onSubmit { onSubmit?() }
                     .accessibilityLabel(Text(label))
-                    .accessibilityHint(Text(accessibilityHintText ?? "Enter your \(label.lowercased())"))
+                    .accessibilityHint(Text(accessibilityHintText ?? L10n.t("ds.textField.defaultHint", label.lowercased())))
 
                 if isSecure {
                     Button {
@@ -103,8 +103,8 @@ public struct SLTextField: View {
                             .foregroundStyle(SLColor.textSecondary)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(Text(isRevealed ? "Hide \(label)" : "Show \(label)"))
-                    .accessibilityHint(Text("Toggles whether the \(label.lowercased()) is visible on screen"))
+                    .accessibilityLabel(Text(isRevealed ? L10n.t("ds.textField.hide", label) : L10n.t("ds.textField.show", label)))
+                    .accessibilityHint(Text(L10n.t("ds.textField.revealHint", label.lowercased())))
                 }
             }
             .padding(.horizontal, SLSpacing.md)
