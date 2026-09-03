@@ -216,7 +216,7 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertFalse(flags.useMockProfile)
         XCTAssertTrue(flags.auth, "Phase 1 ships")
         XCTAssertTrue(flags.feed, "Phase 3 ships")
-        XCTAssertFalse(flags.verification, "Phase 2 does not exist yet")
+        XCTAssertTrue(flags.verification, "Phase 2 ships — the Nafath flow is wired to the wall")
         XCTAssertTrue(flags.composer, "Phase 4 ships")
         XCTAssertTrue(flags.preferences, "contract v4 ships")
         XCTAssertTrue(flags.account, "contract v5 ships")

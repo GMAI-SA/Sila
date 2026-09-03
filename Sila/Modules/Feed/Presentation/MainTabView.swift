@@ -32,6 +32,8 @@ public struct MainTabView: View {
     @State private var isShowingSafety = false
     /// `true` while the five notification switches are up.
     @State private var isShowingNotificationSettings = false
+    /// `true` while the app-language picker is up.
+    @State private var isShowingLanguage = false
     /// Owns the notification list and — the reason it lives up here rather than
     /// inside the tab — the unread count the tab-bar badge draws. A view model
     /// created inside the Notifications branch would be thrown away every time
@@ -151,6 +153,17 @@ public struct MainTabView: View {
                 )
             }
             .tint(SLColor.primary)
+        }
+        .sheet(isPresented: $isShowingLanguage) {
+            NavigationStack {
+                LanguagePickerSheet(
+                    preference: container.language,
+                    analytics: container.analytics,
+                    onClose: { isShowingLanguage = false }
+                )
+            }
+            .tint(SLColor.primary)
+            .presentationDetents([.medium, .large])
         }
         .sheet(
             isPresented: Binding(
@@ -380,6 +393,15 @@ public struct MainTabView: View {
         )
     }
 
+    // MARK: - Language
+
+    /// Opens the app-language picker. Always available — there is no flag
+    /// behind it, because the person most in need of it is the one looking at
+    /// an interface in the wrong language.
+    private var languageHandler: (@MainActor () -> Void)? {
+        { isShowingLanguage = true }
+    }
+
     // MARK: - Composer
 
     /// The hook every screen uses to start a composition, or `nil` when Phase 4
@@ -549,6 +571,7 @@ public struct MainTabView: View {
                 ownerActions: ProfileOwnerActions(
                     onOpenAccount: accountHandler,
                     onOpenPreferences: preferencesHandler,
+                    onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler,
                     onSignOut: {
                         container.suspension.clear()
@@ -566,6 +589,7 @@ public struct MainTabView: View {
                 user: container.session.user,
                 onStub: stub,
                 onOpenPreferences: preferencesHandler,
+                onOpenLanguage: languageHandler,
                 onOpenAccount: accountHandler,
                 onOpenSafety: safetyHandler,
                 onSignOut: {
@@ -697,6 +721,7 @@ public struct MainTabView: View {
                 ownerActions: ProfileOwnerActions(
                     onOpenAccount: accountHandler,
                     onOpenPreferences: preferencesHandler,
+                    onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler
                 ),
                 safetyMenu: safetyMenu(for:),
@@ -756,6 +781,7 @@ public struct MainTabView: View {
                 ownerActions: ProfileOwnerActions(
                     onOpenAccount: accountHandler,
                     onOpenPreferences: preferencesHandler,
+                    onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler
                 ),
                 safetyMenu: safetyMenu(for:),
@@ -900,6 +926,9 @@ struct ProfileStubScreen: View {
     let onStub: @MainActor (String) -> Void
     /// Opens feed preferences, or `nil` when the flag is off.
     var onOpenPreferences: (@MainActor () -> Void)?
+    /// Opens the app-language picker. Never `nil` in the app — the person who
+    /// needs it most is the one reading the wrong language.
+    var onOpenLanguage: (@MainActor () -> Void)?
     /// Opens account settings, or `nil` when the flag is off.
     var onOpenAccount: (@MainActor () -> Void)?
     /// Opens the blocked / muted / reported lists. Never `nil` in the app —
@@ -962,6 +991,17 @@ struct ProfileStubScreen: View {
                     detail: L10n.t("feed.profileOff.preferences.detail"),
                     hint: L10n.t("feed.profileOff.preferences.hint"),
                     open: onOpenPreferences
+                )
+                .padding(.horizontal, SLSpacing.lg)
+            }
+
+            if let onOpenLanguage {
+                settingsEntry(
+                    icon: "globe",
+                    title: L10n.t("profile.language.title"),
+                    detail: L10n.t("profile.language.detail"),
+                    hint: L10n.t("profile.language.hint"),
+                    open: onOpenLanguage
                 )
                 .padding(.horizontal, SLSpacing.lg)
             }

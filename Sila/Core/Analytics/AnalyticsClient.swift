@@ -31,6 +31,29 @@ public enum AnalyticsEvent: String, Sendable {
     case verificationStarted = "verification_started"
     case appealOpened = "appeal_opened"
 
+    // MARK: Phase 2 — Nafath identity verification
+    //
+    // None of these events may ever carry the national ID — not as a property,
+    // not hashed, not truncated. `NafathPrivacyTests` asserts it.
+
+    /// `POST /verification/nafath/start` succeeded and a request now exists.
+    case nafathStarted = "nafath_started"
+    /// The poll reached `approved`.
+    case nafathApproved = "nafath_approved"
+    /// The poll reached `rejected`. Carries no reason text — the reason is the
+    /// server's copy about a person's identity, not telemetry.
+    case nafathRejected = "nafath_rejected"
+    /// The request ran out before Nafath answered.
+    case nafathExpired = "nafath_expired"
+    /// The start call was refused. Carries `code` — the structured error code
+    /// only, never anything the user typed.
+    case nafathStartRefused = "nafath_start_refused"
+
+    // MARK: Settings
+
+    /// The in-app language changed. Carries `language`: `system`, `en` or `ar`.
+    case languageChanged = "language_changed"
+
     // MARK: Phase 3 — Feed
 
     case feedTabSelected = "feed_tab_selected"
@@ -276,6 +299,13 @@ public final class RecordingAnalyticsClient: AnalyticsClient, @unchecked Sendabl
     public var events: [AnalyticsEvent] {
         lock.lock(); defer { lock.unlock() }
         return storage.map(\.event)
+    }
+
+    /// Every event with its properties, in order — for tests that assert on
+    /// what was (or, for PII, was **not**) attached to an event.
+    public var recorded: [(event: AnalyticsEvent, properties: [String: String])] {
+        lock.lock(); defer { lock.unlock() }
+        return storage
     }
 
     public func track(_ event: AnalyticsEvent, properties: [String: String]) {

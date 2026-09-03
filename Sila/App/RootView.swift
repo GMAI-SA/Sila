@@ -20,6 +20,22 @@ public struct RootView: View {
         ZStack {
             SLColor.background.ignoresSafeArea()
 
+            themedContent
+        }
+        // The whole tree is torn down and rebuilt when the language changes —
+        // that is what makes every `L10n.t` re-resolve without a restart. The
+        // router keeps the navigation paths, so the rebuild lands back on the
+        // same screens.
+        .id(container.language.choice)
+        // The chrome's direction follows the chosen language, not only the
+        // device's: without this an in-app switch to Arabic would translate
+        // every sentence and leave the layout running the wrong way.
+        .environment(\.layoutDirection, container.language.layoutDirection)
+    }
+
+    @ViewBuilder
+    private var themedContent: some View {
+        Group {
             if container.suspension.isSuspended, isSignedIn {
                 // A root, like the verification wall and the deletion recovery
                 // screen — not a sheet and not a push. There is nothing behind
@@ -96,8 +112,12 @@ public struct RootView: View {
                 PendingVerificationWallScreen(
                     status: status,
                     service: container.authService,
+                    // `nil` when the phase is off, which restores the honest
+                    // stub toast rather than a button that goes nowhere.
+                    verification: container.flags.verification ? container.verificationService : nil,
                     analytics: container.analytics,
-                    onSignOut: { Task { await container.session.signOut() } }
+                    onSignOut: { Task { await container.session.signOut() } },
+                    onVerified: { await container.session.refreshUser() }
                 )
                 .transition(.opacity)
 

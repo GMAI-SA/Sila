@@ -14,6 +14,8 @@ public struct ProfileOwnerActions {
     public var onOpenAccount: (@MainActor () -> Void)?
     /// Opens feed preferences.
     public var onOpenPreferences: (@MainActor () -> Void)?
+    /// Opens the app-language picker (System / English / العربية).
+    public var onOpenLanguage: (@MainActor () -> Void)?
     /// Opens the blocked, muted and reported lists.
     public var onOpenSafety: (@MainActor () -> Void)?
     /// Ends the session.
@@ -22,11 +24,13 @@ public struct ProfileOwnerActions {
     public init(
         onOpenAccount: (@MainActor () -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil,
+        onOpenLanguage: (@MainActor () -> Void)? = nil,
         onOpenSafety: (@MainActor () -> Void)? = nil,
         onSignOut: (@MainActor () -> Void)? = nil
     ) {
         self.onOpenAccount = onOpenAccount
         self.onOpenPreferences = onOpenPreferences
+        self.onOpenLanguage = onOpenLanguage
         self.onOpenSafety = onOpenSafety
         self.onSignOut = onSignOut
     }
@@ -34,6 +38,7 @@ public struct ProfileOwnerActions {
     /// `true` when nothing at all was supplied.
     public var isEmpty: Bool {
         onOpenAccount == nil && onOpenPreferences == nil
+            && onOpenLanguage == nil
             && onOpenSafety == nil && onSignOut == nil
     }
 }
@@ -579,6 +584,16 @@ public struct ProfileScreen: View {
                         title: L10n.t("feed.profileOff.preferences.title"),
                         detail: L10n.t("feed.profileOff.preferences.detail"),
                         hint: L10n.t("feed.profileOff.preferences.hint"),
+                        open: open
+                    )
+                }
+
+                if let open = ownerActions.onOpenLanguage {
+                    settingsEntry(
+                        icon: "globe",
+                        title: L10n.t("profile.language.title"),
+                        detail: L10n.t("profile.language.detail"),
+                        hint: L10n.t("profile.language.hint"),
                         open: open
                     )
                 }

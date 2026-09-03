@@ -24,6 +24,25 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// "Missing bearer token" would be shown to the user.
     case unauthorized = "unauthorized"
 
+    // MARK: Phase 2 — Nafath identity verification
+
+    /// `POST /verification/nafath/start` from an account that is already
+    /// verified (HTTP 409). Not a failure — the wall just needs refreshing.
+    case alreadyVerified = "already_verified"
+    /// The submitted number is not a plausible National ID / Iqama (HTTP 400).
+    case invalidNationalId = "invalid_national_id"
+    /// This identity is already attached to a *different* Sila account
+    /// (HTTP 409). One person, one account — the answer is signing in to the
+    /// account that exists, and the copy has to say so rather than read as an
+    /// error to retry.
+    case identityAlreadyUsed = "identity_already_used"
+    /// The Nafath integration is down (HTTP 503). Try later; nothing was lost.
+    case verificationUnavailable = "verification_unavailable"
+    /// The verified identity is under Sila's minimum age (HTTP 403). There is
+    /// nothing to retry and nothing to correct — the server's message is shown
+    /// as-is.
+    case underMinimumAge = "under_minimum_age"
+
     // MARK: Contract v2 — feed & social
 
     /// The requested post id does not exist (or is no longer visible).
@@ -196,6 +215,18 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.rateLimited")
             case .unauthorized:
                 return L10n.t("error.sessionEnded")
+            case .alreadyVerified:
+                return L10n.t("error.alreadyVerified")
+            case .invalidNationalId:
+                return L10n.t("error.invalidNationalId")
+            case .identityAlreadyUsed:
+                return L10n.t("error.identityAlreadyUsed")
+            case .verificationUnavailable:
+                return L10n.t("error.verificationUnavailable")
+            case .underMinimumAge:
+                // The server's sentence when it sent one: the age rule and its
+                // wording are policy, and policy copy comes from the server.
+                return message.isEmpty ? L10n.t("error.underMinimumAge") : message
             case .postNotFound:
                 return L10n.t("error.postNotFound")
             case .replyNotAllowed:

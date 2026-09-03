@@ -8971,6 +8971,24 @@
         }
       }
     },
+    "error.alreadyVerified": {
+      "comment": "409 already_verified.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هويتك موثّقة بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your identity is already verified."
+          }
+        }
+      }
+    },
     "error.blocked": {
       "comment": "A block exists between the viewer and this thread. Deliberately says nothing about which direction.",
       "extractionState": "manual",
@@ -9115,6 +9133,24 @@
         }
       }
     },
+    "error.identityAlreadyUsed": {
+      "comment": "409 identity_already_used.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الهوية مرتبطة بحساب آخر في سِلة بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This identity is already linked to another Sila account."
+          }
+        }
+      }
+    },
     "error.imageTooLarge": {
       "comment": "The uploaded image is over the size limit.",
       "extractionState": "manual",
@@ -9201,6 +9237,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "That file couldn't be read as an image. Pick a photo instead."
+          }
+        }
+      }
+    },
+    "error.invalidNationalId": {
+      "comment": "400 invalid_national_id.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يبدو هذا رقم هوية وطنية أو إقامة صالحًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That doesn't look like a valid National ID or Iqama number."
           }
         }
       }
@@ -9733,6 +9787,24 @@
         }
       }
     },
+    "error.underMinimumAge": {
+      "comment": "403 under_minimum_age fallback when the server sent no message.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الحساب لا يستوفي الحد الأدنى للعمر في سِلة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account doesn't meet Sila's minimum age requirement."
+          }
+        }
+      }
+    },
     "error.unknownTopic": {
       "comment": "A preferences save carried a topic the server no longer knows. Nothing was stored.",
       "extractionState": "manual",
@@ -9783,6 +9855,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "This account isn't available."
+          }
+        }
+      }
+    },
+    "error.verificationUnavailable": {
+      "comment": "503 verification_unavailable.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توثيق الهوية غير متاح مؤقتًا. حاول مرة أخرى بعد قليل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identity verification is temporarily unavailable. Try again in a little while."
           }
         }
       }
@@ -15803,6 +15893,168 @@
         }
       }
     },
+    "profile.language.detail": {
+      "comment": "Settings row detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر لغة التطبيق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the app's language"
+          }
+        }
+      }
+    },
+    "profile.language.done.hint": {
+      "comment": "A11y hint on the sheet's Done button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يغلق خيارات اللغة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes the language picker"
+          }
+        }
+      }
+    },
+    "profile.language.hint": {
+      "comment": "A11y hint on the settings row.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح خيارات لغة التطبيق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the app language picker"
+          }
+        }
+      }
+    },
+    "profile.language.option.hint": {
+      "comment": "A11y hint on each language option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يحوّل التطبيق إلى هذه اللغة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switches the app to this language"
+          }
+        }
+      }
+    },
+    "profile.language.selected.accessibility": {
+      "comment": "VoiceOver label of the checkmark.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محدد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        }
+      }
+    },
+    "profile.language.sheet.message": {
+      "comment": "Explainer at the top of the picker sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يُطبَّق فورًا، بما في ذلك اتجاه التصميم. خيار النظام يتبع لغة جهازك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applies immediately, including the layout direction. System follows your device's language."
+          }
+        }
+      }
+    },
+    "profile.language.sheet.title": {
+      "comment": "Nav title of the picker sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لغة التطبيق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Language"
+          }
+        }
+      }
+    },
+    "profile.language.system": {
+      "comment": "The follow-the-device option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النظام"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        }
+      }
+    },
+    "profile.language.title": {
+      "comment": "Settings row title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اللغة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
     "profile.loading.accessibilityLabel": {
       "comment": "VoiceOver label while a profile loads.",
       "extractionState": "manual",
@@ -21811,6 +22063,564 @@
           "stringUnit": {
             "state": "translated",
             "value": "TRENDING NOW"
+          }
+        }
+      }
+    },
+    "verification.approved.continue": {
+      "comment": "CTA that refreshes the session and enters the app.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متابعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        }
+      }
+    },
+    "verification.approved.continue.hint": {
+      "comment": "A11y hint on the approved CTA.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يحدّث حسابك وينقلك إلى سِلة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refreshes your account and takes you into Sila"
+          }
+        }
+      }
+    },
+    "verification.approved.message": {
+      "comment": "Body of the approved step.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أكّد نفاذ هويتك. مرحبًا بك في سِلة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nafath confirmed your identity. Welcome to Sila."
+          }
+        }
+      }
+    },
+    "verification.approved.title": {
+      "comment": "Headline of the approved step.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم توثيق هويتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identity verified"
+          }
+        }
+      }
+    },
+    "verification.cancel.hint": {
+      "comment": "A11y hint on the flow's Cancel button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يغلق توثيق الهوية دون إكماله"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes identity verification without finishing it"
+          }
+        }
+      }
+    },
+    "verification.enter.message": {
+      "comment": "Body copy of the ID-entry step.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل رقم الهوية الوطنية أو الإقامة. سنرسله إلى نفاذ، وستوافق على الطلب من تطبيق نفاذ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your National ID or Iqama number. We'll send it to Nafath, and you'll approve the request in the Nafath app."
+          }
+        }
+      }
+    },
+    "verification.enter.privacy": {
+      "comment": "Privacy note under the Start button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يُرسل رقمك إلى نفاذ بشكل آمن مرة واحدة ولا يُخزَّن على هذا الجهاز أبدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your number is sent securely to Nafath once and is never stored on this device."
+          }
+        }
+      }
+    },
+    "verification.enter.title": {
+      "comment": "Headline of the ID-entry step.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتك عبر نفاذ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify with Nafath"
+          }
+        }
+      }
+    },
+    "verification.expired.message": {
+      "comment": "Body when the request lapsed.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت صلاحية الطلب قبل الموافقة عليه في نفاذ. ابدأ من جديد للحصول على رقم جديد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The request expired before it was approved in Nafath. Start again to get a new number."
+          }
+        }
+      }
+    },
+    "verification.expired.title": {
+      "comment": "Headline when the request lapsed.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت صلاحية الطلب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request expired"
+          }
+        }
+      }
+    },
+    "verification.field.nationalId.error": {
+      "comment": "Inline error under the ID field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل الرقم المكوّن من 10 أرقام الذي يبدأ بـ1 أو 2."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the 10-digit number that starts with 1 or 2."
+          }
+        }
+      }
+    },
+    "verification.field.nationalId.hint": {
+      "comment": "A11y hint of the ID field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عشرة أرقام، تبدأ بـ1 للهوية الوطنية أو بـ2 للإقامة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten digits, starting with 1 for a National ID or 2 for an Iqama"
+          }
+        }
+      }
+    },
+    "verification.field.nationalId.label": {
+      "comment": "Label of the ID field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رقم الهوية الوطنية أو الإقامة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "National ID or Iqama number"
+          }
+        }
+      }
+    },
+    "verification.field.nationalId.placeholder": {
+      "comment": "Placeholder of the ID field. An example number, not prose.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مثال: 1023456789"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. 1023456789"
+          }
+        }
+      }
+    },
+    "verification.identityUsed.message": {
+      "comment": "Body pointing at signing in rather than retrying.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لكل هوية حساب واحد في سِلة. سجّل الدخول إلى الحساب المرتبط بهذه الهوية بدلًا من إنشاء حساب آخر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each identity can hold one Sila account. Sign in to the account this identity belongs to instead of creating another."
+          }
+        }
+      }
+    },
+    "verification.identityUsed.signIn": {
+      "comment": "CTA that signs out towards the sign-in form.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الانتقال إلى تسجيل الدخول"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to Sign In"
+          }
+        }
+      }
+    },
+    "verification.identityUsed.signIn.hint": {
+      "comment": "A11y hint on Go to Sign In.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسجّل الخروج من هذا الحساب لتتمكن من تسجيل الدخول إلى الحساب الموجود"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signs out of this account so you can sign in to the existing one"
+          }
+        }
+      }
+    },
+    "verification.identityUsed.title": {
+      "comment": "Headline of the identity-already-used outcome. Not a failure.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الهوية لديها حساب في سِلة بالفعل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This identity already has a Sila account"
+          }
+        }
+      }
+    },
+    "verification.nav.title": {
+      "comment": "Nav title of the Nafath verification flow.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توثيق الهوية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identity Verification"
+          }
+        }
+      }
+    },
+    "verification.rejected.message": {
+      "comment": "Body when Nafath declined, above the server's reason if any.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفض نفاذ هذا الطلب. يمكنك البدء من جديد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nafath declined this request. You can start again."
+          }
+        }
+      }
+    },
+    "verification.rejected.title": {
+      "comment": "Headline when Nafath declined.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رُفض التوثيق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification declined"
+          }
+        }
+      }
+    },
+    "verification.start.button": {
+      "comment": "Submits the ID and opens the Nafath request.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ التوثيق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Verification"
+          }
+        }
+      }
+    },
+    "verification.start.hint": {
+      "comment": "A11y hint on the Start button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسل رقمك إلى نفاذ ويعرض الرقم الذي ستضغطه في تطبيق نفاذ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends your number to Nafath and shows the number to tap in the Nafath app"
+          }
+        }
+      }
+    },
+    "verification.tryAgain": {
+      "comment": "CTA returning to the ID form after expiry/rejection.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ من جديد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Again"
+          }
+        }
+      }
+    },
+    "verification.tryAgain.hint": {
+      "comment": "A11y hint on Start Again.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعيدك إلى نموذج الهوية لفتح طلب نفاذ جديد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns to the ID form to open a new Nafath request"
+          }
+        }
+      }
+    },
+    "verification.underAge.title": {
+      "comment": "Headline of the under-minimum-age outcome; body is the server's.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التوثيق غير متاح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification isn't available"
+          }
+        }
+      }
+    },
+    "verification.waiting.expires": {
+      "comment": "When the open request lapses; %@ is a relative time.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنتهي صلاحية هذا الطلب %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This request expires %@"
+          }
+        }
+      }
+    },
+    "verification.waiting.instruction": {
+      "comment": "The load-bearing instruction next to the big number.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح تطبيق نفاذ واضغط على هذا الرقم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Nafath app and tap this number."
+          }
+        }
+      }
+    },
+    "verification.waiting.number.accessibility": {
+      "comment": "VoiceOver label of the big two-digit number.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رقم نفاذ: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nafath number: %@"
+          }
+        }
+      }
+    },
+    "verification.waiting.status": {
+      "comment": "Status line while polling.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بانتظار موافقتك في نفاذ…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for your approval in Nafath…"
+          }
+        }
+      }
+    },
+    "verification.waiting.title": {
+      "comment": "Headline while polling.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح تطبيق نفاذ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Nafath app"
           }
         }
       }

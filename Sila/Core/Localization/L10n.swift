@@ -44,11 +44,13 @@ public enum L10n {
         }
     }
 
-    /// Forces a language for the duration of a test.
+    /// Forces a language — for the duration of a test, or because the person
+    /// chose one in the Profile tab's language row.
     ///
-    /// `nil` — the shipping state — means "whatever the system picked", which
-    /// is the only thing that is ever true in production. Nothing in `Modules/`
-    /// may set this.
+    /// `nil` — the default — means "whatever the system picked". In
+    /// production the **only** writer is ``LanguagePreference``, which owns
+    /// persistence and the re-render; nothing in `Modules/` may set this
+    /// directly.
     public static var override: Language?
 
     /// The bundle strings are read from.

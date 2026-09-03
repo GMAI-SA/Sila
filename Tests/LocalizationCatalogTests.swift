@@ -348,6 +348,10 @@ final class LocalizationCatalogTests: XCTestCase {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             // Doc comments name keys while explaining them; they are not uses.
             if trimmed.hasPrefix("//") { continue }
+            // Accessibility identifiers are stable test hooks that share the
+            // dotted shape of a key on purpose — they must never localise,
+            // which is exactly why they are not catalog references.
+            if trimmed.contains(".accessibilityIdentifier(") { continue }
             for match in Self.keyPattern.matches(
                 in: String(line),
                 range: NSRange(line.startIndex..<line.endIndex, in: line)
@@ -365,7 +369,8 @@ final class LocalizationCatalogTests: XCTestCase {
     static let namespaces = [
         "account.", "app.", "auth.", "biometrics.", "common.", "composer.",
         "ds.", "error.", "feed.", "format.", "notifications.", "post.",
-        "preferences.", "profile.", "rooms.", "safety.", "search."
+        "preferences.", "profile.", "rooms.", "safety.", "search.",
+        "verification."
     ]
 
     static let keyPattern = try! NSRegularExpression(

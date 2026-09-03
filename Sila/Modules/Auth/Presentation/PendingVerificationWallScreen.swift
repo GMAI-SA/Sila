@@ -10,7 +10,11 @@ import SwiftUI
 public struct PendingVerificationWallScreen: View {
 
     @State private var viewModel: VerificationWallViewModel
+    @State private var isShowingNafath = false
+    private let verification: VerificationServiceProtocol?
+    private let analytics: AnalyticsClient
     private let onSignOut: () -> Void
+    private let onVerified: (() async -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isSigningOut = false
@@ -19,20 +23,30 @@ public struct PendingVerificationWallScreen: View {
     /// - Parameters:
     ///   - status: Status known from the session.
     ///   - service: Auth backend.
+    ///   - verification: The Nafath backend. `nil` — the kill switch's off
+    ///     state — keeps "Start Verification" as the honest stub toast.
     ///   - analytics: Event sink.
     ///   - onSignOut: Ends the session.
+    ///   - onVerified: Refreshes the session after an approval — the account's
+    ///     `verification_status` and `country_code` both changed, and this is
+    ///     what takes the wall down.
     public init(
         status: VerificationStatus,
         service: AuthServiceProtocol,
+        verification: VerificationServiceProtocol? = nil,
         analytics: AnalyticsClient,
-        onSignOut: @escaping () -> Void
+        onSignOut: @escaping () -> Void,
+        onVerified: (() async -> Void)? = nil
     ) {
         _viewModel = State(initialValue: VerificationWallViewModel(
             status: status,
             service: service,
             analytics: analytics
         ))
+        self.verification = verification
+        self.analytics = analytics
         self.onSignOut = onSignOut
+        self.onVerified = onVerified
     }
 
     public var body: some View {
@@ -104,6 +118,46 @@ public struct PendingVerificationWallScreen: View {
             await viewModel.refresh()
             startProcessingAnimation()
         }
+        .fullScreenCover(isPresented: $isShowingNafath) {
+            if let verification {
+                NafathVerificationScreen(
+                    viewModel: NafathVerificationViewModel(
+                        service: verification,
+                        analytics: analytics
+                    ),
+                    onApproved: {
+                        isShowingNafath = false
+                        // The account's `verification_status` and
+                        // `country_code` changed server-side; the session
+                        // re-reads both and routes past the wall.
+                        Task { await refreshAfterFlow() }
+                    },
+                    onSignInInstead: {
+                        // "This identity already has a Sila account" — the way
+                        // forward is the sign-in form, which means ending this
+                        // session.
+                        isShowingNafath = false
+                        onSignOut()
+                    },
+                    onClose: {
+                        isShowingNafath = false
+                        // The status may have moved (e.g. to in_progress);
+                        // the wall should say so rather than sit stale.
+                        Task { await viewModel.refresh() }
+                    }
+                )
+            }
+        }
+    }
+
+    /// Refreshes the session when the host gave us a way to, and the local
+    /// wall otherwise.
+    private func refreshAfterFlow() async {
+        if let onVerified {
+            await onVerified()
+        } else {
+            await viewModel.refresh()
+        }
     }
 
     // MARK: - Pieces
@@ -139,7 +193,7 @@ public struct PendingVerificationWallScreen: View {
                     variant: .primary,
                     accessibilityHint: L10n.t("auth.wall.startVerification.hint")
                 ) {
-                    viewModel.startVerification()
+                    primaryAction()
                 }
             }
 
@@ -164,6 +218,26 @@ public struct PendingVerificationWallScreen: View {
             }
         }
         .padding(.horizontal, SLSpacing.lg)
+    }
+
+    /// What the primary CTA actually does, by status.
+    ///
+    /// `unstarted` / `inProgress` open the Nafath flow. `verified` and
+    /// `rejected` re-read the session instead: the route has moved on — into
+    /// the app, or to the rejected screen with its appeal — and the button's
+    /// job is to take the user there, not to open an ID form they are past.
+    private func primaryAction() {
+        switch viewModel.status {
+        case .verified, .rejected:
+            Task { await refreshAfterFlow() }
+        case .unstarted, .inProgress, .pendingReview:
+            guard verification != nil else {
+                viewModel.startVerification()
+                return
+            }
+            analytics.track(.verificationStarted, properties: ["status": viewModel.status.rawValue])
+            isShowingNafath = true
+        }
     }
 
     private var spokenSummary: String {

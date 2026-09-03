@@ -27,6 +27,8 @@ public final class AppContainer {
     public let tokenStore: AuthTokenStore
     /// The live session — the object every screen observes.
     public let session: AuthSession
+    /// Phase 2's service — Nafath identity verification.
+    public let verificationService: VerificationServiceProtocol
     /// Phase 3's service.
     public let feedService: FeedServiceProtocol
     /// Phase 4's post-creation service.
@@ -54,6 +56,11 @@ public final class AppContainer {
     /// request in the app reports `403 account_suspended` through one place. A
     /// suspended account cannot find a screen whose author forgot to catch it.
     public let suspension: SuspensionMonitor
+    /// The in-app language choice — System / English / Arabic.
+    ///
+    /// Constructed early so the stored choice is installed into ``L10n``
+    /// before the first sentence renders.
+    public let language: LanguagePreference
     /// Navigation coordinator.
     public let router: AppRouter
 
@@ -69,6 +76,7 @@ public final class AppContainer {
         analytics: AnalyticsClient? = nil,
         biometrics: BiometricAuthenticating? = nil,
         authService: AuthServiceProtocol? = nil,
+        verificationService: VerificationServiceProtocol? = nil,
         feedService: FeedServiceProtocol? = nil,
         composerService: ComposerServiceProtocol? = nil,
         searchService: SearchServiceProtocol? = nil,
@@ -99,6 +107,10 @@ public final class AppContainer {
         self.analytics = analytics
         self.biometrics = biometrics
 
+        // Before any service resolves and long before anything renders: the
+        // stored language choice must be live for the very first string.
+        self.language = LanguagePreference(storage: storage)
+
         let store = AuthTokenStore(keychain: keychain, storage: storage)
 
         let resolvedService: AuthServiceProtocol
@@ -127,6 +139,21 @@ public final class AppContainer {
         // One provider for every authenticated service, so a token refreshed by
         // any of them is picked up by all of them.
         let tokens = SessionAccessTokenProvider(store: store, service: resolvedService)
+
+        if let verificationService {
+            self.verificationService = verificationService
+        } else if flags.useMockVerification {
+            self.verificationService = VerificationServiceMock(
+                scenario: flags.mockVerificationScenario,
+                latency: 0.4
+            )
+        } else {
+            self.verificationService = VerificationService(
+                network: network,
+                tokens: tokens,
+                analytics: analytics
+            )
+        }
 
         if let feedService {
             self.feedService = feedService
@@ -289,6 +316,7 @@ public final class AppContainer {
     /// A container wired entirely to mocks, for previews.
     public static func preview(
         scenario: AuthServiceMock.MockScenario = .pendingReview,
+        verificationScenario: VerificationServiceMock.MockScenario = .approved,
         feedScenario: FeedServiceMock.MockScenario = .populated,
         composerScenario: ComposerServiceMock.MockScenario = .success,
         searchScenario: SearchServiceMock.MockScenario = .populated,
@@ -302,6 +330,8 @@ public final class AppContainer {
         var flags = FeatureFlags()
         flags.useMockAuth = true
         flags.mockScenario = scenario
+        flags.useMockVerification = true
+        flags.mockVerificationScenario = verificationScenario
         flags.useMockFeed = true
         flags.mockFeedScenario = feedScenario
         flags.useMockComposer = true
@@ -329,6 +359,7 @@ public final class AppContainer {
             analytics: RecordingAnalyticsClient(),
             biometrics: StubBiometricAuthenticator(),
             authService: AuthServiceMock(scenario: scenario, hasBiometricCredential: true),
+            verificationService: VerificationServiceMock(scenario: verificationScenario),
             feedService: FeedServiceMock(scenario: feedScenario),
             composerService: ComposerServiceMock(scenario: composerScenario),
             searchService: SearchServiceMock(scenario: searchScenario),

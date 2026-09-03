@@ -203,20 +203,37 @@ public struct NotificationsScreen: View {
             HStack(alignment: .top, spacing: SLSpacing.md) {
                 unreadDot(notification)
 
-                ZStack(alignment: .bottomTrailing) {
-                    SLAvatar(
-                        url: notification.actor.avatarURL,
-                        initials: notification.actor.initials,
-                        size: .md,
-                        isVerified: notification.actor.isVerified,
-                        displayName: notification.actor.displayName
-                    )
+                // A control in its own right, exactly as `PostCardView`'s
+                // author block is: the face opens the person, while the rest
+                // of the row keeps opening what happened. Nested inside the
+                // row's tap gesture, and winning over it, because a control
+                // beats a gesture.
+                Button {
+                    openActor(notification)
+                } label: {
+                    ZStack(alignment: .bottomTrailing) {
+                        SLAvatar(
+                            url: notification.actor.avatarURL,
+                            initials: notification.actor.initials,
+                            size: .md,
+                            isVerified: notification.actor.isVerified,
+                            displayName: notification.actor.displayName
+                        )
 
-                    kindMarker(notification.kind)
-                        // `.bottomTrailing` mirrors on its own; the nudge that
-                        // pushes the marker off the avatar's corner does not.
-                        .offset(x: layoutDirection == .rightToLeft ? -4 : 4, y: 4)
+                        kindMarker(notification.kind)
+                            // `.bottomTrailing` mirrors on its own; the nudge that
+                            // pushes the marker off the avatar's corner does not.
+                            .offset(x: layoutDirection == .rightToLeft ? -4 : 4, y: 4)
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(notification.actor.displayName))
+                .accessibilityHint(
+                    // The same sentence the post card's author block speaks —
+                    // it is the same affordance.
+                    Text(L10n.t("post.author.openProfile.hint", notification.actor.displayName))
+                )
 
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
                     HStack(alignment: .firstTextBaseline, spacing: SLSpacing.xs) {
@@ -263,10 +280,17 @@ public struct NotificationsScreen: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { open(notification) }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
+        // `.contain`, not `.combine`: the avatar inside is a control of its
+        // own now, and combining would swallow it. Same shape as a post card.
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(notification.accessibilityDescription))
         .accessibilityHint(Text(NotificationCopy.openHint(notification.kind)))
+    }
+
+    /// The avatar's destination — the actor's page, never the post.
+    private func openActor(_ notification: UserNotification) {
+        guard case let .profile(handle) = viewModel.openActor(notification) else { return }
+        onOpenProfile?(handle)
     }
 
     /// The unread marker. A dot, not a colour wash: the row has to stay legible

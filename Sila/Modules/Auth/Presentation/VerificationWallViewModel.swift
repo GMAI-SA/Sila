@@ -83,8 +83,9 @@ public struct WallPresentation: Equatable, Sendable {
 
 /// Drives ``PendingVerificationWallScreen``.
 ///
-/// Polls `/verification/status` on appear and on pull-to-refresh. Phase 2 will
-/// replace ``startVerification()``'s stub with a push into the wizard.
+/// Polls `/verification/status` on appear and on pull-to-refresh. The Nafath
+/// flow itself is presented by the screen; ``startVerification()`` remains as
+/// the verification kill switch's honest off state.
 @MainActor
 @Observable
 public final class VerificationWallViewModel {
@@ -144,10 +145,12 @@ public final class VerificationWallViewModel {
         }
     }
 
-    /// Phase-2 entry point.
+    /// The kill switch's off state.
     ///
-    /// The Verification module does not exist yet, so this records the intent
-    /// and tells the user plainly rather than pretending to navigate.
+    /// When the Verification module is switched off, the wall screen falls
+    /// back to this: record the intent, tell the user plainly. With the module
+    /// on, ``PendingVerificationWallScreen`` opens the Nafath flow instead and
+    /// never calls this.
     public func startVerification() {
         analytics.track(.verificationStarted, properties: ["status": status.rawValue])
         toast = .info(L10n.t("auth.wall.verificationComingSoon"))

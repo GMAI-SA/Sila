@@ -94,6 +94,13 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     /// Remote avatar image, or `nil` for the monogram fallback.
     public let avatarURL: URL?
 
+    /// E.164 contact number, when the account carries one.
+    ///
+    /// Present for phone-registered accounts — whose ``email`` is a machine
+    /// placeholder — and optional everywhere else. Decoded tolerantly like
+    /// every other optional here.
+    public let phone: String?
+
     public init(
         id: UUID,
         email: String,
@@ -103,7 +110,8 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         createdAt: Date,
         handle: String? = nil,
         countryCode: String? = nil,
-        avatarURL: URL? = nil
+        avatarURL: URL? = nil,
+        phone: String? = nil
     ) {
         self.id = id
         self.email = email
@@ -114,11 +122,12 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         self.handle = handle
         self.countryCode = CountryCode.normalised(countryCode)
         self.avatarURL = avatarURL
+        self.phone = phone
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
-        case handle, countryCode
+        case handle, countryCode, phone
         case avatarURL = "avatarUrl"
     }
 
@@ -149,12 +158,27 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         avatarURL = AppConfig.mediaURL(
             (try? container.decodeIfPresent(String.self, forKey: .avatarURL)) ?? nil
         )
+        phone = (try? container.decodeIfPresent(String.self, forKey: .phone)) ?? nil
     }
 
     /// The handle as it is rendered, with the `@`, when the account has one.
     public var atHandle: String? {
         guard let handle, !handle.isEmpty else { return nil }
         return "@\(handle)"
+    }
+
+    /// What the Face ID / Touch ID prompt should call this account.
+    ///
+    /// Preference order: the handle, the phone, the email — because a
+    /// phone-registered account's email is a placeholder
+    /// (`…@phone.sila.invalid`), and showing machine noise at the exact moment
+    /// the prompt is asking for trust reads as a compromise, not a shortcut.
+    /// The email survives as the last resort: an email-registered account with
+    /// no handle yet has nothing truer to show.
+    public var biometricIdentityLabel: String {
+        if let atHandle { return atHandle }
+        if let phone, !phone.isEmpty { return phone }
+        return email
     }
 
     /// Two-letter monogram for ``SLAvatar``.

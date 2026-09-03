@@ -54,14 +54,39 @@ public actor AuthTokenStore {
     }
 
     /// Marks this device as biometric-enabled for `email`.
-    public func enableBiometrics(for email: String) {
+    ///
+    /// - Parameters:
+    ///   - email: The address the credential belongs to — still stored, because
+    ///     it prefills the sign-in form.
+    ///   - label: What the biometric prompt should *call* the account — the
+    ///     handle when there is one, else the phone, else the email. `nil`
+    ///     stores no label, and display falls back to the email.
+    public func enableBiometrics(for email: String, label: String? = nil) {
         try? keychain.saveString(email, for: .biometricEmail)
+        if let label, !label.isEmpty {
+            try? keychain.saveString(label, for: .biometricLabel)
+        } else {
+            try? keychain.delete(.biometricLabel)
+        }
         storage.setFlag(true, for: .biometricEnabled)
     }
 
     /// The email a biometric credential exists for, if any.
     public func biometricEmail() -> String? {
         guard storage.flag(.biometricEnabled) else { return nil }
+        return try? keychain.loadString(.biometricEmail)
+    }
+
+    /// What the biometric prompt should call the saved account.
+    ///
+    /// The stored label when one exists; otherwise the stored email, so a
+    /// credential saved by a build that predates labels keeps working exactly
+    /// as it always did.
+    public func biometricLabel() -> String? {
+        guard storage.flag(.biometricEnabled) else { return nil }
+        if let label = try? keychain.loadString(.biometricLabel), !label.isEmpty {
+            return label
+        }
         return try? keychain.loadString(.biometricEmail)
     }
 
@@ -73,6 +98,7 @@ public actor AuthTokenStore {
         try? keychain.delete(.authToken)
         try? keychain.delete(.cachedUser)
         try? keychain.delete(.biometricEmail)
+        try? keychain.delete(.biometricLabel)
         storage.setFlag(false, for: .biometricEnabled)
     }
 

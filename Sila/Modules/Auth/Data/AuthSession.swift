@@ -119,6 +119,26 @@ public final class AuthSession {
         }
     }
 
+    /// Re-reads `/auth/me` and re-routes — the post-verification refresh.
+    ///
+    /// Distinct from ``refreshVerification()`` because an approval changes
+    /// *two* fields — `verification_status` **and** `country_code` — and only
+    /// `/auth/me` carries both. Distinct from ``restore()`` because a network
+    /// failure here must keep the session, not wipe it: the fallback is the
+    /// status endpoint, whose failure path already keeps the last known state.
+    public func refreshUser() async {
+        guard user != nil else { return }
+        isBusy = true
+        defer { isBusy = false }
+        if let fresh = try? await service.currentUser() {
+            user = fresh
+            await applyRouteForCurrentUser()
+        } else {
+            isBusy = false
+            await refreshVerification()
+        }
+    }
+
     /// Ends the session and returns to the welcome screen.
     public func signOut() async {
         isBusy = true

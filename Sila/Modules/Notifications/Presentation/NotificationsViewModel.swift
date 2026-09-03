@@ -306,6 +306,23 @@ public final class NotificationsViewModel {
         }
     }
 
+    /// Where the actor's avatar leads: their profile — always, whatever the
+    /// row itself opens.
+    ///
+    /// Tapping Noura's face on "Noura liked your post" is asking about
+    /// *Noura*, not about the post, so this returns her page even when the
+    /// row's own destination is a thread. Deliberately does **not** mark the
+    /// row read: reading is recorded when somebody opens what the
+    /// notification is about, and her profile is not that.
+    public func openActor(_ notification: UserNotification) -> NotificationDestination {
+        analytics.track(.notificationOpened, properties: [
+            "kind": notification.kind.rawValue,
+            "read": String(notification.read),
+            "target": "actor"
+        ])
+        return .profile(handle: notification.actor.handle)
+    }
+
     // MARK: - Helpers
 
     /// Adopts a page. The unread count always comes from the response.

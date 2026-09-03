@@ -32,6 +32,8 @@ public struct StorageKey: RawRepresentable, Hashable, Sendable {
     public static let lastSignedInEmail = StorageKey("com.socialsa.sila.lastSignedInEmail")
     /// Whether the welcome screen has ever been shown.
     public static let hasSeenWelcome = StorageKey("com.socialsa.sila.hasSeenWelcome")
+    /// The in-app language choice: `system`, `en` or `ar`.
+    public static let appLanguage = StorageKey("com.socialsa.sila.appLanguage")
 }
 
 /// `UserDefaults`-backed ``StorageClient``.

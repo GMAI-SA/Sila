@@ -10,7 +10,16 @@ public struct KeychainKey: RawRepresentable, Hashable, Sendable {
     /// The persisted ``AuthToken``.
     public static let authToken = KeychainKey("auth.token")
     /// The email associated with the stored biometric credential.
+    ///
+    /// Retained for sign-in-form prefill and as the display fallback for
+    /// credentials saved before ``biometricLabel`` existed.
     public static let biometricEmail = KeychainKey("auth.biometric.email")
+    /// The human-readable identity the biometric prompt names — the handle
+    /// when the account has one, else the phone, else the email. Kept separate
+    /// from ``biometricEmail`` because a phone-registered account's email is a
+    /// machine placeholder that must never be put in front of the user at the
+    /// exact moment the prompt is asking for trust.
+    public static let biometricLabel = KeychainKey("auth.biometric.label")
     /// The cached ``AuthUser`` used to route on cold launch before `/auth/me` returns.
     public static let cachedUser = KeychainKey("auth.user")
 }

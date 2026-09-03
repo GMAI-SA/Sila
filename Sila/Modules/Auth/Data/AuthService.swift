@@ -71,7 +71,13 @@ public final class AuthService: AuthServiceProtocol {
             let pair = try await network.send(request, as: TokenPair.self)
             await store.store(pair)
             if biometrics.availableBiometry != .none {
-                await store.enableBiometrics(for: normalise(email))
+                // The label is what the Face ID prompt will *say*. It prefers
+                // the handle to the account's email because a phone-registered
+                // account's email is a placeholder nobody should ever read.
+                await store.enableBiometrics(
+                    for: normalise(email),
+                    label: pair.user.biometricIdentityLabel
+                )
             }
             analytics.track(.signInSucceeded)
             return pair
@@ -89,8 +95,12 @@ public final class AuthService: AuthServiceProtocol {
             throw APIError.biometricFailed(L10n.t("auth.biometric.error.sessionExpired"))
         }
 
+        // The prompt names the identity, not the credential: the stored label
+        // (handle → phone → email), falling back to the email for credentials
+        // saved before labels existed.
+        let label = await store.biometricLabel() ?? email
         try await biometrics.authenticate(
-            reason: L10n.t("auth.biometric.prompt", email)
+            reason: L10n.t("auth.biometric.prompt", label)
         )
 
         let pair = try await refreshToken(token)

@@ -12,6 +12,8 @@ import Foundation
 /// ```
 /// -mockAuth            run against AuthServiceMock instead of the live API
 /// -mockScenario X      pick an AuthServiceMock.MockScenario by raw value
+/// -mockVerification    run against VerificationServiceMock instead of the live API
+/// -mockVerificationScenario X  pick a VerificationServiceMock.MockScenario
 /// -mockFeed            run against FeedServiceMock instead of the live API
 /// -mockFeedScenario X  pick a FeedServiceMock.MockScenario by raw value
 /// -mockComposer        run against ComposerServiceMock instead of the live API
@@ -38,8 +40,10 @@ public struct FeatureFlags: Sendable {
 
     /// P1 — Authentication. Always on; the app cannot function without it.
     public var auth = true
-    /// P2 — Identity verification wizard. Not implemented yet.
-    public var verification = false
+    /// P2 — Nafath identity verification. Turning this off puts the wall's
+    /// "Start Verification" back to its honest stub toast; accounts already
+    /// verified are untouched, because the client does not own the status.
+    public var verification = true
     /// P3 — Social feed. Turning this off drops verified users back onto the
     /// Phase-1 placeholder instead of ``MainTabView``.
     public var feed = true
@@ -94,6 +98,13 @@ public struct FeatureFlags: Sendable {
     public var mockScenario: AuthServiceMock.MockScenario = .pendingReview
     /// Offer the Face ID / Touch ID button on the sign-in screen.
     public var biometricSignIn = true
+
+    // MARK: Phase 2 build switches
+
+    /// Use ``VerificationServiceMock`` instead of the live backend.
+    public var useMockVerification = false
+    /// Which mock journey to play when ``useMockVerification`` is on.
+    public var mockVerificationScenario: VerificationServiceMock.MockScenario = .approved
 
     // MARK: Phase 3 build switches
 
@@ -196,6 +207,21 @@ public struct FeatureFlags: Sendable {
         }
         if arguments.contains("-noBiometrics") {
             flags.biometricSignIn = false
+        }
+        if arguments.contains("-mockVerification") {
+            flags.useMockVerification = true
+        }
+        if let index = arguments.firstIndex(of: "-mockVerificationScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = VerificationServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockVerification = true
+            flags.mockVerificationScenario = scenario
+        }
+        // A mocked session's token would 401 against the real
+        // `/verification/nafath/start`, and spending a real identity is not
+        // something a demo should ever do.
+        if flags.useMockAuth && !arguments.contains("-mockVerificationScenario") {
+            flags.useMockVerification = true
         }
         if arguments.contains("-mockFeed") {
             flags.useMockFeed = true
