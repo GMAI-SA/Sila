@@ -139,6 +139,20 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// A second appeal against the same suspension (HTTP 409).
     case alreadyAppealed = "already_appealed"
 
+    // MARK: Contract v9 — the verification gate & identity challenges
+
+    /// Enough verified people have said this account is presenting itself as
+    /// somebody it is not, so posting is paused while a moderator looks
+    /// (HTTP 403).
+    ///
+    /// Deliberately **not** an account state like ``accountSuspended``. A hold
+    /// stops writing and nothing else: reading, feeds and messages all still
+    /// work, and the account's existing posts stay up. Putting it on a wall
+    /// would tell somebody they had been judged when nothing has been decided,
+    /// which is exactly what a hold is careful not to do — so it surfaces at
+    /// the refused write and nowhere else.
+    case identityHold = "identity_hold"
+
     // MARK: Voice rooms
 
     /// The room's scope excludes this account from **speaking**.
@@ -298,6 +312,12 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.accountSuspended")
             case .alreadyAppealed:
                 return L10n.t("error.alreadyAppealed")
+            case .identityHold:
+                // Says what is paused, what is not, and that nothing has been
+                // decided. Never "your account is under review for
+                // impersonation": the claim is unproven and repeating it to the
+                // person accused is how a hold becomes an accusation.
+                return L10n.t("error.identityHold")
             case .scopeNotAllowed:
                 // Says exactly what is refused. The room itself is still open —
                 // scope governs the microphone, never the door.

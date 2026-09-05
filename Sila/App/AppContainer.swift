@@ -48,6 +48,7 @@ public final class AppContainer {
     public let notificationsService: NotificationsServiceProtocol
     /// Live voice rooms — listing, joining, hosting.
     public let roomsService: RoomsServiceProtocol
+    public let messagesService: MessagesServiceProtocol
     /// `GET /languages` — the `rtl` flag that decides which way a post reads.
     public let languageService: LanguageServiceProtocol
     /// Whether the app should be showing nothing but the suspension screen.
@@ -56,6 +57,13 @@ public final class AppContainer {
     /// request in the app reports `403 account_suspended` through one place. A
     /// suspended account cannot find a screen whose author forgot to catch it.
     public let suspension: SuspensionMonitor
+    /// Turns `403 unverified` — from any call — back into the verification wall.
+    ///
+    /// Constructed before the network client for the same reason as
+    /// ``suspension``, and wired to the session immediately after it exists:
+    /// the transport cannot take the session as an argument, because the
+    /// session is built out of services built out of the transport.
+    public let verificationGate: VerificationGate
     /// The in-app language choice — System / English / Arabic.
     ///
     /// Constructed early so the stored choice is installed into ``L10n``
@@ -86,6 +94,7 @@ public final class AppContainer {
         safetyService: SafetyServiceProtocol? = nil,
         notificationsService: NotificationsServiceProtocol? = nil,
         roomsService: RoomsServiceProtocol? = nil,
+        messagesService: MessagesServiceProtocol? = nil,
         languageService: LanguageServiceProtocol? = nil
     ) {
         self.flags = flags
@@ -95,7 +104,13 @@ public final class AppContainer {
         let suspension = SuspensionMonitor(analytics: analytics ?? ConsoleAnalyticsClient())
         self.suspension = suspension
 
-        let network = network ?? URLSessionNetworkClient(suspension: suspension.signal)
+        let verificationGate = VerificationGate(analytics: analytics ?? ConsoleAnalyticsClient())
+        self.verificationGate = verificationGate
+
+        let network = network ?? URLSessionNetworkClient(
+            suspension: suspension.signal,
+            verification: verificationGate.signal
+        )
         let storage = storage ?? UserDefaultsStorageClient()
         let keychain = keychain ?? SystemKeychainClient()
         let analytics = analytics ?? ConsoleAnalyticsClient()
@@ -134,7 +149,16 @@ public final class AppContainer {
 
         self.authService = resolvedService
         self.tokenStore = store
-        self.session = AuthSession(service: resolvedService, store: store, analytics: analytics)
+        let session = AuthSession(service: resolvedService, store: store, analytics: analytics)
+        self.session = session
+
+        // The gate knows a call was refused; only the session knows what to do
+        // about it, and only `/auth/me` — one of the four routes that answers an
+        // unverified account — knows why. Weakly captured: the container owns
+        // both ends of this, and a strong closure would tie them in a knot.
+        verificationGate.reconcile = { [weak session] in
+            await session?.reconcileVerification()
+        }
 
         // One provider for every authenticated service, so a token refreshed by
         // any of them is picked up by all of them.
@@ -236,6 +260,18 @@ public final class AppContainer {
             )
         } else {
             self.safetyService = SafetyService(
+                network: network,
+                tokens: tokens,
+                analytics: analytics
+            )
+        }
+
+        if let messagesService {
+            self.messagesService = messagesService
+        } else if flags.useMockMessages {
+            self.messagesService = MessagesServiceMock()
+        } else {
+            self.messagesService = MessagesService(
                 network: network,
                 tokens: tokens,
                 analytics: analytics

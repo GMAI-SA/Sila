@@ -19,19 +19,30 @@ public final class URLSessionNetworkClient: NetworkClient {
     /// its author forgot. One transport, one interception, no gaps.
     private let suspension: SuspensionReporting?
 
+    /// Told whenever a request comes back `403 unverified`.
+    ///
+    /// Here for the same reason as ``suspension``, and since contract v9 for
+    /// the same *shape* of reason: verification is now a condition of holding
+    /// an account rather than a permission on top of one, so an unverified
+    /// session is refused by every route bar four. One interception, no gaps.
+    private let verification: VerificationGateReporting?
+
     /// Creates a client.
     /// - Parameters:
     ///   - baseURL: Defaults to ``AppConfig/apiBaseURL``.
     ///   - session: Injectable for tests. Defaults to an ephemeral-friendly default session.
     ///   - suspension: Told about `403 account_suspended`. `nil` in tests and
     ///     previews, where there is no app shell to route.
+    ///   - verification: Told about `403 unverified`. `nil` for the same reason.
     public init(
         baseURL: URL = AppConfig.apiBaseURL,
         session: URLSession? = nil,
-        suspension: SuspensionReporting? = nil
+        suspension: SuspensionReporting? = nil,
+        verification: VerificationGateReporting? = nil
     ) {
         self.baseURL = baseURL
         self.suspension = suspension
+        self.verification = verification
         if let session {
             self.session = session
         } else {
@@ -91,6 +102,9 @@ public final class URLSessionNetworkClient: NetworkClient {
             // has already been told to stop showing that screen at all.
             if error.code == .accountSuspended {
                 suspension?.accountSuspended()
+            }
+            if error.code == .unverified {
+                verification?.verificationRequired()
             }
             throw error
         }

@@ -174,8 +174,9 @@ final class ArabicRTLJourneyUITests: XCTestCase {
         assertNothingOverflows(app, "feed after tabs")
 
         // The composer — the surface where a wrong text direction is most
-        // obvious and most damaging.
-        if tap(app, identifier: "tab.compose", timeout: 10) {
+        // obvious and most damaging. Reached from the feed's own compose row
+        // now that the tab bar is five destinations and nothing else.
+        if tap(app, identifier: "feed.composeRow", timeout: 10) {
             add(screenshot(app, named: "AR — Composer"))
             assertNothingOverflows(app, "composer")
 

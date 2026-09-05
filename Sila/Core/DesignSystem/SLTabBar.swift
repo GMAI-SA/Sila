@@ -90,11 +90,15 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
     /// - Parameters:
     ///   - items: Slots, left to right.
     ///   - selection: The bound selected tab.
-    ///   - onAction: Called with the item id when an ``SLTabBarItem/Kind/action`` slot is tapped.
+    ///   - onAction: Called with the item id when an ``SLTabBarItem/Kind/action``
+    ///     slot is tapped. Defaults to doing nothing, because a bar of pure
+    ///     destinations — which is what the app ships — has no action slot to
+    ///     serve, and requiring the closure would make every such caller pass
+    ///     an empty one.
     public init(
         items: [SLTabBarItem<Tab>],
         selection: Binding<Tab>,
-        onAction: @escaping (String) -> Void
+        onAction: @escaping (String) -> Void = { _ in }
     ) {
         self.items = items
         self._selection = selection

@@ -222,7 +222,7 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flags.account, "contract v5 ships")
         XCTAssertTrue(flags.profile, "Phase 7 ships")
         XCTAssertFalse(flags.deepDive, "the Deep Dive panel has no endpoint behind it")
-        XCTAssertFalse(flags.messaging, "Phase 5 does not exist yet")
+        XCTAssertTrue(flags.messaging, "Phase 5 ships — inbox, requests and a thread")
         XCTAssertTrue(flags.biometricSignIn)
     }
 

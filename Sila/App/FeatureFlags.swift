@@ -61,8 +61,17 @@ public struct FeatureFlags: Sendable {
     /// deletion. Turning this off hides the entry point; the endpoints keep
     /// working, because the client does not own the account.
     public var account = true
-    /// P5 — Encrypted messaging.
-    public var messaging = false
+    /// P5 — private messages: an inbox, a request folder, and one thread.
+    ///
+    /// **Not encrypted, and never described as such.** The blueprint asked for
+    /// end-to-end encryption *and* server-side scam warnings; those are
+    /// mutually exclusive, because a server that cannot read a message can
+    /// neither warn about it nor act on a report about it. The body is stored
+    /// opaquely so ciphertext can replace plaintext later, once reporting has
+    /// an answer.
+    public var messaging = true
+    /// Drives the messages surface from ``MessagesServiceMock``.
+    public var useMockMessages = false
     /// P5 sub-feature — audio/video calls.
     public var calls = false
     /// P6 — Voice rooms. Turning this off removes the Rooms tab and every

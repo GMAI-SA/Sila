@@ -252,6 +252,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public let id: UUID
     public let author: UserSummary
     public let text: String
+    /// Images attached to the post, in the order they were added — at most
+    /// four. Server-minted paths only; the API refuses anything else, so a post
+    /// can never point a reader's device at an arbitrary host.
+    public let imageURLs: [URL]
     /// BCP-47 code for the language ``text`` is written in, as detected
     /// server-side at write time — `"ar"`, `"en"`, or `nil` when the server
     /// could not tell (a post that is only numbers and emoji has no language).
@@ -290,6 +294,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         author: UserSummary,
         text: String,
         createdAt: Date,
+        // Defaulted, so every existing caller and fixture is untouched.
+        imageURLs: [URL] = [],
         language: String? = nil,
         scope: PostScope = .international,
         scopeCountry: String? = nil,
@@ -303,6 +309,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         self.id = id
         self.author = author
         self.text = text
+        self.imageURLs = imageURLs
         self.language = Post.normalisedLanguage(language)
         self.createdAt = createdAt
         self.scope = scope
@@ -316,7 +323,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, author, text, language, createdAt, scope, scopeCountry, scopeRegion
+        case id, author, text, imageUrls, language, createdAt, scope, scopeCountry, scopeRegion
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
     }
 
@@ -347,6 +354,11 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         }
         author = try container.decode(UserSummary.self, forKey: .author)
         text = (try? container.decode(String.self, forKey: .text)) ?? ""
+        // Relative paths, resolved against the API host. A row whose image list
+        // fails to decode still renders its text: losing a picture is a much
+        // smaller failure than losing the post.
+        imageURLs = ((try? container.decodeIfPresent([String].self, forKey: .imageUrls)) ?? [])?
+            .compactMap { AppConfig.mediaURL($0) } ?? []
         language = Post.normalisedLanguage(
             (try? container.decodeIfPresent(String.self, forKey: .language)) ?? nil
         )

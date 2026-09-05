@@ -2,11 +2,12 @@ import Foundation
 
 /// Everything the Composer module can ask the backend to do.
 ///
-/// > Note: The Phase-4 spec listed `uploadMedia`, `schedulePost`,
-/// > `fetchScheduledPosts` and `cancelScheduledPost`. Contract v3 has no upload,
-/// > poll or scheduling endpoint, so those requirements are deliberately absent
-/// > rather than declared and stubbed — a protocol requirement no
-/// > implementation can honour is a lie the compiler cannot catch.
+/// > Note: The Phase-4 spec also listed `schedulePost`, `fetchScheduledPosts`
+/// > and `cancelScheduledPost`. There is still no scheduling endpoint, so those
+/// > requirements stay deliberately absent rather than declared and stubbed — a
+/// > protocol requirement no implementation can honour is a lie the compiler
+/// > cannot catch. `uploadMedia` was in that list until the server grew
+/// > `POST /media/posts`; it is ``uploadImage(_:)`` below.
 public protocol ComposerServiceProtocol: Sendable {
 
     /// Creates one post.
@@ -17,6 +18,17 @@ public protocol ComposerServiceProtocol: Sendable {
     ///   (403) when the scope excludes the author, or
     ///   ``APIErrorCode/textTooLong`` / ``APIErrorCode/invalidScope`` (400).
     func createPost(_ draft: PostDraft) async throws -> Post
+
+    /// Uploads one image and returns the path to attach to a draft.
+    ///
+    /// Separate from ``createPost(_:)`` on purpose. Images fail far more often
+    /// than text on the connections this app is written for, and a composer
+    /// that sent both together would have to discard a whole draft when one
+    /// picture failed. Here a failure costs one image and the words stay put.
+    ///
+    /// - Throws: ``APIError`` with ``APIErrorCode/invalidImage`` (400) for
+    ///   something that is not a decodable image, or `imageTooLarge` (413).
+    func uploadImage(_ data: Data) async throws -> String
 }
 
 extension ComposerServiceProtocol {
@@ -40,7 +52,8 @@ extension ComposerServiceProtocol {
         segments: [String],
         scope: ComposeScope,
         replyToPostId: UUID? = nil,
-        quotedPostId: UUID? = nil
+        quotedPostId: UUID? = nil,
+        imageURLs: [String] = []
     ) async -> ThreadPostReport {
         var queue = segments
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -56,7 +69,11 @@ extension ComposerServiceProtocol {
                 scope: scope,
                 replyToPostId: parentId,
                 // Only the opening segment carries the quote.
-                quotedPostId: posted.isEmpty ? quotedPostId : nil
+                quotedPostId: posted.isEmpty ? quotedPostId : nil,
+                // ...and only the opening segment carries the images, for the
+                // same reason: a thread is a chain of replies, and repeating
+                // the pictures on every link would post them four times.
+                imageURLs: posted.isEmpty ? imageURLs : []
             )
             do {
                 let post = try await createPost(draft)

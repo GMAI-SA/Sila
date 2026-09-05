@@ -20,6 +20,10 @@ public enum AuthRoute: Hashable, Sendable {
 /// timeline leads to another post — and a second enum would only let the two
 /// tabs drift apart.
 public enum FeedRoute: Hashable, Sendable {
+    /// One conversation. Carries the whole thread rather than an id because the
+    /// list already holds it, and re-fetching a conversation to open it would
+    /// show an empty screen on a slow connection for something already on file.
+    case conversation(Conversation)
     /// A post with its reply thread.
     case postDetail(Post)
     /// One account's public page. Carries the handle rather than a
@@ -74,6 +78,9 @@ public final class AppRouter {
     /// home feed's would mean opening a notification rearranged the history
     /// somebody left behind on Home.
     public var notificationsPath: [FeedRoute] = []
+
+    /// The Messages tab's stack.
+    public var messagesPath: [FeedRoute] = []
     /// The Rooms tab's own stack path.
     public var roomsPath: [RoomsRoute] = []
     /// `true` while the create-room sheet is up.

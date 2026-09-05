@@ -25,6 +25,19 @@ final class ScriptedComposerService: ComposerServiceProtocol, @unchecked Sendabl
         return Self.post(index: index, draft: draft)
     }
 
+    /// Paths handed back for uploads, in order, and what a test can make fail.
+    private(set) var uploadedBytes: [Int] = []
+    var uploadFailure: APIError?
+
+    func uploadImage(_ data: Data) async throws -> String {
+        let failure = lock.withLock { () -> APIError? in
+            uploadedBytes.append(data.count)
+            return uploadFailure
+        }
+        if let failure { throw failure }
+        return "/api/v1/media/posts/scripted-\(uploadedBytes.count).jpg"
+    }
+
     /// Deterministic ids so a test can assert segment 2 replied to segment 1.
     static func id(_ index: Int) -> UUID {
         UUID(uuidString: "00000000-0000-4000-8000-\(String(format: "%012d", 7_000 + index))") ?? UUID()
@@ -536,5 +549,87 @@ final class ComposerViewModelTests: XCTestCase {
         viewModel.requestDismiss()
         viewModel.confirmDiscard()
         XCTAssertTrue(closed)
+    }
+}
+
+// MARK: - Attachments
+
+@MainActor
+final class ComposerAttachmentTests: XCTestCase {
+
+    private func makeViewModel(_ service: ComposerServiceProtocol) -> ComposerViewModel {
+        ComposerViewModel(
+            context: .newPost,
+            author: ComposerAuthor(handle: "aziz", countryCode: "SA", isVerified: true),
+            composer: service,
+            search: nil,
+            analytics: RecordingAnalyticsClient(),
+            mentionDebounce: 0.02,
+            onPosted: { _ in },
+            onClose: {}
+        )
+    }
+
+    /// A failed upload must cost one picture, never the draft.
+    ///
+    /// This is the whole reason upload and post are two steps: on the
+    /// connections this app is written for, images fail far more often than
+    /// text, and a composer that sent both together would throw away somebody's
+    /// words because a photograph did not make it.
+    func testAFailedUploadLeavesTheTextAlone() async {
+        let service = ScriptedComposerService()
+        service.uploadFailure = .api(code: .imageTooLarge, message: "Too big", status: 413)
+        let viewModel = makeViewModel(service)
+        viewModel.setText("Words worth keeping", at: 0)
+
+        await viewModel.attach(Data(repeating: 0xFF, count: 32))
+
+        XCTAssertTrue(viewModel.attachments.isEmpty, "a failed upload was attached anyway")
+        XCTAssertEqual(viewModel.text(at: 0), "Words worth keeping", "the draft was lost")
+        XCTAssertNotNil(viewModel.toast, "the failure was silent")
+    }
+
+    /// Only the opening segment of a thread carries the images.
+    func testAThreadAttachesImagesOnceNotToEverySegment() async {
+        let service = ScriptedComposerService()
+        let viewModel = makeViewModel(service)
+        viewModel.setText("First", at: 0)
+        viewModel.addSegment()
+        viewModel.setText("Second", at: 1)
+
+        await viewModel.attach(Data(repeating: 0x01, count: 16))
+        await viewModel.post()
+
+        XCTAssertEqual(service.drafts.count, 2)
+        XCTAssertEqual(service.drafts[0].imageURLs.count, 1, "the opening segment lost its image")
+        XCTAssertTrue(service.drafts[1].imageURLs.isEmpty, "the image was posted twice")
+    }
+
+    /// The fifth picture is refused rather than silently dropped.
+    func testAFifthImageIsRefusedOutLoud() async {
+        let service = ScriptedComposerService()
+        let viewModel = makeViewModel(service)
+
+        for _ in 0..<ComposerConstants.maximumImages {
+            await viewModel.attach(Data([0x01]))
+        }
+        viewModel.toast = nil
+        await viewModel.attach(Data([0x01]))
+
+        XCTAssertEqual(viewModel.attachments.count, ComposerConstants.maximumImages)
+        XCTAssertNotNil(viewModel.toast, "the limit was enforced silently")
+    }
+
+    /// Removing an attachment removes exactly one.
+    func testRemovingAnAttachmentRemovesOnlyThatOne() async {
+        let service = ScriptedComposerService()
+        let viewModel = makeViewModel(service)
+        await viewModel.attach(Data([0x01]))
+        await viewModel.attach(Data([0x02]))
+        let survivor = viewModel.attachments[1]
+
+        viewModel.removeAttachment(at: 0)
+
+        XCTAssertEqual(viewModel.attachments, [survivor])
     }
 }

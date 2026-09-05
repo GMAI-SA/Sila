@@ -48,6 +48,12 @@ public final class ComposerViewModel {
     public let scopeOptions: [ScopeOption]
     /// `true` while a post (or a thread) is in flight.
     public private(set) var isPosting = false
+    /// Images already uploaded and ready to attach, in the order they were
+    /// picked. Server paths, never bytes — see ``attach(_:)``.
+    public private(set) var attachments: [String] = []
+    /// `true` while an image is on its way up. The Post button stays live: text
+    /// is not held hostage to a picture.
+    public private(set) var isUploadingImage = false
     /// Mention candidates for the segment being typed.
     public private(set) var mentionSuggestions: [UserSummary] = []
     /// `true` while `/search/users` is in flight for the current prefix.
@@ -299,6 +305,35 @@ public final class ComposerViewModel {
     /// the rest stay, and the next attempt continues the chain from the last
     /// post that succeeded — the user is never asked to retype what is already
     /// public, and never silently duplicates it either.
+    /// Uploads a picked image and keeps its path.
+    ///
+    /// Uploaded on selection rather than at Post time so a failure costs one
+    /// image instead of the whole draft — images fail far more often than text
+    /// on the connections this app is written for.
+    public func attach(_ data: Data) async {
+        guard attachments.count < ComposerConstants.maximumImages else {
+            toast = .error(L10n.plural("composer.images.limit", ComposerConstants.maximumImages))
+            return
+        }
+        isUploadingImage = true
+        defer { isUploadingImage = false }
+        do {
+            attachments.append(try await composer.uploadImage(data))
+        } catch {
+            toast = .error(APIError.wrapping(error).userMessage)
+        }
+    }
+
+    /// Removes an attachment before posting.
+    ///
+    /// The uploaded file stays on the server, unreferenced. Deleting it would
+    /// need an endpoint that can delete by path, which is a capability worth
+    /// more scrutiny than removing a thumbnail deserves.
+    public func removeAttachment(at index: Int) {
+        guard attachments.indices.contains(index) else { return }
+        attachments.remove(at: index)
+    }
+
     public func post() async {
         guard canPost else { return }
         isPosting = true
@@ -319,7 +354,10 @@ public final class ComposerViewModel {
             replyToPostId: parentId,
             // Only a fresh thread carries the quote — a continuation's opening
             // segment is a reply, and quoting again would duplicate the card.
-            quotedPostId: continuationId == nil ? context.quotedPost?.id : nil
+            quotedPostId: continuationId == nil ? context.quotedPost?.id : nil,
+            // Same for the pictures: a retry that continues a half-posted
+            // thread must not attach them a second time.
+            imageURLs: continuationId == nil ? attachments : []
         )
 
         if !report.posted.isEmpty {

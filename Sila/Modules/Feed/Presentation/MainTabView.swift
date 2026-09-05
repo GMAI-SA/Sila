@@ -13,9 +13,10 @@ import SwiftUI
 @MainActor
 public struct MainTabView: View {
 
-    /// The five selectable destinations. Compose is an action, not a tab.
+    /// The selectable destinations. Every one is a place; writing is not a
+    /// place, which is why the compose action left this bar.
     public enum Tab: String, Hashable, Sendable, CaseIterable {
-        case home, explore, rooms, notifications, profile
+        case home, explore, rooms, messages, notifications, profile
     }
 
     private let container: AppContainer
@@ -43,6 +44,10 @@ public struct MainTabView: View {
     /// model is: a list thrown away on every tab switch would refetch — and
     /// lose somebody's place — every time they glanced at Home.
     @State private var roomsViewModel: RoomsViewModel
+    /// Owns both message folders and the unread badge. Up here for the reason
+    /// the two above are: a model rebuilt on every tab switch would take the
+    /// badge with it.
+    @State private var conversationsViewModel: ConversationsViewModel
     /// Blocking, muting and reporting for every card and every header below.
     ///
     /// One instance for the whole shell rather than one per screen. The block
@@ -87,6 +92,12 @@ public struct MainTabView: View {
                 suspension: container.suspension
             )
         )
+        self._conversationsViewModel = State(
+            initialValue: ConversationsViewModel(
+                service: container.messagesService,
+                analytics: container.analytics
+            )
+        )
         // `onChange` is wired after construction, because it has to reach the
         // two view models built just above.
         self._deletion = State(
@@ -111,9 +122,9 @@ public struct MainTabView: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            SLTabBar(items: tabBarItems, selection: $selection) { id in
-                if id == "compose" { openComposer() }
-            }
+            // No action slot: the bar is five destinations, and writing lives
+            // at the top of the feed it writes into.
+            SLTabBar(items: tabBarItems, selection: $selection)
         }
         .tnScreenBackground()
         .sheet(
@@ -304,9 +315,12 @@ public struct MainTabView: View {
             switch route {
             case let .profile(handle): return Handle.normalised(handle) == target
             case let .postDetail(post): return Handle.normalised(post.author.handle) == target
+            case let .conversation(conversation):
+                return Handle.normalised(conversation.other.handle) == target
             }
         }
         container.router.feedPath.removeAll(where: isAbout)
+        container.router.messagesPath.removeAll(where: isAbout)
         container.router.explorePath.removeAll(where: isAbout)
         container.router.profilePath.removeAll(where: isAbout)
         container.router.notificationsPath.removeAll(where: isAbout)
@@ -532,6 +546,24 @@ public struct MainTabView: View {
             }
             .tint(SLColor.primary)
 
+        case .messages:
+            NavigationStack(path: Binding(
+                get: { container.router.messagesPath },
+                set: { container.router.messagesPath = $0 }
+            )) {
+                ConversationsScreen(
+                    viewModel: conversationsViewModel,
+                    onOpen: { conversation in
+                        container.router.messagesPath.append(.conversation(conversation))
+                    },
+                    onOpenProfile: openProfile
+                )
+                .navigationDestination(for: FeedRoute.self) { route in
+                    destination(for: route)
+                }
+            }
+            .tint(SLColor.primary)
+
         case .profile:
             NavigationStack(path: Binding(
                 get: { container.router.profilePath },
@@ -629,6 +661,7 @@ public struct MainTabView: View {
         case .explore: container.router.explorePath.append(route)
         case .profile: container.router.profilePath.append(route)
         case .notifications: container.router.notificationsPath.append(route)
+        case .messages: container.router.messagesPath.append(route)
         // The Rooms tab keeps its own route type, because a room is a live
         // connection rather than a document — it has to be torn down when it
         // is popped, which a `FeedRoute` knows nothing about. Only the profile
@@ -758,6 +791,17 @@ public struct MainTabView: View {
     @ViewBuilder
     private func destination(for route: FeedRoute) -> some View {
         switch route {
+        case let .conversation(conversation):
+            ChatScreen(
+                viewModel: ChatViewModel(
+                    conversation: conversation,
+                    viewerId: container.session.user?.id,
+                    service: container.messagesService
+                ),
+                onOpenProfile: openProfile,
+                safetyMenu: safetyMenu(for:)
+            )
+
         case let .postDetail(post):
             // Engagement changed on the detail screen must not be lost when the
             // user swipes back to a list still holding the old copy. Both lists
@@ -830,14 +874,6 @@ public struct MainTabView: View {
                 label: L10n.t("feed.tab.explore.label"), hint: L10n.t("feed.tab.explore.hint"), kind: .tab(.explore)
             ),
             SLTabBarItem(
-                id: "compose", icon: "plus",
-                label: L10n.t("feed.tab.compose.label"),
-                hint: container.flags.composer
-                    ? L10n.t("feed.tab.compose.hint")
-                    : L10n.t("feed.tab.compose.disabledHint"),
-                kind: .action
-            ),
-            SLTabBarItem(
                 id: "notifications", icon: "bell", selectedIcon: "bell.fill",
                 label: L10n.t("feed.tab.notifications.label"),
                 hint: L10n.t("feed.tab.notifications.hint"),
@@ -855,6 +891,25 @@ public struct MainTabView: View {
         // Inserted rather than appended, so Rooms sits beside the compose
         // button where a thing you *start* belongs — and so the flag's off
         // state is a bar with no gap in it rather than a hidden slot.
+        // Beside Notifications: both are things addressed to you. Inserted
+        // rather than declared inline so the flag's off state is a bar with no
+        // gap in it rather than a hidden slot.
+        if container.flags.messaging {
+            items.insert(
+                SLTabBarItem(
+                    id: "messages", icon: "envelope", selectedIcon: "envelope.fill",
+                    label: L10n.t("feed.tab.messages.label"),
+                    hint: L10n.t("feed.tab.messages.hint"),
+                    kind: .tab(.messages),
+                    // Unread only. The request count is deliberately absent: a
+                    // stranger must not be able to put a number on somebody's
+                    // attention, which is the whole point of the request folder.
+                    badge: conversationsViewModel.badgeCount
+                ),
+                at: 2
+            )
+        }
+
         if container.flags.rooms {
             items.insert(
                 SLTabBarItem(
@@ -863,7 +918,10 @@ public struct MainTabView: View {
                     hint: L10n.t("feed.tab.rooms.hint"),
                     kind: .tab(.rooms)
                 ),
-                at: 3
+                // Third of five, so Home and Explore keep the leading edge and
+                // Notifications and Profile keep the trailing one. This used to
+                // be index 3 to clear the compose button that sat at 2.
+                at: 2
             )
         }
         return items

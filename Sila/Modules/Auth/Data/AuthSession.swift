@@ -139,6 +139,27 @@ public final class AuthSession {
         }
     }
 
+    /// Reconciles after a call was refused `403 unverified`.
+    ///
+    /// Contract v9 closed every authenticated route to an unverified account,
+    /// so a verification that lapses mid-session turns the whole app into
+    /// error alerts with Retry buttons that can only produce the same 403. The
+    /// answer is not to guess a screen: `GET /auth/me` deliberately stays open
+    /// so the client can find out *why* it was refused, and ``refreshUser()``
+    /// already turns that answer into a route.
+    ///
+    /// The one case worth spelling out is disagreement. If `/auth/me` still
+    /// says verified while other calls are refusing, the refusal is believed:
+    /// it is the more recent fact and the more restrictive one, and the wall at
+    /// least offers a way forward. Sitting on the feed re-erroring offers none.
+    public func reconcileVerification() async {
+        guard user != nil else { return }
+        await refreshUser()
+        guard route == .feed else { return }
+        analytics.track(.verificationGateTripped, properties: ["source": "disagreement"])
+        route = .verificationWall(.unstarted)
+    }
+
     /// Ends the session and returns to the welcome screen.
     public func signOut() async {
         isBusy = true

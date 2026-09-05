@@ -39,6 +39,28 @@ public final class ComposerService: ComposerServiceProtocol {
         return post
     }
 
+    public func uploadImage(_ data: Data) async throws -> String {
+        let token = try await tokens.accessToken()
+        var form = MultipartFormData()
+        // The filename is a label, not a promise — the server decides what the
+        // file is by decoding it, which is also what strips the EXIF.
+        form.appendFile(data, name: "file", filename: "image.jpg", mimeType: "image/jpeg")
+        let response = try await network.send(
+            APIRequest.multipart("/media/posts", method: .post, form: form, accessToken: token),
+            as: UploadedImage.self
+        )
+        analytics.track(.postImageUploaded, properties: ["bytes": String(data.count)])
+        return response.imageURL
+    }
+
+    private struct UploadedImage: Decodable {
+        let imageURL: String
+
+        private enum CodingKeys: String, CodingKey {
+            case imageURL = "imageUrl"
+        }
+    }
+
     /// What the post is, for analytics only — a reply, a quote or a root.
     private func kind(of draft: PostDraft) -> String {
         if draft.replyToPostId != nil { return "reply" }

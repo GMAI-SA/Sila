@@ -84,6 +84,9 @@ public enum AnalyticsEvent: String, Sendable {
     case composerDiscarded = "composer_discarded"
     /// One post reached the server (emitted by the service, per post).
     case postCreated = "post_created"
+    /// An image was uploaded for a post (emitted by the service). Carries only
+    /// its size — never the image, and never who it was of.
+    case postImageUploaded = "post_image_uploaded"
     case postDeleted = "post_deleted"
     /// A composition finished, counting every segment that got through.
     case postPublished = "post_published"
@@ -217,6 +220,16 @@ public enum AnalyticsEvent: String, Sendable {
     /// A second appeal was refused, and the screen showed the first one instead.
     case appealAlreadyOnFile = "appeal_already_on_file"
 
+    // MARK: Contract v9 — the verification gate
+
+    /// A call was refused `403 unverified`, and the app went back to `/auth/me`
+    /// to find out where the account really stands.
+    ///
+    /// Carries `source`. Anything but zero of these means sessions are running
+    /// on past their verification — which is legitimate (a revocation) but
+    /// worth being able to see.
+    case verificationGateTripped = "verification_gate_tripped"
+
     // MARK: Notifications
 
     /// A page of `GET /notifications` came back (emitted by the service).
@@ -230,6 +243,19 @@ public enum AnalyticsEvent: String, Sendable {
     case notificationsMarkedRead = "notifications_marked_read"
     /// One of the five notification switches was changed.
     case notificationPreferenceChanged = "notification_preference_changed"
+
+    // MARK: Messages
+
+    /// A direct message was sent (emitted by the service).
+    ///
+    /// Deliberately carries nothing about the message or its recipient. A
+    /// private conversation whose participants show up in an analytics event is
+    /// not private, whatever the body says.
+    case messageSent = "message_sent"
+    /// A request was accepted, moving a stranger's thread into the inbox.
+    case messageRequestAccepted = "message_request_accepted"
+    /// The conversation list was opened. Carries `folder`: `inbox` or `requests`.
+    case messagesOpened = "messages_opened"
 
     // MARK: Voice rooms
 

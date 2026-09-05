@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// The composer, presented as a sheet from the tab bar's centre `[+]`.
@@ -7,15 +8,16 @@ import SwiftUI
 /// ``ReplyComposerBar`` — a reply.
 ///
 /// > Note: The Phase-4 spec's toolbar listed Photo, Video, Poll and Schedule.
-/// > Contract v3 has no upload, poll or scheduling endpoint, so those buttons
-/// > are absent rather than present-and-dead. The **scope picker** takes the
-/// > centre of the screen instead, because on Sila the audience is the
-/// > product, not a setting.
+/// > Photo now exists — the server grew `POST /media/posts`. Video, Poll and
+/// > Schedule still have no endpoint behind them, so those buttons stay absent
+/// > rather than present-and-dead. The **scope picker** keeps the centre of the
+/// > screen, because on Sila the audience is the product, not a setting.
 @MainActor
 public struct ComposerSheetScreen: View {
 
     @Bindable private var viewModel: ComposerViewModel
     @FocusState private var focusedSegment: UUID?
+    @State private var picked: [PhotosPickerItem] = []
 
     /// - Parameter viewModel: Owns the draft and the posting chain.
     public init(viewModel: ComposerViewModel) {
@@ -38,6 +40,13 @@ public struct ComposerSheetScreen: View {
 
                     if let quoted = viewModel.context.quotedPost {
                         quotedSection(quoted)
+                    }
+
+                    // Only on a root post or a quote. A reply carries no
+                    // pictures, because the reply bar is one line by design and
+                    // a thumbnail strip inside it would make it something else.
+                    if viewModel.context.showsScopePicker {
+                        attachmentsSection
                     }
                 }
                 .padding(.horizontal, SLSpacing.lg)
@@ -66,6 +75,80 @@ public struct ComposerSheetScreen: View {
         }
         .tint(SLColor.primary)
         .interactiveDismissDisabled(viewModel.hasContent)
+    }
+
+    // MARK: - Attachments
+
+    /// Picked images, and the button that picks them.
+    ///
+    /// Each thumbnail carries its own remove button rather than a swipe or a
+    /// long press: attaching the wrong photograph is easy and undoing it should
+    /// not be a thing you have to discover.
+    @ViewBuilder
+    private var attachmentsSection: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            if !viewModel.attachments.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: SLSpacing.sm) {
+                        ForEach(Array(viewModel.attachments.enumerated()), id: \.element) { index, path in
+                            ZStack(alignment: .topTrailing) {
+                                AsyncImage(url: AppConfig.mediaURL(path)) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    SLColor.surface2
+                                }
+                                .frame(width: 88, height: 88)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: SLRadius.md, style: .continuous))
+
+                                Button {
+                                    viewModel.removeAttachment(at: index)
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 20))
+                                        .symbolRenderingMode(.palette)
+                                        .foregroundStyle(SLColor.textPrimary, SLColor.surface1)
+                                }
+                                .padding(SLSpacing.xs)
+                                .accessibilityLabel(Text(L10n.t("composer.images.remove")))
+                            }
+                        }
+                    }
+                }
+            }
+
+            HStack(spacing: SLSpacing.sm) {
+                PhotosPicker(
+                    selection: $picked,
+                    maxSelectionCount: ComposerConstants.maximumImages - viewModel.attachments.count,
+                    matching: .images
+                ) {
+                    Label(L10n.t("composer.images.add"), systemImage: "photo.on.rectangle")
+                        .font(SLFont.caption)
+                }
+                .disabled(viewModel.attachments.count >= ComposerConstants.maximumImages)
+                .accessibilityIdentifier("composer.addImage")
+
+                if viewModel.isUploadingImage {
+                    ProgressView()
+                        .tint(SLColor.primary)
+                        .accessibilityLabel(Text(L10n.t("composer.images.uploading")))
+                }
+            }
+        }
+        .onChange(of: picked) { _, items in
+            guard !items.isEmpty else { return }
+            picked = []
+            Task {
+                for item in items {
+                    // One at a time, so a failure names one picture rather than
+                    // abandoning the rest of the selection.
+                    if let data = try? await item.loadTransferable(type: Data.self) {
+                        await viewModel.attach(data)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Toolbar

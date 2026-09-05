@@ -7,6 +7,9 @@ public enum ComposerConstants {
 
     /// Maximum characters in one post. The server answers `text_too_long` above it.
     public static let characterLimit = FeedConstants.maximumPostLength
+    /// What the server accepts on one post; more are refused with
+    /// `too_many_images` rather than silently dropped.
+    public static let maximumImages = 4
 
     /// How many characters from the limit the counter starts warning.
     public static let warningThreshold = 20
@@ -43,16 +46,23 @@ public struct PostDraft: Equatable, Sendable {
     public var replyToPostId: UUID?
     /// Set when this post quotes another.
     public var quotedPostId: UUID?
+    /// Server paths from ``ComposerServiceProtocol/uploadImage(_:)``, at most
+    /// four. Paths rather than bytes: the images are already uploaded by the
+    /// time a draft is posted, which is what stops a failed picture from taking
+    /// somebody's words down with it.
+    public var imageURLs: [String]
 
     public init(
         text: String,
         scope: ComposeScope,
         replyToPostId: UUID? = nil,
-        quotedPostId: UUID? = nil
+        quotedPostId: UUID? = nil,
+        imageURLs: [String] = []
     ) {
         self.text = text
         self.scope = scope
         self.replyToPostId = replyToPostId
+        self.imageURLs = imageURLs
         self.quotedPostId = quotedPostId
     }
 
@@ -81,6 +91,10 @@ struct CreatePostBody: Encodable, Equatable {
     /// uppercase form, and the server's ids are lowercase everywhere else.
     let replyToPostId: String?
     let quotedPostId: String?
+    /// Omitted entirely when there are none, rather than sent as `[]`. The
+    /// server treats both the same, but a request body that states its empties
+    /// is a body whose logs cannot be read at a glance.
+    let imageUrls: [String]?
 
     init(draft: PostDraft) {
         self.text = draft.trimmedText
@@ -89,6 +103,7 @@ struct CreatePostBody: Encodable, Equatable {
         self.scopeRegion = draft.scope.scopeRegion
         self.replyToPostId = draft.replyToPostId?.uuidString.lowercased()
         self.quotedPostId = draft.quotedPostId?.uuidString.lowercased()
+        self.imageUrls = draft.imageURLs.isEmpty ? nil : draft.imageURLs
     }
 }
 

@@ -141,6 +141,11 @@ public struct PostCardView: View {
             postText
                 .padding(.leading, style == .detail ? 0 : 56)
 
+            if !post.imageURLs.isEmpty {
+                images
+                    .padding(.leading, style == .detail ? 0 : 56)
+            }
+
             if let quoted = post.quotedPost {
                 QuotedPostCard(post: quoted, onTap: { actions.onOpenQuoted(quoted) })
                     .padding(.leading, style == .detail ? 0 : 56)
@@ -291,6 +296,53 @@ public struct PostCardView: View {
     /// keep its full stop on the correct end — and the English post quoted
     /// underneath it still has to do the opposite. Forcing `.leading` here was
     /// the one line that made every Arabic post in the feed read wrong.
+    /// Attached images.
+    ///
+    /// One fills the width; two or more go in a grid. Every one keeps a fixed
+    /// aspect box so a feed does not reflow as pictures arrive — a timeline that
+    /// jumps while somebody is reading it costs them their place.
+    ///
+    /// No image is ever the whole post: the text is always above it, and a
+    /// picture that fails to load leaves the words behind rather than a broken
+    /// card.
+    @ViewBuilder
+    private var images: some View {
+        let urls = Array(post.imageURLs.prefix(4))
+        let columns = urls.count == 1 ? 1 : 2
+
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: SLSpacing.xs), count: columns),
+            spacing: SLSpacing.xs
+        ) {
+            ForEach(urls, id: \.self) { url in
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure:
+                        // Says what happened rather than showing a grey void.
+                        ZStack {
+                            SLColor.surface2
+                            Image(systemName: "photo")
+                                .foregroundStyle(SLColor.textMuted)
+                        }
+                        .accessibilityLabel(Text(L10n.t("post.image.failed")))
+                    default:
+                        SLColor.surface2
+                    }
+                }
+                .frame(height: urls.count == 1 ? 220 : 140)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: SLRadius.md, style: .continuous))
+                .accessibilityAddTraits(.isImage)
+            }
+        }
+        .accessibilityLabel(Text(L10n.plural("post.image.count", urls.count)))
+    }
+
     private var postText: some View {
         Text(attributedText)
             .font(style == .detail ? SLFont.displayM : SLFont.body)

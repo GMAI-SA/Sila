@@ -84,6 +84,51 @@ public struct HomeScreen: View {
         .tnToast($viewModel.toast)
     }
 
+    // MARK: - Writing
+
+    /// Tap-to-write, at the top of the feed.
+    ///
+    /// This replaced a raised `+` in the middle of the tab bar. The bar's job
+    /// is moving between places; writing is not a place, and a control that
+    /// looked like a sixth tab but never highlighted was the one item in the
+    /// bar whose behaviour you had to learn. Here the same action sits in the
+    /// timeline it acts on, reads as what it does, and leaves the bar as five
+    /// destinations that all behave alike.
+    ///
+    /// It scrolls away with the feed on purpose. Somebody reading is reading;
+    /// pull down — the gesture that already refreshes — brings it back.
+    @ViewBuilder
+    private var composeRow: some View {
+        if onCompose != nil {
+            Button {
+                compose(.newPost, fallback: MainTabView.StubFeature.composing)
+            } label: {
+                HStack(spacing: SLSpacing.md) {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(SLColor.primary)
+
+                    Text(L10n.t("feed.composeRow.placeholder"))
+                        .font(SLFont.body)
+                        .foregroundStyle(SLColor.textMuted)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, SLSpacing.lg)
+                .padding(.vertical, SLSpacing.md)
+                .background(SLColor.surface2)
+                .clipShape(RoundedRectangle(cornerRadius: SLRadius.lg, style: .continuous))
+                .padding(.horizontal, SLSpacing.lg)
+                .padding(.vertical, SLSpacing.md)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("feed.composeRow")
+            .accessibilityLabel(Text(L10n.t("feed.composeRow.a11yLabel")))
+            .accessibilityHint(Text(L10n.t("feed.composeRow.hint")))
+        }
+    }
+
     // MARK: - Preferences entry point
 
     /// A link to the topic controls, on the one feed they affect.
@@ -128,11 +173,17 @@ public struct HomeScreen: View {
         let state = viewModel.state(for: tab)
 
         ScrollView {
+            // Above every state, including the empty one and the skeleton:
+            // writing is the one thing that must not wait for a feed to load,
+            // and an account whose feed is empty is exactly the account that
+            // needs somewhere to start.
+            composeRow
+
             if state.isLoading && !state.isPopulated {
                 skeleton
             } else if let empty = state.emptyKind, !state.isPopulated {
                 emptyState(empty, tab: tab)
-                    .padding(.top, SLSpacing.xxl * 2)
+                    .padding(.top, SLSpacing.xxl)
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(state.posts) { post in

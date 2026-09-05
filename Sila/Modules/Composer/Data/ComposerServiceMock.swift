@@ -61,6 +61,15 @@ public actor ComposerServiceMock: ComposerServiceProtocol {
 
     // MARK: - ComposerServiceProtocol
 
+    /// Hands back a path shaped like the server's, so a screen that assumed a
+    /// full URL fails here rather than in front of somebody.
+    public func uploadImage(_ data: Data) async throws -> String {
+        guard !data.isEmpty else {
+            throw APIError.api(code: .invalidImage, message: "That file could not be read as an image", status: 400)
+        }
+        return "/api/v1/media/posts/mock-\(UUID().uuidString.prefix(8)).jpg"
+    }
+
     public func createPost(_ draft: PostDraft) async throws -> Post {
         receivedDrafts.append(draft)
         if latency > 0 {

@@ -51,13 +51,27 @@ final class ComposerJourneyUITests: XCTestCase {
         )
     }
 
-    /// The centre `[+]` opens a real composer, offers the scope picker, and
-    /// posts — the thing that used to be a toast saying "later release".
+    /// Opens the composer the way a person does: the row at the top of the
+    /// feed. Fails loudly rather than silently doing nothing, because a missing
+    /// entry point is precisely the regression worth catching here.
+    private func openComposer(_ app: XCUIApplication) {
+        let row = app.descendants(matching: .any)["feed.composeRow"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "the feed has no compose row")
+        row.tap()
+    }
+
+    /// The feed's compose row opens a real composer, offers the scope picker,
+    /// and posts — the thing that used to be a toast saying "later release".
+    ///
+    /// Driven by identifier, not by the label "Post": that label belongs to the
+    /// composer's own submit button too, and matching it by text is what made
+    /// the old version of this test need a comment explaining which "Post" it
+    /// meant.
     func testComposeButtonOpensTheComposerAndPostingClosesIt() throws {
         let app = launchApp()
         signIn(app)
 
-        app.buttons["Post"].firstMatch.tap()
+        openComposer(app)
 
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "the composer sheet never appeared")
@@ -77,7 +91,6 @@ final class ComposerJourneyUITests: XCTestCase {
 
         editor.tap()
         editor.typeText("Posting from a UI test.")
-        // The sheet's own toolbar button, not the tab bar's behind it.
         app.navigationBars.buttons["Post"].firstMatch.tap()
 
         XCTAssertTrue(
@@ -92,7 +105,7 @@ final class ComposerJourneyUITests: XCTestCase {
         let app = launchApp()
         signIn(app)
 
-        app.buttons["Post"].firstMatch.tap()
+        openComposer(app)
 
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
