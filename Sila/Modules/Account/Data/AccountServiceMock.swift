@@ -118,7 +118,8 @@ public actor AccountServiceMock: AccountServiceProtocol {
             countryCode: stored.countryCode,
             verificationStatus: stored.verificationStatus,
             deletionRequestedAt: stored.deletionRequestedAt,
-            purgeAfter: stored.purgeAfter
+            purgeAfter: stored.purgeAfter,
+            isPrivate: update.isPrivate ?? stored.isPrivate
         )
         return stored
     }

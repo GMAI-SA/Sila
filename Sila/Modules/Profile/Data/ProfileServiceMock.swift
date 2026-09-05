@@ -40,6 +40,9 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
         /// A second device followed the same account in the meantime, so the
         /// server's count is **two** higher than the local `+1` predicted.
         case followedElsewhere
+        /// Every account is private, and the viewer follows none of them: a
+        /// follow becomes a request, and a stranger's timeline is a wall.
+        case privateAccount
     }
 
     /// The scenario currently being played.
@@ -53,6 +56,12 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
 
     /// Follow state, keyed by handle, mutated by accepted writes.
     private var following: Set<String> = []
+
+    /// Requests the viewer has made to private accounts, keyed by handle.
+    private var pending: Set<String> = []
+
+    /// Handles waiting to follow the **viewer**, newest first.
+    private var incoming: [String] = []
 
     /// Follower counts, keyed by handle. Mutated the way the server would.
     private var followerCounts: [String: Int] = [:]
@@ -87,6 +96,11 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
         following = Set(handles.map(Handle.normalised))
     }
 
+    /// Pre-seeds people waiting to follow the viewer.
+    public func setIncomingRequests(_ handles: [String]) {
+        incoming = handles.map(Handle.normalised)
+    }
+
     // MARK: - ProfileServiceProtocol
 
     public func fetchProfile(handle: String) async throws -> Profile {
@@ -96,14 +110,20 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
         let user = try person(handle)
         let key = user.handle
         let isMe = key == viewerHandle
+        let isPrivate = scenario == .privateAccount
+        let isFollowing = following.contains(key)
         return Profile(
             user: user,
             bio: scenario == .empty ? nil : Self.bios[key],
             postCount: try posts(for: key).count,
             followerCount: followerCounts[key] ?? 0,
             followingCount: Self.followingCounts[key] ?? 0,
-            isFollowing: following.contains(key),
-            isMe: isMe
+            isFollowing: isFollowing,
+            isMe: isMe,
+            isPrivate: isPrivate,
+            isRequested: pending.contains(key),
+            canViewPosts: isMe || !isPrivate || isFollowing,
+            followRequestCount: isMe ? incoming.count : nil
         )
     }
 
@@ -112,6 +132,11 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
         try await delay()
         try failIfOffline()
         let user = try person(handle)
+        // The server answers a stranger's request for a private timeline with
+        // an empty page rather than an error; so does this.
+        if scenario == .privateAccount, user.handle != viewerHandle, !following.contains(user.handle) {
+            return .empty
+        }
         // One page is enough for every fixture account; a cursor that arrives
         // anyway gets the honest end-of-list answer rather than a repeat.
         guard cursor == nil else { return .empty }
@@ -135,6 +160,16 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
 
         let wasFollowing = self.following.contains(key)
         var count = followerCounts[key] ?? 0
+
+        // A private account answers a follow with a request. The count does
+        // not move, and the row is the owner's to flip.
+        if scenario == .privateAccount, following, !wasFollowing {
+            pending.insert(key)
+            return FollowResult(following: false, followerCount: count, requested: true)
+        }
+        if !following {
+            pending.remove(key)
+        }
         if following, !wasFollowing {
             count += 1
         } else if !following, wasFollowing {
@@ -154,6 +189,27 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
         }
         followerCounts[key] = count
         return FollowResult(following: following, followerCount: count)
+    }
+
+    public func fetchFollowRequests() async throws -> [FollowRequest] {
+        record("fetchFollowRequests")
+        try await delay()
+        try failIfOffline()
+        return try incoming.map { FollowRequest(user: try person($0)) }
+    }
+
+    public func answerFollowRequest(handle: String, accept: Bool) async throws {
+        let key = Handle.normalised(handle)
+        record("answerFollowRequest:\(accept ? "accept" : "decline"):\(key)")
+        try await delay()
+        try failIfOffline()
+        guard let index = incoming.firstIndex(of: key) else {
+            throw APIError.api(code: .notFound, message: "No pending request from that account", status: 404)
+        }
+        incoming.remove(at: index)
+        if accept {
+            followerCounts[viewerHandle, default: 0] += 1
+        }
     }
 
     // MARK: - Fixture world

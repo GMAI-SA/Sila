@@ -45,7 +45,8 @@ public final class AccountService: AccountServiceProtocol {
         analytics.track(.accountProfileSaved, properties: [
             "handle": String(update.handle != nil),
             "display_name": String(update.displayName != nil),
-            "bio": String(update.bio != nil)
+            "bio": String(update.bio != nil),
+            "is_private": String(update.isPrivate != nil)
         ])
         return try await fetchAccount()
     }

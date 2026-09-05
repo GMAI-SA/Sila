@@ -293,4 +293,19 @@ final class NotificationModelsTests: XCTestCase {
             XCTAssertFalse(copy.contains(phrase), "the settings copy promises \(phrase)")
         }
     }
+
+    // MARK: - Follow requests
+
+    func testTheTwoRequestKindsDecodeAndSpeakForThemselves() throws {
+        let asked = try decode(UserNotification.self, Self.row(kind: "follow_request", postId: nil, excerpt: nil))
+        XCTAssertEqual(asked.kind, .followRequest)
+        XCTAssertFalse(asked.kind.isAboutAPost)
+        XCTAssertTrue(asked.sentence.contains("Faisal"))
+
+        let letIn = try decode(UserNotification.self, Self.row(kind: "follow_accepted", postId: nil, excerpt: nil))
+        XCTAssertEqual(letIn.kind, .followAccepted)
+        XCTAssertNotEqual(asked.sentence, letIn.sentence, "asking and being let in are different news")
+        XCTAssertNotEqual(letIn.sentence, NotificationCopy.sentence(.follow, actor: "Faisal"))
+    }
 }
+

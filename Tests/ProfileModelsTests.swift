@@ -264,4 +264,105 @@ final class ProfileModelsTests: XCTestCase {
         XCTAssertEqual(ProfileCopy.followTitle(isFollowing: false), "Follow")
         XCTAssertEqual(ProfileCopy.followTitle(isFollowing: true), "Following")
     }
+
+    // MARK: - Private accounts
+
+    private static let privateProfile = """
+    {
+      "user": {"id": "2c3ff295-050b-4193-8eea-98f5cf1f92f2", "handle": "yuki",
+               "display_name": "Yuki Tanaka", "avatar_url": null, "is_verified": true,
+               "country_code": "JP", "verified_since": null, "is_private": true},
+      "bio": "Tokyo.", "post_count": 3, "follower_count": 12, "following_count": 4,
+      "is_following": false, "is_me": false,
+      "is_private": true, "is_requested": true, "can_view_posts": false,
+      "follow_request_count": null
+    }
+    """
+
+    func testAPrivateProfileDecodesItsThreeAnswers() throws {
+        let profile: Profile = try decode(Self.privateProfile)
+        XCTAssertTrue(profile.isPrivate)
+        XCTAssertTrue(profile.isRequested)
+        XCTAssertFalse(profile.canViewPosts)
+        XCTAssertNil(profile.followRequestCount)
+        XCTAssertEqual(profile.bio, "Tokyo.", "the header stays readable; only the posts are held back")
+    }
+
+    func testAServerWithoutPrivateAccountsHidesNothing() throws {
+        // `can_view_posts` absent means the server predates the feature and
+        // never held anything back — so nothing is walled off retroactively.
+        let profile: Profile = try decode(Self.verifiedProfile)
+        XCTAssertFalse(profile.isPrivate)
+        XCTAssertFalse(profile.isRequested)
+        XCTAssertTrue(profile.canViewPosts)
+    }
+
+    func testTheRequestCountIsOnlyEverYourOwn() throws {
+        let mine: Profile = try decode(Self.privateProfile.replacingOccurrences(
+            of: "\"is_me\": false", with: "\"is_me\": true"
+        ).replacingOccurrences(of: "\"follow_request_count\": null", with: "\"follow_request_count\": 4"))
+        XCTAssertEqual(mine.followRequestCount, 4)
+        XCTAssertFalse(mine.isRequested, "you cannot be waiting on yourself")
+
+        let theirs: Profile = try decode(Self.privateProfile.replacingOccurrences(
+            of: "\"follow_request_count\": null", with: "\"follow_request_count\": 4"
+        ))
+        XCTAssertNil(theirs.followRequestCount, "somebody else's queue is not shown, whatever the server sent")
+    }
+
+    func testPredictingAFollowOnAPrivateAccountPredictsARequest() {
+        let profile = Profile(user: FeedServiceMock.yuki, followerCount: 12, isPrivate: true)
+        let predicted = profile.predicting(following: true)
+        XCTAssertTrue(predicted.isRequested)
+        XCTAssertFalse(predicted.isFollowing)
+        XCTAssertEqual(predicted.followerCount, 12, "nothing is granted until the owner decides")
+        XCTAssertFalse(predicted.canViewPosts)
+
+        let withdrawn = predicted.predicting(following: false)
+        XCTAssertFalse(withdrawn.isRequested)
+        XCTAssertEqual(withdrawn.followerCount, 12)
+    }
+
+    func testReconcilingAdoptsTheServersRequestedFlagAndLowersTheWallOnApproval() {
+        let profile = Profile(user: FeedServiceMock.yuki, followerCount: 12, isPrivate: true)
+        let requested = profile.reconciled(with: FollowResult(following: false, followerCount: 12, requested: true))
+        XCTAssertTrue(requested.isRequested)
+        XCTAssertFalse(requested.canViewPosts)
+
+        let approved = profile.reconciled(with: FollowResult(following: true, followerCount: 13))
+        XCTAssertTrue(approved.isFollowing)
+        XCTAssertFalse(approved.isRequested)
+        XCTAssertTrue(approved.canViewPosts, "being let in is being let in")
+    }
+
+    func testAFollowResultCannotBeBothFollowingAndRequested() throws {
+        let result: FollowResult = try decode(#"{"following": true, "requested": true, "follower_count": 1}"#)
+        XCTAssertTrue(result.following)
+        XCTAssertFalse(result.requested)
+        let asked: FollowResult = try decode(#"{"following": false, "requested": true, "follower_count": 1}"#)
+        XCTAssertTrue(asked.requested)
+    }
+
+    func testTheWaitingListSkipsABadRowRatherThanBlanking() throws {
+        let page: FollowRequestsPage = try decode("""
+        {"requests": [
+          {"user": {"id": "2c3ff295-050b-4193-8eea-98f5cf1f92f2", "handle": "maria", "display_name": "Maria",
+                    "avatar_url": null, "is_verified": true, "country_code": "BR", "verified_since": null},
+           "created_at": "2026-09-05T10:00:00Z"},
+          {"user": null}
+        ]}
+        """)
+        XCTAssertEqual(page.requests.map(\.user.handle), ["maria"])
+        XCTAssertNotNil(page.requests[0].createdAt)
+    }
+
+    func testTheFollowLabelHasThreeStatesNotTwo() {
+        XCTAssertEqual(ProfileCopy.followTitle(isFollowing: false, isRequested: true), "Requested")
+        XCTAssertNotEqual(ProfileCopy.followTitle(isFollowing: false, isRequested: true),
+                          ProfileCopy.followTitle(isFollowing: true))
+        XCTAssertFalse(ProfileCopy.privateSubtitle(for: "Yuki").lowercased().contains("hidden"),
+                       "the header the reader is looking at proves the account is not hiding")
+        XCTAssertTrue(ProfileCopy.privateSubtitle(for: "Yuki").contains("Yuki"))
+    }
 }
+

@@ -325,6 +325,30 @@ public struct AccountScreen: View {
                     )))
             }
 
+            // A preference about who may *read*, not about who may find: the
+            // name, handle and bio stay public so the account can be asked.
+            // The one consequence people do not expect — going public lets
+            // in everyone waiting — is said before it happens, not after.
+            Toggle(isOn: $viewModel.profileDraft.isPrivate) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.t("account.profile.private.label"))
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.textPrimary)
+                    Text(L10n.t("account.profile.private.hint"))
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if viewModel.account?.isPrivate == true, !viewModel.profileDraft.isPrivate {
+                        Text(L10n.t("account.profile.private.goingPublic"))
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.warning)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .tint(SLColor.primary)
+            .accessibilityIdentifier("account.profile.private")
+
             if let error = viewModel.profileValidationError ?? viewModel.profileError {
                 inlineError(error)
             }

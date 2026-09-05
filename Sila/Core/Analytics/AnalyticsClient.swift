@@ -220,6 +220,14 @@ public enum AnalyticsEvent: String, Sendable {
     /// A second appeal was refused, and the screen showed the first one instead.
     case appealAlreadyOnFile = "appeal_already_on_file"
 
+    // MARK: Contract v10 — private accounts
+
+    /// The owner of a private account let somebody in.
+    case followRequestAccepted = "follow_request_accepted"
+    /// The owner said no. Carries nothing about who — the decline is silent
+    /// to the requester, and telemetry must not be the place it leaks.
+    case followRequestDeclined = "follow_request_declined"
+
     // MARK: Contract v9 — the verification gate
 
     /// A call was refused `403 unverified`, and the app went back to `/auth/me`

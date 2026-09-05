@@ -67,6 +67,29 @@ public final class ProfileService: ProfileServiceProtocol {
         return result
     }
 
+    // MARK: - Follow requests
+
+    public func fetchFollowRequests() async throws -> [FollowRequest] {
+        let token = try await tokens.accessToken()
+        let page = try await network.send(
+            APIRequest(path: "/me/follow-requests", accessToken: token),
+            as: FollowRequestsPage.self
+        )
+        return page.requests
+    }
+
+    public func answerFollowRequest(handle: String, accept: Bool) async throws {
+        let token = try await tokens.accessToken()
+        try await network.send(
+            APIRequest(
+                path: "/me/follow-requests/\(try component(handle))/\(accept ? "accept" : "decline")",
+                method: .post,
+                accessToken: token
+            )
+        )
+        analytics.track(accept ? .followRequestAccepted : .followRequestDeclined)
+    }
+
     // MARK: - Plumbing
 
     /// The handle as a safe path component.

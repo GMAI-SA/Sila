@@ -22,6 +22,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case reply
     /// Somebody put the viewer's handle in a post.
     case mention
+    /// Somebody asked to follow the viewer's private account. No post behind it.
+    case followRequest = "follow_request"
+    /// A private account let the viewer in. No post behind it either.
+    case followAccepted = "follow_accepted"
     /// A kind this build does not recognise.
     case unknown
 
@@ -42,7 +46,12 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     ///
     /// A follow is the only one that is not, which is why it is the only one
     /// whose `post_id` is legitimately `null`.
-    public var isAboutAPost: Bool { self != .follow && self != .unknown }
+    public var isAboutAPost: Bool {
+        switch self {
+        case .follow, .followRequest, .followAccepted, .unknown: return false
+        case .like, .repost, .reply, .mention: return true
+        }
+    }
 
     /// SF Symbol for the row's kind marker.
     public var icon: String {
@@ -52,6 +61,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .repost: return "arrow.2.squarepath"
         case .reply: return "arrowshape.turn.up.left.fill"
         case .mention: return "at"
+        case .followRequest: return "person.crop.circle.badge.questionmark"
+        case .followAccepted: return "person.crop.circle.badge.checkmark"
         case .unknown: return "bell"
         }
     }
@@ -64,6 +75,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .repost: return SLColor.secondary
         case .reply: return SLColor.primary
         case .mention: return SLColor.warning
+        case .followRequest: return SLColor.primary
+        case .followAccepted: return SLColor.secondary
         case .unknown: return SLColor.textSecondary
         }
     }
@@ -76,6 +89,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .repost: return L10n.t("notifications.kind.repost.title")
         case .reply: return L10n.t("notifications.kind.reply.title")
         case .mention: return L10n.t("notifications.kind.mention.title")
+        case .followRequest: return L10n.t("notifications.kind.followRequest.title")
+        case .followAccepted: return L10n.t("notifications.kind.followAccepted.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -97,6 +112,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.reply.detail")
         case .mention:
             return L10n.t("notifications.kind.mention.detail")
+        case .followRequest:
+            return L10n.t("notifications.kind.followRequest.detail")
+        case .followAccepted:
+            return L10n.t("notifications.kind.followAccepted.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -402,6 +421,8 @@ public enum NotificationCopy {
         case .repost: return L10n.t("notifications.sentence.repost", name)
         case .reply: return L10n.t("notifications.sentence.reply", name)
         case .mention: return L10n.t("notifications.sentence.mention", name)
+        case .followRequest: return L10n.t("notifications.sentence.followRequest", name)
+        case .followAccepted: return L10n.t("notifications.sentence.followAccepted", name)
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.

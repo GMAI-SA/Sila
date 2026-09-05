@@ -70,6 +70,8 @@ public struct ProfileScreen: View {
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// The waiting list, presented over the viewer's own private profile.
+    @State private var isShowingRequests = false
 
     /// - Parameters:
     ///   - viewModel: Owns the profile and the timeline.
@@ -108,6 +110,9 @@ public struct ProfileScreen: View {
 
     public var body: some View {
         content
+            .sheet(isPresented: $isShowingRequests) {
+                FollowRequestsSheet(viewModel: viewModel)
+            }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .tnScreenBackground()
             .task {
@@ -248,6 +253,22 @@ public struct ProfileScreen: View {
 
                 if viewModel.isBlocked {
                     blockedPanel
+
+                } else if viewModel.showsPrivateWall {
+                    // Where the timeline would be. It names what is held back
+                    // and how to ask; it never claims the account is hiding,
+                    // because the header just above proves it is not.
+                    SLEmptyState(
+                        icon: "lock.fill",
+                        title: ProfileCopy.privateTitle,
+                        subtitle: ProfileCopy.privateSubtitle(
+                            for: viewModel.profile?.displayName ?? viewModel.handle
+                        ),
+                        tint: SLColor.textSecondary
+                    )
+                    .padding(.horizontal, SLSpacing.lg)
+                    .padding(.vertical, SLSpacing.xl)
+                    .accessibilityIdentifier("profile.privateWall")
 
                 } else if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
                     VStack(spacing: SLSpacing.lg) {
@@ -430,6 +451,14 @@ public struct ProfileScreen: View {
                         if profile.user.isVerified {
                             SLVerifiedBadge(size: 20, isPulsing: false)
                         }
+
+                        // A preference, not a warning — drawn muted, beside
+                        // the name, so a reader knows before they follow.
+                        if profile.isPrivate {
+                            SLBadge(ProfileCopy.privateBadge, style: .neutral, icon: "lock.fill")
+                                .accessibilityLabel(Text(L10n.t("profile.private.badge.accessibilityLabel")))
+                                .accessibilityIdentifier("profile.private")
+                        }
                     }
 
                     HStack(spacing: SLSpacing.sm) {
@@ -568,6 +597,21 @@ public struct ProfileScreen: View {
     private var ownerSection: some View {
         if !ownerActions.isEmpty, viewModel.isOwnProfile {
             VStack(spacing: SLSpacing.md) {
+                // Only a private account has a waiting list; a public one
+                // approves nobody because it refuses nobody.
+                if viewModel.profile?.isPrivate == true {
+                    settingsEntry(
+                        icon: "person.crop.circle.badge.questionmark",
+                        title: L10n.t("profile.requests.title"),
+                        detail: L10n.plural(
+                            "profile.requests.detail",
+                            viewModel.profile?.followRequestCount ?? 0
+                        ),
+                        hint: L10n.t("profile.requests.hint"),
+                        open: { isShowingRequests = true }
+                    )
+                }
+
                 if let open = ownerActions.onOpenAccount {
                     settingsEntry(
                         icon: "person.text.rectangle",

@@ -41,6 +41,8 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
     public let deletionRequestedAt: Date?
     /// When the data is destroyed for good, or `nil`.
     public let purgeAfter: Date?
+    /// Posts held back from everyone but approved followers.
+    public let isPrivate: Bool
 
     /// Creates an account record.
     public init(
@@ -54,7 +56,8 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
         countryCode: String? = nil,
         verificationStatus: VerificationStatus = .unstarted,
         deletionRequestedAt: Date? = nil,
-        purgeAfter: Date? = nil
+        purgeAfter: Date? = nil,
+        isPrivate: Bool = false
     ) {
         self.id = id
         self.email = email
@@ -67,6 +70,7 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
         self.verificationStatus = verificationStatus
         self.deletionRequestedAt = deletionRequestedAt
         self.purgeAfter = purgeAfter
+        self.isPrivate = isPrivate
     }
 
     /// Explicit keys are mandatory because ``init(from:)`` is custom; the raw
@@ -76,7 +80,7 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case id, email, handle, displayName, bio, phone, countryCode, verificationStatus
         case avatarPath = "avatarUrl"
-        case deletionRequestedAt, purgeAfter
+        case deletionRequestedAt, purgeAfter, isPrivate
     }
 
     /// Tolerant decoder: a settings screen that refuses to open because one
@@ -93,6 +97,8 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
         handle = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .handle))
         displayName = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .displayName))
         bio = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .bio))
+        // Absent on a server that predates private accounts: public, then.
+        isPrivate = ((try? container.decodeIfPresent(Bool.self, forKey: .isPrivate)) ?? nil) ?? false
         avatarPath = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .avatarPath))
         phone = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .phone))
         countryCode = CountryCode.normalised(
@@ -179,15 +185,27 @@ public struct ProfileUpdate: Encodable, Equatable, Sendable {
     public var handle: String?
     /// New bio, or `nil` to leave it alone.
     public var bio: String?
+    /// Close the posts to everyone but approved followers (`true`), reopen
+    /// them (`false`), or leave it alone (`nil`). Reopening approves every
+    /// pending request server-side.
+    public var isPrivate: Bool?
 
-    public init(displayName: String? = nil, handle: String? = nil, bio: String? = nil) {
+    public init(
+        displayName: String? = nil,
+        handle: String? = nil,
+        bio: String? = nil,
+        isPrivate: Bool? = nil
+    ) {
         self.displayName = displayName
         self.handle = handle
         self.bio = bio
+        self.isPrivate = isPrivate
     }
 
     /// `true` when the body would change nothing.
-    public var isEmpty: Bool { displayName == nil && handle == nil && bio == nil }
+    public var isEmpty: Bool {
+        displayName == nil && handle == nil && bio == nil && isPrivate == nil
+    }
 
     /// The fields of `edited` that differ from `stored`.
     ///
@@ -208,6 +226,9 @@ public struct ProfileUpdate: Encodable, Equatable, Sendable {
         if edited.bio != (stored.bio ?? "") {
             update.bio = edited.bio
         }
+        if edited.isPrivate != stored.isPrivate {
+            update.isPrivate = edited.isPrivate
+        }
         return update
     }
 }
@@ -221,11 +242,14 @@ public struct ProfileDraft: Equatable, Sendable {
     public var handle: String
     /// Bio as typed.
     public var bio: String
+    /// The private switch, as set.
+    public var isPrivate: Bool
 
-    public init(displayName: String = "", handle: String = "", bio: String = "") {
+    public init(displayName: String = "", handle: String = "", bio: String = "", isPrivate: Bool = false) {
         self.displayName = displayName
         self.handle = handle
         self.bio = bio
+        self.isPrivate = isPrivate
     }
 
     /// The draft that matches an account exactly.
@@ -233,6 +257,7 @@ public struct ProfileDraft: Equatable, Sendable {
         self.displayName = account.displayName ?? ""
         self.handle = account.handle ?? ""
         self.bio = account.bio ?? ""
+        self.isPrivate = account.isPrivate
     }
 
     /// A copy with whitespace stripped and the handle lowercased — the exact
@@ -242,7 +267,8 @@ public struct ProfileDraft: Equatable, Sendable {
         ProfileDraft(
             displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
             handle: handle.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
-            bio: bio.trimmingCharacters(in: .whitespacesAndNewlines)
+            bio: bio.trimmingCharacters(in: .whitespacesAndNewlines),
+            isPrivate: isPrivate
         )
     }
 

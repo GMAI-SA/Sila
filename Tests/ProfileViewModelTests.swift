@@ -36,6 +36,22 @@ final class ScriptedProfileService: ProfileServiceProtocol, @unchecked Sendable 
     private(set) var cursors: [String?] = []
     private(set) var followCalls: [(following: Bool, handle: String)] = []
 
+    /// What `fetchFollowRequests` answers.
+    var followRequests: [FollowRequest] = []
+    /// When set, `answerFollowRequest` fails.
+    var answerError: APIError?
+    private(set) var answerCalls: [(handle: String, accept: Bool)] = []
+
+    func fetchFollowRequests() async throws -> [FollowRequest] {
+        followRequests
+    }
+
+    func answerFollowRequest(handle: String, accept: Bool) async throws {
+        answerCalls.append((handle, accept))
+        if let answerError { throw answerError }
+        followRequests.removeAll { $0.user.handle == handle }
+    }
+
     func fetchProfile(handle: String) async throws -> Profile {
         profileFetches += 1
         if let profileError { throw profileError }
@@ -495,4 +511,123 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.posts.first?.viewer.bookmarked ?? false)
         XCTAssertEqual(viewModel.posts.first?.metrics.bookmarks, post.metrics.bookmarks + 1)
     }
+
+    // MARK: - Private accounts
+
+    private static func privateProfile(isRequested: Bool = false, isFollowing: Bool = false) -> Profile {
+        Profile(
+            user: FeedServiceMock.yuki,
+            bio: "Tokyo.",
+            postCount: 2,
+            followerCount: 12,
+            followingCount: 4,
+            isFollowing: isFollowing,
+            isMe: false,
+            isPrivate: true,
+            isRequested: isRequested
+        )
+    }
+
+    func testFollowingAPrivateAccountBecomesARequestAndMovesNoCount() async {
+        let service = ScriptedProfileService()
+        service.profile = Self.privateProfile()
+        service.followResult = FollowResult(following: false, followerCount: 12, requested: true)
+        let viewModel = makeViewModel(service)
+        await viewModel.load()
+        XCTAssertTrue(viewModel.showsPrivateWall, "a stranger sees the wall, not the timeline")
+
+        await viewModel.toggleFollow()
+
+        XCTAssertEqual(service.followCalls.map(\.following), [true])
+        XCTAssertEqual(viewModel.profile?.isRequested, true)
+        XCTAssertEqual(viewModel.profile?.isFollowing, false)
+        XCTAssertEqual(viewModel.profile?.followerCount, 12, "nothing was granted; nothing is counted")
+        XCTAssertEqual(viewModel.followButtonTitle, ProfileCopy.followTitle(isFollowing: false, isRequested: true))
+        XCTAssertTrue(viewModel.showsPrivateWall, "asking is not being let in")
+    }
+
+    func testTheSecondTapWithdrawsTheRequest() async {
+        let service = ScriptedProfileService()
+        service.profile = Self.privateProfile(isRequested: true)
+        service.followResult = FollowResult(following: false, followerCount: 12)
+        let viewModel = makeViewModel(service)
+        await viewModel.load()
+
+        await viewModel.toggleFollow()
+
+        XCTAssertEqual(service.followCalls.map(\.following), [false], "Requested → tap = withdraw")
+        XCTAssertEqual(viewModel.profile?.isRequested, false)
+        XCTAssertEqual(viewModel.profile?.isFollowing, false)
+    }
+
+    func testAnInstantApprovalBringsTheWallDownAndFetchesTheTimeline() async {
+        // The account went public between the page load and the tap: the
+        // server answers a plain follow, and the posts it was hiding are fetched
+        // now rather than on the next visit.
+        let service = ScriptedProfileService()
+        service.profile = Self.privateProfile()
+        service.followResult = FollowResult(following: true, followerCount: 13)
+        let viewModel = makeViewModel(service)
+        await viewModel.load()
+        let fetchesBefore = service.profileFetches
+        // What the server says once the follow has landed: the reload reads
+        // this, and it is the server's answer — not the reconciled guess —
+        // that decides whether the wall stays.
+        service.profile = Self.privateProfile(isFollowing: true)
+
+        await viewModel.toggleFollow()
+
+        XCTAssertFalse(viewModel.showsPrivateWall)
+        XCTAssertGreaterThan(service.profileFetches, fetchesBefore, "reloaded after being let in")
+    }
+
+    func testTheWaitingListIsOnlyEverFetchedForYourOwnProfile() async {
+        let service = ScriptedProfileService()
+        service.followRequests = [FollowRequest(user: FeedServiceMock.maria)]
+        let stranger = makeViewModel(service, handle: "yuki", viewerHandle: "aziz")
+        await stranger.loadFollowRequests()
+        XCTAssertTrue(stranger.followRequests.isEmpty, "not yours to see")
+
+        service.profile = Profile(user: FeedServiceMock.aziz, isMe: true, isPrivate: true, followRequestCount: 1)
+        let own = makeViewModel(service, handle: "aziz", viewerHandle: "aziz")
+        await own.load()
+        await own.loadFollowRequests()
+        XCTAssertEqual(own.followRequests.map(\.user.handle), ["maria"])
+    }
+
+    func testAnsweringARequestRemovesTheRowAndAcceptingReloadsTheCount() async {
+        let service = ScriptedProfileService()
+        service.profile = Profile(user: FeedServiceMock.aziz, followerCount: 3, isMe: true, isPrivate: true, followRequestCount: 2)
+        service.followRequests = [FollowRequest(user: FeedServiceMock.maria), FollowRequest(user: FeedServiceMock.noor)]
+        let viewModel = makeViewModel(service, handle: "aziz", viewerHandle: "aziz")
+        await viewModel.load()
+        await viewModel.loadFollowRequests()
+        let fetchesBefore = service.profileFetches
+
+        await viewModel.answer(viewModel.followRequests[0], accept: false)
+        XCTAssertEqual(service.answerCalls.map(\.accept), [false])
+        XCTAssertEqual(viewModel.followRequests.map(\.user.handle), ["noor"])
+        XCTAssertEqual(service.profileFetches, fetchesBefore, "declining changes no count")
+
+        await viewModel.answer(viewModel.followRequests[0], accept: true)
+        XCTAssertEqual(service.answerCalls.map(\.accept), [false, true])
+        XCTAssertTrue(viewModel.followRequests.isEmpty)
+        XCTAssertGreaterThan(service.profileFetches, fetchesBefore, "the server's count replaces the old one")
+    }
+
+    func testARequestAnsweredElsewhereIsSimplyGone() async {
+        let service = ScriptedProfileService()
+        service.profile = Profile(user: FeedServiceMock.aziz, isMe: true, isPrivate: true)
+        service.followRequests = [FollowRequest(user: FeedServiceMock.maria)]
+        service.answerError = .api(code: .notFound, message: "No pending request from that account", status: 404)
+        let viewModel = makeViewModel(service, handle: "aziz", viewerHandle: "aziz")
+        await viewModel.load()
+        await viewModel.loadFollowRequests()
+
+        await viewModel.answer(viewModel.followRequests[0], accept: true)
+
+        XCTAssertTrue(viewModel.followRequests.isEmpty)
+        XCTAssertNil(viewModel.toast, "a 404 here is the answer, not an error")
+    }
 }
+

@@ -149,15 +149,76 @@ public final class ProfileViewModel {
 
     /// Label for the follow control.
     public var followButtonTitle: String {
-        ProfileCopy.followTitle(isFollowing: profile?.isFollowing == true)
+        ProfileCopy.followTitle(
+            isFollowing: profile?.isFollowing == true,
+            isRequested: profile?.isRequested == true
+        )
     }
 
     /// Accessibility hint for the follow control.
     public var followButtonHint: String {
         ProfileCopy.followHint(
             isFollowing: profile?.isFollowing == true,
+            isRequested: profile?.isRequested == true,
             name: profile?.displayName ?? handle
         )
+    }
+
+    /// `true` when the timeline should be a wall rather than a list.
+    ///
+    /// From the server's `can_view_posts`, never inferred from `is_private`
+    /// plus `is_following` here: the server also knows about ownership and
+    /// about a follow approved from another device, and one rule in one place
+    /// is the point.
+    public var showsPrivateWall: Bool {
+        profile.map { !$0.canViewPosts } ?? false
+    }
+
+    // MARK: - Follow requests
+
+    /// People waiting to follow the viewer's private account.
+    public private(set) var followRequests: [FollowRequest] = []
+    /// `true` while the list is being fetched.
+    public private(set) var isLoadingRequests = false
+    /// `true` while one answer is in flight — one at a time, so a double tap
+    /// cannot accept and decline the same person.
+    public private(set) var isAnsweringRequest = false
+
+    /// Fetches the waiting list. Own profile only; elsewhere it is a no-op.
+    public func loadFollowRequests() async {
+        guard isOwnProfile, !isLoadingRequests else { return }
+        isLoadingRequests = true
+        defer { isLoadingRequests = false }
+        do {
+            followRequests = try await service.fetchFollowRequests()
+        } catch {
+            toast = .error(APIError.wrapping(error).userMessage)
+        }
+    }
+
+    /// Accepts or declines one request, then reloads the header so the
+    /// follower count is the server's.
+    public func answer(_ request: FollowRequest, accept: Bool) async {
+        guard !isAnsweringRequest else { return }
+        isAnsweringRequest = true
+        defer { isAnsweringRequest = false }
+        do {
+            try await service.answerFollowRequest(handle: request.user.handle, accept: accept)
+            followRequests.removeAll { $0.id == request.id }
+            if accept {
+                // A follower gained is a count changed; the server's number
+                // replaces the one on screen rather than being incremented.
+                await reload(isRefresh: true)
+            }
+        } catch {
+            let wrapped = APIError.wrapping(error)
+            if wrapped.code == .notFound {
+                // Answered from another device, or withdrawn. Gone either way.
+                followRequests.removeAll { $0.id == request.id }
+                return
+            }
+            toast = .error(wrapped.userMessage)
+        }
     }
 
     /// `true` when the timeline has nothing to show and nothing went wrong.
@@ -276,7 +337,8 @@ public final class ProfileViewModel {
     /// was followed from somewhere else.
     public func toggleFollow() async {
         guard let snapshot = profile, snapshot.showsFollowControl, !isFollowPending else { return }
-        let desired = !snapshot.isFollowing
+        // Following, or waiting to: either way the next tap undoes it.
+        let desired = !(snapshot.isFollowing || snapshot.isRequested)
 
         isFollowPending = true
         profile = snapshot.predicting(following: desired)
@@ -287,6 +349,12 @@ public final class ProfileViewModel {
             // Reconciled against the *snapshot*, so the authoritative count
             // lands on the real state rather than on top of the prediction.
             profile = snapshot.reconciled(with: result)
+            if result.following, !snapshot.canViewPosts {
+                // Let in on the spot — the account went public, or was never
+                // private after all. The timeline the wall stood in for is
+                // fetched now rather than on the next visit.
+                await reload(isRefresh: true)
+            }
         } catch {
             profile = snapshot
             let wrapped = APIError.wrapping(error)

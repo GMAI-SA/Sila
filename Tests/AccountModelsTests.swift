@@ -359,4 +359,27 @@ final class AccountModelsTests: XCTestCase {
         XCTAssertFalse(text.contains("✓"))
         XCTAssertFalse(text.lowercased().contains("confirmed"))
     }
+
+    // MARK: - The private switch
+
+    func testThePrivateSwitchIsSentOnlyWhenItChanged() throws {
+        let stored = Account(id: UUID(), email: "a@b.com", handle: "aziz", isPrivate: false)
+        var draft = ProfileDraft(account: stored)
+        XCTAssertTrue(ProfileUpdate.difference(from: stored, to: draft.normalised).isEmpty)
+
+        draft.isPrivate = true
+        let update = ProfileUpdate.difference(from: stored, to: draft.normalised)
+        XCTAssertEqual(update.isPrivate, true)
+        XCTAssertNil(update.bio, "only the switch moved")
+        XCTAssertTrue(try encoded(update).contains("\"is_private\":true"))
+    }
+
+    func testAnAccountWithoutTheFieldIsPublic() throws {
+        let account = try JSONCoding.decoder.decode(Account.self, from: Data("""
+        {"id": "2c3ff295-050b-4193-8eea-98f5cf1f92f2", "email": "a@b.com"}
+        """.utf8))
+        XCTAssertFalse(account.isPrivate)
+        XCTAssertFalse(ProfileDraft(account: account).isPrivate)
+    }
 }
+

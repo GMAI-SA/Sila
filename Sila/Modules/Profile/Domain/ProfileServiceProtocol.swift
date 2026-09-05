@@ -45,6 +45,19 @@ public protocol ProfileServiceProtocol: Sendable {
     /// - Throws: ``APIErrorCode/selfFollow`` (HTTP 400) when the handle is the
     ///   viewer's own, ``APIErrorCode/userNotFound`` (HTTP 404) otherwise.
     func setFollowing(_ following: Bool, handle: String) async throws -> FollowResult
+
+    /// The people waiting to follow the viewer's private account,
+    /// `GET /me/follow-requests`, newest first.
+    func fetchFollowRequests() async throws -> [FollowRequest]
+
+    /// Answers one request.
+    ///
+    /// Accepting makes them a follower and tells them. Declining removes the
+    /// request and tells **nobody** — they may ask again, and be declined
+    /// again, silently. Nothing in this app describes a decline as sent.
+    /// - Throws: ``APIErrorCode/notFound`` (HTTP 404) when there is no such
+    ///   request — it was answered from another device, or withdrawn.
+    func answerFollowRequest(handle: String, accept: Bool) async throws
 }
 
 extension ProfileServiceProtocol {

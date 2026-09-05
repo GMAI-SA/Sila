@@ -3073,6 +3073,60 @@
         }
       }
     },
+    "account.profile.private.goingPublic": {
+      "comment": "Warning shown when the switch is being turned off.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التحويل إلى حساب عام يقبل كل الطلبات المعلّقة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switching to public approves every pending request."
+          }
+        }
+      }
+    },
+    "account.profile.private.hint": {
+      "comment": "Explanation under the private-account switch.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يرى منشوراتك إلا المتابعون الذين توافق عليهم. يبقى اسمك ومعرّفك ونبذتك ظاهرة ليتمكن الناس من العثور عليك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only followers you approve can see your posts. Your name, handle and bio stay visible so people can find you."
+          }
+        }
+      }
+    },
+    "account.profile.private.label": {
+      "comment": "Label of the private-account switch in settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حساب خاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private account"
+          }
+        }
+      }
+    },
     "account.profile.save.hint": {
       "comment": "VoiceOver hint for the profile save button.",
       "extractionState": "manual",
@@ -12123,6 +12177,78 @@
         }
       }
     },
+    "notifications.kind.followAccepted.detail": {
+      "comment": "What the accepted-request kind covers.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حساب خاص قبل طلبك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A private account letting you in."
+          }
+        }
+      }
+    },
+    "notifications.kind.followAccepted.title": {
+      "comment": "Plural label for the accepted-request kind.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الطلبات المقبولة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted requests"
+          }
+        }
+      }
+    },
+    "notifications.kind.followRequest.detail": {
+      "comment": "What the follow-request kind covers.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شخص يطلب متابعة حسابك الخاص."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone asking to follow your private account."
+          }
+        }
+      }
+    },
+    "notifications.kind.followRequest.title": {
+      "comment": "Plural label for the follow-request kind.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلبات المتابعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow requests"
+          }
+        }
+      }
+    },
     "notifications.kind.like.detail": {
       "comment": "What the like switch governs.",
       "extractionState": "manual",
@@ -12569,6 +12695,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ followed you"
+          }
+        }
+      }
+    },
+    "notifications.sentence.followAccepted": {
+      "comment": "Notification row: a private account let the viewer in. %@ is its name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ قبل طلب متابعتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ accepted your follow request"
+          }
+        }
+      }
+    },
+    "notifications.sentence.followRequest": {
+      "comment": "Notification row: somebody asked to follow. %@ is their name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ طلب متابعتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ asked to follow you"
           }
         }
       }
@@ -16563,6 +16725,42 @@
         }
       }
     },
+    "profile.follow.button.requested": {
+      "comment": "Follow button while a request to a private account is waiting.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم الطلب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requested"
+          }
+        }
+      }
+    },
+    "profile.follow.hint.cancelRequest": {
+      "comment": "VoiceOver hint on the follow button while a request is waiting. %@ is the name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسحب طلبك لمتابعة %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraws your request to follow %@"
+          }
+        }
+      }
+    },
     "profile.follow.hint.follow": {
       "comment": "VoiceOver hint for the follow button. %@ is the display name.",
       "extractionState": "manual",
@@ -16775,6 +16973,326 @@
           "stringUnit": {
             "state": "translated",
             "value": "Loading this profile"
+          }
+        }
+      }
+    },
+    "profile.private.badge": {
+      "comment": "Badge beside a private account's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private"
+          }
+        }
+      }
+    },
+    "profile.private.badge.accessibilityLabel": {
+      "comment": "Spoken form of the private badge.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حساب خاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private account"
+          }
+        }
+      }
+    },
+    "profile.private.subtitle": {
+      "comment": "Under the private wall. %@ is the account's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يرى منشورات %@ إلا المتابعون الذين يوافق عليهم. أرسل طلب متابعة لتطلب ذلك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only followers %@ approves can see their posts. Send a follow request to ask."
+          }
+        }
+      }
+    },
+    "profile.private.title": {
+      "comment": "Title of the wall shown instead of a private account's posts.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الحساب خاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is private"
+          }
+        }
+      }
+    },
+    "profile.requests.accept": {
+      "comment": "Accept button on a follow request.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبول"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        }
+      }
+    },
+    "profile.requests.accept.hint": {
+      "comment": "VoiceOver hint on Accept. %@ is the name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسمح لـ %@ بمتابعتك ورؤية منشوراتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets %@ follow you and see your posts"
+          }
+        }
+      }
+    },
+    "profile.requests.decline": {
+      "comment": "Decline button on a follow request.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفض"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline"
+          }
+        }
+      }
+    },
+    "profile.requests.decline.hint": {
+      "comment": "VoiceOver hint on Decline. %@ is the name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يزيل الطلب. لن يُخبَر %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes the request. %@ is not told."
+          }
+        }
+      }
+    },
+    "profile.requests.detail": {
+      "comment": "Detail line under the follow-requests entry: how many people are waiting.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "zero": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "لا أحد ينتظر"
+                    }
+                  },
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "شخص واحد ينتظر"
+                    }
+                  },
+                  "two": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "شخصان ينتظران"
+                    }
+                  },
+                  "few": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld أشخاص ينتظرون"
+                    }
+                  },
+                  "many": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld شخصًا ينتظرون"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld شخص ينتظرون"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@count@"
+          },
+          "substitutions": {
+            "count": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld person waiting"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%lld people waiting"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "profile.requests.empty": {
+      "comment": "Empty state title of the follow-requests sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد طلبات معلّقة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pending requests"
+          }
+        }
+      }
+    },
+    "profile.requests.empty.subtitle": {
+      "comment": "Empty state subtitle of the follow-requests sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما يطلب أحد متابعتك، يظهر هنا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When somebody asks to follow you, they appear here."
+          }
+        }
+      }
+    },
+    "profile.requests.hint": {
+      "comment": "VoiceOver hint on the follow-requests entry.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح قائمة من ينتظرون متابعتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the people waiting to follow you"
+          }
+        }
+      }
+    },
+    "profile.requests.silent": {
+      "comment": "Footer of the follow-requests sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرفض صامت — لن يُخبَر الطالب."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declining is silent — they are not told."
+          }
+        }
+      }
+    },
+    "profile.requests.title": {
+      "comment": "Title of the follow-requests entry and sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلبات المتابعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow requests"
           }
         }
       }
