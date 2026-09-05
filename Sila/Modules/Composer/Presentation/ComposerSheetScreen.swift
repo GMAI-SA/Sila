@@ -42,6 +42,10 @@ public struct ComposerSheetScreen: View {
                         quotedSection(quoted)
                     }
 
+                    // On every kind of post, replies included: a spoiler is a
+                    // spoiler wherever it is written.
+                    WarningPickerSection(viewModel: viewModel)
+
                     // Only on a root post or a quote. A reply carries no
                     // pictures, because the reply bar is one line by design and
                     // a thumbnail strip inside it would make it something else.

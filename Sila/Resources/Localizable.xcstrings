@@ -8271,6 +8271,168 @@
         }
       }
     },
+    "composer.sensitive.hint": {
+      "comment": "Explanation under the picker.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرى القرّاء غطاءً بهذا التصنيف ويختارون فتحه. اذكر ما خلفه، لا الشيء نفسه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Readers see a cover with this label and choose to open it. Say what is behind it, not the thing itself."
+          }
+        }
+      }
+    },
+    "composer.sensitive.label": {
+      "comment": "Header of the content-warning picker in the composer.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحذير المحتوى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content warning"
+          }
+        }
+      }
+    },
+    "composer.sensitive.none": {
+      "comment": "Picker option: no warning.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بدون"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        }
+      }
+    },
+    "composer.sensitive.note.hint": {
+      "comment": "VoiceOver hint on the note field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يظهر على الغطاء بكلماتك. حتى 80 حرفًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown on the cover, in your words. Up to 80 characters."
+          }
+        }
+      }
+    },
+    "composer.sensitive.note.label": {
+      "comment": "Label of the note field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما المُغطّى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is covered"
+          }
+        }
+      }
+    },
+    "composer.sensitive.note.placeholder": {
+      "comment": "Placeholder of the note field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مثل: حرق لأحداث الحلقة 3"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Spoilers for episode 3"
+          }
+        }
+      }
+    },
+    "composer.sensitive.other": {
+      "comment": "Picker option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آخر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        }
+      }
+    },
+    "composer.sensitive.spoiler": {
+      "comment": "Picker option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حرق أحداث"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spoiler"
+          }
+        }
+      }
+    },
+    "composer.sensitive.violence": {
+      "comment": "Picker option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Violence"
+          }
+        }
+      }
+    },
     "composer.thread.partialBanner.a11yLabel": {
       "comment": "VoiceOver reading of the partial-thread banner. %@ is the summary.",
       "extractionState": "manual",
@@ -12681,6 +12843,60 @@
         }
       }
     },
+    "notifications.row.sensitive.other": {
+      "comment": "Notification excerpt for a covered post.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منشور مُعلَّم كمحتوى حساس"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A post marked as sensitive"
+          }
+        }
+      }
+    },
+    "notifications.row.sensitive.spoiler": {
+      "comment": "Notification excerpt for a covered post.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منشور مُعلَّم كحرق أحداث"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A post marked as a spoiler"
+          }
+        }
+      }
+    },
+    "notifications.row.sensitive.violence": {
+      "comment": "Notification excerpt for a covered post.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منشور مُعلَّم كمحتوى عنيف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A post marked as violent content"
+          }
+        }
+      }
+    },
     "notifications.sentence.follow": {
       "comment": "A follow notification. %@ is who did it — the verb form must work whoever they are.",
       "extractionState": "manual",
@@ -14355,6 +14571,150 @@
           "stringUnit": {
             "state": "translated",
             "value": "Regional thread. Only verified accounts in that region can reply."
+          }
+        }
+      }
+    },
+    "post.sensitive.covered": {
+      "comment": "Under the cover title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غطّاه الكاتب. افتحه لتقرأ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Covered by the author. Open it to read."
+          }
+        }
+      }
+    },
+    "post.sensitive.hide": {
+      "comment": "Button that closes the cover again.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إخفاء"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide"
+          }
+        }
+      }
+    },
+    "post.sensitive.other.title": {
+      "comment": "Cover title for other sensitive content.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محتوى حساس"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensitive content"
+          }
+        }
+      }
+    },
+    "post.sensitive.quoted": {
+      "comment": "Inside a quoted post that is covered.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح المنشور لتقرأه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the post to read it."
+          }
+        }
+      }
+    },
+    "post.sensitive.show": {
+      "comment": "Button that opens the cover.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show"
+          }
+        }
+      }
+    },
+    "post.sensitive.show.hint": {
+      "comment": "VoiceOver hint on Show. %@ is the cover title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعرض المنشور خلف غطاء %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows the post behind the %@ cover"
+          }
+        }
+      }
+    },
+    "post.sensitive.spoiler.title": {
+      "comment": "Cover title for a spoiler.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنبيه: حرق أحداث"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spoiler alert"
+          }
+        }
+      }
+    },
+    "post.sensitive.violence.title": {
+      "comment": "Cover title for violent content.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محتوى عنيف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Violent content"
           }
         }
       }

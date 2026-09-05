@@ -323,7 +323,20 @@ public struct NotificationsScreen: View {
     /// The post's first line — or the fact that there is no longer a post.
     @ViewBuilder
     private func excerpt(_ notification: UserNotification) -> some View {
-        if let excerpt = notification.postExcerpt {
+        if let kind = notification.postSensitive {
+            // The warning and the author's note, never the words. The list
+            // must not be a way to read a spoiler the post itself hides.
+            HStack(alignment: .firstTextBaseline, spacing: SLSpacing.xs) {
+                Image(systemName: "eye.slash")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(NotificationCopy.covered(kind, note: notification.postExcerpt))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .font(SLFont.caption)
+            .foregroundStyle(SLColor.textSecondary)
+            .accessibilityIdentifier("notification.sensitive")
+        } else if let excerpt = notification.postExcerpt {
             Text(excerpt)
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)

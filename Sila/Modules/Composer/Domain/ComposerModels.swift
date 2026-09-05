@@ -51,19 +51,30 @@ public struct PostDraft: Equatable, Sendable {
     /// time a draft is posted, which is what stops a failed picture from taking
     /// somebody's words down with it.
     public var imageURLs: [String]
+    /// The author's warning, or `nil`. Declared here, never inferred from the
+    /// text: a guess that said "violence" about somebody's post would be
+    /// putting words in their mouth.
+    public var sensitive: SensitiveKind?
+    /// Their words about what is covered. Sent only with a category; the
+    /// server refuses a note on its own, and so does ``CreatePostBody``.
+    public var sensitiveNote: String
 
     public init(
         text: String,
         scope: ComposeScope,
         replyToPostId: UUID? = nil,
         quotedPostId: UUID? = nil,
-        imageURLs: [String] = []
+        imageURLs: [String] = [],
+        sensitive: SensitiveKind? = nil,
+        sensitiveNote: String = ""
     ) {
         self.text = text
         self.scope = scope
         self.replyToPostId = replyToPostId
         self.imageURLs = imageURLs
         self.quotedPostId = quotedPostId
+        self.sensitive = sensitive
+        self.sensitiveNote = sensitiveNote
     }
 
     /// The text as it goes over the wire.
@@ -95,6 +106,11 @@ struct CreatePostBody: Encodable, Equatable {
     /// server treats both the same, but a request body that states its empties
     /// is a body whose logs cannot be read at a glance.
     let imageUrls: [String]?
+    /// Omitted when there is no warning. The note travels only beside a
+    /// category — alone it would be `400 invalid_sensitivity`, and it would
+    /// deserve to be.
+    let sensitive: String?
+    let sensitiveNote: String?
 
     init(draft: PostDraft) {
         self.text = draft.trimmedText
@@ -104,7 +120,16 @@ struct CreatePostBody: Encodable, Equatable {
         self.replyToPostId = draft.replyToPostId?.uuidString.lowercased()
         self.quotedPostId = draft.quotedPostId?.uuidString.lowercased()
         self.imageUrls = draft.imageURLs.isEmpty ? nil : draft.imageURLs
+        self.sensitive = draft.sensitive?.wireValue
+        let note = draft.sensitiveNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.sensitiveNote = (draft.sensitive != nil && !note.isEmpty) ? String(note.prefix(80)) : nil
     }
+}
+
+/// The warning's limits, from the contract.
+public enum SensitiveContentLimits {
+    /// The server's cap on the note; longer answers 422.
+    public static let maximumNoteLength = 80
 }
 
 // MARK: - Character counting

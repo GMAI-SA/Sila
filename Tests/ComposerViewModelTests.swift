@@ -633,3 +633,68 @@ final class ComposerAttachmentTests: XCTestCase {
         XCTAssertEqual(viewModel.attachments, [survivor])
     }
 }
+
+// MARK: - Content warnings
+
+/// The warning goes over the wire exactly as the author set it, on every
+/// segment of a thread — and nowhere when they set none.
+@MainActor
+final class ComposerWarningTests: XCTestCase {
+
+    private func makeViewModel(_ service: ComposerServiceProtocol) -> ComposerViewModel {
+        ComposerViewModel(
+            context: .newPost,
+            author: ComposerAuthor(handle: "aziz", countryCode: "SA", isVerified: true),
+            composer: service,
+            search: nil,
+            analytics: RecordingAnalyticsClient(),
+            mentionDebounce: 0.02,
+            onPosted: { _ in },
+            onClose: {}
+        )
+    }
+
+    func testTheWarningAndNoteTravelWithThePost() async {
+        let mock = ComposerServiceMock(scenario: .success, latency: 0)
+        let viewModel = makeViewModel(mock)
+        viewModel.setText("the butler did it", at: 0)
+        viewModel.sensitive = .spoiler
+        viewModel.sensitiveNote = "Spoilers for episode 3"
+
+        await viewModel.post()
+
+        let drafts = await mock.receivedDrafts
+        XCTAssertEqual(drafts.count, 1)
+        XCTAssertEqual(drafts.first?.sensitive, .spoiler)
+        XCTAssertEqual(drafts.first?.sensitiveNote, "Spoilers for episode 3")
+    }
+
+    func testNoWarningByDefault() async {
+        let mock = ComposerServiceMock(scenario: .success, latency: 0)
+        let viewModel = makeViewModel(mock)
+        viewModel.setText("nothing to see", at: 0)
+
+        await viewModel.post()
+
+        let drafts = await mock.receivedDrafts
+        XCTAssertNil(drafts.first?.sensitive, "off unless the author turns it on — never inferred")
+    }
+
+    func testAThreadIsCoveredOnEverySegment() async {
+        let mock = ComposerServiceMock(scenario: .success, latency: 0)
+
+        let report = await mock.createThread(
+            segments: ["one", "two", "three"],
+            scope: .international,
+            sensitive: .violence,
+            sensitiveNote: "Crash footage"
+        )
+
+        XCTAssertEqual(report.posted.count, 3)
+        let drafts = await mock.receivedDrafts
+        XCTAssertEqual(drafts.map(\.sensitive), [.violence, .violence, .violence],
+                       "covering only the opening line would leave the rest readable under it")
+        XCTAssertEqual(Set(drafts.map(\.sensitiveNote)), ["Crash footage"])
+    }
+}
+

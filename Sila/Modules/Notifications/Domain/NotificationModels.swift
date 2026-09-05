@@ -144,8 +144,13 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// The post it is about, or `nil` for a follow.
     public let postId: UUID?
     /// The first 140 characters of that post, or `nil` when there is no post —
-    /// or when there was one and it is gone.
+    /// or when there was one and it is gone — or when the post is covered and
+    /// its author wrote no note.
     public let postExcerpt: String?
+    /// Set when the post carries a warning. The excerpt is then the author's
+    /// note, never the text: the list must not be a way to read a spoiler the
+    /// post itself hides.
+    public let postSensitive: SensitiveKind?
     /// Whether the viewer has already seen it. `var` so a row can be marked
     /// read in place without refetching the page.
     public var read: Bool
@@ -159,13 +164,15 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         postId: UUID? = nil,
         postExcerpt: String? = nil,
         read: Bool = false,
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        postSensitive: SensitiveKind? = nil
     ) {
         self.id = id
         self.kind = kind
         self.actor = actor
         self.postId = postId
         self.postExcerpt = (postExcerpt?.isEmpty == false) ? postExcerpt : nil
+        self.postSensitive = postSensitive
         self.read = read
         self.createdAt = createdAt
     }
@@ -173,7 +180,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// Explicit keys are required because ``init(from:)`` is custom, and the
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
-        case id, kind, actor, postId, postExcerpt, read, createdAt
+        case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive
     }
 
     /// Tolerant decoder: one malformed row must not blank the whole page.
@@ -199,6 +206,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         }
         let excerpt = (try? container.decodeIfPresent(String.self, forKey: .postExcerpt)) ?? nil
         postExcerpt = (excerpt?.isEmpty == false) ? excerpt : nil
+        postSensitive = (try? container.decodeIfPresent(SensitiveKind.self, forKey: .postSensitive)) ?? nil
         read = (try? container.decode(Bool.self, forKey: .read)) ?? false
         createdAt = (try? container.decode(Date.self, forKey: .createdAt)) ?? Date()
     }
@@ -207,7 +215,10 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
 
     /// `true` when this row points at a post whose text the server would not
     /// give us — which the contract says means the post has been deleted.
-    public var postWasDeleted: Bool { postId != nil && postExcerpt == nil }
+    ///
+    /// Checked after the warning: a covered post with no note also has no
+    /// excerpt, and it is not gone.
+    public var postWasDeleted: Bool { postId != nil && postExcerpt == nil && postSensitive == nil }
 
     /// The sentence the row leads with.
     public var sentence: String {
@@ -217,7 +228,9 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// The whole row as one line for VoiceOver.
     public var accessibilityDescription: String {
         var parts = [sentence, RelativeTime.accessible(createdAt)]
-        if let excerpt = postExcerpt {
+        if let kind = postSensitive {
+            parts.append(NotificationCopy.covered(kind, note: postExcerpt))
+        } else if let excerpt = postExcerpt {
             parts.append(L10n.t("notifications.row.accessibility.post", excerpt))
         } else if postWasDeleted {
             parts.append(NotificationCopy.deletedPost)
@@ -428,6 +441,19 @@ public enum NotificationCopy {
         // event was unimportant.
         case .unknown: return L10n.t("notifications.sentence.unknown", name)
         }
+    }
+
+    /// Shown in place of the excerpt when the post is covered: the kind of
+    /// warning, and the author's note if they wrote one — never the text.
+    public static func covered(_ kind: SensitiveKind, note: String?) -> String {
+        let label: String
+        switch kind {
+        case .spoiler: label = L10n.t("notifications.row.sensitive.spoiler")
+        case .violence: label = L10n.t("notifications.row.sensitive.violence")
+        case .other: label = L10n.t("notifications.row.sensitive.other")
+        }
+        guard let note, !note.isEmpty else { return label }
+        return "\(label) — \(note)"
     }
 
     /// Shown in place of the excerpt when the post behind a row is gone.

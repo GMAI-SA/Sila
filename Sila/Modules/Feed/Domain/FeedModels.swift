@@ -247,11 +247,40 @@ public indirect enum PostReference: Equatable, Sendable, Hashable {
 }
 
 /// A post, reply or quote-post.
+/// What an author may warn about.
+///
+/// A closed list, because each is rendered as its own sentence — "Spoiler
+/// alert" is a different promise from "Violent content", and a reader deciding
+/// whether to open a cover deserves to know which. A category this build does
+/// not recognise still covers the post, generically: the author asked for a
+/// cover, and a server whose vocabulary grew must not quietly uncover it.
+public enum SensitiveKind: String, Sendable, Hashable, Decodable, CaseIterable {
+    case spoiler
+    case violence
+    case other
+
+    /// Unrecognised values become ``other`` rather than throwing — or, worse,
+    /// rather than decoding as "no warning".
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = SensitiveKind(rawValue: raw) ?? .other
+    }
+
+    /// The wire value. Only the three the server accepts; ``other`` covers the
+    /// rest, so nothing this client sends is ever outside the list.
+    public var wireValue: String { rawValue }
+}
+
 public struct Post: Identifiable, Equatable, Sendable, Decodable {
 
     public let id: UUID
     public let author: UserSummary
     public let text: String
+    /// The author's warning, or `nil`. The text is still here — the cover is
+    /// the reader's choice, and opening it must not cost a request.
+    public let sensitive: SensitiveKind?
+    /// The author's own words about what is covered.
+    public let sensitiveNote: String?
     /// Images attached to the post, in the order they were added — at most
     /// four. Server-minted paths only; the API refuses anything else, so a post
     /// can never point a reader's device at an arbitrary host.
@@ -304,11 +333,15 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         replyCountDirect: Int = 0,
         metrics: PostMetrics = PostMetrics(),
         viewer: PostViewerState = PostViewerState(),
-        quotedPost: Post? = nil
+        quotedPost: Post? = nil,
+        sensitive: SensitiveKind? = nil,
+        sensitiveNote: String? = nil
     ) {
         self.id = id
         self.author = author
         self.text = text
+        self.sensitive = sensitive
+        self.sensitiveNote = sensitive == nil ? nil : ((sensitiveNote?.isEmpty == false) ? sensitiveNote : nil)
         self.imageURLs = imageURLs
         self.language = Post.normalisedLanguage(language)
         self.createdAt = createdAt
@@ -325,6 +358,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     private enum CodingKeys: String, CodingKey {
         case id, author, text, imageUrls, language, createdAt, scope, scopeCountry, scopeRegion
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
+        case sensitive, sensitiveNote
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -354,6 +388,12 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         }
         author = try container.decode(UserSummary.self, forKey: .author)
         text = (try? container.decode(String.self, forKey: .text)) ?? ""
+        // `null` is no warning; any string is one. A malformed value (a number,
+        // say) is read as no warning, which is the one case where being wrong
+        // uncovers a post — and it is a case the server cannot produce.
+        sensitive = (try? container.decodeIfPresent(SensitiveKind.self, forKey: .sensitive)) ?? nil
+        let note = (try? container.decodeIfPresent(String.self, forKey: .sensitiveNote)) ?? nil
+        sensitiveNote = sensitive == nil ? nil : ((note?.isEmpty == false) ? note : nil)
         // Relative paths, resolved against the API host. A row whose image list
         // fails to decode still renders its text: losing a picture is a much
         // smaller failure than losing the post.
@@ -395,7 +435,9 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             replyCountDirect: replyCountDirect,
             metrics: metrics,
             viewer: viewer,
-            quotedPost: nil
+            quotedPost: nil,
+            sensitive: sensitive,
+            sensitiveNote: sensitiveNote
         )
     }
 }

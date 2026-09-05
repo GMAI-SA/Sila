@@ -122,6 +122,9 @@ public struct PostCardView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var likeScale: CGFloat = 1
+    /// The cover, per card, starting closed. Never remembered across posts:
+    /// opening one spoiler is not consent to every spoiler after it.
+    @State private var isRevealed = false
 
     /// Creates a card.
     /// - Parameters:
@@ -138,17 +141,28 @@ public struct PostCardView: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             authorBlock
 
-            postText
+            if let kind = post.sensitive {
+                SensitiveCoverView(
+                    kind: kind,
+                    note: post.sensitiveNote,
+                    isRevealed: $isRevealed
+                )
                 .padding(.leading, style == .detail ? 0 : 56)
-
-            if !post.imageURLs.isEmpty {
-                images
-                    .padding(.leading, style == .detail ? 0 : 56)
             }
 
-            if let quoted = post.quotedPost {
-                QuotedPostCard(post: quoted, onTap: { actions.onOpenQuoted(quoted) })
+            if post.sensitive == nil || isRevealed {
+                postText
                     .padding(.leading, style == .detail ? 0 : 56)
+
+                if !post.imageURLs.isEmpty {
+                    images
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
+
+                if let quoted = post.quotedPost {
+                    QuotedPostCard(post: quoted, onTap: { actions.onOpenQuoted(quoted) })
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
             }
 
             if style == .detail {
@@ -686,15 +700,30 @@ struct QuotedPostCard: View {
                         .foregroundStyle(SLColor.textMuted)
                 }
 
-                Text(post.text)
-                    .font(SLFont.bodyLight)
+                if let kind = post.sensitive {
+                    // The quoted post's own warning holds inside the quote: a
+                    // quote is not a way to read around a cover. Its text is
+                    // one tap away, on its own page, behind its own cover.
+                    HStack(alignment: .firstTextBaseline, spacing: SLSpacing.xs) {
+                        Image(systemName: "eye.slash")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text(SensitiveCopy.quotedLabel(kind, note: post.sensitiveNote))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .font(SLFont.caption)
                     .foregroundStyle(SLColor.textSecondary)
-                    .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
-                    // The quoted post is somebody else's writing and has its
-                    // own language, which is routinely not the language of the
-                    // post quoting it.
-                    .slContentDirection(of: post)
+                    .accessibilityIdentifier("post.quoted.sensitive")
+                } else {
+                    Text(post.text)
+                        .font(SLFont.bodyLight)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .lineLimit(4)
+                        .fixedSize(horizontal: false, vertical: true)
+                        // The quoted post is somebody else's writing and has its
+                        // own language, which is routinely not the language of the
+                        // post quoting it.
+                        .slContentDirection(of: post)
+                }
             }
         }
     }

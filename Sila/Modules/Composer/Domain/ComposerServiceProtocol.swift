@@ -47,13 +47,19 @@ extension ComposerServiceProtocol {
     ///   - replyToPostId: Set when the whole thread is itself a reply.
     ///   - quotedPostId: Applied to the **first** segment only — a thread quotes
     ///     one post, not the same post five times.
+    ///   - sensitive: The author's warning, applied to **every** segment. A
+    ///     spoiler thread is spoilers throughout; covering only its opening
+    ///     line would leave the rest readable under it.
+    ///   - sensitiveNote: Their words about what is covered.
     /// - Returns: What was posted, what was not, and why it stopped.
     public func createThread(
         segments: [String],
         scope: ComposeScope,
         replyToPostId: UUID? = nil,
         quotedPostId: UUID? = nil,
-        imageURLs: [String] = []
+        imageURLs: [String] = [],
+        sensitive: SensitiveKind? = nil,
+        sensitiveNote: String = ""
     ) async -> ThreadPostReport {
         var queue = segments
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -73,7 +79,9 @@ extension ComposerServiceProtocol {
                 // ...and only the opening segment carries the images, for the
                 // same reason: a thread is a chain of replies, and repeating
                 // the pictures on every link would post them four times.
-                imageURLs: posted.isEmpty ? imageURLs : []
+                imageURLs: posted.isEmpty ? imageURLs : [],
+                sensitive: sensitive,
+                sensitiveNote: sensitiveNote
             )
             do {
                 let post = try await createPost(draft)

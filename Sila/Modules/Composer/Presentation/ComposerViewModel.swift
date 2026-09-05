@@ -44,6 +44,12 @@ public final class ComposerViewModel {
     public var focusedIndex: Int = 0
     /// The audience for the root post.
     public private(set) var scope: ComposeScope
+    /// The author's warning, or `nil`. Off by default and never inferred from
+    /// the text: a guess that said "violence" about somebody's post would be
+    /// putting words in their mouth.
+    public var sensitive: SensitiveKind?
+    /// Their words about what is covered. Sent only beside a category.
+    public var sensitiveNote: String = ""
     /// Every row of the scope picker, available or not.
     public let scopeOptions: [ScopeOption]
     /// `true` while a post (or a thread) is in flight.
@@ -357,7 +363,9 @@ public final class ComposerViewModel {
             quotedPostId: continuationId == nil ? context.quotedPost?.id : nil,
             // Same for the pictures: a retry that continues a half-posted
             // thread must not attach them a second time.
-            imageURLs: continuationId == nil ? attachments : []
+            imageURLs: continuationId == nil ? attachments : [],
+            sensitive: sensitive,
+            sensitiveNote: sensitiveNote
         )
 
         if !report.posted.isEmpty {
