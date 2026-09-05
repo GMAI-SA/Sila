@@ -36,9 +36,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.socialsa.sila
         PRODUCT_NAME: Sila
         INFOPLIST_FILE: Sila/Resources/Info.plist
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: 1
+        # Device builds sign with the team so they can be archived for TestFlight;
+        # simulator builds stay unsigned so tests never need an account.
+        DEVELOPMENT_TEAM: 7258Y6294P
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGNING_REQUIRED: NO
-        CODE_SIGNING_ALLOWED: NO
+        "CODE_SIGNING_ALLOWED[sdk=iphoneos*]": YES
+        "CODE_SIGNING_REQUIRED[sdk=iphoneos*]": YES
+        "CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]": NO
+        "CODE_SIGNING_REQUIRED[sdk=iphonesimulator*]": NO
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_EMIT_LOC_STRINGS: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

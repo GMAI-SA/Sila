@@ -149,6 +149,7 @@
 		94DE75F4E70B232A4798E66F /* BiometricAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D420A50F8AFB60A6BEEBED5 /* BiometricAuthenticator.swift */; };
 		978F3C8E70960B6477EC0CFD /* FeedServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E398B55C962F0BBC07BEE98B /* FeedServiceTests.swift */; };
 		989BAA6428838A4FCFBE7C5E /* RegisterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19B6E4FDCD81C141AB16647 /* RegisterViewModel.swift */; };
+		99CDC121D9CA1BE534396B31 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = ACF507A0B8046DA6CFAB259A /* PrivacyInfo.xcprivacy */; };
 		9ABA32C0164A8A2C4ED4DB51 /* SearchServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40E404B94F4BD7EF0972A07 /* SearchServiceMock.swift */; };
 		9E88E22138337F43A4075150 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0E81F47A68EEB07807A48E0 /* FeatureFlags.swift */; };
 		9F005C2727BABA6BFB98A58B /* SLDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B204472383AA0961250F71 /* SLDivider.swift */; };
@@ -387,6 +388,7 @@
 		AA1F9BE9BFB7B0790305D08B /* SLShimmer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLShimmer.swift; sourceTree = "<group>"; };
 		AAB2372A9D78DD3B962DB35C /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		AC91C40381A70F5C7CF0D8F7 /* RoomModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomModels.swift; sourceTree = "<group>"; };
+		ACF507A0B8046DA6CFAB259A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ADCD505083ED32DAE8D32525 /* SLVerifiedBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLVerifiedBadge.swift; sourceTree = "<group>"; };
 		ADE3599EE430555C0A6EDFBE /* ComposerModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerModelsTests.swift; sourceTree = "<group>"; };
 		ADEFC7B68D54A54B0A74D48E /* PostDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailViewModelTests.swift; sourceTree = "<group>"; };
@@ -1155,6 +1157,7 @@
 				5DCFC10CFD0F78F53A527DD6 /* Info.plist */,
 				B6906DBCFD3EE0BF96910A85 /* InfoPlist.xcstrings */,
 				B353F14DEB9DC0EC7EC9CB0F /* Localizable.xcstrings */,
+				ACF507A0B8046DA6CFAB259A /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -1301,6 +1304,7 @@
 						TestTargetID = E11F897E9E320FB61F3F0636;
 					};
 					E11F897E9E320FB61F3F0636 = {
+						DevelopmentTeam = 7258Y6294P;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -1336,6 +1340,7 @@
 				52D24BD4C98F1E0214DB9B4A /* Assets.xcassets in Resources */,
 				05AF2ACFD01F7DA51BFEDDE4 /* InfoPlist.xcstrings in Resources */,
 				6EDB2A2023DDA0862643F639 /* Localizable.xcstrings in Resources */,
+				99CDC121D9CA1BE534396B31 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1703,17 +1708,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGNING_ALLOWED[sdk=iphoneos*]" = YES;
+				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
+				"CODE_SIGNING_REQUIRED[sdk=iphoneos*]" = YES;
+				"CODE_SIGNING_REQUIRED[sdk=iphonesimulator*]" = NO;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.socialsa.sila;
 				PRODUCT_NAME = Sila;
 				SDKROOT = iphoneos;
@@ -1746,17 +1756,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGNING_ALLOWED[sdk=iphoneos*]" = YES;
+				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
+				"CODE_SIGNING_REQUIRED[sdk=iphoneos*]" = YES;
+				"CODE_SIGNING_REQUIRED[sdk=iphonesimulator*]" = NO;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.socialsa.sila;
 				PRODUCT_NAME = Sila;
 				SDKROOT = iphoneos;
