@@ -17,6 +17,7 @@ public struct DocumentVerificationScreen: View {
     @State private var viewModel: DocumentVerificationViewModel
     private let onSubmitted: () -> Void
     private let onSignInInstead: (() -> Void)?
+    private let onUseNafath: (() -> Void)?
     private let onClose: () -> Void
 
     /// - Parameters:
@@ -25,16 +26,21 @@ public struct DocumentVerificationScreen: View {
     ///     caller refreshes the session so the wall shows `pending_review`.
     ///   - onSignInInstead: Ends this session so the person can sign in to the
     ///     account their document already belongs to. `nil` hides the button.
+    ///   - onUseNafath: Closes this flow and opens the Nafath one — for a
+    ///     Saudi document, which this route does not take. `nil` hides the
+    ///     button and leaves only Cancel.
     ///   - onClose: Dismisses the flow without finishing it.
     public init(
         viewModel: DocumentVerificationViewModel,
         onSubmitted: @escaping () -> Void,
         onSignInInstead: (() -> Void)? = nil,
+        onUseNafath: (() -> Void)? = nil,
         onClose: @escaping () -> Void
     ) {
         _viewModel = State(initialValue: viewModel)
         self.onSubmitted = onSubmitted
         self.onSignInInstead = onSignInInstead
+        self.onUseNafath = onUseNafath
         self.onClose = onClose
     }
 
@@ -89,6 +95,7 @@ public struct DocumentVerificationScreen: View {
         case .identityUsed: identityUsed
         case .underAge: underAge
         case .documentExpired: documentExpired
+        case .useNafath: useNafath
         }
     }
 
@@ -365,6 +372,36 @@ public struct DocumentVerificationScreen: View {
                 accessibilityHint: L10n.t("verification.tryAgain.hint")
             ) {
                 viewModel.startAgain()
+            }
+        }
+        .padding(.horizontal, SLSpacing.lg)
+        .padding(.top, SLSpacing.xl)
+    }
+
+    /// Not a failure. The person is Saudi, or holds a Saudi-issued permit,
+    /// and has the instant route; this one would only ever have made them a
+    /// second account.
+    private var useNafath: some View {
+        VStack(spacing: SLSpacing.xl) {
+            hero(icon: "person.badge.shield.checkmark", tint: SLColor.primary)
+            VStack(spacing: SLSpacing.sm) {
+                Text(L10n.t("document.useNafath.title"))
+                    .font(SLFont.displayL)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text(L10n.t("document.useNafath.message"))
+                    .font(SLFont.bodyLight)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let onUseNafath {
+                SLButton(
+                    L10n.t("document.useNafath.button"),
+                    variant: .primary,
+                    accessibilityHint: L10n.t("document.useNafath.button.hint"),
+                    action: onUseNafath
+                )
             }
         }
         .padding(.horizontal, SLSpacing.lg)

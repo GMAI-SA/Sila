@@ -226,11 +226,9 @@ final class LivenessEngine {
         case .turnLeft:
             satisfied = abs(yaw) > Self.turnThreshold
         case .turnRight:
-            if let firstTurnSign {
-                satisfied = abs(yaw) > Self.turnThreshold && (yaw.sign == .minus ? -1.0 : 1.0) != firstTurnSign
-            } else {
-                satisfied = false
-            }
+            let turned = abs(yaw) > Self.turnThreshold
+            let thisSign: Double = yaw < 0 ? -1 : 1
+            satisfied = turned && firstTurnSign != nil && thisSign != firstTurnSign
         }
 
         guard satisfied else {
@@ -245,7 +243,7 @@ final class LivenessEngine {
         case .lookStraight:
             selfie = frame
         case .turnLeft:
-            firstTurnSign = yaw.sign == .minus ? -1.0 : 1.0
+            firstTurnSign = yaw < 0 ? -1 : 1
             turnFrame = frame
         case .turnRight:
             break

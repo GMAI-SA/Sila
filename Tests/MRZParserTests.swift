@@ -167,14 +167,14 @@ final class MRZParserTests: XCTestCase {
     // MARK: - Helpers
 
     /// A TD3 zone with correct check digits.
-    static func passport(number: String, nationality: String, dob: String = "900101", expiry: String = "300101") -> String {
+    static func passport(number: String, nationality: String, dob: String = "900101", expiry: String = "300101", issuing: String? = nil) -> String {
         let padded = number.padding(toLength: 9, withPad: "<", startingAt: 0)
         var line2 = padded + MRZParser.checkDigit(padded)! + nationality + dob + MRZParser.checkDigit(dob)! + "M"
         line2 += expiry + MRZParser.checkDigit(expiry)! + String(repeating: "<", count: 14) + "<"
         let chars = Array(line2)
         let composite = String(chars[0..<10]) + String(chars[13..<20]) + String(chars[21..<43])
         line2 += MRZParser.checkDigit(composite)!
-        let line1 = ("P<" + nationality + "DOE<<JOHN").padding(toLength: 44, withPad: "<", startingAt: 0)
+        let line1 = ("P<" + (issuing ?? nationality) + "DOE<<JOHN").padding(toLength: 44, withPad: "<", startingAt: 0)
         return line1 + "\n" + line2
     }
 }

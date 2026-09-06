@@ -54,6 +54,11 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case reviewPending = "review_pending"
     /// Not a passport, national ID or residence permit (HTTP 400).
     case invalidDocumentType = "invalid_document_type"
+    /// The document is Saudi — a Saudi nationality or a Saudi-issued permit
+    /// (HTTP 409). Not a failure: this person has an identity Nafath proves
+    /// in a minute, and one person is one account, so the document route
+    /// hands them to Nafath rather than open a second account.
+    case useNafath = "use_nafath"
 
     // MARK: Contract v2 — feed & social
 
@@ -261,6 +266,8 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.reviewPending")
             case .invalidDocumentType:
                 return L10n.t("error.invalidDocumentType")
+            case .useNafath:
+                return L10n.t("error.useNafath")
             case .postNotFound:
                 return L10n.t("error.postNotFound")
             case .replyNotAllowed:

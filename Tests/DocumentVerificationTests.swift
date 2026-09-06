@@ -88,6 +88,33 @@ final class DocumentVerificationTests: XCTestCase {
         XCTAssertNil(viewModel.frontImage)
     }
 
+    func testASaudiDocumentIsSentToNafathBeforeAnythingIsUploaded() async {
+        let service = VerificationServiceMock(scenario: .approved)
+        let viewModel = makeViewModel(service: service)
+        viewModel.choose(.passport)
+        viewModel.acceptFront(jpeg: front, recognisedText: MRZParserTests.passport(number: "X12345678", nationality: "SAU"))
+        XCTAssertEqual(viewModel.phase, .useNafath, "one person, one account")
+        XCTAssertNil(viewModel.frontImage)
+        let calls = await service.recordedCalls
+        XCTAssertTrue(calls.isEmpty, "nothing goes over the wire")
+    }
+
+    func testASaudiIssuedPermitIsSentToNafathToo() {
+        let viewModel = makeViewModel(service: VerificationServiceMock())
+        viewModel.choose(.residencePermit)
+        viewModel.acceptFront(jpeg: front, recognisedText: MRZParserTests.passport(number: "X12345678", nationality: "EGY", issuing: "SAU"))
+        XCTAssertEqual(viewModel.phase, .useNafath)
+    }
+
+    func testTheServersUseNafathAnswerIsHandledTheSameWay() async {
+        let viewModel = makeViewModel(service: VerificationServiceMock(scenario: .useNafath))
+        reachLiveness(viewModel)
+        viewModel.livenessCompleted(selfie: selfie, turn: nil, challenges: LivenessChallenge.allCases)
+        await waitForSubmit(viewModel)
+        XCTAssertEqual(viewModel.phase, .useNafath)
+        XCTAssertNil(viewModel.toast, "not an error")
+    }
+
     func testRetakeDropsTheZoneReadFromTheOldPhoto() {
         let viewModel = makeViewModel(service: VerificationServiceMock())
         viewModel.choose(.passport)

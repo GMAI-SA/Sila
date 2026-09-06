@@ -137,7 +137,12 @@ public struct PendingVerificationWallScreen: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.hidden)
         }
-        .fullScreenCover(item: $route) { chosen in
+        .fullScreenCover(item: $route, onDismiss: {
+            if let next = pendingRoute {
+                pendingRoute = nil
+                route = next
+            }
+        }) { chosen in
             if let verification {
                 switch chosen {
                 case .nafath:
@@ -182,6 +187,13 @@ public struct PendingVerificationWallScreen: View {
                         onSignInInstead: {
                             route = nil
                             onSignOut()
+                        },
+                        onUseNafath: {
+                            // A Saudi document: close this flow, open Nafath
+                            // once the cover has actually gone.
+                            analytics.track(.verificationMethodChosen, properties: ["method": "nafath_redirect"])
+                            pendingRoute = .nafath
+                            route = nil
                         },
                         onClose: {
                             route = nil

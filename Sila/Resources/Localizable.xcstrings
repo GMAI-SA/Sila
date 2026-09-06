@@ -9723,6 +9723,78 @@
         }
       }
     },
+    "document.useNafath.button": {
+      "comment": "Button that opens the Nafath flow.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المتابعة عبر نفاذ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with Nafath"
+          }
+        }
+      }
+    },
+    "document.useNafath.button.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يغلق هذا ويفتح التحقق عبر نفاذ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes this and opens the Nafath verification"
+          }
+        }
+      }
+    },
+    "document.useNafath.message": {
+      "comment": "Body when the document turns out to be Saudi.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الوثيقة سعودية. يتحقق المواطنون والمقيمون في السعودية عبر نفاذ — يستغرق دقيقة، وهو فوري، ويُبقي لكل شخص حسابًا واحدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document is Saudi. Saudi citizens and residents verify with Nafath — it takes a minute, it's instant, and it keeps one person to one account."
+          }
+        }
+      }
+    },
+    "document.useNafath.title": {
+      "comment": "Headline when the document turns out to be Saudi.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم نفاذ بدلًا من ذلك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Nafath instead"
+          }
+        }
+      }
+    },
     "ds.avatar.fallbackName": {
       "comment": "VoiceOver label for an avatar with no display name. The %@ is the monogram initials.",
       "extractionState": "manual",
@@ -11375,6 +11447,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Only verified humans can post. Everyone can read Sila — finish identity verification to speak."
+          }
+        }
+      }
+    },
+    "error.useNafath": {
+      "comment": "Server said a Saudi document must go through Nafath.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتحقق المواطنون والمقيمون في السعودية عبر نفاذ — يستغرق دقيقة وهو فوري."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saudi citizens and residents verify with Nafath — it takes a minute and is instant."
           }
         }
       }
@@ -25170,13 +25260,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "من أي دولة، بما فيها السعودية. صوّر الوثيقة، والتقط سيلفي قصيرًا، ويراجعها مراجع — عادةً خلال يوم."
+            "value": "من أي دولة عدا السعودية. صوّر الوثيقة، والتقط سيلفي قصيرًا، ويراجعها مراجع — عادةً خلال يوم."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Any country, including Saudi Arabia. Photograph the document, take a short selfie, and a reviewer checks it — usually within a day."
+            "value": "Any country except Saudi Arabia. Photograph the document, take a short selfie, and a reviewer checks it — usually within a day."
           }
         }
       }
@@ -25224,13 +25314,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هوية وطنية سعودية أو إقامة. فوري — تؤكد رقمًا في تطبيق نفاذ."
+            "value": "هوية وطنية سعودية أو إقامة. فوري — تؤكد رقمًا في تطبيق نفاذ. الطريقة لكل من في السعودية."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Saudi National ID or Iqama. Instant — you confirm a number in the Nafath app."
+            "value": "Saudi National ID or Iqama. Instant — you confirm a number in the Nafath app. The route for everyone in Saudi Arabia."
           }
         }
       }

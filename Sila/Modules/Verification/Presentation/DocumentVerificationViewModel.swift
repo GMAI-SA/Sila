@@ -24,6 +24,9 @@ public enum DocumentPhase: Equatable, Sendable {
     case underAge
     /// The zone's expiry is in the past. A different document is needed.
     case documentExpired
+    /// The document is Saudi. One person, one account: this person verifies
+    /// through Nafath, which is instant, and is sent there.
+    case useNafath
 }
 
 /// Drives ``DocumentVerificationScreen``.
@@ -91,6 +94,17 @@ public final class DocumentVerificationViewModel {
     /// document. The badge cannot be produced from it; the person is told.
     public var zoneHasNoCountry: Bool { zoneIsReadable && mrz?.nationality == nil }
 
+    /// Nationalities and issuers whose people verify through Nafath, never
+    /// here. Mirrors the server's `NAFATH_ONLY`.
+    public static let nafathOnly: Set<String> = ["SA"]
+
+    /// `true` when the zone belongs to somebody Nafath already knows — a
+    /// Saudi nationality, or a Saudi-issued document such as an Iqama.
+    public var zoneIsNafathOnly: Bool {
+        guard zoneIsReadable, let mrz else { return false }
+        return Self.nafathOnly.contains(mrz.nationality ?? "") || Self.nafathOnly.contains(mrz.issuingCountry ?? "")
+    }
+
     /// `true` when the zone's expiry date is in the past.
     public var zoneIsExpired: Bool {
         guard let expiry = mrz?.expiryDate, zoneIsReadable else { return false }
@@ -127,6 +141,13 @@ public final class DocumentVerificationViewModel {
     public func acceptFront(jpeg: Data, recognisedText: String?) {
         frontImage = jpeg
         mrz = recognisedText.flatMap { MRZParser.parseRepairing($0) }
+        if zoneIsNafathOnly {
+            // Decided here, before the back is photographed and before any
+            // upload: the server would refuse it with `use_nafath` anyway.
+            releaseImages()
+            phase = .useNafath
+            return
+        }
         if zoneIsExpired {
             phase = .documentExpired
             return
@@ -229,6 +250,9 @@ public final class DocumentVerificationViewModel {
             phase = .underAge
         case .documentExpired:
             phase = .documentExpired
+        case .useNafath:
+            releaseImages()
+            phase = .useNafath
         case .invalidMrz:
             // The server disagreed with a zone the device thought verified:
             // the photo is the thing to fix.

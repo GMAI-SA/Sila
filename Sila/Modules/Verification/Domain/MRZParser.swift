@@ -126,11 +126,15 @@ public enum MRZParser {
             if format == "TD3" {
                 let optional = String(l2[28..<42])
                 if !checksOut(optional, l2[42]) { note("optional_data") }
-                let composite = String(l2[0..<10]) + String(l2[13..<20]) + String(l2[21..<43])
-                if !checksOut(composite, l2[43]) { note("composite") }
+                let numberPart = String(l2[0..<10])
+                let birthPart = String(l2[13..<20])
+                let expiryPart = String(l2[21..<43])
+                if !checksOut(numberPart + birthPart + expiryPart, l2[43]) { note("composite") }
             } else {
-                let composite = String(l2[0..<10]) + String(l2[13..<20]) + String(l2[21..<35])
-                if !checksOut(composite, l2[35]) { note("composite") }
+                let numberPart = String(l2[0..<10])
+                let birthPart = String(l2[13..<20])
+                let expiryPart = String(l2[21..<35])
+                if !checksOut(numberPart + birthPart + expiryPart, l2[35]) { note("composite") }
             }
         } else {
             let l1 = Array(lines[0]), l2 = Array(lines[1]), l3 = lines[2]
@@ -144,8 +148,11 @@ public enum MRZParser {
             expiryRaw = String(l2[8..<14])
             if !checksOut(expiryRaw, l2[14]) { note("expiry_date") }
             nationalityRaw = String(l2[15..<18])
-            let composite = String(l1[5..<30]) + String(l2[0..<7]) + String(l2[8..<15]) + String(l2[18..<29])
-            if !checksOut(composite, l2[29]) { note("composite") }
+            let upperPart = String(l1[5..<30])
+            let birthPart = String(l2[0..<7])
+            let expiryPart = String(l2[8..<15])
+            let optionalPart = String(l2[18..<29])
+            if !checksOut(upperPart + birthPart + expiryPart + optionalPart, l2[29]) { note("composite") }
             names = l3
         }
 

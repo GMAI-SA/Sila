@@ -67,10 +67,11 @@ enum SampleCapture {
         line2 += "900101" + (MRZParser.checkDigit("900101") ?? "0") + "F"
         line2 += "330101" + (MRZParser.checkDigit("330101") ?? "0")
         line2 += String(repeating: "<", count: 14) + "<"
-        let start = line2.startIndex
-        let composite = String(line2[start..<line2.index(start, offsetBy: 10)])
-            + String(line2[line2.index(start, offsetBy: 13)..<line2.index(start, offsetBy: 20)])
-            + String(line2[line2.index(start, offsetBy: 21)..<line2.index(start, offsetBy: 43)])
+        let chars = Array(line2)
+        let numberPart = String(chars[0..<10])
+        let birthPart = String(chars[13..<20])
+        let expiryPart = String(chars[21..<43])
+        let composite = numberPart + birthPart + expiryPart
         line2 += MRZParser.checkDigit(composite) ?? "0"
         let line1 = ("P<" + nationality + "SAMPLE<<SILA").padding(toLength: 44, withPad: "<", startingAt: 0)
         return line1 + "\n" + line2

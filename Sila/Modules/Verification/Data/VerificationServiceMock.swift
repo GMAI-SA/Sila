@@ -34,6 +34,9 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         case unavailable
         /// Nafath poll / document submit answer 403 `under_minimum_age`.
         case underMinimumAge
+        /// Document submit answers 409 `use_nafath` (Nafath itself proceeds
+        /// as `approved`).
+        case useNafath
         /// Every call fails with a transport error.
         case offline
     }
@@ -204,6 +207,12 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
                 code: .underMinimumAge,
                 message: "You must be at least 13 to use Sila.",
                 status: 403
+            )
+        case .useNafath:
+            throw APIError.api(
+                code: .useNafath,
+                message: "Saudi citizens and residents verify with Nafath — it takes a minute and is instant.",
+                status: 409
             )
         default:
             let documentCase = DocumentCase(
