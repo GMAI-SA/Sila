@@ -11,6 +11,9 @@ public struct PendingVerificationWallScreen: View {
 
     @State private var viewModel: VerificationWallViewModel
     @State private var isChoosingMethod = false
+    @State private var isPickingNationality = false
+    @State private var isSavingNationality = false
+    @State private var chooseAfterPicking = false
     @State private var pendingRoute: VerificationRoute?
     @State private var route: VerificationRoute?
     private let verification: VerificationServiceProtocol?
@@ -75,9 +78,9 @@ public struct PendingVerificationWallScreen: View {
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    if let reason = viewModel.rejectionReason {
-                        // The reviewer wrote this, not us: it can arrive in
-                        // either language and has to read in its own.
+                    if let reason = VerificationRejection.display(viewModel.rejectionReason) {
+                        // A machine reason reads in the interface language; a
+                        // reviewer's words read in their own direction.
                         Text(reason)
                             .font(SLFont.caption)
                             .foregroundStyle(SLColor.danger)
@@ -85,7 +88,9 @@ public struct PendingVerificationWallScreen: View {
                             .padding(.top, SLSpacing.xs)
                             .environment(
                                 \.layoutDirection,
-                                TextDirection.resolve(languageCode: nil, text: reason).layoutDirection
+                                VerificationRejection.isMachineReason(viewModel.rejectionReason)
+                                    ? TextDirection.resolve(languageCode: L10n.languageCode, text: reason).layoutDirection
+                                    : TextDirection.resolve(languageCode: nil, text: reason).layoutDirection
                             )
                     }
                 }
@@ -120,6 +125,19 @@ public struct PendingVerificationWallScreen: View {
             await viewModel.refresh()
             startProcessingAnimation()
         }
+        // The claim comes first. Once it is saved the chooser opens — after
+        // this sheet has gone, for the same reason as below.
+        .sheet(isPresented: $isPickingNationality, onDismiss: {
+            if chooseAfterPicking {
+                chooseAfterPicking = false
+                isChoosingMethod = true
+            }
+        }) {
+            NationalityPickerSheet(selected: viewModel.declaredNationality, isSaving: isSavingNationality) { code in
+                Task { await declare(code) }
+            }
+            .interactiveDismissDisabled(isSavingNationality)
+        }
         // The chooser is a sheet; the chosen flow is a cover. Presenting the
         // cover while the sheet is still dismissing is a glitch, so the
         // choice is remembered and acted on in `onDismiss`.
@@ -129,7 +147,7 @@ public struct PendingVerificationWallScreen: View {
                 route = chosen
             }
         }) {
-            VerificationMethodSheet { chosen in
+            VerificationMethodSheet(declaredNationality: viewModel.declaredNationality) { chosen in
                 analytics.track(.verificationMethodChosen, properties: ["method": chosen.rawValue])
                 pendingRoute = chosen
                 isChoosingMethod = false
@@ -202,6 +220,24 @@ public struct PendingVerificationWallScreen: View {
                     )
                 }
             }
+        }
+    }
+
+    /// Sends the claim, then moves on to the route chooser.
+    private func declare(_ code: String) async {
+        guard let verification, !isSavingNationality else { return }
+        isSavingNationality = true
+        defer { isSavingNationality = false }
+        do {
+            let report = try await verification.setNationality(code)
+            viewModel.adopt(report)
+            analytics.track(.nationalityDeclared)
+            chooseAfterPicking = true
+            isPickingNationality = false
+        } catch let error as APIError {
+            viewModel.toast = .error(error.userMessage)
+        } catch {
+            viewModel.toast = .error(L10n.t("common.somethingWentWrong"))
         }
     }
 
@@ -291,7 +327,12 @@ public struct PendingVerificationWallScreen: View {
                 return
             }
             analytics.track(.verificationStarted, properties: ["status": viewModel.status.rawValue])
-            isChoosingMethod = true
+            // No claim yet: ask for it first. The chooser follows on its own.
+            if viewModel.declaredNationality == nil {
+                isPickingNationality = true
+            } else {
+                isChoosingMethod = true
+            }
         }
     }
 

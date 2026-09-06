@@ -62,6 +62,7 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
 
     private var pollCount = 0
     private var submitted: DocumentCase?
+    private var declared: String?
 
     /// The fixed number the waiting screen shows in mock runs.
     public static let mockRandomNumber = "42"
@@ -89,6 +90,22 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         self.scenario = scenario
         pollCount = 0
         submitted = nil
+    }
+
+    // MARK: - The claim
+
+    public func setNationality(_ code: String) async throws -> VerificationStatusReport {
+        record("setNationality")
+        try await delay()
+        try failIfOffline()
+        guard let normalised = CountryCode.normalised(code) else {
+            throw APIError.api(code: .invalidCountry, message: "Choose a nationality from the list.", status: 400)
+        }
+        if scenario == .alreadyVerified {
+            throw APIError.api(code: .alreadyVerified, message: "This account is already verified.", status: 409)
+        }
+        declared = normalised
+        return VerificationStatusReport(status: .unstarted, nationality: normalised)
     }
 
     // MARK: - Nafath

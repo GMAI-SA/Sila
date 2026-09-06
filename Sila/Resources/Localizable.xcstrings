@@ -5413,6 +5413,24 @@
         }
       }
     },
+    "auth.rejected.reason.documentExpired": {
+      "comment": "Rejection reason: expired document or Iqama.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت صلاحية وثيقة الهوية التي قدّمتها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The identity document you presented has expired."
+          }
+        }
+      }
+    },
     "auth.rejected.reason.hint": {
       "comment": "VoiceOver hint for the reason block.",
       "extractionState": "manual",
@@ -5427,6 +5445,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "The reviewer's explanation for the decision"
+          }
+        }
+      }
+    },
+    "auth.rejected.reason.nationalityMismatch": {
+      "comment": "Rejection reason: the document contradicted the declared nationality.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجنسية في الهوية التي قدّمتها لا تطابق الجنسية التي اخترتها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The nationality on the identity you presented does not match the nationality you selected."
+          }
+        }
+      }
+    },
+    "auth.rejected.reason.underMinimumAge": {
+      "comment": "Rejection reason: under the minimum age.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الهوية التي قدّمتها دون الحد الأدنى للعمر في سِلة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The identity you presented is under the minimum age for Sila."
           }
         }
       }
@@ -10905,6 +10959,24 @@
         }
       }
     },
+    "error.nationalityMismatch": {
+      "comment": "Server refused: proven nationality differs from the claim.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجنسية في هويتك لا تطابق الجنسية التي اخترتها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The nationality on your identity does not match the nationality you selected."
+          }
+        }
+      }
+    },
     "error.noCountry": {
       "comment": "The My Country feed was opened by an account with no verified country.",
       "extractionState": "manual",
@@ -13323,6 +13395,96 @@
           "stringUnit": {
             "state": "translated",
             "value": "Messages"
+          }
+        }
+      }
+    },
+    "nationality.picker.message": {
+      "comment": "Explains what the choice is for.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر الجنسية المدوّنة في وثيقة هويتك. يتحقق النظام منها مقابل الوثيقة — والوثيقة التي تخالفها تُرفض، فاختر ما يمكنك إثباته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the nationality on your identity document. Verification checks it against the document — a document that says otherwise is refused, so pick the one you can prove."
+          }
+        }
+      }
+    },
+    "nationality.picker.row.hint": {
+      "comment": "Accessibility hint on a country row.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يختار هذه الجنسية ويتابع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selects this nationality and continues"
+          }
+        }
+      }
+    },
+    "nationality.picker.saving": {
+      "comment": "Accessibility label while the choice is sent.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ حفظ جنسيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving your nationality"
+          }
+        }
+      }
+    },
+    "nationality.picker.search": {
+      "comment": "Search field placeholder.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابحث عن دولة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search countries"
+          }
+        }
+      }
+    },
+    "nationality.picker.title": {
+      "comment": "Navigation title of the nationality picker.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جنسيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your nationality"
           }
         }
       }
@@ -25339,6 +25501,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nafath"
+          }
+        }
+      }
+    },
+    "verification.method.saudiOnly": {
+      "comment": "Shown instead of the document option for a Saudi claim.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اخترت الجنسية السعودية، لذا نفاذ هو طريقك — فوري، بهويتك الوطنية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You chose Saudi nationality, so Nafath is your route — instant, with your National ID."
           }
         }
       }

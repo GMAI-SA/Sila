@@ -27,6 +27,18 @@ public final class VerificationService: VerificationServiceProtocol {
         self.analytics = analytics
     }
 
+    // MARK: The claim
+
+    public func setNationality(_ code: String) async throws -> VerificationStatusReport {
+        let token = try await tokens.accessToken()
+        let request = try APIRequest.json(
+            "/verification/nationality",
+            body: NationalityBody(countryCode: code.uppercased()),
+            accessToken: token
+        )
+        return try await network.send(request, as: VerificationStatusReport.self)
+    }
+
     // MARK: Nafath
 
     public func startNafath(nationalID: String) async throws -> NafathStart {

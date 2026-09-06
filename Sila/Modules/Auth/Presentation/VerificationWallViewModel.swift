@@ -128,6 +128,16 @@ public final class VerificationWallViewModel {
     /// Rejection reason from the API, when present.
     public var rejectionReason: String? { report?.rejectionReason }
 
+    /// The nationality the person declared, when the server has one.
+    public var declaredNationality: String? { report?.nationality }
+
+    /// Takes a report another call produced (declaring the nationality
+    /// answers with one) so the wall reflects it without a second round trip.
+    public func adopt(_ report: VerificationStatusReport) {
+        self.report = report
+        self.status = report.status
+    }
+
     /// Fetches `/verification/status`.
     public func refresh() async {
         guard !isRefreshing else { return }

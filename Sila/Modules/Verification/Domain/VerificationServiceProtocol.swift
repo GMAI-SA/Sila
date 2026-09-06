@@ -15,6 +15,16 @@ import Foundation
 /// as long as the request does.
 public protocol VerificationServiceProtocol: Sendable {
 
+    // MARK: The claim
+
+    /// Records what the person says their nationality is — the first step
+    /// of verification, and the claim every route then tests.
+    ///
+    /// - Throws: ``APIError`` with ``APIErrorCode/invalidCountry`` for a code
+    ///   that is not a country, ``APIErrorCode/alreadyVerified`` once the
+    ///   badge exists.
+    func setNationality(_ code: String) async throws -> VerificationStatusReport
+
     // MARK: Nafath
 
     /// Opens a Nafath request for `nationalID`.

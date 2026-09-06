@@ -301,21 +301,26 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     public let rejectionReason: String?
     public let submittedAt: Date?
     public let reviewedAt: Date?
+    /// The nationality the person declared — the claim verification tests.
+    /// `nil` until they have chosen one.
+    public let nationality: String?
 
     public init(
         status: VerificationStatus,
         rejectionReason: String? = nil,
         submittedAt: Date? = nil,
-        reviewedAt: Date? = nil
+        reviewedAt: Date? = nil,
+        nationality: String? = nil
     ) {
         self.status = status
         self.rejectionReason = rejectionReason
         self.submittedAt = submittedAt
         self.reviewedAt = reviewedAt
+        self.nationality = nationality
     }
 
     private enum CodingKeys: String, CodingKey {
-        case status, rejectionReason, submittedAt, reviewedAt
+        case status, rejectionReason, submittedAt, reviewedAt, nationality
     }
 
     public init(from decoder: Decoder) throws {
@@ -324,6 +329,7 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         rejectionReason = try? container.decodeIfPresent(String.self, forKey: .rejectionReason)
         submittedAt = try? container.decodeIfPresent(Date.self, forKey: .submittedAt)
         reviewedAt = try? container.decodeIfPresent(Date.self, forKey: .reviewedAt)
+        nationality = CountryCode.normalised(try? container.decodeIfPresent(String.self, forKey: .nationality))
     }
 }
 

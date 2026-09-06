@@ -59,6 +59,9 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// in a minute, and one person is one account, so the document route
     /// hands them to Nafath rather than open a second account.
     case useNafath = "use_nafath"
+    /// The proven nationality differs from the declared one (HTTP 403). The
+    /// account is now `rejected`; the wall and the email say why.
+    case nationalityMismatch = "nationality_mismatch"
 
     // MARK: Contract v2 — feed & social
 
@@ -268,6 +271,8 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.invalidDocumentType")
             case .useNafath:
                 return L10n.t("error.useNafath")
+            case .nationalityMismatch:
+                return L10n.t("error.nationalityMismatch")
             case .postNotFound:
                 return L10n.t("error.postNotFound")
             case .replyNotAllowed:

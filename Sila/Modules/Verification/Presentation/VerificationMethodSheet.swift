@@ -10,16 +10,27 @@ public enum VerificationRoute: String, Identifiable, Sendable, CaseIterable {
     public var id: String { rawValue }
 }
 
-/// Lets the person pick a route. Both are offered to everybody — a Saudi
-/// citizen may prefer the document route, and nothing about the choice is
+/// Lets the person pick a route. Nafath for a Saudi claim — one person, one
+/// account — and either route for everyone else. Nothing about the choice is
 /// recorded beyond which door was opened.
 @MainActor
 public struct VerificationMethodSheet: View {
 
+    private let declaredNationality: String?
     private let onChoose: (VerificationRoute) -> Void
 
-    public init(onChoose: @escaping (VerificationRoute) -> Void) {
+    /// - Parameters:
+    ///   - declaredNationality: The claim on the account. `SA` hides the
+    ///     document route — Nafath is the only door for a Saudi, by policy.
+    ///   - onChoose: Called with the chosen route.
+    public init(declaredNationality: String? = nil, onChoose: @escaping (VerificationRoute) -> Void) {
+        self.declaredNationality = declaredNationality
         self.onChoose = onChoose
+    }
+
+    /// Whether the document route is on offer for this claim.
+    public var offersDocumentRoute: Bool {
+        !DocumentVerificationViewModel.nafathOnly.contains(declaredNationality ?? "")
     }
 
     public var body: some View {
@@ -50,12 +61,21 @@ public struct VerificationMethodSheet: View {
                     title: L10n.t("verification.method.nafath.title"),
                     detail: L10n.t("verification.method.nafath.detail")
                 )
-                option(
-                    .document,
-                    icon: "doc.text.viewfinder",
-                    title: L10n.t("verification.method.document.title"),
-                    detail: L10n.t("verification.method.document.detail")
-                )
+                if offersDocumentRoute {
+                    option(
+                        .document,
+                        icon: "doc.text.viewfinder",
+                        title: L10n.t("verification.method.document.title"),
+                        detail: L10n.t("verification.method.document.detail")
+                    )
+                } else {
+                    Text(L10n.t("verification.method.saudiOnly"))
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textMuted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, SLSpacing.xs)
+                }
             }
             .padding(.horizontal, SLSpacing.lg)
 

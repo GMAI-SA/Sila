@@ -54,6 +54,9 @@ public enum AnalyticsEvent: String, Sendable {
     // Same rule as the Nafath events: nothing read off a document — not the
     // number, not the nationality, not the name — may ever be a property.
 
+    /// The person declared a nationality on the wall. Carries nothing — the
+    /// claim is about a person and stays with the account.
+    case nationalityDeclared = "nationality_declared"
     /// The person chose a route on the wall. Carries `method`: `nafath` or
     /// `document`.
     case verificationMethodChosen = "verification_method_chosen"

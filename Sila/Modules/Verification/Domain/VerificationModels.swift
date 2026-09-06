@@ -158,3 +158,8 @@ public struct NafathPoll: Decodable, Equatable, Sendable {
 struct NafathStartBody: Encodable {
     let nationalId: String
 }
+
+/// The `POST /verification/nationality` body.
+struct NationalityBody: Encodable {
+    let countryCode: String
+}

@@ -71,27 +71,29 @@ public struct RejectedScreen: View {
                 .padding(.horizontal, SLSpacing.lg)
                 .accessibilityElement(children: .combine)
 
-                if let reason, !reason.isEmpty {
+                if let shown = VerificationRejection.display(reason) {
                     SLCard(padding: SLSpacing.lg) {
                         VStack(alignment: .leading, spacing: SLSpacing.sm) {
                             Text(L10n.t("auth.rejected.reasonLabel"))
                                 .font(SLFont.micro)
                                 .tracking(0.8)
                                 .foregroundStyle(SLColor.textMuted)
-                            // Written by a reviewer, in whichever language they
-                            // reviewed in — so it reads in its own direction.
-                            Text(reason)
+                            // A machine reason reads in the interface language;
+                            // a reviewer's words read in their own direction.
+                            Text(shown)
                                 .font(SLFont.body)
                                 .foregroundStyle(SLColor.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .slContentDirection(
-                                    TextDirection.resolve(languageCode: nil, text: reason)
+                                    VerificationRejection.isMachineReason(reason)
+                                        ? TextDirection.resolve(languageCode: L10n.languageCode, text: shown)
+                                        : TextDirection.resolve(languageCode: nil, text: shown)
                                 )
                         }
                     }
                     .padding(.horizontal, SLSpacing.lg)
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel(Text(L10n.t("auth.rejected.reason.a11yLabel", reason)))
+                    .accessibilityLabel(Text(L10n.t("auth.rejected.reason.a11yLabel", shown)))
                     .accessibilityHint(Text(L10n.t("auth.rejected.reason.hint")))
                 }
 
