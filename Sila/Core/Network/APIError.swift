@@ -43,6 +43,18 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// as-is.
     case underMinimumAge = "under_minimum_age"
 
+    // MARK: Contract v12 — document + selfie verification
+
+    /// A check digit in the machine-readable zone failed server-side
+    /// (HTTP 400). The answer is a better photograph, never a typed value.
+    case invalidMrz = "invalid_mrz"
+    /// The zone's expiry date is in the past (HTTP 400).
+    case documentExpired = "document_expired"
+    /// A submission is already waiting for a reviewer (HTTP 409).
+    case reviewPending = "review_pending"
+    /// Not a passport, national ID or residence permit (HTTP 400).
+    case invalidDocumentType = "invalid_document_type"
+
     // MARK: Contract v2 — feed & social
 
     /// The requested post id does not exist (or is no longer visible).
@@ -241,6 +253,14 @@ public enum APIError: Error, Equatable, Sendable {
                 // The server's sentence when it sent one: the age rule and its
                 // wording are policy, and policy copy comes from the server.
                 return message.isEmpty ? L10n.t("error.underMinimumAge") : message
+            case .invalidMrz:
+                return L10n.t("error.invalidMrz")
+            case .documentExpired:
+                return L10n.t("error.documentExpired")
+            case .reviewPending:
+                return L10n.t("error.reviewPending")
+            case .invalidDocumentType:
+                return L10n.t("error.invalidDocumentType")
             case .postNotFound:
                 return L10n.t("error.postNotFound")
             case .replyNotAllowed:

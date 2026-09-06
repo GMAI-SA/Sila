@@ -30,6 +30,33 @@ final class OTPVerificationViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isComplete)
     }
 
+    func testAutoFillTypingIntoTheFirstBoxFillsEveryBox() {
+        // iOS AutoFill "types" the code one character at a time into the box
+        // that was first responder when the suggestion was tapped — faster
+        // than the deferred first-responder change can move to the next box.
+        // Every character therefore arrives at box 0.
+        let (viewModel, _) = makeViewModel()
+        for digit in "482913" {
+            viewModel.input(String(digit), at: 0)
+        }
+        XCTAssertEqual(viewModel.code, "482913")
+        XCTAssertTrue(viewModel.isComplete)
+        XCTAssertNil(viewModel.focusedIndex, "the keyboard can dismiss")
+    }
+
+    func testRetypingOverAFilledBoxStillReplacesIt() {
+        // The AutoFill routing must not break the deliberate case: tapping a
+        // filled box and typing replaces that box, not the focused one.
+        let (viewModel, _) = makeViewModel()
+        viewModel.input("1", at: 0)
+        viewModel.input("2", at: 1)
+        viewModel.focus(0)
+        viewModel.input("9", at: 0)
+        XCTAssertEqual(viewModel.digits[0], "9")
+        XCTAssertEqual(viewModel.digits[1], "2")
+        XCTAssertEqual(viewModel.focusedIndex, 1)
+    }
+
     func testTypingADigitAdvancesFocus() {
         let (viewModel, _) = makeViewModel()
 

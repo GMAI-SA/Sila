@@ -3,14 +3,16 @@ import SwiftUI
 /// **Screen 6 — Pending verification wall.**
 ///
 /// The hard gate. Everyone who is signed in but not yet verified lands here,
-/// and the **only** ways off it are completing verification (Phase 2) or
-/// signing out. There is no `NavigationStack` and no back button, by design:
-/// the screen is presented as a root, not pushed.
+/// and the **only** ways off it are completing verification — by Nafath or
+/// by document — or signing out. There is no `NavigationStack` and no back
+/// button, by design: the screen is presented as a root, not pushed.
 @MainActor
 public struct PendingVerificationWallScreen: View {
 
     @State private var viewModel: VerificationWallViewModel
-    @State private var isShowingNafath = false
+    @State private var isChoosingMethod = false
+    @State private var pendingRoute: VerificationRoute?
+    @State private var route: VerificationRoute?
     private let verification: VerificationServiceProtocol?
     private let analytics: AnalyticsClient
     private let onSignOut: () -> Void
@@ -23,13 +25,13 @@ public struct PendingVerificationWallScreen: View {
     /// - Parameters:
     ///   - status: Status known from the session.
     ///   - service: Auth backend.
-    ///   - verification: The Nafath backend. `nil` — the kill switch's off
-    ///     state — keeps "Start Verification" as the honest stub toast.
+    ///   - verification: The verification backend. `nil` — the kill switch's
+    ///     off state — keeps "Start Verification" as the honest stub toast.
     ///   - analytics: Event sink.
     ///   - onSignOut: Ends the session.
-    ///   - onVerified: Refreshes the session after an approval — the account's
-    ///     `verification_status` and `country_code` both changed, and this is
-    ///     what takes the wall down.
+    ///   - onVerified: Refreshes the session after a flow finishes — the
+    ///     account's `verification_status` (and, on approval, `country_code`)
+    ///     changed, and this is what moves the wall on.
     public init(
         status: VerificationStatus,
         service: AuthServiceProtocol,
@@ -118,34 +120,75 @@ public struct PendingVerificationWallScreen: View {
             await viewModel.refresh()
             startProcessingAnimation()
         }
-        .fullScreenCover(isPresented: $isShowingNafath) {
+        // The chooser is a sheet; the chosen flow is a cover. Presenting the
+        // cover while the sheet is still dismissing is a glitch, so the
+        // choice is remembered and acted on in `onDismiss`.
+        .sheet(isPresented: $isChoosingMethod, onDismiss: {
+            if let chosen = pendingRoute {
+                pendingRoute = nil
+                route = chosen
+            }
+        }) {
+            VerificationMethodSheet { chosen in
+                analytics.track(.verificationMethodChosen, properties: ["method": chosen.rawValue])
+                pendingRoute = chosen
+                isChoosingMethod = false
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.hidden)
+        }
+        .fullScreenCover(item: $route) { chosen in
             if let verification {
-                NafathVerificationScreen(
-                    viewModel: NafathVerificationViewModel(
-                        service: verification,
-                        analytics: analytics
-                    ),
-                    onApproved: {
-                        isShowingNafath = false
-                        // The account's `verification_status` and
-                        // `country_code` changed server-side; the session
-                        // re-reads both and routes past the wall.
-                        Task { await refreshAfterFlow() }
-                    },
-                    onSignInInstead: {
-                        // "This identity already has a Sila account" — the way
-                        // forward is the sign-in form, which means ending this
-                        // session.
-                        isShowingNafath = false
-                        onSignOut()
-                    },
-                    onClose: {
-                        isShowingNafath = false
-                        // The status may have moved (e.g. to in_progress);
-                        // the wall should say so rather than sit stale.
-                        Task { await viewModel.refresh() }
-                    }
-                )
+                switch chosen {
+                case .nafath:
+                    NafathVerificationScreen(
+                        viewModel: NafathVerificationViewModel(
+                            service: verification,
+                            analytics: analytics
+                        ),
+                        onApproved: {
+                            route = nil
+                            // The account's `verification_status` and
+                            // `country_code` changed server-side; the session
+                            // re-reads both and routes past the wall.
+                            Task { await refreshAfterFlow() }
+                        },
+                        onSignInInstead: {
+                            // "This identity already has a Sila account" — the
+                            // way forward is the sign-in form, which means
+                            // ending this session.
+                            route = nil
+                            onSignOut()
+                        },
+                        onClose: {
+                            route = nil
+                            // The status may have moved (e.g. to in_progress);
+                            // the wall should say so rather than sit stale.
+                            Task { await viewModel.refresh() }
+                        }
+                    )
+                case .document:
+                    DocumentVerificationScreen(
+                        viewModel: DocumentVerificationViewModel(
+                            service: verification,
+                            analytics: analytics
+                        ),
+                        onSubmitted: {
+                            route = nil
+                            // Now `pending_review`: the session re-reads the
+                            // status and the wall shows "under review".
+                            Task { await refreshAfterFlow() }
+                        },
+                        onSignInInstead: {
+                            route = nil
+                            onSignOut()
+                        },
+                        onClose: {
+                            route = nil
+                            Task { await viewModel.refresh() }
+                        }
+                    )
+                }
             }
         }
     }
@@ -222,21 +265,21 @@ public struct PendingVerificationWallScreen: View {
 
     /// What the primary CTA actually does, by status.
     ///
-    /// `unstarted` / `inProgress` open the Nafath flow. `verified` and
-    /// `rejected` re-read the session instead: the route has moved on — into
-    /// the app, or to the rejected screen with its appeal — and the button's
-    /// job is to take the user there, not to open an ID form they are past.
+    /// `unstarted` / `inProgress` / `rejected` offer the choice of route —
+    /// a rejection on one route is a reason to try the other. `verified`
+    /// re-reads the session instead: the route has moved on, into the app,
+    /// and the button's job is to take the user there.
     private func primaryAction() {
         switch viewModel.status {
-        case .verified, .rejected:
+        case .verified:
             Task { await refreshAfterFlow() }
-        case .unstarted, .inProgress, .pendingReview:
+        case .unstarted, .inProgress, .pendingReview, .rejected:
             guard verification != nil else {
                 viewModel.startVerification()
                 return
             }
             analytics.track(.verificationStarted, properties: ["status": viewModel.status.rawValue])
-            isShowingNafath = true
+            isChoosingMethod = true
         }
     }
 

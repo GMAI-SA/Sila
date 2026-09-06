@@ -146,6 +146,19 @@ public struct MultipartFormData: Sendable, Equatable {
         parts.append(Data("\r\n".utf8))
     }
 
+    /// Appends a plain text field.
+    ///
+    /// Sent without a `Content-Type`, as RFC 7578 specifies for text parts;
+    /// the server reads it as a form value. Used for the small facts that
+    /// accompany an upload (a document type, a machine-readable zone) so one
+    /// request carries the whole submission.
+    public mutating func appendField(_ value: String, name: String) {
+        parts.append(Data("--\(boundary)\r\n".utf8))
+        parts.append(Data("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".utf8))
+        parts.append(Data(value.utf8))
+        parts.append(Data("\r\n".utf8))
+    }
+
     /// The complete body: every part plus the closing delimiter.
     public func encoded() -> Data {
         var body = parts

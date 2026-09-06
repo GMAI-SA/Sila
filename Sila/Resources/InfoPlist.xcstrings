@@ -1,6 +1,24 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "NSCameraUsageDescription" : {
+      "comment" : "System camera prompt, shown when the document verification flow opens the camera.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تستخدم سِلة الكاميرا فقط لتصوير وثيقة هويتك والتقاط صورة سيلفي قصيرة أثناء التحقق. لا يُسجَّل أي شيء خارج هذه الخطوة."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sila uses the camera only to photograph your identity document and take a short selfie during verification. Nothing is recorded outside that step."
+          }
+        }
+      }
+    },
     "NSFaceIDUsageDescription" : {
       "comment" : "System Face ID prompt, shown the first time biometric sign-in is offered.",
       "extractionState" : "manual",

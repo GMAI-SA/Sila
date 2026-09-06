@@ -2,15 +2,20 @@ import Foundation
 
 /// Everything the Verification module can ask the backend to do.
 ///
-/// The seam ``NafathVerificationViewModel`` depends on; the real
-/// implementation (``VerificationService``) and the scripted one
-/// (``VerificationServiceMock``) are interchangeable.
+/// The seam ``NafathVerificationViewModel`` and
+/// ``DocumentVerificationViewModel`` depend on; the real implementation
+/// (``VerificationService``) and the scripted one (``VerificationServiceMock``)
+/// are interchangeable.
 ///
-/// The national ID passed to ``startNafath(nationalID:)`` is sent once and
-/// discarded. Implementations must not store it, log it, or attach it to an
-/// analytics event — the number is somebody's government identity, and this
-/// protocol's contract is that it exists exactly as long as the request does.
+/// Two routes, one contract. The national ID passed to
+/// ``startNafath(nationalID:)`` and the zone inside a ``DocumentSubmission``
+/// are sent once and discarded. Implementations must not store them, log
+/// them, or attach them to an analytics event — the number is somebody's
+/// government identity, and this protocol's contract is that it exists exactly
+/// as long as the request does.
 public protocol VerificationServiceProtocol: Sendable {
+
+    // MARK: Nafath
 
     /// Opens a Nafath request for `nationalID`.
     ///
@@ -31,4 +36,23 @@ public protocol VerificationServiceProtocol: Sendable {
     ///   verified identity is under Sila's minimum age — terminal, and the
     ///   server's message is what the user reads.
     func pollNafath(requestID: String) async throws -> NafathPoll
+
+    // MARK: Document + selfie
+
+    /// Uploads a document and selfie sequence for a reviewer.
+    ///
+    /// - Returns: The case, in ``DocumentCaseStatus/submitted``; the account
+    ///   is now `pending_review`.
+    /// - Throws: ``APIError`` with:
+    ///   - ``APIErrorCode/alreadyVerified``, ``APIErrorCode/reviewPending``;
+    ///   - ``APIErrorCode/invalidMrz`` — a check digit failed server-side;
+    ///   - ``APIErrorCode/documentExpired``;
+    ///   - ``APIErrorCode/identityAlreadyUsed`` — this document already
+    ///     verified another account;
+    ///   - ``APIErrorCode/underMinimumAge`` — terminal, server's words.
+    func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase
+
+    /// The caller's most recent document case, or `nil` when there has never
+    /// been one.
+    func latestDocumentCase() async throws -> DocumentCase?
 }

@@ -11,6 +11,7 @@ public struct RejectedScreen: View {
     private let reason: String?
     private let email: String?
     private let analytics: AnalyticsClient
+    private let onTryAgain: (() -> Void)?
     private let onSignOut: () -> Void
 
     @Environment(\.openURL) private var openURL
@@ -20,16 +21,21 @@ public struct RejectedScreen: View {
     ///   - reason: Rejection reason from `/verification/status`.
     ///   - email: The user's address, quoted in the appeal mail body.
     ///   - analytics: Event sink.
+    ///   - onTryAgain: Reopens the verification wall so the person can try
+    ///     the other route — a document rejected for a blurry photograph is
+    ///     not a verdict on the person. `nil` hides the button.
     ///   - onSignOut: Ends the session.
     public init(
         reason: String?,
         email: String? = nil,
         analytics: AnalyticsClient,
+        onTryAgain: (() -> Void)? = nil,
         onSignOut: @escaping () -> Void
     ) {
         self.reason = reason
         self.email = email
         self.analytics = analytics
+        self.onTryAgain = onTryAgain
         self.onSignOut = onSignOut
     }
 
@@ -90,9 +96,19 @@ public struct RejectedScreen: View {
                 }
 
                 VStack(spacing: SLSpacing.md) {
+                    if let onTryAgain {
+                        SLButton(
+                            L10n.t("auth.rejected.tryAgain"),
+                            variant: .primary,
+                            icon: "arrow.counterclockwise",
+                            accessibilityHint: L10n.t("auth.rejected.tryAgain.hint"),
+                            action: onTryAgain
+                        )
+                    }
+
                     SLButton(
                         L10n.t("auth.rejected.appeal"),
-                        variant: .primary,
+                        variant: onTryAgain == nil ? .primary : .secondary,
                         icon: "envelope",
                         accessibilityHint: L10n.t("auth.rejected.appeal.hint")
                     ) {

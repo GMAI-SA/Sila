@@ -126,6 +126,7 @@ public struct RootView: View {
                     reason: reason,
                     email: container.session.user?.email,
                     analytics: container.analytics,
+                    onTryAgain: { container.session.retryVerification() },
                     onSignOut: { Task { await container.session.signOut() } }
                 )
                 .transition(.opacity)

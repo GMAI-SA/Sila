@@ -115,8 +115,19 @@ public final class OTPVerificationViewModel {
             return
         }
 
-        digits[index] = String(filtered.prefix(1))
-        advanceFocus(from: index)
+        // AutoFill — and a fast typist — deliver digits quicker than UIKit
+        // moves the first responder: the model has already advanced focus to
+        // the next box while the keyboard is still writing into the previous
+        // one. A digit that lands on a filled box the model has moved on from
+        // belongs to the box the model is focused on. Without this a six-digit
+        // AutoFill leaves one box holding its last digit and five empty.
+        var target = index
+        if let focusedIndex, focusedIndex != index, !digits[index].isEmpty {
+            target = focusedIndex
+        }
+
+        digits[target] = String(filtered.prefix(1))
+        advanceFocus(from: target)
     }
 
     /// Handles a backspace on an already-empty box by clearing the previous one.

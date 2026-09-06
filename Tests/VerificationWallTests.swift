@@ -48,11 +48,11 @@ final class VerificationWallTests: XCTestCase {
         XCTAssertFalse(presentation.showsProcessingAnimation)
     }
 
-    func testRejectedIsColouredAsDangerAndOffersAnAppeal() {
+    func testRejectedIsColouredAsDangerAndOffersTheOtherRoute() {
         let presentation = WallPresentation.make(for: .rejected)
         XCTAssertEqual(presentation.badgeText, "Rejected")
         XCTAssertEqual(presentation.badgeStyle, .danger)
-        XCTAssertEqual(presentation.primaryActionTitle, "Appeal")
+        XCTAssertEqual(presentation.primaryActionTitle, "Try another way")
     }
 
     func testOnlyVerifiedGrantsAccess() {

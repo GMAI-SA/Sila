@@ -49,6 +49,25 @@ public enum AnalyticsEvent: String, Sendable {
     /// only, never anything the user typed.
     case nafathStartRefused = "nafath_start_refused"
 
+    // MARK: Contract v12 — document + selfie verification
+    //
+    // Same rule as the Nafath events: nothing read off a document — not the
+    // number, not the nationality, not the name — may ever be a property.
+
+    /// The person chose a route on the wall. Carries `method`: `nafath` or
+    /// `document`.
+    case verificationMethodChosen = "verification_method_chosen"
+    /// The document flow opened. Carries `document_type`.
+    case documentVerificationStarted = "document_verification_started"
+    /// The selfie sequence completed on device.
+    case livenessCompleted = "liveness_completed"
+    /// `POST /verification/document` succeeded. Carries `document_type`,
+    /// whether a zone was `read` or `none`, and the challenge count.
+    case documentSubmitted = "document_submitted"
+    /// The submit was refused. Carries `code` — the structured error code
+    /// only.
+    case documentSubmitRefused = "document_submit_refused"
+
     // MARK: Settings
 
     /// The in-app language changed. Carries `language`: `system`, `en` or `ar`.

@@ -4,28 +4,35 @@ import Foundation
 /// `-mockVerification` launch argument.
 ///
 /// Pick a ``MockScenario`` and the whole flow behaves consistently with it: a
-/// tester can walk from the wall, through the ID form, to the exact terminal
+/// tester can walk from the wall, through either route, to the exact terminal
 /// state they want to see — without a backend and without spending a real
-/// identity.
+/// identity or a real passport.
 public actor VerificationServiceMock: VerificationServiceProtocol {
 
-    /// The canned journeys the mock can play.
+    /// The canned journeys the mock can play. The same scenario drives both
+    /// routes, so a tester picks one word and sees the same outcome whichever
+    /// door they walk through.
     public enum MockScenario: String, CaseIterable, Sendable {
-        /// Pending for a couple of polls, then approved.
+        /// Nafath: pending for a couple of polls, then approved.
+        /// Document: submitted, then the latest case reads `approved`.
         case approved
-        /// Pending for a couple of polls, then rejected with a reason.
+        /// Nafath: pending, then rejected with a reason.
+        /// Document: submitted, then the latest case reads `rejected`.
         case rejected
-        /// Pending forever — the request expires.
+        /// Nafath: pending forever — the request expires.
+        /// Document: submitted, and stays under review.
         case expires
-        /// `start` answers 409 `already_verified`.
+        /// Either start answers 409 `already_verified`.
         case alreadyVerified
-        /// `start` answers 400 `invalid_national_id`.
+        /// Nafath start answers 400 `invalid_national_id`;
+        /// document submit answers 400 `invalid_mrz`.
         case invalidNationalId
-        /// `start` answers 409 `identity_already_used`.
+        /// Either start answers 409 `identity_already_used`.
         case identityAlreadyUsed
-        /// `start` answers 503 `verification_unavailable`.
+        /// Nafath start answers 503 `verification_unavailable`;
+        /// document submit answers 409 `review_pending`.
         case unavailable
-        /// The poll answers 403 `under_minimum_age`.
+        /// Nafath poll / document submit answer 403 `under_minimum_age`.
         case underMinimumAge
         /// Every call fails with a transport error.
         case offline
@@ -45,11 +52,13 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
     private let latency: Double
 
     /// Calls recorded for test assertions. Deliberately **never** includes the
-    /// national ID — the mock honours the same privacy contract as the real
-    /// service, so a test that inspects it proves the right thing.
+    /// national ID, the zone, or anything read off a document — the mock
+    /// honours the same privacy contract as the real service, so a test that
+    /// inspects it proves the right thing.
     public private(set) var recordedCalls: [String] = []
 
     private var pollCount = 0
+    private var submitted: DocumentCase?
 
     /// The fixed number the waiting screen shows in mock runs.
     public static let mockRandomNumber = "42"
@@ -76,9 +85,10 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
     public func setScenario(_ scenario: MockScenario) {
         self.scenario = scenario
         pollCount = 0
+        submitted = nil
     }
 
-    // MARK: - VerificationServiceProtocol
+    // MARK: - Nafath
 
     public func startNafath(nationalID: String) async throws -> NafathStart {
         record("startNafath")
@@ -158,6 +168,93 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
             return NafathPoll(status: .pending, verificationStatus: .inProgress)
         default:
             return NafathPoll(status: .pending, verificationStatus: .inProgress)
+        }
+    }
+
+    // MARK: - Document + selfie
+
+    public func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase {
+        record("submitDocument")
+        try await delay()
+        try failIfOffline()
+
+        switch scenario {
+        case .alreadyVerified:
+            throw APIError.api(code: .alreadyVerified, message: "This account is already verified.", status: 409)
+        case .invalidNationalId:
+            throw APIError.api(
+                code: .invalidMrz,
+                message: "The machine-readable zone could not be verified. Retake the photo in good light.",
+                status: 400
+            )
+        case .identityAlreadyUsed:
+            throw APIError.api(
+                code: .identityAlreadyUsed,
+                message: "That document is already verified on another account.",
+                status: 409
+            )
+        case .unavailable:
+            throw APIError.api(
+                code: .reviewPending,
+                message: "A submission is already waiting for review.",
+                status: 409
+            )
+        case .underMinimumAge:
+            throw APIError.api(
+                code: .underMinimumAge,
+                message: "You must be at least 13 to use Sila.",
+                status: 403
+            )
+        default:
+            let documentCase = DocumentCase(
+                id: "mock-case-\(UUID().uuidString.prefix(8))",
+                status: .submitted,
+                documentType: submission.documentType.wireValue,
+                nationality: submission.mrz?.nationality ?? "US",
+                mrzValid: submission.mrz?.isValid ?? false,
+                livenessPassed: Set(submission.challenges) == Set(LivenessChallenge.allCases),
+                submittedAt: Date(),
+                verificationStatus: .pendingReview
+            )
+            submitted = documentCase
+            return documentCase
+        }
+    }
+
+    public func latestDocumentCase() async throws -> DocumentCase? {
+        record("latestDocumentCase")
+        try await delay()
+        try failIfOffline()
+        guard let submitted else { return nil }
+
+        switch scenario {
+        case .approved:
+            return DocumentCase(
+                id: submitted.id,
+                status: .approved,
+                documentType: submitted.documentType,
+                nationality: submitted.nationality,
+                mrzValid: submitted.mrzValid,
+                livenessPassed: submitted.livenessPassed,
+                submittedAt: submitted.submittedAt,
+                reviewedAt: Date(),
+                verificationStatus: .verified
+            )
+        case .rejected:
+            return DocumentCase(
+                id: submitted.id,
+                status: .rejected,
+                documentType: submitted.documentType,
+                nationality: submitted.nationality,
+                mrzValid: submitted.mrzValid,
+                livenessPassed: submitted.livenessPassed,
+                submittedAt: submitted.submittedAt,
+                reviewedAt: Date(),
+                rejectionReason: "The selfie does not match the photo on the document.",
+                verificationStatus: .rejected
+            )
+        default:
+            return submitted
         }
     }
 

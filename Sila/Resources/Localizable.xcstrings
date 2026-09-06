@@ -5467,6 +5467,42 @@
         }
       }
     },
+    "auth.rejected.tryAgain": {
+      "comment": "Button on the rejected screen that reopens the wall.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جرّب طريقة أخرى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another way"
+          }
+        }
+      }
+    },
+    "auth.rejected.tryAgain.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعود إلى شاشة التحقق لتجربة الطريقة الأخرى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns to the verification screen to try the other method"
+          }
+        }
+      }
+    },
     "auth.signIn.biometric.button": {
       "comment": "Biometric sign-in button. %@ is Face ID, Touch ID or Optic ID.",
       "extractionState": "manual",
@@ -6032,13 +6068,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تقديم تظلّم"
+            "value": "جرّب طريقة أخرى"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Appeal"
+            "value": "Try another way"
           }
         }
       }
@@ -7200,24 +7236,6 @@
         "ar": {
           "variations": {
             "plural": {
-              "zero": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "لا يمكنك إرفاق صور"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "يمكنك إرفاق صورة واحدة"
-                }
-              },
-              "two": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "يمكنك إرفاق صورتين"
-                }
-              },
               "few": {
                 "stringUnit": {
                   "state": "translated",
@@ -7230,10 +7248,28 @@
                   "value": "يمكنك إرفاق %lld صورة"
                 }
               },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يمكنك إرفاق صورة واحدة"
+                }
+              },
               "other": {
                 "stringUnit": {
                   "state": "translated",
                   "value": "يمكنك إرفاق %lld صورة"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يمكنك إرفاق صورتين"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا يمكنك إرفاق صور"
                 }
               }
             }
@@ -8607,6 +8643,1086 @@
         }
       }
     },
+    "document.cancel.hint": {
+      "comment": "Accessibility hint on Cancel.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يغادر دون إرسال"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leaves without submitting"
+          }
+        }
+      }
+    },
+    "document.capture.back.instruction": {
+      "comment": "Capture step instruction.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "املأ الإطار بالبطاقة كاملة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill the frame with the whole card."
+          }
+        }
+      }
+    },
+    "document.capture.back.title": {
+      "comment": "Capture step headline.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "والآن الظهر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now the back"
+          }
+        }
+      }
+    },
+    "document.capture.front.instruction": {
+      "comment": "Capture step instruction.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "املأ الإطار بالصفحة كاملة. يجب أن تكون سطور الحروف والأرقام في الأسفل واضحة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill the frame with the whole page. The lines of letters and numbers at the bottom must be sharp."
+          }
+        }
+      }
+    },
+    "document.capture.front.title": {
+      "comment": "Capture step headline.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صوّر الوجه الأمامي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph the front"
+          }
+        }
+      }
+    },
+    "document.capture.noCamera": {
+      "comment": "Shown when the device has no camera.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا تتوفر كاميرا على هذا الجهاز."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No camera is available on this device."
+          }
+        }
+      }
+    },
+    "document.capture.openSettings": {
+      "comment": "Button that opens the system Settings app.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح الإعدادات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
+    },
+    "document.capture.openSettings.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح إعدادات سِلة في تطبيق الإعدادات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens Sila's settings in the Settings app"
+          }
+        }
+      }
+    },
+    "document.capture.permissionDenied": {
+      "comment": "Shown when camera access was refused.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحتاج سِلة إلى الكاميرا لتصوير وثيقتك. اسمح بها من الإعدادات."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sila needs the camera to photograph your document. Allow it in Settings."
+          }
+        }
+      }
+    },
+    "document.capture.reading": {
+      "comment": "Progress text while the zone is read.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ قراءة الوثيقة…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading the document…"
+          }
+        }
+      }
+    },
+    "document.capture.retake": {
+      "comment": "Button: discard the photo and try again.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة الالتقاط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retake"
+          }
+        }
+      }
+    },
+    "document.capture.shutter": {
+      "comment": "Shutter button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التقاط صورة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take photo"
+          }
+        }
+      }
+    },
+    "document.capture.shutter.hint": {
+      "comment": "Accessibility hint on the shutter.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يلتقط الوثيقة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captures the document"
+          }
+        }
+      }
+    },
+    "document.capture.usePhoto": {
+      "comment": "Button: keep the captured photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدام هذه الصورة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use this photo"
+          }
+        }
+      }
+    },
+    "document.capture.usePhoto.hint": {
+      "comment": "Accessibility hint on Use this photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يقرأ الوثيقة ويتابع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads the document and continues"
+          }
+        }
+      }
+    },
+    "document.capture.viewport.a11y": {
+      "comment": "Accessibility label of the camera viewport.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض الكاميرا للوثيقة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera view of the document"
+          }
+        }
+      }
+    },
+    "document.expired.title": {
+      "comment": "Headline of the expired-document screen.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثيقة منتهية الصلاحية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired document"
+          }
+        }
+      }
+    },
+    "document.liveness.done": {
+      "comment": "Prompt once every challenge is complete.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "document.liveness.lookStraight": {
+      "comment": "Liveness prompt.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انظر مباشرة إلى الكاميرا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look straight at the camera"
+          }
+        }
+      }
+    },
+    "document.liveness.message": {
+      "comment": "Selfie step body.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتبع التعليمات. هذا يثبت أن شخصًا يحمل الهاتف، لا صورة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow the prompts. This proves a person is holding the phone, not a photo."
+          }
+        }
+      }
+    },
+    "document.liveness.noFace": {
+      "comment": "Prompt when no face is detected.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحرّك حتى يملأ وجهك الدائرة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move so your face fills the circle"
+          }
+        }
+      }
+    },
+    "document.liveness.start": {
+      "comment": "Button that begins the prompts.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        }
+      }
+    },
+    "document.liveness.start.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يبدأ تعليمات السيلفي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begins the selfie prompts"
+          }
+        }
+      }
+    },
+    "document.liveness.start.prompt": {
+      "comment": "Prompt before Start is pressed.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أمسك الهاتف على مسافة ذراع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold the phone at arm's length"
+          }
+        }
+      }
+    },
+    "document.liveness.title": {
+      "comment": "Selfie step headline.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "والآن سيلفي سريع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now a quick selfie"
+          }
+        }
+      }
+    },
+    "document.liveness.turnLeft": {
+      "comment": "Liveness prompt.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدر رأسك إلى أحد الجانبين"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn your head to one side"
+          }
+        }
+      }
+    },
+    "document.liveness.turnRight": {
+      "comment": "Liveness prompt.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "والآن الجانب الآخر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now the other side"
+          }
+        }
+      }
+    },
+    "document.liveness.viewport.a11y": {
+      "comment": "Accessibility label of the selfie viewport.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض الكاميرا الأمامية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front camera view"
+          }
+        }
+      }
+    },
+    "document.mock.useSample": {
+      "comment": "Simulator-only button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدام صورة تجريبية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a sample photo"
+          }
+        }
+      }
+    },
+    "document.mock.useSample.hint": {
+      "comment": "Accessibility hint, simulator only.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "للمحاكي فقط: يتابع بصورة بديلة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulator only: continues with a placeholder image"
+          }
+        }
+      }
+    },
+    "document.nav.title": {
+      "comment": "Navigation title of the document flow.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التحقق بوثيقة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify with a document"
+          }
+        }
+      }
+    },
+    "document.privacy": {
+      "comment": "Privacy note under the document picker.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يُخزَّن رقم الوثيقة أبدًا — بصمة منه فقط، ليتحقق حساب واحد بوثيقة واحدة. تُحذف صورك بعد المراجعة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document number is never stored — only a fingerprint of it, so one document can verify one account. Your photos are deleted once reviewed."
+          }
+        }
+      }
+    },
+    "document.retake.hint": {
+      "comment": "Accessibility hint on Retake.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يلتقط الصورة مجددًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes the photo again"
+          }
+        }
+      }
+    },
+    "document.review.continue": {
+      "comment": "Button: confirm the details and go to the selfie.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التفاصيل صحيحة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looks right"
+          }
+        }
+      }
+    },
+    "document.review.continue.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتابع إلى السيلفي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continues to the selfie"
+          }
+        }
+      }
+    },
+    "document.review.dateOfBirth": {
+      "comment": "Row label.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تاريخ الميلاد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date of birth"
+          }
+        }
+      }
+    },
+    "document.review.documentNumber": {
+      "comment": "Row label. The value is masked.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رقم الوثيقة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document number"
+          }
+        }
+      }
+    },
+    "document.review.expired": {
+      "comment": "Shown for an expired document.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت صلاحية هذه الوثيقة. تحتاج سِلة إلى وثيقة سارية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document has expired. Sila needs a valid one."
+          }
+        }
+      }
+    },
+    "document.review.expiry": {
+      "comment": "Row label.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنتهي في"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires"
+          }
+        }
+      }
+    },
+    "document.review.message": {
+      "comment": "Review step body.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قُرئت من وثيقتك. إن كان شيء خاطئًا فأعد التقاط الصورة — لا يمكن كتابة أي شيء هنا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from your document. If anything is wrong, retake the photo — nothing here can be typed."
+          }
+        }
+      }
+    },
+    "document.review.nationality": {
+      "comment": "Row label.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجنسية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nationality"
+          }
+        }
+      }
+    },
+    "document.review.noCountry": {
+      "comment": "Shown when the zone names no country.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الوثيقة لا تذكر دولة، لذا لا يمكنها منحك شارة دولة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document names no country, so it cannot give you a country badge."
+          }
+        }
+      }
+    },
+    "document.review.title": {
+      "comment": "Review step headline when the zone was read.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "راجع التفاصيل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the details"
+          }
+        }
+      }
+    },
+    "document.review.unreadable.message": {
+      "comment": "Review step body when no zone was read.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيقرأ مراجعٌ الوثيقة بعينه بدلًا من ذلك. إعادة التقاط الصورة في إضاءة أفضل تحلّ هذا عادةً."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A reviewer will read the document by eye instead. Retaking the photo in better light usually fixes this."
+          }
+        }
+      }
+    },
+    "document.review.unreadable.title": {
+      "comment": "Review step headline when no zone was read.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر علينا قراءة المنطقة الآلية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't read the zone"
+          }
+        }
+      }
+    },
+    "document.submitted.continue": {
+      "comment": "Button that returns to the wall.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "document.submitted.continue.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعود إلى شاشة التحقق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns to the verification screen"
+          }
+        }
+      }
+    },
+    "document.submitted.message": {
+      "comment": "Body after submission.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيقارن مراجعٌ السيلفي بالوثيقة. سترى النتيجة هنا — عادةً خلال يوم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A reviewer will compare your selfie with the document. You'll see the result here — usually within a day."
+          }
+        }
+      }
+    },
+    "document.submitted.title": {
+      "comment": "Headline after submission.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قيد المراجعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under review"
+          }
+        }
+      }
+    },
+    "document.submitting.message": {
+      "comment": "Body while uploading.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُنقل صورك مشفّرة وتُحذف لحظة يقرر المراجع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your photos travel encrypted and are deleted the moment a reviewer decides."
+          }
+        }
+      }
+    },
+    "document.submitting.title": {
+      "comment": "Headline while uploading.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الإرسال…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending…"
+          }
+        }
+      }
+    },
+    "document.type.hint": {
+      "comment": "Accessibility hint on a document option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المتابعة بهذه الوثيقة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with this document"
+          }
+        }
+      }
+    },
+    "document.type.message": {
+      "comment": "Body of the document picker.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منطقتها المقروءة آليًا تخبرنا بجنسيتك. وهذا ما ستعرضه شارتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its machine-readable zone tells us your nationality. That is what your badge will show."
+          }
+        }
+      }
+    },
+    "document.type.nationalId.detail": {
+      "comment": "Document option detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوجه والظهر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front and back."
+          }
+        }
+      }
+    },
+    "document.type.nationalId.title": {
+      "comment": "Document option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بطاقة هوية وطنية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "National ID card"
+          }
+        }
+      }
+    },
+    "document.type.passport.detail": {
+      "comment": "Document option detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من أي دولة. صفحة الصورة فقط."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any country. The photo page only."
+          }
+        }
+      }
+    },
+    "document.type.passport.title": {
+      "comment": "Document option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جواز سفر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport"
+          }
+        }
+      }
+    },
+    "document.type.residencePermit.detail": {
+      "comment": "Document option detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوجه والظهر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front and back."
+          }
+        }
+      }
+    },
+    "document.type.residencePermit.title": {
+      "comment": "Document option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصريح إقامة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Residence permit"
+          }
+        }
+      }
+    },
+    "document.type.title": {
+      "comment": "Headline of the document picker.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أي وثيقة؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which document?"
+          }
+        }
+      }
+    },
     "ds.avatar.fallbackName": {
       "comment": "VoiceOver label for an avatar with no display name. The %@ is the monogram initials.",
       "extractionState": "manual",
@@ -9375,6 +10491,24 @@
         }
       }
     },
+    "error.documentExpired": {
+      "comment": "Server refused an expired document.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت صلاحية هذه الوثيقة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document has expired."
+          }
+        }
+      }
+    },
     "error.emailTaken": {
       "comment": "Registration with an address that already has an account.",
       "extractionState": "manual",
@@ -9555,6 +10689,24 @@
         }
       }
     },
+    "error.invalidDocumentType": {
+      "comment": "Server refused the document type.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر جواز سفر أو بطاقة هوية وطنية أو تصريح إقامة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a passport, national ID card or residence permit."
+          }
+        }
+      }
+    },
     "error.invalidHandle": {
       "comment": "The requested handle breaks the character rule.",
       "extractionState": "manual",
@@ -9587,6 +10739,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "That file couldn't be read as an image. Pick a photo instead."
+          }
+        }
+      }
+    },
+    "error.invalidMrz": {
+      "comment": "Server refused the machine-readable zone.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر التحقق من المنطقة المقروءة آليًا في الوثيقة. أعد التقاط الصورة في إضاءة جيدة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document's machine-readable zone couldn't be verified. Retake the photo in good light."
           }
         }
       }
@@ -9923,6 +11093,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "You can't reply to this thread."
+          }
+        }
+      }
+    },
+    "error.reviewPending": {
+      "comment": "A submission is already waiting.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلبك بانتظار المراجعة بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your submission is already waiting for review."
           }
         }
       }
@@ -13659,24 +14847,6 @@
         "ar": {
           "variations": {
             "plural": {
-              "zero": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "لا صور"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "صورة واحدة"
-                }
-              },
-              "two": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "صورتان"
-                }
-              },
               "few": {
                 "stringUnit": {
                   "state": "translated",
@@ -13689,10 +14859,28 @@
                   "value": "%lld صورة"
                 }
               },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "صورة واحدة"
+                }
+              },
               "other": {
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld صورة"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "صورتان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا صور"
                 }
               }
             }
@@ -17496,24 +18684,6 @@
               "formatSpecifier": "lld",
               "variations": {
                 "plural": {
-                  "zero": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "لا أحد ينتظر"
-                    }
-                  },
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "شخص واحد ينتظر"
-                    }
-                  },
-                  "two": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "شخصان ينتظران"
-                    }
-                  },
                   "few": {
                     "stringUnit": {
                       "state": "translated",
@@ -17526,10 +18696,28 @@
                       "value": "%lld شخصًا ينتظرون"
                     }
                   },
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "شخص واحد ينتظر"
+                    }
+                  },
                   "other": {
                     "stringUnit": {
                       "state": "translated",
                       "value": "%lld شخص ينتظرون"
+                    }
+                  },
+                  "two": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "شخصان ينتظران"
+                    }
+                  },
+                  "zero": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "لا أحد ينتظر"
                     }
                   }
                 }
@@ -23971,6 +25159,132 @@
           "stringUnit": {
             "state": "translated",
             "value": "This identity already has a Sila account"
+          }
+        }
+      }
+    },
+    "verification.method.document.detail": {
+      "comment": "Option detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من أي دولة، بما فيها السعودية. صوّر الوثيقة، والتقط سيلفي قصيرًا، ويراجعها مراجع — عادةً خلال يوم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any country, including Saudi Arabia. Photograph the document, take a short selfie, and a reviewer checks it — usually within a day."
+          }
+        }
+      }
+    },
+    "verification.method.document.title": {
+      "comment": "Option title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جواز سفر أو بطاقة هوية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport or ID card"
+          }
+        }
+      }
+    },
+    "verification.method.hint": {
+      "comment": "Accessibility hint on either option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح طريقة التحقق هذه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens this verification method"
+          }
+        }
+      }
+    },
+    "verification.method.nafath.detail": {
+      "comment": "Option detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هوية وطنية سعودية أو إقامة. فوري — تؤكد رقمًا في تطبيق نفاذ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saudi National ID or Iqama. Instant — you confirm a number in the Nafath app."
+          }
+        }
+      }
+    },
+    "verification.method.nafath.title": {
+      "comment": "Option title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نفاذ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nafath"
+          }
+        }
+      }
+    },
+    "verification.method.subtitle": {
+      "comment": "Sheet subtitle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كلاهما يستغرق دقائق قليلة. وفي الحالتين تُقرأ جنسيتك من الوثيقة، لا منك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Both take a few minutes. Either way, your nationality comes from the document — never from you."
+          }
+        }
+      }
+    },
+    "verification.method.title": {
+      "comment": "Sheet title: choosing between Nafath and document verification.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كيف تودّ التحقق؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How would you like to verify?"
           }
         }
       }

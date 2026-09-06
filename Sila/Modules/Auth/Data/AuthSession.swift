@@ -202,6 +202,15 @@ public final class AuthSession {
         applyRoute(for: user.verificationStatus, reason: verificationReport?.rejectionReason)
     }
 
+    /// Puts a rejected account back on the wall so it can try the other
+    /// verification route. The status on the server is still `rejected`;
+    /// only the screen changes, and the next refresh routes on whatever the
+    /// new attempt produced.
+    public func retryVerification() {
+        route = .verificationWall(.rejected)
+        analytics.track(.verificationWallShown, properties: ["status": "rejected_retry"])
+    }
+
     private func applyRoute(for status: VerificationStatus, reason: String?) {
         switch status {
         case .verified:
