@@ -24,6 +24,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Sila never opens the camera. The voice-room framework it uses ships camera support that Sila does not enable, and iOS requires this description because that code is present.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Sign in with Face ID</string>
 	<key>NSMicrophoneUsageDescription</key>
