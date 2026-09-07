@@ -312,6 +312,13 @@ public enum AnalyticsEvent: String, Sendable {
     case roomSpeakerPromoted = "room_speaker_promoted"
     /// Somebody was moved back to the audience. **Not** a removal.
     case roomSpeakerDemoted = "room_speaker_demoted"
+    /// A host invited people to a closed room. Carries `count` — how many
+    /// handles, never which.
+    case roomInvited = "room_invited"
+    /// A host withdrew an invitation.
+    case roomInviteRevoked = "room_invite_revoked"
+    /// A join was refused because the room is invite only.
+    case roomJoinRefusedNotInvited = "room_join_refused_not_invited"
     /// Somebody was removed from one room. Per-room; not a block, and this
     /// event must never be read as one.
     case roomParticipantRemoved = "room_participant_removed"

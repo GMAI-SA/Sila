@@ -30,6 +30,7 @@ public struct LiveRoomScreen: View {
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
 
     @Environment(\.scenePhase) private var scenePhase
+    @State private var isManagingInvites = false
 
     /// - Parameters:
     ///   - viewModel: Owns the connection, the roster and the host controls.
@@ -87,6 +88,27 @@ public struct LiveRoomScreen: View {
                 .accessibilityLabel(Text(L10n.t("rooms.live.leave.a11yLabel")))
                 .accessibilityHint(Text(RoomCopy.leaveHint))
             }
+
+            // Only a host, and only for a room they closed: an open room has
+            // no guest list to manage.
+            if viewModel.room.isHost && viewModel.room.isInviteOnly {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isManagingInvites = true
+                    } label: {
+                        Label(L10n.t("rooms.invites.title"), systemImage: "person.badge.plus")
+                            .foregroundStyle(SLColor.primary)
+                    }
+                    .accessibilityLabel(Text(L10n.t("rooms.invites.title")))
+                    .accessibilityHint(Text(L10n.t("rooms.invites.open.a11yHint")))
+                }
+            }
+        }
+        .sheet(isPresented: $isManagingInvites) {
+            RoomInvitesSheet(
+                viewModel: viewModel.makeInvitesViewModel(),
+                onClose: { isManagingInvites = false }
+            )
         }
         .task { await viewModel.start() }
         .onChange(of: scenePhase) { _, phase in

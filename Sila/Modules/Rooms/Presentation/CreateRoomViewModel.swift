@@ -35,6 +35,14 @@ public final class CreateRoomViewModel {
     public var scheduledFor = Date().addingTimeInterval(60 * 60)
     /// How many people fit on the stage.
     public var maxSpeakers = RoomConstants.defaultSpeakerLimit
+    /// Whether only invited people may enter.
+    ///
+    /// The only setting here that governs **listening**. The audience picker
+    /// above decides who may speak, and it keeps doing that inside a closed
+    /// room: being invited is not being handed a microphone.
+    public var isInviteOnly = false
+    /// Handles typed into the guest field, as typed. Parsed on submit.
+    public var inviteHandlesText = ""
 
     /// The taxonomy, once it has arrived.
     public private(set) var topics: [TopicOption] = []
@@ -85,6 +93,9 @@ public final class CreateRoomViewModel {
     }
 
     // MARK: - Derived state
+
+    /// The handles the guest field currently names, tidied.
+    public var inviteHandles: [String] { RoomInviteHandles.clean(inviteHandlesText) }
 
     /// The audience rows, unavailable ones included and explained.
     public var scopeOptions: [ScopeOption] { ScopePicker.options(for: author) }
@@ -191,7 +202,9 @@ public final class CreateRoomViewModel {
                     // past would be the client asking the server to open a room
                     // retroactively, which is not a thing.
                     scheduledFor: isScheduled ? scheduledFor : nil,
-                    maxSpeakers: maxSpeakers
+                    maxSpeakers: maxSpeakers,
+                    isInviteOnly: isInviteOnly,
+                    inviteHandles: inviteHandles
                 )
             )
             onCreated?(room)

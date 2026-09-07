@@ -143,6 +143,44 @@ public final class RoomsService: RoomsServiceProtocol {
         return room
     }
 
+    public func fetchInvites(roomId: UUID) async throws -> RoomInviteList {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(path: "/rooms/\(path(roomId))/invites", accessToken: token),
+            as: RoomInviteList.self
+        )
+    }
+
+    public func invite(roomId: UUID, handles: [String]) async throws -> RoomInviteList {
+        let token = try await tokens.accessToken()
+        let cleaned = RoomInviteHandles.clean(handles)
+        let list = try await network.send(
+            try APIRequest.json(
+                "/rooms/\(path(roomId))/invites",
+                method: .post,
+                body: RoomInviteBody(handles: cleaned),
+                accessToken: token
+            ),
+            as: RoomInviteList.self
+        )
+        analytics.track(.roomInvited, properties: ["count": String(cleaned.count)])
+        return list
+    }
+
+    public func revokeInvite(roomId: UUID, handle: String) async throws -> RoomInviteList {
+        let token = try await tokens.accessToken()
+        let list = try await network.send(
+            APIRequest(
+                path: "/rooms/\(path(roomId))/invites/\(Handle.pathComponent(handle))",
+                method: .delete,
+                accessToken: token
+            ),
+            as: RoomInviteList.self
+        )
+        analytics.track(.roomInviteRevoked)
+        return list
+    }
+
     public func promote(roomId: UUID, handle: String) async throws -> VoiceRoom {
         let token = try await tokens.accessToken()
         let room = try await network.send(

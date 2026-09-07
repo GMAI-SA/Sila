@@ -137,6 +137,15 @@ public final class LiveRoomViewModel {
         self.pollInterval = pollInterval
     }
 
+    /// The guest-list model for this room, built from the same backend this
+    /// screen already holds — so the view never has to be handed a service.
+    ///
+    /// Only meaningful for a host of a closed room; the screen shows the
+    /// entry point under exactly that condition.
+    public func makeInvitesViewModel() -> RoomInvitesViewModel {
+        RoomInvitesViewModel(roomId: room.id, service: service, analytics: analytics)
+    }
+
     // MARK: - Derived state
 
     /// **The single predicate the microphone affordance is gated on.**

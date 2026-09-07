@@ -197,6 +197,12 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case cannotDemoteHost = "cannot_demote_host"
     /// The room id does not exist.
     case notFound = "not_found"
+    /// The room is closed and this account holds no invitation (HTTP 403).
+    /// Not a removal: nobody decided anything about this person, the room was
+    /// never open to them.
+    case notInvited = "not_invited"
+    /// Invitations were sent for a room anybody may enter (HTTP 400).
+    case notInviteOnly = "not_invite_only"
 
     /// Anything the client does not recognise.
     case unknown
@@ -366,6 +372,10 @@ public enum APIError: Error, Equatable, Sendable {
                 return RoomCopy.cannotDemoteHost
             case .notFound:
                 return L10n.t("error.roomNotFound")
+            case .notInvited:
+                return L10n.t("rooms.inviteOnly.refusal")
+            case .notInviteOnly:
+                return L10n.t("error.notInviteOnly")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

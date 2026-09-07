@@ -11013,6 +11013,24 @@
         }
       }
     },
+    "error.notInviteOnly": {
+      "comment": "Server refused invitations for an open room.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تلك الغرفة مفتوحة للجميع، فلا تحتاج إلى دعوات."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That room is open to everyone, so it needs no invitations."
+          }
+        }
+      }
+    },
     "error.notPendingDeletion": {
       "comment": "Deletion cancel on an account with nothing scheduled.",
       "extractionState": "manual",
@@ -19781,6 +19799,198 @@
         }
       }
     },
+    "rooms.create.guests.a11yHint": {
+      "comment": "Accessibility hint on the guest field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتب المعرّفات مفصولة بفواصل. يمكنك دعوة آخرين لاحقًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type handles separated by commas. You can invite more people later."
+          }
+        }
+      }
+    },
+    "rooms.create.guests.count": {
+      "comment": "How many handles the guest field currently names.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "سيُدعى %lld أشخاص"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "سيُدعى %lld شخصًا"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "سيُدعى شخص واحد"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "سيُدعى %lld شخص"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "سيُدعى شخصان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لن يُدعى أحد"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld person will be invited"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld people will be invited"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rooms.create.guests.label": {
+      "comment": "Label of the guest-handles field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ادعُ بالمعرّف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite by handle"
+          }
+        }
+      }
+    },
+    "rooms.create.guests.placeholder": {
+      "comment": "Placeholder of the guest-handles field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aziz، noura"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aziz, noura"
+          }
+        }
+      }
+    },
+    "rooms.create.inviteOnly.a11yHint": {
+      "comment": "Accessibility hint on the toggle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يغلق الغرفة فلا يدخلها إلا من تدعوهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closes the room so only people you invite can enter"
+          }
+        }
+      }
+    },
+    "rooms.create.inviteOnly.explanation": {
+      "comment": "Explanation under the toggle when it is on.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يدخلها سواك ومن تدعوهم، ولن تظهر في قائمة أي شخص آخر. أما من يتحدث فيحدده الجمهور أعلاه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only you and the people you invite can enter. The room will not appear in anyone else's list. Who may speak is still decided by the audience above."
+          }
+        }
+      }
+    },
+    "rooms.create.inviteOnlyToggle": {
+      "comment": "Toggle in the create-room sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بدعوة فقط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite only"
+          }
+        }
+      }
+    },
+    "rooms.create.open.explanation": {
+      "comment": "Explanation under the toggle when it is off.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن لأي شخص الاستماع. والجمهور أعلاه يحدد من يمكنه التحدث."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anyone can listen. The audience above decides who may speak."
+          }
+        }
+      }
+    },
     "rooms.create.scheduleButton": {
       "comment": "Button that schedules the room for later.",
       "extractionState": "manual",
@@ -20521,6 +20731,336 @@
           "stringUnit": {
             "state": "translated",
             "value": "This room is invite only."
+          }
+        }
+      }
+    },
+    "rooms.invites.add.a11yHint": {
+      "comment": "Accessibility hint on the send button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يدعو المعرّفات التي كتبتها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invites the handles you typed"
+          }
+        }
+      }
+    },
+    "rooms.invites.add.button": {
+      "comment": "Button that sends the invitations.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال الدعوات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send invitations"
+          }
+        }
+      }
+    },
+    "rooms.invites.add.label": {
+      "comment": "Label of the add field in the guest sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ادعُ المزيد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite more"
+          }
+        }
+      }
+    },
+    "rooms.invites.added": {
+      "comment": "Toast after inviting people.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "تمت دعوة %lld أشخاص"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "تمت دعوة %lld شخصًا"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "تمت دعوة شخص واحد"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "تمت دعوة %lld شخص"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "تمت دعوة شخصين"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لم تتم دعوة أحد"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld person invited"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld people invited"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rooms.invites.count": {
+      "comment": "Header above the guest list.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ضيوف"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ضيفًا"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ضيف واحد"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ضيف"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ضيفان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا ضيوف"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld guest"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld guests"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rooms.invites.empty.message": {
+      "comment": "Empty state message.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لن يدخل أحد سواك حتى تدعو شخصًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only you can enter until you invite somebody."
+          }
+        }
+      }
+    },
+    "rooms.invites.empty.title": {
+      "comment": "Empty state title in the guest sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تتم دعوة أحد بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody invited yet"
+          }
+        }
+      }
+    },
+    "rooms.invites.explanation": {
+      "comment": "Explanation at the top of the guest sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يدخل سوى هؤلاء. سحب الدعوة يمنع الانضمام لاحقًا، ولا يُخرج من هو موجود الآن."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only these people can enter. Withdrawing an invitation stops someone joining later — it does not remove anyone who is already here."
+          }
+        }
+      }
+    },
+    "rooms.invites.open.a11yHint": {
+      "comment": "Accessibility hint on the toolbar button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح قائمة ضيوف هذه الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the guest list for this room"
+          }
+        }
+      }
+    },
+    "rooms.invites.revoke": {
+      "comment": "Button that withdraws one invitation.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw"
+          }
+        }
+      }
+    },
+    "rooms.invites.revoke.a11yHint": {
+      "comment": "Accessibility hint on withdraw. %@ is a handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسحب دعوة %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraws the invitation for %@"
+          }
+        }
+      }
+    },
+    "rooms.invites.revoked": {
+      "comment": "Toast after withdrawing. %@ is a handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يعد بإمكان @%@ الانضمام."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ can no longer join."
+          }
+        }
+      }
+    },
+    "rooms.invites.title": {
+      "comment": "Title of the host's guest-list sheet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الضيوف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guests"
           }
         }
       }

@@ -42,6 +42,8 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
     private var stored: [VoiceRoom]
     /// Who is in which room.
     private var rosters: [UUID: [RoomParticipant]] = [:]
+    /// Guest lists, by room.
+    private var invites: [UUID: [UserSummary]] = [:]
     /// Calls recorded for test assertions, e.g. `"join:…"`.
     public private(set) var recordedCalls: [String] = []
     /// The viewer's own handle, for the host-only refusals.
@@ -77,6 +79,25 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             stored = Self.cast
         }
         rosters = Dictionary(uniqueKeysWithValues: stored.map { ($0.id, Self.roster(for: $0)) })
+    }
+
+    /// Adds a live closed room hosted by the viewer, and returns it.
+    ///
+    /// Exists because the guest list is a host-only surface: a test needs a
+    /// room it hosts *and* has closed before any of it means anything.
+    @discardableResult
+    public func seedInviteOnlyRoom(title: String = "A closed conversation") -> VoiceRoom {
+        let room = VoiceRoom(
+            id: UUID(),
+            title: title,
+            status: .live,
+            host: Self.cast.first?.host ?? FeedServiceMock.aziz,
+            isHost: true,
+            isInviteOnly: true
+        )
+        stored.insert(room, at: 0)
+        rosters[room.id] = Self.roster(for: room)
+        return room
     }
 
     /// Switches scenario mid-flight.
@@ -204,6 +225,60 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         let ended = Self.copy(room, status: .ended)
         replace(ended)
         return ended
+    }
+
+    public func fetchInvites(roomId: UUID) async throws -> RoomInviteList {
+        recordedCalls.append("invites")
+        try await delay()
+        try failIfOffline()
+        let room = try await fetchRoom(id: roomId)
+        try requireHost(room)
+        return RoomInviteList(roomId: roomId, invited: invites[roomId] ?? [])
+    }
+
+    public func invite(roomId: UUID, handles: [String]) async throws -> RoomInviteList {
+        let cleaned = RoomInviteHandles.clean(handles)
+        recordedCalls.append("invite:\(cleaned.joined(separator: ","))")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+
+        let room = try await fetchRoom(id: roomId)
+        try requireHost(room)
+        guard room.isInviteOnly else {
+            throw APIError.api(
+                code: .notInviteOnly,
+                message: "An open room does not need invitations.",
+                status: 400
+            )
+        }
+        // The server refuses the whole call when one handle belongs to
+        // nobody, so the mock does too — a test that passes here and fails
+        // against the API would be worse than no test.
+        for handle in cleaned where handle == "nobody" {
+            throw APIError.api(code: .userNotFound, message: "No account with handle @\(handle).", status: 404)
+        }
+        var current = invites[roomId] ?? []
+        for handle in cleaned where !current.contains(where: { $0.handle == handle }) {
+            current.append(
+                UserSummary(id: UUID(), handle: handle, displayName: "@\(handle)", isVerified: true)
+            )
+        }
+        invites[roomId] = current
+        return RoomInviteList(roomId: roomId, invited: current)
+    }
+
+    public func revokeInvite(roomId: UUID, handle: String) async throws -> RoomInviteList {
+        let target = Handle.normalised(handle)
+        recordedCalls.append("revoke:\(target)")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+
+        let room = try await fetchRoom(id: roomId)
+        try requireHost(room)
+        invites[roomId] = (invites[roomId] ?? []).filter { $0.handle != target }
+        return RoomInviteList(roomId: roomId, invited: invites[roomId] ?? [])
     }
 
     public func promote(roomId: UUID, handle: String) async throws -> VoiceRoom {

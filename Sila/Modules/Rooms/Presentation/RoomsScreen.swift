@@ -398,6 +398,13 @@ struct RoomCardView: View {
                 icon: room.scopePresentation.icon,
                 accessibilityHint: room.scopePresentation.accessibilityLabel
             )
+            if room.isInviteOnly {
+                SLChip(
+                    RoomCopy.inviteOnlyBadge,
+                    icon: "lock.fill",
+                    accessibilityHint: RoomCopy.inviteOnlyBadge
+                )
+            }
             if let topic = room.topicLabel {
                 SLChip(topic, icon: "number")
             }

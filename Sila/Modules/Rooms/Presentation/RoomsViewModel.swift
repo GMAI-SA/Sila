@@ -242,7 +242,16 @@ public final class RoomsViewModel {
         } catch {
             guard suspension?.notice(error) != true else { return nil }
             let wrapped = APIError.wrapping(error)
-            if wrapped.code == .removedFromRoom {
+            if wrapped.code == .notInvited {
+                analytics.track(.roomJoinRefusedNotInvited)
+                // Not a warning: nothing went wrong and nobody decided
+                // anything about this person. The room was never theirs to
+                // enter, and the sentence says only that.
+                toast = .info(RoomCopy.inviteOnlyRefusal)
+                // The row stays: a closed room a stranger can see is one they
+                // were shown before the invitation was withdrawn, and it will
+                // disappear on the next refresh.
+            } else if wrapped.code == .removedFromRoom {
                 analytics.track(.roomJoinRefusedRemoved)
                 // The removal sentence, which is deliberately not a block's.
                 toast = .warning(RoomCopy.removedFromRoom)

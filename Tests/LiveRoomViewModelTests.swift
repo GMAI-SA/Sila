@@ -535,6 +535,21 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
         return stored
     }
 
+    func fetchInvites(roomId: UUID) async throws -> RoomInviteList {
+        calls.append("invites")
+        return RoomInviteList(roomId: roomId, invited: [])
+    }
+
+    func invite(roomId: UUID, handles: [String]) async throws -> RoomInviteList {
+        calls.append("invite")
+        return RoomInviteList(roomId: roomId, invited: [])
+    }
+
+    func revokeInvite(roomId: UUID, handle: String) async throws -> RoomInviteList {
+        calls.append("revoke")
+        return RoomInviteList(roomId: roomId, invited: [])
+    }
+
     func fetchParticipants(roomId: UUID) async throws -> RoomParticipantList {
         calls.append("participants")
         // The viewer is `aziz` in every test above; when they host the room

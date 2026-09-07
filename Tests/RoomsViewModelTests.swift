@@ -269,6 +269,18 @@ private actor EndedRoomService: RoomsServiceProtocol {
         try await backing.fetchParticipants(roomId: roomId)
     }
 
+    func fetchInvites(roomId: UUID) async throws -> RoomInviteList {
+        try await backing.fetchInvites(roomId: roomId)
+    }
+
+    func invite(roomId: UUID, handles: [String]) async throws -> RoomInviteList {
+        try await backing.invite(roomId: roomId, handles: handles)
+    }
+
+    func revokeInvite(roomId: UUID, handle: String) async throws -> RoomInviteList {
+        try await backing.revokeInvite(roomId: roomId, handle: handle)
+    }
+
     func searchRooms(query: String, limit: Int) async throws -> [VoiceRoom] {
         try await backing.searchRooms(query: query, limit: limit)
     }

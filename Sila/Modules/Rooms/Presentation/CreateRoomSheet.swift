@@ -45,6 +45,7 @@ public struct CreateRoomSheet: View {
                 audiencePicker
                 schedule
                 stageSize
+                whoMayEnter
                 notRecorded
 
                 if let error = viewModel.createError {
@@ -230,6 +231,43 @@ public struct CreateRoomSheet: View {
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// The one control here about **listening**, which is why it says so
+    /// rather than sitting unlabelled next to the audience picker.
+    private var whoMayEnter: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            Toggle(isOn: $viewModel.isInviteOnly) {
+                Text(L10n.t("rooms.create.inviteOnlyToggle"))
+                    .font(SLFont.body)
+                    .foregroundStyle(SLColor.textPrimary)
+            }
+            .tint(SLColor.primary)
+            .accessibilityHint(Text(L10n.t("rooms.create.inviteOnly.a11yHint")))
+
+            if viewModel.isInviteOnly {
+                SLTextField(
+                    L10n.t("rooms.create.guests.label"),
+                    text: $viewModel.inviteHandlesText,
+                    placeholder: L10n.t("rooms.create.guests.placeholder"),
+                    accessibilityHint: L10n.t("rooms.create.guests.a11yHint")
+                )
+                if !viewModel.inviteHandles.isEmpty {
+                    Text(L10n.plural("rooms.create.guests.count", viewModel.inviteHandles.count))
+                        .font(SLFont.micro)
+                        .foregroundStyle(SLColor.textSecondary)
+                }
+            }
+
+            Text(
+                viewModel.isInviteOnly
+                    ? L10n.t("rooms.create.inviteOnly.explanation")
+                    : L10n.t("rooms.create.open.explanation")
+            )
+            .font(SLFont.micro)
+            .foregroundStyle(SLColor.textMuted)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

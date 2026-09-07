@@ -76,6 +76,26 @@ public protocol RoomsServiceProtocol: Sendable {
     /// room on Sila.
     func remove(roomId: UUID, handle: String) async throws -> VoiceRoom
 
+    /// Who has been invited to a closed room, `GET /rooms/{id}/invites`.
+    /// Host only — the guest list is the host's, and nobody else's business.
+    func fetchInvites(roomId: UUID) async throws -> RoomInviteList
+
+    /// Invites people by handle, `POST /rooms/{id}/invites`. Host only.
+    ///
+    /// - Returns: Everybody now holding an invitation, not just the additions.
+    /// - Throws: ``APIErrorCode/userNotFound`` when a handle belongs to
+    ///   nobody — the server writes nothing in that case, so a mistyped handle
+    ///   is a refusal rather than a guest who never arrives;
+    ///   ``APIErrorCode/notInviteOnly`` for an open room; ``APIErrorCode/blocked``.
+    func invite(roomId: UUID, handles: [String]) async throws -> RoomInviteList
+
+    /// Withdraws one invitation, `DELETE /rooms/{id}/invites/{handle}`.
+    ///
+    /// Stops a future join. Somebody already in the room stays until they
+    /// leave — ejecting them is ``remove(roomId:handle:)``, which is a
+    /// different decision and reads as one.
+    func revokeInvite(roomId: UUID, handle: String) async throws -> RoomInviteList
+
     /// Who is in the room, `GET /rooms/{id}/participants`.
     func fetchParticipants(roomId: UUID) async throws -> RoomParticipantList
 
