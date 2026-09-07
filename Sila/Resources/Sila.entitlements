@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Password AutoFill keys a saved password to a *website*. Without this,
+	  iOS has no way to know that the Sila app is sila.gmai.sa, so a password
+	  saved from the web client is never offered here and one saved from the
+	  app is never offered on the web. The other half of the handshake is
+	  https://sila.gmai.sa/.well-known/apple-app-site-association, which must
+	  answer application/json and name this app.
+	-->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:sila.gmai.sa</string>
+	</array>
+</dict>
+</plist>

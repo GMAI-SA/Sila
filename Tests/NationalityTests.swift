@@ -47,6 +47,25 @@ final class NationalityTests: XCTestCase {
         XCTAssertTrue(VerificationMethodSheet(declaredNationality: nil) { _ in }.offersDocumentRoute)
     }
 
+    func testTheClaimCanBeChangedUntilItIsProved() async throws {
+        // Changing is an ordinary edit while unverified — the wall offers it
+        // next to the chosen country — and refused once the badge exists,
+        // because then the nationality is a fact rather than a claim.
+        let service = VerificationServiceMock()
+        let first = try await service.setNationality("US")
+        XCTAssertEqual(first.nationality, "US")
+        let changed = try await service.setNationality("ES")
+        XCTAssertEqual(changed.nationality, "ES")
+
+        let verified = VerificationServiceMock(scenario: .alreadyVerified)
+        do {
+            _ = try await verified.setNationality("FR")
+            XCTFail("a verified account's nationality is its badge")
+        } catch let error as APIError {
+            XCTAssertEqual(error.code, .alreadyVerified)
+        }
+    }
+
     func testMachineReasonsReadAsSentencesAndReviewerWordsPassThrough() {
         XCTAssertEqual(VerificationRejection.display("nationality_mismatch"), "The nationality on the identity you presented does not match the nationality you selected.")
         XCTAssertEqual(VerificationRejection.display("document_expired"), "The identity document you presented has expired.")

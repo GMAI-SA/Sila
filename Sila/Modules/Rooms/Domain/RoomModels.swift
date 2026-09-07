@@ -139,6 +139,21 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     public let isHost: Bool
     /// Whether the host removed this viewer **from this room**. Not a block.
     public let isRemoved: Bool
+    /// A closed room: only the host and the people they invited may enter.
+    ///
+    /// **The one thing about a room that governs listening.** Scope decides
+    /// who speaks and never who hears; this decides who gets through the door
+    /// at all, which is why it is its own flag with its own refusal rather
+    /// than another scope value.
+    public let isInviteOnly: Bool
+    /// Whether this viewer holds an invitation. Always false for an open room —
+    /// nobody is "invited" to a room anyone may enter.
+    public let isInvited: Bool
+    /// Whether this viewer may enter, decided server-side exactly as
+    /// ``canSpeak`` is.
+    public let canJoin: Bool
+    /// Why not, in the server's own words. Rendered verbatim.
+    public let joinRefusal: String?
 
     public init(
         id: UUID,
@@ -157,7 +172,11 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         canSpeak: Bool = true,
         speakRefusal: String? = nil,
         isHost: Bool = false,
-        isRemoved: Bool = false
+        isRemoved: Bool = false,
+        isInviteOnly: Bool = false,
+        isInvited: Bool = false,
+        canJoin: Bool = true,
+        joinRefusal: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -176,6 +195,10 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         self.speakRefusal = (speakRefusal?.isEmpty == false) ? speakRefusal : nil
         self.isHost = isHost
         self.isRemoved = isRemoved
+        self.isInviteOnly = isInviteOnly
+        self.isInvited = isInvited
+        self.canJoin = canJoin
+        self.joinRefusal = (joinRefusal?.isEmpty == false) ? joinRefusal : nil
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
@@ -184,6 +207,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         case id, title, topic, scope, scopeCountry, scopeRegion, status, host
         case speakerCount, listenerCount, scheduledFor, startedAt, createdAt
         case canSpeak, speakRefusal, isHost, isRemoved
+        case isInviteOnly, isInvited, canJoin, joinRefusal
     }
 
     /// Tolerant decoder: one malformed optional must not blank a whole list.
@@ -232,6 +256,15 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         speakRefusal = (refusal?.isEmpty == false) ? refusal : nil
         isHost = (try? container.decode(Bool.self, forKey: .isHost)) ?? false
         isRemoved = (try? container.decode(Bool.self, forKey: .isRemoved)) ?? false
+        isInviteOnly = (try? container.decode(Bool.self, forKey: .isInviteOnly)) ?? false
+        isInvited = (try? container.decode(Bool.self, forKey: .isInvited)) ?? false
+        // Fails **open**, unlike `canSpeak`. A server without this field has no
+        // closed rooms, so absent means "anyone may enter" — and the join call
+        // is the real gate either way. Failing closed here would hide the Join
+        // button on every ordinary room the moment a field went missing.
+        canJoin = (try? container.decode(Bool.self, forKey: .canJoin)) ?? true
+        let joinWhy = (try? container.decodeIfPresent(String.self, forKey: .joinRefusal)) ?? nil
+        joinRefusal = (joinWhy?.isEmpty == false) ? joinWhy : nil
     }
 
     // MARK: Derived
@@ -258,6 +291,21 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     public var topicLabel: String? {
         guard let topic, !topic.isEmpty else { return nil }
         return TopicOption.makeLabel(from: topic)
+    }
+
+    /// `true` when the viewer may enter **right now**: the server allows it,
+    /// the room is live, and they were not removed.
+    public var isEnterable: Bool { canJoin && status.isJoinable && !isRemoved }
+
+    /// The sentence explaining why the door is shut, or `nil` when it is open.
+    ///
+    /// Removal outranks invite-only: "the host removed you" is a decision
+    /// about this person and says more than "invite only" does.
+    public var joinRefusalMessage: String? {
+        if isRemoved { return RoomCopy.removedFromRoom }
+        guard !canJoin else { return nil }
+        if let joinRefusal { return joinRefusal }
+        return RoomCopy.inviteOnlyRefusal
     }
 
     /// `true` when the viewer may take the microphone **right now**.
@@ -468,6 +516,11 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     public let scopeRegion: String?
     public let scheduledFor: Date?
     public let maxSpeakers: Int?
+    /// Whether only invited people may enter.
+    public let isInviteOnly: Bool
+    /// Handles invited as the room opens, so a closed room is one call.
+    /// Always empty unless ``isInviteOnly``.
+    public let inviteHandles: [String]
 
     /// - Parameters:
     ///   - title: What to call it. Trimmed.
@@ -475,12 +528,18 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     ///   - scope: Who may speak.
     ///   - scheduledFor: A future start time, or `nil` to open it now.
     ///   - maxSpeakers: Stage size, or `nil` for the server's default.
+    ///   - isInviteOnly: Close the room to everybody but its guests.
+    ///   - inviteHandles: Who to invite. Dropped unless `isInviteOnly`, because
+    ///     the server refuses invitations to an open room rather than
+    ///     quietly ignoring them.
     public init(
         title: String,
         topic: String? = nil,
         scope: ComposeScope,
         scheduledFor: Date? = nil,
-        maxSpeakers: Int? = nil
+        maxSpeakers: Int? = nil,
+        isInviteOnly: Bool = false,
+        inviteHandles: [String] = []
     ) {
         self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.topic = (topic?.isEmpty == false) ? topic : nil
@@ -489,6 +548,8 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         self.scopeRegion = scope.scopeRegion
         self.scheduledFor = scheduledFor
         self.maxSpeakers = maxSpeakers
+        self.isInviteOnly = isInviteOnly
+        self.inviteHandles = isInviteOnly ? RoomInviteHandles.clean(inviteHandles) : []
     }
 
     /// Optional fields are omitted rather than sent as `null`: the contract
@@ -503,11 +564,19 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         try container.encodeIfPresent(scopeRegion, forKey: .scopeRegion)
         try container.encodeIfPresent(scheduledFor, forKey: .scheduledFor)
         try container.encodeIfPresent(maxSpeakers, forKey: .maxSpeakers)
+        // Sent only when true, because absence has always meant "open".
+        if isInviteOnly {
+            try container.encode(true, forKey: .isInviteOnly)
+            if !inviteHandles.isEmpty {
+                try container.encode(inviteHandles, forKey: .inviteHandles)
+            }
+        }
     }
 
     /// The keys are camel-cased; the encoder converts them to `snake_case`.
     private enum CodingKeys: String, CodingKey {
         case title, topic, scope, scopeCountry, scopeRegion, scheduledFor, maxSpeakers
+        case isInviteOnly, inviteHandles
     }
 }
 
@@ -561,7 +630,75 @@ public enum RoomConstants {
 ///    apologises for its absence.
 /// 4. A refusal to speak is the **server's sentence**, shown verbatim. The
 ///    fallbacks below exist only for when the server sent none.
+/// Tidying for the handles a host types into the invite field.
+///
+/// A handle is `[a-z0-9_]{3,20}`; people type `@aziz`, `Aziz`, or paste a
+/// comma-separated list. Those all mean the same person, and the server
+/// answers `user_not_found` for anything that does not — so this normalises
+/// what was typed and never invents a handle that was not.
+public enum RoomInviteHandles {
+
+    /// The most handles one call may carry. The server's own cap.
+    public static let maximum = 50
+
+    /// Splits on commas, spaces and newlines; drops a leading `@`;
+    /// lower-cases; de-duplicates, keeping the order they were typed.
+    public static func clean(_ raw: [String]) -> [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for entry in raw {
+            for piece in entry.split(whereSeparator: { $0 == "," || $0 == " " || $0.isNewline }) {
+                let handle = piece.trimmingCharacters(in: .whitespaces)
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+                    .lowercased()
+                guard !handle.isEmpty, !seen.contains(handle) else { continue }
+                seen.insert(handle)
+                out.append(handle)
+                if out.count == maximum { return out }
+            }
+        }
+        return out
+    }
+
+    /// The same, from one typed string.
+    public static func clean(_ raw: String) -> [String] { clean([raw]) }
+}
+
+/// The body of `POST /rooms/{id}/invites`.
+struct RoomInviteBody: Encodable {
+    let handles: [String]
+}
+
+/// What the invite endpoints answer: `{"room_id": …, "invited": [...]}`.
+public struct RoomInviteList: Equatable, Sendable, Decodable {
+
+    public let roomId: UUID?
+    /// Everybody holding an invitation, oldest first.
+    public let invited: [UserSummary]
+
+    public init(roomId: UUID? = nil, invited: [UserSummary]) {
+        self.roomId = roomId
+        self.invited = invited
+    }
+
+    private enum CodingKeys: String, CodingKey { case roomId, invited }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        roomId = (try? container.decodeIfPresent(UUID.self, forKey: .roomId)) ?? nil
+        invited = (try? container.decode([UserSummary].self, forKey: .invited)) ?? []
+    }
+}
+
 public enum RoomCopy {
+
+    // MARK: Closed rooms
+
+    /// The fallback refusal, for when the server sent none.
+    public static var inviteOnlyRefusal: String { L10n.t("rooms.inviteOnly.refusal") }
+
+    /// The chip on a closed room's card.
+    public static var inviteOnlyBadge: String { L10n.t("rooms.inviteOnly.badge") }
 
     // MARK: The promise
 

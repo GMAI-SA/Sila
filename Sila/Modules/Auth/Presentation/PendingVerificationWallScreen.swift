@@ -14,6 +14,7 @@ public struct PendingVerificationWallScreen: View {
     @State private var isPickingNationality = false
     @State private var isSavingNationality = false
     @State private var chooseAfterPicking = false
+    @State private var reopenPickerAfterChoosing = false
     @State private var pendingRoute: VerificationRoute?
     @State private var route: VerificationRoute?
     private let verification: VerificationServiceProtocol?
@@ -142,12 +143,25 @@ public struct PendingVerificationWallScreen: View {
         // cover while the sheet is still dismissing is a glitch, so the
         // choice is remembered and acted on in `onDismiss`.
         .sheet(isPresented: $isChoosingMethod, onDismiss: {
+            if reopenPickerAfterChoosing {
+                reopenPickerAfterChoosing = false
+                isPickingNationality = true
+                return
+            }
             if let chosen = pendingRoute {
                 pendingRoute = nil
                 route = chosen
             }
         }) {
-            VerificationMethodSheet(declaredNationality: viewModel.declaredNationality) { chosen in
+            VerificationMethodSheet(
+                declaredNationality: viewModel.declaredNationality,
+                onChangeNationality: {
+                    // Back to the picker, through the same latch the picker
+                    // uses to reach here — one sheet at a time.
+                    reopenPickerAfterChoosing = true
+                    isChoosingMethod = false
+                }
+            ) { chosen in
                 analytics.track(.verificationMethodChosen, properties: ["method": chosen.rawValue])
                 pendingRoute = chosen
                 isChoosingMethod = false

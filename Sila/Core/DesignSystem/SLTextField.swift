@@ -127,12 +127,22 @@ public struct SLTextField: View {
         }
     }
 
+    /// The editable field.
+    ///
+    /// `SecureField` and `TextField` are different views, so revealing a
+    /// password replaces one with the other. Without a stable identity SwiftUI
+    /// treats that as a new field: the first responder moves, and an AutoFill
+    /// that was mid-flight is dropped along with the old view. The `.id` ties
+    /// both branches to one identity so the swap is a change of appearance
+    /// rather than a change of field.
     @ViewBuilder
     private var field: some View {
         if isSecure && !isRevealed {
             SecureField("", text: $text, prompt: promptText)
+                .id("sl-field-\(label)")
         } else {
             TextField("", text: $text, prompt: promptText)
+                .id("sl-field-\(label)")
         }
     }
 

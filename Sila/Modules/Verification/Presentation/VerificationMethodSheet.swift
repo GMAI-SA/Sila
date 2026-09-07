@@ -18,13 +18,23 @@ public struct VerificationMethodSheet: View {
 
     private let declaredNationality: String?
     private let onChoose: (VerificationRoute) -> Void
+    private let onChangeNationality: (() -> Void)?
 
     /// - Parameters:
     ///   - declaredNationality: The claim on the account. `SA` hides the
     ///     document route — Nafath is the only door for a Saudi, by policy.
+    ///   - onChangeNationality: Reopens the country picker. A claim is
+    ///     changeable until it has been proved, and somebody who taps the
+    ///     wrong country needs a way back that is not "delete the account".
+    ///     `nil` hides the affordance.
     ///   - onChoose: Called with the chosen route.
-    public init(declaredNationality: String? = nil, onChoose: @escaping (VerificationRoute) -> Void) {
+    public init(
+        declaredNationality: String? = nil,
+        onChangeNationality: (() -> Void)? = nil,
+        onChoose: @escaping (VerificationRoute) -> Void
+    ) {
         self.declaredNationality = declaredNationality
+        self.onChangeNationality = onChangeNationality
         self.onChoose = onChoose
     }
 
@@ -53,6 +63,11 @@ public struct VerificationMethodSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, SLSpacing.lg)
+
+            if let code = declaredNationality {
+                chosenNationality(code)
+                    .padding(.horizontal, SLSpacing.lg)
+            }
 
             VStack(spacing: SLSpacing.md) {
                 option(
@@ -83,6 +98,28 @@ public struct VerificationMethodSheet: View {
         }
         .frame(maxWidth: .infinity)
         .tnScreenBackground()
+    }
+
+    /// The claim, and the way back to the picker.
+    private func chosenNationality(_ code: String) -> some View {
+        HStack(spacing: SLSpacing.sm) {
+            Text(CountryCode.flag(code) ?? "")
+                .accessibilityHidden(true)
+            Text(L10n.t("verification.method.nationality", CountryCode.name(code) ?? code))
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textSecondary)
+            Spacer(minLength: 0)
+            if let onChangeNationality {
+                Button(L10n.t("common.change"), action: onChangeNationality)
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.primary)
+                    .accessibilityHint(Text(L10n.t("verification.method.change.hint")))
+            }
+        }
+        .padding(.horizontal, SLSpacing.md)
+        .padding(.vertical, SLSpacing.sm)
+        .background(SLColor.surface1)
+        .clipShape(RoundedRectangle(cornerRadius: SLRadius.md))
     }
 
     private func option(_ route: VerificationRoute, icon: String, title: String, detail: String) -> some View {

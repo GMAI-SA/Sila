@@ -6709,6 +6709,24 @@
         }
       }
     },
+    "common.change": {
+      "comment": "Generic button: change a choice already made.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيير"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
+          }
+        }
+      }
+    },
     "common.delete": {
       "comment": "Destructive confirm.",
       "extractionState": "manual",
@@ -20471,6 +20489,42 @@
         }
       }
     },
+    "rooms.inviteOnly.badge": {
+      "comment": "Chip on a closed room's card.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بدعوة فقط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite only"
+          }
+        }
+      }
+    },
+    "rooms.inviteOnly.refusal": {
+      "comment": "Shown when somebody without an invitation tries to enter.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الغرفة بدعوة فقط."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room is invite only."
+          }
+        }
+      }
+    },
     "rooms.join.unverifiedCannotOpen": {
       "comment": "Refusal when an unverified account tries to host. Listening is open to everyone.",
       "extractionState": "manual",
@@ -25415,6 +25469,24 @@
         }
       }
     },
+    "verification.method.change.hint": {
+      "comment": "Accessibility hint on the Change button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح قائمة الدول مجددًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the country list again"
+          }
+        }
+      }
+    },
     "verification.method.document.detail": {
       "comment": "Option detail.",
       "extractionState": "manual",
@@ -25501,6 +25573,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nafath"
+          }
+        }
+      }
+    },
+    "verification.method.nationality": {
+      "comment": "Shows the declared nationality above the route options. %@ is the country name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجنسية: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nationality: %@"
           }
         }
       }
