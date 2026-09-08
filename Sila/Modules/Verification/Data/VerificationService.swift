@@ -94,6 +94,29 @@ public final class VerificationService: VerificationServiceProtocol {
         }
     }
 
+    // MARK: Contesting a decision
+
+    public func appealVerification(message: String) async throws -> VerificationAppealReceipt {
+        let token = try await tokens.accessToken()
+        let request = try APIRequest.json(
+            "/verification/appeal",
+            method: .post,
+            body: AppealRequest(message: message),
+            accessToken: token
+        )
+        let data = try await network.sendData(request)
+        analytics.track(.appealSubmitted)
+        // The server answers `{id, status}` with no timestamp; the appeal is on
+        // file the moment this returns, so "now" is the honest date — and an
+        // unreadable body is still an appeal that reached the server.
+        guard !data.isEmpty,
+              let decoded = try? JSONCoding.decoder.decode(VerificationAppealReceipt.self, from: data)
+        else {
+            return VerificationAppealReceipt(status: .pending, submittedAt: Date())
+        }
+        return VerificationAppealReceipt(id: decoded.id, status: decoded.status, submittedAt: decoded.submittedAt ?? Date())
+    }
+
     public func latestDocumentCase() async throws -> DocumentCase? {
         let token = try await tokens.accessToken()
         let request = APIRequest(path: "/verification/document", accessToken: token)

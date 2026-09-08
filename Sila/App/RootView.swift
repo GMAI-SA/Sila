@@ -124,8 +124,11 @@ public struct RootView: View {
             case let .rejected(reason):
                 RejectedScreen(
                     reason: reason,
-                    email: container.session.user?.email,
+                    appeal: container.session.verificationReport?.appeal,
                     analytics: container.analytics,
+                    onAppeal: { message in
+                        try await container.verificationService.appealVerification(message: message)
+                    },
                     onTryAgain: { container.session.retryVerification() },
                     onSignOut: { Task { await container.session.signOut() } }
                 )

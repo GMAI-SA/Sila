@@ -17,14 +17,20 @@ public enum VerificationRejection {
         case "nationality_mismatch": return L10n.t("auth.rejected.reason.nationalityMismatch")
         case "document_expired": return L10n.t("auth.rejected.reason.documentExpired")
         case "under_minimum_age": return L10n.t("auth.rejected.reason.underMinimumAge")
+        case "verification_revoked": return L10n.t("auth.rejected.reason.verificationRevoked")
         default: return reason
         }
+    }
+
+    /// A badge a moderator withdrew — contested, never simply re-run.
+    public static func isRevocation(_ reason: String?) -> Bool {
+        reason == "verification_revoked"
     }
 
     /// Whether `reason` is one of the machine reasons rather than a
     /// reviewer's words — decides whether the text follows the interface
     /// language or its own.
     public static func isMachineReason(_ reason: String?) -> Bool {
-        ["nationality_mismatch", "document_expired", "under_minimum_age"].contains(reason ?? "")
+        ["nationality_mismatch", "document_expired", "under_minimum_age", "verification_revoked"].contains(reason ?? "")
     }
 }

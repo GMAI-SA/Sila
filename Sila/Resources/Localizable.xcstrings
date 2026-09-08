@@ -5233,74 +5233,20 @@
         }
       }
     },
-    "auth.rejected.appeal.bodyEmail": {
-      "comment": "Appeal email line naming the account. %@ is the address.",
+    "auth.rejected.appeal.field": {
+      "comment": "Label of the appeal text field.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "بريد الحساب: %@"
+            "value": "تظلمك"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Account email: %@"
-          }
-        }
-      }
-    },
-    "auth.rejected.appeal.bodyIntro": {
-      "comment": "First line of the appeal email body.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "أود التظلّم على قرار التوثيق الخاص بحسابي في سِلة."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I'd like to appeal the verification decision on my Sila account."
-          }
-        }
-      }
-    },
-    "auth.rejected.appeal.bodyPrompt": {
-      "comment": "Appeal email line inviting the user to explain.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لماذا أعتقد أن هذا خطأ:"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Why I think this was a mistake:"
-          }
-        }
-      }
-    },
-    "auth.rejected.appeal.bodyReason": {
-      "comment": "Appeal email line quoting the reviewer. %@ is the reason.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "السبب المذكور: %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reason given: %@"
+            "value": "Your appeal"
           }
         }
       }
@@ -5312,67 +5258,193 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يفتح تطبيق البريد برسالة تظلّم موجّهة إلى فريق المراجعة في سِلة"
+            "value": "يفتح نموذجًا قصيرًا يقرأه مشرف"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Opens your mail app with an appeal addressed to the Sila review team"
+            "value": "Opens a short form that a moderator reads"
           }
         }
       }
     },
-    "auth.rejected.appeal.noMailApp": {
-      "comment": "Toast when no mail app can be opened. %@ is the appeal address.",
+    "auth.rejected.appeal.placeholder": {
+      "comment": "Placeholder of the appeal text field.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تعذّر فتح تطبيق البريد. راسلنا على %@."
+            "value": "ما الذي حدث، بكلماتك"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We couldn't open your mail app. Write to %@."
+            "value": "What happened, in your own words"
           }
         }
       }
     },
-    "auth.rejected.appeal.noMailConfigured": {
-      "comment": "Toast when no mail account is configured. %@ is the appeal address.",
+    "auth.rejected.appeal.prompt": {
+      "comment": "Above the appeal form.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا يوجد تطبيق بريد مُعدّ على الجهاز. راسلنا على %@."
+            "value": "أخبرنا لماذا ترى أن هذا القرار خاطئ. سيقرأه مشرف."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No mail app is set up. Write to %@."
+            "value": "Tell us why you think this decision is wrong. A moderator will read it."
           }
         }
       }
     },
-    "auth.rejected.appeal.subject": {
-      "comment": "Subject line of the appeal email.",
+    "auth.rejected.appeal.receipt": {
+      "comment": "Receipt line; %@ is the date.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تظلّم على توثيق سِلة"
+            "value": "أُرسل التظلم %@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sila verification appeal"
+            "value": "Appeal sent %@"
+          }
+        }
+      }
+    },
+    "auth.rejected.appeal.receipt.noDate": {
+      "comment": "Receipt line when the date is unknown.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُرسل التظلم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appeal sent"
+          }
+        }
+      }
+    },
+    "auth.rejected.appeal.send": {
+      "comment": "Sends the appeal.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال التظلم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send appeal"
+          }
+        }
+      }
+    },
+    "auth.rejected.appeal.send.hint": {
+      "comment": "Accessibility hint on the send button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسل تظلمك إلى فريق المراجعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends your appeal to the review team"
+          }
+        }
+      }
+    },
+    "auth.rejected.appeal.sent": {
+      "comment": "Toast after sending.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُرسل تظلمك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your appeal has been sent."
+          }
+        }
+      }
+    },
+    "auth.rejected.appeal.status.overturned": {
+      "comment": "Appeal status: the decision was overturned.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قُبل التظلم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted"
+          }
+        }
+      }
+    },
+    "auth.rejected.appeal.status.pending": {
+      "comment": "Appeal status.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بانتظار القراءة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting to be read"
+          }
+        }
+      }
+    },
+    "auth.rejected.appeal.status.upheld": {
+      "comment": "Appeal status: the decision was upheld.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت المراجعة — القرار قائم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviewed — the decision stands"
           }
         }
       }
@@ -5485,6 +5557,24 @@
         }
       }
     },
+    "auth.rejected.reason.verificationRevoked": {
+      "comment": "Machine reason: verification_revoked.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحب مشرف التوثيق من حسابك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator has withdrawn the verification of your account."
+          }
+        }
+      }
+    },
     "auth.rejected.reasonLabel": {
       "comment": "Label above the reviewer's stated reason.",
       "extractionState": "manual",
@@ -5499,6 +5589,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reason given"
+          }
+        }
+      }
+    },
+    "auth.rejected.revoked.message": {
+      "comment": "Body when a moderator withdrew the badge.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحب مشرف التوثيق من هذا الحساب، لذا فهو مغلق. إن كنت ترى أن هذا خطأ، يمكنك التظلم هنا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator has withdrawn the verification of this account, so it is closed. If you believe this is wrong, you can appeal here."
+          }
+        }
+      }
+    },
+    "auth.rejected.revoked.title": {
+      "comment": "Headline when a moderator withdrew the badge.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم سحب التوثيق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification withdrawn"
           }
         }
       }

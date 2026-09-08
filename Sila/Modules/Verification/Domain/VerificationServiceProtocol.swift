@@ -65,4 +65,16 @@ public protocol VerificationServiceProtocol: Sendable {
     /// The caller's most recent document case, or `nil` when there has never
     /// been one.
     func latestDocumentCase() async throws -> DocumentCase?
+
+    // MARK: Contesting a decision
+
+    /// Appeals the decision that closed the account, `POST /verification/appeal`.
+    ///
+    /// One per decision. A rejection, a refusal on the facts and a withdrawn
+    /// badge are all appealable; a moderator decides the appeal on the
+    /// dashboard, never by mail.
+    /// - Throws: ``APIError`` with ``APIErrorCode/alreadyAppealed`` (409) when
+    ///   one is already on file — the state it describes, not a failure — and
+    ///   `nothing_to_appeal` (400) on an account that is not closed.
+    func appealVerification(message: String) async throws -> VerificationAppealReceipt
 }

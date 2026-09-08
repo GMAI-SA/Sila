@@ -47,8 +47,6 @@ public enum AppConfig {
         return URL(string: path, relativeTo: originURL)?.absoluteURL
     }
 
-    /// Address used by the "Appeal" mail link on the rejected screen.
-    public static let appealEmail = "appeals@socialsa.com"
 
     /// Terms of Service, opened in a web sheet from registration.
     public static let termsURLString = "https://sila.gmai.sa/legal/terms"

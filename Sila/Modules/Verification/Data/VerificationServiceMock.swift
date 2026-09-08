@@ -286,6 +286,21 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
 
     // MARK: - Internals
 
+    // MARK: Contesting a decision
+
+    private var appealed = false
+
+    public func appealVerification(message: String) async throws -> VerificationAppealReceipt {
+        record("appealVerification")
+        try failIfOffline()
+        try await delay()
+        if appealed {
+            throw APIError.api(code: .alreadyAppealed, message: "You have already appealed this decision.", status: 409)
+        }
+        appealed = true
+        return VerificationAppealReceipt(id: UUID().uuidString, status: .pending, submittedAt: Date())
+    }
+
     private func record(_ call: String) {
         recordedCalls.append(call)
     }

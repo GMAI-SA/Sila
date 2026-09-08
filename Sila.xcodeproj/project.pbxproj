@@ -26,6 +26,7 @@
 		0E145221BA8AB17D1163870B /* SLShimmer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1F9BE9BFB7B0790305D08B /* SLShimmer.swift */; };
 		0ECCC3A46918B475C7FD1E0C /* ComposerSheetScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EEED6F55650ACA5C31B27E2 /* ComposerSheetScreen.swift */; };
 		0ED3BC0C91A1874ED583AE0B /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A275C6BADDF4853D5DB32D /* MainTabView.swift */; };
+		0FD761FA569DEE3AC00ABE74 /* VerificationAppealTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72088CA22D27140AAAAEDEBF /* VerificationAppealTests.swift */; };
 		1050EA325B63E04C6E4AE3DB /* URLSessionNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7451D318ADBB1936A25F41E4 /* URLSessionNetworkClient.swift */; };
 		125748E9A648EA13D67613A9 /* ProfileServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B94325C2FB64855C65A80A /* ProfileServiceTests.swift */; };
 		1299FA66C79F95152527C6D6 /* NewPostVisibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E10DAAEB758D6946418FAC /* NewPostVisibilityTests.swift */; };
@@ -372,6 +373,7 @@
 		6FC72187B14DF20C322B073F /* ComposerServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerServiceProtocol.swift; sourceTree = "<group>"; };
 		70D94A418B1D2D452BBC92D2 /* PostDeletionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDeletionViewModelTests.swift; sourceTree = "<group>"; };
 		710B3AA75F6F99545BD91BA1 /* LanguagePreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePreferenceTests.swift; sourceTree = "<group>"; };
+		72088CA22D27140AAAAEDEBF /* VerificationAppealTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationAppealTests.swift; sourceTree = "<group>"; };
 		7451D318ADBB1936A25F41E4 /* URLSessionNetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSessionNetworkClient.swift; sourceTree = "<group>"; };
 		76D2363B5E056E0F4A413E99 /* FeedContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedContractTests.swift; sourceTree = "<group>"; };
 		77655FE604AB4868A6EF9329 /* ProfileViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModelTests.swift; sourceTree = "<group>"; };
@@ -787,6 +789,7 @@
 				0D7D27766CC416AF335B9091 /* SensitiveContentTests.swift */,
 				A2C1F4F0B0F0FC9214608731 /* SignInViewModelTests.swift */,
 				C5F5248C4BDB3A6A1E49B543 /* TextDirectionTests.swift */,
+				72088CA22D27140AAAAEDEBF /* VerificationAppealTests.swift */,
 				2DA1C065F65D47FA241DE0DB /* VerificationGateTests.swift */,
 				103C7F823AD9B71B8F17F433 /* VerificationWallTests.swift */,
 			);
@@ -1669,6 +1672,7 @@
 				6FD8FA8AB6E42FC513C99D97 /* SensitiveContentTests.swift in Sources */,
 				3605A24B5C27BC341A97E16C /* SignInViewModelTests.swift in Sources */,
 				61385292E9329CA2705354B5 /* TextDirectionTests.swift in Sources */,
+				0FD761FA569DEE3AC00ABE74 /* VerificationAppealTests.swift in Sources */,
 				79ADC68E845793CE609CB2A7 /* VerificationGateTests.swift in Sources */,
 				24DDBF412A5FA03BE8D61363 /* VerificationWallTests.swift in Sources */,
 			);
@@ -1797,7 +1801,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sila/Resources/Sila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;
@@ -1846,7 +1850,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sila/Resources/Sila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;

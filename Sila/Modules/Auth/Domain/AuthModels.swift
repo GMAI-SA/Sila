@@ -304,23 +304,28 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     /// The nationality the person declared — the claim verification tests.
     /// `nil` until they have chosen one.
     public let nationality: String?
+    /// The person's appeal against the current decision, when they filed one.
+    /// Only ever present while ``status`` is ``VerificationStatus/rejected``.
+    public let appeal: VerificationAppealReceipt?
 
     public init(
         status: VerificationStatus,
         rejectionReason: String? = nil,
         submittedAt: Date? = nil,
         reviewedAt: Date? = nil,
-        nationality: String? = nil
+        nationality: String? = nil,
+        appeal: VerificationAppealReceipt? = nil
     ) {
         self.status = status
         self.rejectionReason = rejectionReason
         self.submittedAt = submittedAt
         self.reviewedAt = reviewedAt
         self.nationality = nationality
+        self.appeal = appeal
     }
 
     private enum CodingKeys: String, CodingKey {
-        case status, rejectionReason, submittedAt, reviewedAt, nationality
+        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal
     }
 
     public init(from decoder: Decoder) throws {
@@ -330,6 +335,68 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         submittedAt = try? container.decodeIfPresent(Date.self, forKey: .submittedAt)
         reviewedAt = try? container.decodeIfPresent(Date.self, forKey: .reviewedAt)
         nationality = CountryCode.normalised(try? container.decodeIfPresent(String.self, forKey: .nationality))
+        appeal = try? container.decodeIfPresent(VerificationAppealReceipt.self, forKey: .appeal)
+    }
+}
+
+/// Where an appeal against a verification decision has got to.
+///
+/// The server's vocabulary is `pending | upheld | overturned`; *upheld* means
+/// the **decision** stands, *overturned* means the appeal succeeded. Anything
+/// this build does not know reads as ``unknown``, which the screen shows as
+/// "submitted" — an appeal that reached the server is on file whatever its
+/// state is called.
+public enum VerificationAppealStatus: String, Sendable, Equatable, Hashable {
+    case pending
+    case upheld
+    case overturned
+    case unknown
+
+    public init(serverValue: String) {
+        self = VerificationAppealStatus(rawValue: serverValue.lowercased()) ?? .unknown
+    }
+
+    /// The sentence the person reads.
+    public var label: String {
+        switch self {
+        case .pending, .unknown: return L10n.t("auth.rejected.appeal.status.pending")
+        case .upheld: return L10n.t("auth.rejected.appeal.status.upheld")
+        case .overturned: return L10n.t("auth.rejected.appeal.status.overturned")
+        }
+    }
+}
+
+/// An appeal on file against a verification decision.
+///
+/// From `/verification/status` (`appeal`) or the answer to
+/// `POST /verification/appeal`. One per decision: the server refuses a
+/// second with `already_appealed`, which the screen treats as the state it
+/// describes rather than as an error.
+public struct VerificationAppealReceipt: Decodable, Equatable, Sendable {
+
+    /// The server's limit on an appeal's length.
+    public static let maximumLength = 1_000
+
+    public let id: String?
+    public let status: VerificationAppealStatus
+    /// When it was sent, or `nil` when the server did not say.
+    public let submittedAt: Date?
+
+    public init(id: String? = nil, status: VerificationAppealStatus = .pending, submittedAt: Date? = nil) {
+        self.id = id
+        self.status = status
+        self.submittedAt = submittedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, status, submittedAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try? container.decodeIfPresent(String.self, forKey: .id)
+        status = VerificationAppealStatus(serverValue: (try? container.decodeIfPresent(String.self, forKey: .status)) ?? "pending")
+        submittedAt = try? container.decodeIfPresent(Date.self, forKey: .submittedAt)
     }
 }
 
