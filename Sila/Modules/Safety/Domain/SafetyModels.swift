@@ -252,6 +252,10 @@ public enum ReportReason: String, CaseIterable, Sendable, Hashable, Codable, Ide
 
 /// Client-side limits for the report form.
 public enum SafetyLimits {
+
+    /// The server's bounds on `claimed_identity`.
+    public static let minimumClaimedIdentityLength = 2
+    public static let maximumClaimedIdentityLength = 120
     /// The most a `detail` may carry. Mirrored client-side so an essay is
     /// refused before it is sent, not after.
     public static let maximumDetailLength = 1_000
@@ -334,22 +338,36 @@ public struct ReportRequest: Encodable, Equatable, Sendable {
     /// Free text, or `nil` when there is none. Never an empty string: a blank
     /// `detail` on the wire is noise a reviewer has to read past.
     public let detail: String?
+    /// For ``ReportReason/impersonation`` only: who the account is pretending
+    /// to be. With it, the report is also an identity challenge — the signal
+    /// that, from enough established people, puts the account in front of a
+    /// moderator. Nothing pauses the account; a person decides.
+    public let claimedIdentity: String?
 
-    public init(postId: UUID? = nil, userHandle: String? = nil, reason: ReportReason, detail: String? = nil) {
+    public init(
+        postId: UUID? = nil,
+        userHandle: String? = nil,
+        reason: ReportReason,
+        detail: String? = nil,
+        claimedIdentity: String? = nil
+    ) {
         self.postId = postId
         self.userHandle = userHandle
         self.reason = reason
         let trimmed = detail?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         self.detail = trimmed.isEmpty ? nil : trimmed
+        let claimed = claimedIdentity?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // Only ever sent with the reason it belongs to.
+        self.claimedIdentity = (reason == .impersonation && claimed.count >= 2) ? claimed : nil
     }
 
     /// Builds the body for a subject.
-    public init(subject: ReportSubject, reason: ReportReason, detail: String?) {
+    public init(subject: ReportSubject, reason: ReportReason, detail: String?, claimedIdentity: String? = nil) {
         switch subject {
         case let .post(id, _, _):
-            self.init(postId: id, userHandle: nil, reason: reason, detail: detail)
+            self.init(postId: id, userHandle: nil, reason: reason, detail: detail, claimedIdentity: claimedIdentity)
         case let .account(target):
-            self.init(postId: nil, userHandle: target.handle, reason: reason, detail: detail)
+            self.init(postId: nil, userHandle: target.handle, reason: reason, detail: detail, claimedIdentity: claimedIdentity)
         }
     }
 }

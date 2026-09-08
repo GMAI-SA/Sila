@@ -235,6 +235,9 @@ final class SafetyModelsTests: XCTestCase {
     /// category a reviewer can act on does not need an essay attached.
     func testEveryNamedReasonIsSubmittableWithNoDetail() {
         for reason in ReportReason.allCases where reason != .other {
+            // Impersonation now asks who is being impersonated, so it is
+            // handled by its own test rather than swept as "needs nothing".
+            if reason == .impersonation { continue }
             let draft = ReportDraft(
                 subject: .account(SafetyTarget(handle: "yuki")),
                 reason: reason
@@ -242,6 +245,13 @@ final class SafetyModelsTests: XCTestCase {
             XCTAssertTrue(draft.isSubmittable, "\(reason.rawValue) needed a detail it should not")
             XCTAssertFalse(reason.requiresDetail)
         }
+    }
+
+    func testImpersonationRequiresTheNameOfWhoIsBeingImpersonated() {
+        var draft = ReportDraft(subject: .account(SafetyTarget(handle: "yuki")), reason: .impersonation)
+        XCTAssertFalse(draft.isSubmittable, "a bare impersonation report counts for nothing")
+        draft.claimedIdentity = "Ministry of Interior"
+        XCTAssertTrue(draft.isSubmittable)
     }
 
     /// "Something else" with nothing after it names nothing at all.

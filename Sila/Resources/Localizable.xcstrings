@@ -23705,6 +23705,78 @@
         }
       }
     },
+    "safety.report.claimedIdentity.explanation": {
+      "comment": "Under the field: what the name does.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسم يمكن للمراجع التحقق منه. عدد كافٍ من البلاغات التي تذكر الهوية نفسها يضع هذا الحساب أمام مراجع، ولا يحدث له شيء حتى يقرر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A name a reviewer can check. Enough reports naming the same identity put this account in front of a reviewer; nothing happens to it until they decide."
+          }
+        }
+      }
+    },
+    "safety.report.claimedIdentity.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مطلوب. اذكر من ينتحل هذا الحساب صفته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required. Name who this account is impersonating."
+          }
+        }
+      }
+    },
+    "safety.report.claimedIdentity.label": {
+      "comment": "Label of the who-are-they-pretending-to-be field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من ينتحلون صفته؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who are they pretending to be?"
+          }
+        }
+      }
+    },
+    "safety.report.claimedIdentity.placeholder": {
+      "comment": "Placeholder for that field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شخص أو شركة أو جهة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A person, company or organisation"
+          }
+        }
+      }
+    },
     "safety.report.close.editingHint": {
       "comment": "VoiceOver hint for cancelling a report that has not been sent.",
       "extractionState": "manual",

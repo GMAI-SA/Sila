@@ -16,11 +16,23 @@ public struct ReportDraft: Equatable, Sendable {
     public var reason: ReportReason?
     /// Free text, as typed.
     public var detail: String
+    /// For impersonation: who the account is pretending to be, as typed.
+    public var claimedIdentity: String
 
-    public init(subject: ReportSubject, reason: ReportReason? = nil, detail: String = "") {
+    public init(subject: ReportSubject, reason: ReportReason? = nil, detail: String = "", claimedIdentity: String = "") {
         self.subject = subject
         self.reason = reason
         self.detail = detail
+        self.claimedIdentity = claimedIdentity
+    }
+
+    /// Whether the form asks who is being impersonated.
+    public var asksWhoIsImpersonated: Bool { reason == .impersonation }
+
+    /// The name as it would be sent, or `nil` when there is nothing usable.
+    public var normalisedClaimedIdentity: String? {
+        let trimmed = claimedIdentity.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.count >= SafetyLimits.minimumClaimedIdentityLength ? trimmed : nil
     }
 
     /// The detail as it would be sent: trimmed, and `nil` when there is nothing
@@ -56,6 +68,15 @@ public struct ReportDraft: Equatable, Sendable {
             return "\"\(reason.title)\" needs a line explaining what is wrong — "
                 + "on its own there is nothing for a reviewer to act on."
         }
+        if reason == .impersonation, normalisedClaimedIdentity == nil {
+            // Required, and not a menu: a name is something a reviewer can
+            // check and a brigade has to fabricate consistently. Without it
+            // the report is filed but counts for nothing.
+            return "Say who this account is pretending to be — a name a reviewer can check."
+        }
+        if claimedIdentity.trimmingCharacters(in: .whitespacesAndNewlines).count > SafetyLimits.maximumClaimedIdentityLength {
+            return "Keep the name under \(SafetyLimits.maximumClaimedIdentityLength) characters."
+        }
         return nil
     }
 
@@ -66,7 +87,12 @@ public struct ReportDraft: Equatable, Sendable {
     /// draft cannot be turned into a request by accident.
     public var request: ReportRequest? {
         guard let reason, isSubmittable else { return nil }
-        return ReportRequest(subject: subject, reason: reason, detail: normalisedDetail)
+        return ReportRequest(
+            subject: subject,
+            reason: reason,
+            detail: normalisedDetail,
+            claimedIdentity: asksWhoIsImpersonated ? normalisedClaimedIdentity : nil
+        )
     }
 }
 

@@ -71,6 +71,9 @@ public struct ReportSheet: View {
 
             reasonPicker
 
+            if viewModel.draft.asksWhoIsImpersonated {
+                claimedIdentityField
+            }
             if viewModel.reason != nil {
                 detailField
             }
@@ -189,6 +192,27 @@ public struct ReportSheet: View {
                     .foregroundStyle(isSelected ? SLColor.primary : SLColor.textMuted)
                     .accessibilityHidden(true)
             }
+        }
+    }
+
+    /// Asked only for impersonation. The answer is what makes the report
+    /// count toward a review, and it says so.
+    private var claimedIdentityField: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.xs) {
+            SLTextField(
+                L10n.t("safety.report.claimedIdentity.label"),
+                text: $viewModel.draft.claimedIdentity,
+                placeholder: L10n.t("safety.report.claimedIdentity.placeholder"),
+                autocapitalization: .words,
+                accessibilityHint: L10n.t("safety.report.claimedIdentity.hint")
+            )
+            .slContentDirection(
+                TextDirection.resolve(languageCode: nil, text: viewModel.draft.claimedIdentity)
+            )
+            Text(L10n.t("safety.report.claimedIdentity.explanation"))
+                .font(SLFont.micro)
+                .foregroundStyle(SLColor.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
