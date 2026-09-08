@@ -16300,6 +16300,241 @@
         }
       }
     },
+    "people.picker.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "إضافة %lld أشخاص"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "إضافة %lld شخصًا"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "إضافة شخص واحد"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "إضافة %lld شخص"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "إضافة شخصين"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "اختر أحدًا"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld person"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld people"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "people.picker.choose": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر من الأشخاص الذين تعرفهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose from people you know"
+          }
+        }
+      }
+    },
+    "people.picker.empty.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تابع أشخاصًا أو دعهم يتابعونك ليظهروا هنا. ما زال بإمكانك البحث بالاسم أو المعرّف."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow people, or let them follow you, and they'll appear here. You can still search by name or handle."
+          }
+        }
+      }
+    },
+    "people.picker.empty.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا أحد بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody yet"
+          }
+        }
+      }
+    },
+    "people.picker.known.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أشخاص تعرفهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People you know"
+          }
+        }
+      }
+    },
+    "people.picker.known.noMatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا أحد ممن تعرفهم يطابق. تابع الكتابة للبحث عن الجميع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody you know matches. Keep typing to search everyone."
+          }
+        }
+      }
+    },
+    "people.picker.more.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أشخاص آخرون"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More people"
+          }
+        }
+      }
+    },
+    "people.picker.search.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يصفّي من تعرفهم ويبحث عن الآخرين"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filters the people you know and searches everyone else"
+          }
+        }
+      }
+    },
+    "people.picker.search.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بحث"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        }
+      }
+    },
+    "people.picker.search.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاسم أو @المعرّف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name or @handle"
+          }
+        }
+      }
+    },
+    "people.picker.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختيار أشخاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose people"
+          }
+        }
+      }
+    },
     "post.author.openProfile.hint": {
       "comment": "VoiceOver hint on the author region of a post card. %@ is the display name.",
       "extractionState": "manual",
@@ -21740,6 +21975,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "aziz, noura"
+          }
+        }
+      }
+    },
+    "rooms.create.guests.remove.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة %@ من الضيوف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@ from the guests"
           }
         }
       }

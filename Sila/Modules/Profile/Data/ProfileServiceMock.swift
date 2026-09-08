@@ -191,6 +191,24 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
         return FollowResult(following: following, followerCount: count)
     }
 
+    /// The people the viewer knows, for pickers. A fixed cast: the mock's
+    /// point is that a picker has somebody to show.
+    public func fetchFollowers(handle: String, cursor: String?) async throws -> FollowListPage {
+        FollowListPage(items: Self.knownPeople.prefix(3).map(FollowRow.init(user:)))
+    }
+
+    public func fetchFollowing(handle: String, cursor: String?) async throws -> FollowListPage {
+        FollowListPage(items: Self.knownPeople.dropFirst(2).map(FollowRow.init(user:)))
+    }
+
+    static let knownPeople: [UserSummary] = [
+        UserSummary(id: UUID(uuidString: "44444444-0000-4000-8000-000000000001")!, handle: "noura", displayName: "Noura", isVerified: true, countryCode: "SA"),
+        UserSummary(id: UUID(uuidString: "44444444-0000-4000-8000-000000000002")!, handle: "faisal", displayName: "Faisal", isVerified: true, countryCode: "SA"),
+        UserSummary(id: UUID(uuidString: "44444444-0000-4000-8000-000000000003")!, handle: "yuki", displayName: "Yuki", isVerified: true, countryCode: "JP"),
+        UserSummary(id: UUID(uuidString: "44444444-0000-4000-8000-000000000004")!, handle: "amal", displayName: "Amal", isVerified: true, countryCode: "SA"),
+        UserSummary(id: UUID(uuidString: "44444444-0000-4000-8000-000000000005")!, handle: "basma", displayName: "Basma", isVerified: false, countryCode: "SA")
+    ]
+
     public func fetchFollowRequests() async throws -> [FollowRequest] {
         record("fetchFollowRequests")
         try await delay()

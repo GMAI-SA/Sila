@@ -58,6 +58,13 @@ public protocol ProfileServiceProtocol: Sendable {
     /// - Throws: ``APIErrorCode/notFound`` (HTTP 404) when there is no such
     ///   request — it was answered from another device, or withdrawn.
     func answerFollowRequest(handle: String, accept: Bool) async throws
+
+    // MARK: Follow lists
+
+    /// Who follows an account, newest first, one page at a time.
+    func fetchFollowers(handle: String, cursor: String?) async throws -> FollowListPage
+    /// Who an account follows, newest first, one page at a time.
+    func fetchFollowing(handle: String, cursor: String?) async throws -> FollowListPage
 }
 
 extension ProfileServiceProtocol {
@@ -66,3 +73,12 @@ extension ProfileServiceProtocol {
         try await fetchPosts(handle: handle, cursor: cursor, limit: FeedConstants.defaultPageSize)
     }
 }
+
+/// Follow lists are optional for a transport: a scripted service in a test
+/// reads as "nobody" rather than failing to compile. The real service and
+/// the mock implement both.
+extension ProfileServiceProtocol {
+    public func fetchFollowers(handle: String, cursor: String?) async throws -> FollowListPage { .empty }
+    public func fetchFollowing(handle: String, cursor: String?) async throws -> FollowListPage { .empty }
+}
+

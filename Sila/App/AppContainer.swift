@@ -48,6 +48,11 @@ public final class AppContainer {
     public let notificationsService: NotificationsServiceProtocol
     /// Live voice rooms — listing, joining, hosting.
     public let roomsService: RoomsServiceProtocol
+    /// Where pickers get their people: the viewer's followers and following,
+    /// plus search. Built on demand from the two services it reads.
+    public var peopleDirectory: PeopleDirectory {
+        KnownPeopleDirectory(profile: profileService, search: searchService)
+    }
     public let messagesService: MessagesServiceProtocol
     /// `GET /languages` — the `rtl` flag that decides which way a post reads.
     public let languageService: LanguageServiceProtocol

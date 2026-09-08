@@ -49,6 +49,24 @@ public final class CreateRoomViewModel {
     }
     /// Handles typed into the guest field, as typed. Parsed on submit.
     public var inviteHandlesText = ""
+    /// Guests ticked in the picker. Joined with the typed handles on submit.
+    public private(set) var pickedGuests: [UserSummary] = []
+    /// Where the guest picker gets its people, when there is one.
+    public let people: PeopleDirectory?
+
+    /// The viewer, for the picker.
+    public var viewerHandle: String { author.handle ?? "" }
+
+    public func pick(_ guests: [UserSummary]) {
+        for guest in guests where !pickedGuests.contains(where: { Handle.normalised($0.handle) == Handle.normalised(guest.handle) }) {
+            pickedGuests.append(guest)
+        }
+    }
+
+    public func removeGuest(_ handle: String) {
+        let key = Handle.normalised(handle)
+        pickedGuests.removeAll { Handle.normalised($0.handle) == key }
+    }
     /// The viewer's groups, for ``RoomAccess/group``. Loaded on first need.
     public private(set) var groups: [UserGroup] = []
     /// `true` while the groups are loading.
@@ -93,8 +111,10 @@ public final class CreateRoomViewModel {
         preferences: PreferencesServiceProtocol,
         analytics: AnalyticsClient,
         suspension: SuspensionMonitor? = nil,
+        people: PeopleDirectory? = nil,
         onCreated: (@MainActor (VoiceRoom) -> Void)? = nil
     ) {
+        self.people = people
         self.author = author
         self.service = service
         self.preferences = preferences
@@ -107,7 +127,17 @@ public final class CreateRoomViewModel {
     // MARK: - Derived state
 
     /// The handles the guest field currently names, tidied.
-    public var inviteHandles: [String] { RoomInviteHandles.clean(inviteHandlesText) }
+    public var inviteHandles: [String] {
+        var seen = Set<String>()
+        var handles: [String] = []
+        for handle in RoomInviteHandles.clean(inviteHandlesText) + pickedGuests.map(\.handle) {
+            let key = Handle.normalised(handle)
+            guard !key.isEmpty, !seen.contains(key) else { continue }
+            seen.insert(key)
+            handles.append(key)
+        }
+        return handles
+    }
 
     /// The audience rows, unavailable ones included and explained.
     public var scopeOptions: [ScopeOption] { ScopePicker.options(for: author) }
@@ -155,7 +185,10 @@ public final class CreateRoomViewModel {
 
     /// The groups editor, sharing this screen's service.
     public func makeGroupsViewModel() -> GroupsViewModel {
-        GroupsViewModel(service: service, analytics: analytics, suspension: suspension)
+        GroupsViewModel(
+            service: service, analytics: analytics, suspension: suspension,
+            people: people, viewerHandle: viewerHandle
+        )
     }
 
     /// The chosen topic as a readable label, or `nil`.

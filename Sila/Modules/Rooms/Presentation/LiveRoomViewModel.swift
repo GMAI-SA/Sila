@@ -139,9 +139,11 @@ public final class LiveRoomViewModel {
         engine: VoiceEngineProtocol,
         analytics: AnalyticsClient,
         suspension: SuspensionMonitor? = nil,
+        people: PeopleDirectory? = nil,
         pollInterval: TimeInterval = RoomConstants.participantPollInterval,
         eventDebounce: TimeInterval = 0.4
     ) {
+        self.people = people
         self.room = room
         self.viewerHandle = Handle.normalised(viewerHandle)
         self.viewerId = viewerId
@@ -156,8 +158,14 @@ public final class LiveRoomViewModel {
     /// The guest-list model for this room, built from the same backend this
     /// screen already holds — so the view never has to be handed a service.
     public func makeInvitesViewModel() -> RoomInvitesViewModel {
-        RoomInvitesViewModel(roomId: room.id, service: service, analytics: analytics)
+        RoomInvitesViewModel(
+            roomId: room.id, service: service, analytics: analytics,
+            people: people, viewerHandle: viewerHandle
+        )
     }
+
+    /// Where the invites picker gets its people.
+    private let people: PeopleDirectory?
 
     // MARK: - Derived state
 

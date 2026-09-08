@@ -8,6 +8,19 @@ import SwiftUI
 public struct GroupsSheet: View {
 
     @State private var viewModel: GroupsViewModel
+    /// Which list the picker feeds: the new group, or one being edited.
+    @State private var picking: PickTarget?
+
+    private enum PickTarget: Identifiable {
+        case newGroup
+        case group(UUID)
+        var id: String {
+            switch self {
+            case .newGroup: return "new"
+            case let .group(id): return id.uuidString
+            }
+        }
+    }
     private let onClose: @MainActor () -> Void
     /// Called with a group the user tapped to pick, when picking is the point.
     private let onPick: (@MainActor (UserGroup) -> Void)?
@@ -74,7 +87,32 @@ public struct GroupsSheet: View {
             } message: {
                 Text(L10n.t("groups.delete.confirm.message"))
             }
+            .sheet(item: $picking) { target in
+                if let directory = viewModel.people {
+                    PeoplePickerSheet(
+                        viewModel: PeoplePickerViewModel(
+                            directory: directory,
+                            viewerHandle: viewModel.viewerHandle,
+                            excluding: excluded(for: target)
+                        ),
+                        onPick: { people in
+                            switch target {
+                            case .newGroup: viewModel.pickForNew(people)
+                            case .group: Task { await viewModel.addMembers(people: people) }
+                            }
+                        },
+                        onClose: { picking = nil }
+                    )
+                }
+            }
             .tnToast($viewModel.toast)
+        }
+    }
+
+    private func excluded(for target: PickTarget) -> [String] {
+        switch target {
+        case .newGroup: return viewModel.handles
+        case let .group(id): return viewModel.groups.first { $0.id == id }?.members.map(\.handle) ?? []
         }
     }
 
@@ -89,6 +127,18 @@ public struct GroupsSheet: View {
                 accessibilityHint: L10n.t("groups.new.name.a11yHint")
             )
             if viewModel.editingId == nil {
+                if viewModel.people != nil {
+                    SLButton(
+                        L10n.t("people.picker.choose"),
+                        variant: .secondary,
+                        size: .compact,
+                        icon: "person.2.badge.plus",
+                        action: { picking = .newGroup }
+                    )
+                }
+                if !viewModel.pickedForNew.isEmpty {
+                    pickedPeople(viewModel.pickedForNew, remove: { viewModel.removePickedForNew($0) })
+                }
                 SLTextField(
                     L10n.t("groups.new.handles.label"),
                     text: $viewModel.handlesText,
@@ -154,6 +204,16 @@ public struct GroupsSheet: View {
                 }
 
                 if isEditing {
+                    if viewModel.people != nil {
+                        SLButton(
+                            L10n.t("people.picker.choose"),
+                            variant: .secondary,
+                            size: .compact,
+                            icon: "person.2.badge.plus",
+                            isLoading: viewModel.isSaving,
+                            action: { picking = .group(group.id) }
+                        )
+                    }
                     SLTextField(
                         L10n.t("groups.new.handles.label"),
                         text: $viewModel.handlesText,
@@ -180,6 +240,42 @@ public struct GroupsSheet: View {
                         }
                         .accessibilityLabel(Text(L10n.t("groups.delete.a11yLabel", group.name)))
                     }
+                }
+            }
+        }
+    }
+
+    /// People ticked for a group that does not exist yet, each with a way out.
+    private func pickedPeople(_ people: [UserSummary], remove: @escaping (String) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: SLSpacing.xs) {
+            ForEach(people) { person in
+                HStack(spacing: SLSpacing.sm) {
+                    SLAvatar(
+                        url: person.avatarURL,
+                        initials: person.initials,
+                        size: .sm,
+                        isVerified: person.isVerified,
+                        displayName: person.displayName
+                    )
+                    Text(person.displayName)
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .lineLimit(1)
+                    Text(person.atHandle)
+                        .font(SLFont.micro)
+                        .foregroundStyle(SLColor.textMuted)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Button {
+                        remove(person.handle)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(SLColor.textMuted)
+                            .frame(width: 32, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(Text(L10n.t("groups.member.remove.a11yLabel", person.displayName)))
                 }
             }
         }

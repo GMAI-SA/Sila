@@ -204,7 +204,9 @@ public struct MainTabView: View {
                 viewModel: GroupsViewModel(
                     service: container.roomsService,
                     analytics: container.analytics,
-                    suspension: container.suspension
+                    suspension: container.suspension,
+                    people: container.peopleDirectory,
+                    viewerHandle: container.session.user?.handle ?? ""
                 ),
                 onClose: { isShowingGroups = false }
             )
@@ -776,6 +778,7 @@ public struct MainTabView: View {
             preferences: container.preferencesService,
             analytics: container.analytics,
             suspension: container.suspension,
+            people: container.peopleDirectory,
             onCreated: { room in roomsViewModel.insert(room) }
         )
     }
@@ -823,7 +826,8 @@ public struct MainTabView: View {
                     // room somebody opened silently stole the first's socket.
                     engine: container.makeVoiceEngine(),
                     analytics: container.analytics,
-                    suspension: container.suspension
+                    suspension: container.suspension,
+                    people: container.peopleDirectory
                 ),
                 onLeave: {
                     // Back to the list, and anything pushed above the room —

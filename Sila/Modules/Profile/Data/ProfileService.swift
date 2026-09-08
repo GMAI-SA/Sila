@@ -23,6 +23,24 @@ public final class ProfileService: ProfileServiceProtocol {
 
     // MARK: - Reading
 
+    public func fetchFollowers(handle: String, cursor: String?) async throws -> FollowListPage {
+        try await followList("followers", handle: handle, cursor: cursor)
+    }
+
+    public func fetchFollowing(handle: String, cursor: String?) async throws -> FollowListPage {
+        try await followList("following", handle: handle, cursor: cursor)
+    }
+
+    private func followList(_ kind: String, handle: String, cursor: String?) async throws -> FollowListPage {
+        let token = try await tokens.accessToken()
+        var query = [URLQueryItem(name: "limit", value: "100")]
+        if let cursor, !cursor.isEmpty { query.append(URLQueryItem(name: "cursor", value: cursor)) }
+        return try await network.send(
+            APIRequest(path: "/users/\(try component(handle))/\(kind)", accessToken: token, query: query),
+            as: FollowListPage.self
+        )
+    }
+
     public func fetchProfile(handle: String) async throws -> Profile {
         let token = try await tokens.accessToken()
         let profile = try await network.send(

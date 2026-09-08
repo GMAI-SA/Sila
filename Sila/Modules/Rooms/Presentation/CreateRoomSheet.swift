@@ -19,6 +19,7 @@ public struct CreateRoomSheet: View {
     private let onClose: @MainActor () -> Void
     private let onCreated: (@MainActor (VoiceRoom) -> Void)?
     @State private var isManagingGroups = false
+    @State private var isPickingGuests = false
 
     @FocusState private var isTitleFocused: Bool
 
@@ -273,6 +274,18 @@ public struct CreateRoomSheet: View {
             }
 
             if viewModel.access.isClosed {
+                if viewModel.people != nil {
+                    SLButton(
+                        L10n.t("people.picker.choose"),
+                        variant: .secondary,
+                        size: .compact,
+                        icon: "person.2.badge.plus",
+                        action: { isPickingGuests = true }
+                    )
+                }
+                if !viewModel.pickedGuests.isEmpty {
+                    pickedGuests
+                }
                 SLTextField(
                     L10n.t("rooms.create.guests.label"),
                     text: $viewModel.inviteHandlesText,
@@ -294,6 +307,19 @@ public struct CreateRoomSheet: View {
         .task(id: viewModel.access) {
             if viewModel.access == .group { await viewModel.loadGroups() }
         }
+        .sheet(isPresented: $isPickingGuests) {
+            if let directory = viewModel.people {
+                PeoplePickerSheet(
+                    viewModel: PeoplePickerViewModel(
+                        directory: directory,
+                        viewerHandle: viewModel.viewerHandle,
+                        excluding: viewModel.inviteHandles
+                    ),
+                    onPick: { people in viewModel.pick(people) },
+                    onClose: { isPickingGuests = false }
+                )
+            }
+        }
         .sheet(isPresented: $isManagingGroups) {
             GroupsSheet(
                 viewModel: viewModel.makeGroupsViewModel(),
@@ -307,6 +333,42 @@ public struct CreateRoomSheet: View {
                     Task { await viewModel.loadGroups() }
                 }
             )
+        }
+    }
+
+    /// The guests ticked in the picker, each with a way out.
+    private var pickedGuests: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.xs) {
+            ForEach(viewModel.pickedGuests) { guest in
+                HStack(spacing: SLSpacing.sm) {
+                    SLAvatar(
+                        url: guest.avatarURL,
+                        initials: guest.initials,
+                        size: .sm,
+                        isVerified: guest.isVerified,
+                        displayName: guest.displayName
+                    )
+                    Text(guest.displayName)
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .lineLimit(1)
+                    Text(guest.atHandle)
+                        .font(SLFont.micro)
+                        .foregroundStyle(SLColor.textMuted)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Button {
+                        viewModel.removeGuest(guest.handle)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(SLColor.textMuted)
+                            .frame(width: 32, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(Text(L10n.t("rooms.create.guests.remove.a11yLabel", guest.displayName)))
+                }
+            }
         }
     }
 

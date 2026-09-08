@@ -34,10 +34,36 @@ public final class RoomInvitesViewModel {
     ///   - service: Rooms backend.
     ///   - analytics: Event sink. Counts only — never a handle, because who a
     ///     host invited is the room's business and not telemetry's.
-    public init(roomId: UUID, service: RoomsServiceProtocol, analytics: AnalyticsClient) {
+    /// Where a picker gets its people, when the screen offers one.
+    public let people: PeopleDirectory?
+    public let viewerHandle: String
+
+    public init(
+        roomId: UUID,
+        service: RoomsServiceProtocol,
+        analytics: AnalyticsClient,
+        people: PeopleDirectory? = nil,
+        viewerHandle: String = ""
+    ) {
         self.roomId = roomId
         self.service = service
         self.analytics = analytics
+        self.people = people
+        self.viewerHandle = viewerHandle
+    }
+
+    /// Invites the people a picker chose. Same call as the typed field.
+    public func invite(people chosen: [UserSummary]) async {
+        let wanted = chosen.map(\.handle)
+        guard !wanted.isEmpty, !isAdding else { return }
+        isAdding = true
+        defer { isAdding = false }
+        do {
+            invited = try await service.invite(roomId: roomId, handles: wanted).invited
+            toast = .success(L10n.plural("rooms.invites.added", wanted.count))
+        } catch {
+            toast = .error(APIError.wrapping(error).userMessage)
+        }
     }
 
     /// The handles the add field currently names, tidied.

@@ -411,3 +411,52 @@ extension Handle {
         })
     }
 }
+
+// MARK: - Follow lists
+
+/// One row of a followers or following list.
+public struct FollowRow: Equatable, Sendable, Decodable, Identifiable {
+    public let user: UserSummary
+    public var id: UUID { user.id }
+
+    public init(user: UserSummary) { self.user = user }
+
+    private enum CodingKeys: String, CodingKey { case user }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        user = try container.decode(UserSummary.self, forKey: .user)
+    }
+}
+
+/// A page of `GET /users/{handle}/followers` or `/following`.
+public struct FollowListPage: Equatable, Sendable, Decodable {
+    public let items: [FollowRow]
+    public let nextCursor: String?
+
+    public init(items: [FollowRow], nextCursor: String? = nil) {
+        self.items = items
+        self.nextCursor = nextCursor
+    }
+
+    public static let empty = FollowListPage(items: [])
+
+    private enum CodingKeys: String, CodingKey { case items, nextCursor }
+
+    /// One unreadable row does not cost the list the others.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        var rows: [FollowRow] = []
+        if var list = try? container.nestedUnkeyedContainer(forKey: .items) {
+            while !list.isAtEnd {
+                if let row = try? list.decode(FollowRow.self) {
+                    rows.append(row)
+                } else {
+                    _ = try? list.decode(AnyDecodable.self)
+                }
+            }
+        }
+        items = rows
+        nextCursor = (try? container.decodeIfPresent(String.self, forKey: .nextCursor)) ?? nil
+    }
+}

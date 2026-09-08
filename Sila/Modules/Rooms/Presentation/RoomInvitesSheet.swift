@@ -17,6 +17,7 @@ public struct RoomInvitesSheet: View {
 
     @State private var viewModel: RoomInvitesViewModel
     private let onClose: () -> Void
+    @State private var isPicking = false
 
     /// - Parameters:
     ///   - viewModel: Owns the guest list and the calls that change it.
@@ -61,6 +62,19 @@ public struct RoomInvitesSheet: View {
                 }
             }
             .task { await viewModel.load() }
+            .sheet(isPresented: $isPicking) {
+                if let directory = viewModel.people {
+                    PeoplePickerSheet(
+                        viewModel: PeoplePickerViewModel(
+                            directory: directory,
+                            viewerHandle: viewModel.viewerHandle,
+                            excluding: viewModel.invited.map(\.handle)
+                        ),
+                        onPick: { people in Task { await viewModel.invite(people: people) } },
+                        onClose: { isPicking = false }
+                    )
+                }
+            }
             .tnToast($viewModel.toast)
         }
         .tint(SLColor.primary)
@@ -70,6 +84,18 @@ public struct RoomInvitesSheet: View {
 
     private var addField: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            if viewModel.people != nil {
+                // The ordinary way in: tick people you know. The typed field
+                // below stays for a handle you have not met yet.
+                SLButton(
+                    L10n.t("people.picker.choose"),
+                    variant: .primary,
+                    size: .compact,
+                    icon: "person.2.badge.plus",
+                    action: { isPicking = true }
+                )
+            }
+
             SLTextField(
                 L10n.t("rooms.invites.add.label"),
                 text: $viewModel.handlesText,
