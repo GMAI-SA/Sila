@@ -14,134 +14,147 @@ public struct RoomHostActions: Equatable, Sendable {
     public let target: SafetyTarget
     /// Their role right now.
     public let role: RoomRole
+    /// Whether their hand is up.
+    public let hasHandRaised: Bool
     /// `true` while a call about this person is in flight.
     public let isBusy: Bool
-    /// Whether "Invite to speak" applies (they are listening).
+    /// Whether "Invite to speak" / "Approve" applies (they are listening).
     public var canPromote: Bool { role == .listener }
+    /// Whether "Lower their hand" applies.
+    public var canDismissHand: Bool { hasHandRaised }
+    /// Whether "Mute" applies (they hold a microphone that is not the host's).
+    public var canMute: Bool { role == .speaker }
     /// Whether "Move to listeners" applies. Never the host: there is no way to
     /// step off your own stage, and the server says so too.
     public var canDemote: Bool { role == .speaker }
     /// Whether "Remove from room" applies. Never the host.
     public var canRemove: Bool { !role.isHost }
 
-    public init(target: SafetyTarget, role: RoomRole, isBusy: Bool) {
+    public init(target: SafetyTarget, role: RoomRole, hasHandRaised: Bool = false, isBusy: Bool) {
         self.target = target
         self.role = role
+        self.hasHandRaised = hasHandRaised
         self.isBusy = isBusy
     }
 }
 
+/// Where the room screen is in its life.
+public enum LiveRoomPhase: Equatable, Sendable {
+    /// `POST /join` and the media connection are in flight.
+    case joining
+    /// In the room.
+    case inRoom
+    /// The door did not open. The sentence is the server's, or the room's.
+    case refused(String)
+    /// Gone; the screen dismisses on it.
+    case left
+}
+
 /// Drives ``LiveRoomScreen``.
 ///
-/// Five rules, and every one of them is a thing that would otherwise be a bug
-/// somebody only notices in a live conversation.
+/// **The screen joins.** Tapping a room pushes this screen at once; the join
+/// and the media connection happen here, under a connecting header, and a
+/// door that does not open is a state of this screen rather than a toast on
+/// the list behind it.
 ///
 /// **The microphone is gated on ``role``, never on a scope.** The role came
-/// with the token, and the token is what the media server enforces: a
-/// listener's carries `canPublish: false` and their audio is dropped upstream
-/// whatever this app draws. So the app never draws it. A mic button that cannot
-/// work is worse than no mic button, because the person keeps talking.
+/// with the token and is what the media server enforces: a listener's carries
+/// `canPublish: false` and their audio is dropped upstream whatever this app
+/// draws. So the app never draws it.
 ///
-/// **A promotion is followed by a re-join.** The grant travels with the token,
-/// and the token was issued for the role held at join time. Flipping a local
-/// boolean when the host invites somebody up would produce a lit microphone
-/// publishing into a socket that refuses it. So the poll notices the role
-/// changed, tears the connection down and joins again for a new token.
+/// **A raised hand is a request.** It goes to the API (the queue the host
+/// decides from) and is announced over the media channel (so the host's screen
+/// refreshes now). The host approves, dismisses, or does nothing; the person
+/// keeps listening throughout.
 ///
-/// **Microphone permission is asked when somebody takes the microphone, and
-/// never on the way in.** A listener needs no microphone; asking anyway teaches
-/// people that this app wants more than it needs, which is how permission
-/// prompts get denied by reflex.
+/// **A promotion arrives live.** The server tells the media server, the media
+/// server tells this engine, and the role changes without the audio dropping.
+/// The reconnect path survives as the fallback for a live update that did not
+/// land: the next poll notices the role changed and fetches a fresh token.
 ///
 /// **Leaving always does both halves.** `POST /leave` *and* a media disconnect,
-/// including on backgrounding-then-termination. One without the other leaves
-/// either a ghost on the room's list or a live socket nobody is looking at.
-///
-/// **Nothing is recorded, and the screen says so.** There is no recording
-/// affordance here because there is no recording, and the sentence lives on the
-/// screen rather than in a settings page nobody opens.
+/// including on backgrounding-then-termination.
 @MainActor
 @Observable
 public final class LiveRoomViewModel {
 
     /// The room as the server last described it.
     public private(set) var room: VoiceRoom
-    /// What the **token currently in hand** permits. The mic gate.
-    public private(set) var role: RoomRole
+    public private(set) var phase: LiveRoomPhase = .joining
+    /// What the **connection in hand** permits. The mic gate.
+    public private(set) var role: RoomRole = .listener
     /// Who is in the room.
     public private(set) var participants: RoomParticipantList = .empty
-    /// Where the media connection is.
     public private(set) var connection: VoiceConnectionState = .idle
-    /// Whether this device is publishing audio.
     public private(set) var isMicrophoneEnabled = false
-    /// Handles the media server says are talking right now.
-    public private(set) var speakingHandles: Set<String> = []
-    /// `true` while the microphone is being turned on or off.
+    /// Account ids the media server says are talking right now.
+    public private(set) var speakingIds: Set<String> = []
+    /// Account ids whose microphone is muted.
+    public private(set) var mutedIds: Set<String> = []
     public private(set) var isTogglingMic = false
-    /// `true` while a new token is being fetched after a role change.
+    public private(set) var isTogglingHand = false
     public private(set) var isRejoining = false
-    /// `true` while the leave is running.
     public private(set) var isLeaving = false
-    /// `true` while the room is being ended.
     public private(set) var isEnding = false
-    /// `true` once the room has been left; the screen dismisses on it.
     public private(set) var hasLeft = false
+    /// The last person the host removed, so a mis-tap has an undo.
+    public private(set) var lastRemoved: SafetyTarget?
     /// Set when the host asked to end the room and has not confirmed yet.
     public var isConfirmingEnd = false
-    /// Banner message.
     public var toast: SLToastMessage?
 
-    /// The viewer's own handle, so they are never offered a menu about
-    /// themselves and never demoted by their own poll.
+    /// The viewer's own handle and id, so they are never offered a menu about
+    /// themselves and the speaking ring can find them.
     public let viewerHandle: String
+    public let viewerId: UUID?
 
     private let service: RoomsServiceProtocol
     private let engine: VoiceEngineProtocol
     private let analytics: AnalyticsClient
     private let suspension: SuspensionMonitor?
     private let pollInterval: TimeInterval
+    private let eventDebounce: TimeInterval
     private var pollTask: Task<Void, Never>?
+    private var eventTask: Task<Void, Never>?
     private var busyHandles: Set<String> = []
-    /// The credentials for the connection currently held.
-    private var mediaURL: String
-    private var mediaToken: String
+    private var mediaURL = ""
+    private var mediaToken = ""
 
     /// - Parameters:
-    ///   - join: What `POST /rooms/{id}/join` handed back — the room, the media
-    ///     URL, the token and the role that token grants.
+    ///   - room: The room as the list described it. Re-read on join.
     ///   - viewerHandle: The signed-in account's handle.
+    ///   - viewerId: The signed-in account's id — what the media server calls them.
     ///   - service: Rooms backend.
     ///   - engine: The media transport, behind its seam.
     ///   - analytics: Event sink.
     ///   - suspension: Where `403 account_suspended` goes.
     ///   - pollInterval: Seconds between roster refreshes. Tests pass `0` to
     ///     switch polling off and drive ``refresh()`` by hand.
+    ///   - eventDebounce: Seconds to coalesce media events before a refresh.
     public init(
-        join: RoomJoin,
+        room: VoiceRoom,
         viewerHandle: String,
+        viewerId: UUID? = nil,
         service: RoomsServiceProtocol,
         engine: VoiceEngineProtocol,
         analytics: AnalyticsClient,
         suspension: SuspensionMonitor? = nil,
-        pollInterval: TimeInterval = RoomConstants.participantPollInterval
+        pollInterval: TimeInterval = RoomConstants.participantPollInterval,
+        eventDebounce: TimeInterval = 0.4
     ) {
-        self.room = join.room
-        self.role = join.role
-        self.mediaURL = join.url
-        self.mediaToken = join.token
+        self.room = room
         self.viewerHandle = Handle.normalised(viewerHandle)
+        self.viewerId = viewerId
         self.service = service
         self.engine = engine
         self.analytics = analytics
         self.suspension = suspension
         self.pollInterval = pollInterval
+        self.eventDebounce = eventDebounce
     }
 
     /// The guest-list model for this room, built from the same backend this
     /// screen already holds — so the view never has to be handed a service.
-    ///
-    /// Only meaningful for a host of a closed room; the screen shows the
-    /// entry point under exactly that condition.
     public func makeInvitesViewModel() -> RoomInvitesViewModel {
         RoomInvitesViewModel(roomId: room.id, service: service, analytics: analytics)
     }
@@ -149,73 +162,102 @@ public final class LiveRoomViewModel {
     // MARK: - Derived state
 
     /// **The single predicate the microphone affordance is gated on.**
-    ///
-    /// Not "does the scope allow it" — that question was answered by the server
-    /// and is already baked into the token this role came with.
     public var canUseMicrophone: Bool {
-        role.canPublish && room.status.isJoinable && !room.isRemoved
+        phase == .inRoom && role.canPublish && room.status.isJoinable && !room.isRemoved
     }
 
     /// `true` when this person is here to listen.
-    public var isListening: Bool { !canUseMicrophone }
+    public var isListening: Bool { phase == .inRoom && !role.canPublish }
+
+    /// Whether a listener may ask for the microphone: the room's rule allows it.
+    public var canRaiseHand: Bool { isListening && room.canSpeak && room.status.isJoinable }
+
+    /// Whether this viewer's hand is up.
+    public var handRaised: Bool { room.handRaised }
 
     /// Why the microphone is not on offer, or `nil` when it is.
-    ///
-    /// The server's ``VoiceRoom/speakRefusal`` is rendered **verbatim** when
-    /// there is one; nothing here rewrites, shortens or re-derives it.
     public var speakRefusal: String? {
-        guard isListening else { return nil }
+        guard isListening, !room.canSpeak else { return nil }
         return room.speakRefusalMessage ?? RoomCopy.speakRefusalFallback
     }
 
-    /// `true` when this viewer opened the room.
     public var isHost: Bool { room.isHost || role.isHost }
 
     /// The people on stage, host first.
     public var speakers: [RoomParticipant] { participants.stage }
 
-    /// The people listening.
+    /// The people listening, hands first.
     public var listeners: [RoomParticipant] { participants.audience }
 
-    /// Whether a participant is talking right now.
+    /// The queue the host decides from.
+    public var hands: [RoomParticipant] { participants.hands }
+
+    /// One count source — the roster — with the room's numbers until it loads.
+    public var attendanceSummary: String {
+        guard !participants.participants.isEmpty else { return room.attendanceSummary }
+        return RoomCopy.attendance(speakers: speakers.count, listeners: listeners.count)
+    }
+
+    /// Whether a participant is talking right now, by account id.
     public func isSpeaking(_ participant: RoomParticipant) -> Bool {
-        speakingHandles.contains(Handle.normalised(participant.user.handle))
+        speakingIds.contains(participant.user.id.uuidString.lowercased())
+    }
+
+    /// Whether a participant's microphone is muted, by account id.
+    public func isMuted(_ participant: RoomParticipant) -> Bool {
+        mutedIds.contains(participant.user.id.uuidString.lowercased())
     }
 
     /// The host menu for one person, or `nil` when there should not be one.
-    ///
-    /// `nil` for **every** participant when the viewer is not the host — which
-    /// is the assertion that matters: a non-host must not be shown controls
-    /// that exist, greyed out, teaching them the room has a hierarchy they can
-    /// reach into.
     public func hostActions(for participant: RoomParticipant) -> RoomHostActions? {
         guard isHost else { return nil }
         let handle = Handle.normalised(participant.user.handle)
-        // No menu about yourself: every entry on it is either meaningless
-        // (invite yourself up) or refused by the server (demote the host).
         guard handle != viewerHandle else { return nil }
         return RoomHostActions(
             target: SafetyTarget(user: participant.user),
             role: participant.role,
+            hasHandRaised: participant.hasHandRaised,
             isBusy: busyHandles.contains(handle)
         )
     }
 
     // MARK: - Lifecycle
 
-    /// Opens the media connection and starts the roster poll.
+    /// Joins, connects the media, reads the roster, and starts watching.
     public func start() async {
+        guard phase == .joining, !hasLeft else { return }
+        do {
+            let join = try await service.join(roomId: room.id)
+            room = join.room
+            role = join.role
+            mediaURL = join.url
+            mediaToken = join.token
+        } catch {
+            guard suspension?.notice(error) != true else { return }
+            let wrapped = APIError.wrapping(error)
+            analytics.track(.roomJoinRefused, properties: ["code": wrapped.code?.rawValue ?? "transport"])
+            phase = .refused(refusalSentence(wrapped))
+            return
+        }
         await connectMedia()
+        engine.onRoomEvent = { [weak self] event in self?.handle(event) }
+        phase = .inRoom
         await refresh()
         startPolling()
     }
 
+    private func refusalSentence(_ error: APIError) -> String {
+        switch error.code {
+        case .removedFromRoom: return RoomCopy.removedFromRoom
+        case .roomEnded, .notFound: return RoomCopy.roomEnded
+        case .notInvited: return room.joinRefusal ?? RoomCopy.inviteOnlyRefusal
+        case .notFollowed: return room.joinRefusal ?? RoomCopy.followingOnlyRefusal
+        default: return error.userMessage
+        }
+    }
+
     private func connectMedia() async {
         do {
-            // `canPublish` is passed as well as encoded in the token. The token
-            // is the enforcement; this is the client admitting what it thinks,
-            // so a disagreement is a loud local failure rather than audio
-            // vanishing silently somewhere upstream.
             try await engine.connect(url: mediaURL, token: mediaToken, canPublish: role.canPublish)
         } catch {
             analytics.track(.roomMediaFailed, properties: ["stage": "connect"])
@@ -227,11 +269,11 @@ public final class LiveRoomViewModel {
         engine.onChange = { [weak self] in self?.adoptEngineState() }
     }
 
-    /// Mirrors the engine's state onto the observable properties.
     private func adoptEngineState() {
         connection = engine.connection
         isMicrophoneEnabled = engine.isMicrophoneEnabled
-        speakingHandles = Set(engine.speakingIdentities.map { Handle.normalised($0) })
+        speakingIds = Set(engine.speakingIdentities.map { $0.lowercased() })
+        mutedIds = Set(engine.mutedIdentities.map { $0.lowercased() })
     }
 
     private func startPolling() {
@@ -245,16 +287,56 @@ public final class LiveRoomViewModel {
         }
     }
 
+    // MARK: - Live events
+
+    /// Something the media server said. Two events change what the viewer may
+    /// do *now* and are applied at once; every event refreshes the roster.
+    private func handle(_ event: VoiceRoomEvent) {
+        guard !hasLeft else { return }
+        switch event {
+        case let .permissionsChanged(canPublish):
+            if canPublish, !role.canPublish {
+                role = .speaker
+                toast = .success(RoomCopy.youCanSpeakNow)
+            } else if !canPublish, role == .speaker {
+                role = .listener
+                isMicrophoneEnabled = false
+                toast = .info(RoomCopy.youWereDemoted)
+            }
+        case let .muteChanged(identity, isMuted):
+            if isMuted, role.canPublish, identity == viewerId?.uuidString.lowercased(), isMicrophoneEnabled || engine.isMicrophoneEnabled == false {
+                // The host muted us: the track went quiet under the app.
+                if isMicrophoneEnabled { toast = .warning(RoomCopy.youWereMuted) }
+            }
+        default:
+            break
+        }
+        adoptEngineState()
+        scheduleRefresh()
+    }
+
+    /// Coalesces a burst of events into one roster read.
+    private func scheduleRefresh() {
+        eventTask?.cancel()
+        eventTask = Task { [weak self, eventDebounce] in
+            if eventDebounce > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(eventDebounce * 1_000_000_000))
+            }
+            guard !Task.isCancelled else { return }
+            await self?.refresh()
+        }
+    }
+
+    /// Waits for any event-driven refresh to land. For tests.
+    public func settle() async {
+        await eventTask?.value
+    }
+
     // MARK: - Refreshing
 
     /// Re-reads the room and its roster, and reacts to what changed.
-    ///
-    /// Three things can have happened since the last poll, and each is handled
-    /// rather than merely displayed: the room ended, the viewer was removed
-    /// from it, or the viewer's role changed — the last of which needs a **new
-    /// token**, because the old one grants what the old role had.
     public func refresh() async {
-        guard !hasLeft else { return }
+        guard !hasLeft, phase == .inRoom else { return }
         do {
             async let current = service.fetchRoom(id: room.id)
             async let roster = service.fetchParticipants(roomId: room.id)
@@ -269,58 +351,58 @@ public final class LiveRoomViewModel {
                 return
             }
             if updated.isRemoved {
-                // Said as what it is: this room, and nothing else.
                 toast = .warning(RoomCopy.removedFromRoom)
                 await leave()
                 return
             }
 
-            let serverRole = rosterRole ?? previousRole
+            let serverRole = rosterRole ?? updated.viewerRole ?? previousRole
             if serverRole != previousRole {
                 await adopt(newRole: serverRole, from: previousRole)
             }
         } catch {
             guard suspension?.notice(error) != true else { return }
             let wrapped = APIError.wrapping(error)
-            // A room that has gone is a room to leave, not one to keep polling.
             if wrapped.code == .roomEnded || wrapped.code == .notFound {
                 toast = .info(RoomCopy.roomEnded)
                 await leave()
             }
-            // Anything else is a blip in a background refresh. A banner in
-            // front of somebody mid-conversation, for a poll they did not ask
-            // for, is noise — the next tick either recovers or it does not.
+            // Anything else is a blip in a background refresh.
         }
     }
 
-    /// The role the server's roster gives this viewer, if it lists them.
     private var rosterRole: RoomRole? {
-        participants.participants
+        if let viewerId, let role = participants.role(of: viewerId) { return role }
+        return participants.participants
             .first { Handle.normalised($0.user.handle) == viewerHandle }?
             .role
     }
 
-    /// Adopts a role the server changed under us.
+    /// Adopts a role the server changed.
     ///
-    /// **A promotion re-joins.** The token in hand was minted for the old role,
-    /// so a listener who is invited up gets a whole new connection rather than
-    /// a flipped boolean — otherwise the microphone would light up and publish
-    /// into a socket that refuses it.
-    ///
-    /// A demotion re-joins too, for the mirror-image reason: leaving a
-    /// publishing token in place would let somebody keep talking after the host
-    /// moved them off the stage.
+    /// When the media server already applied it (the connection can or cannot
+    /// publish as the new role says), the role is simply taken on — no audio
+    /// drop. When it did not, the old path runs: disconnect, join for a token
+    /// minted for the new role, reconnect.
     private func adopt(newRole: RoomRole, from previous: RoomRole) async {
+        if engine.canPublish == newRole.canPublish, engine.connection.isActive {
+            role = newRole
+            if !newRole.canPublish, isMicrophoneEnabled {
+                try? await engine.setMicrophoneEnabled(false)
+                isMicrophoneEnabled = false
+            }
+            toast = newRole.canPublish && !previous.canPublish
+                ? .success(RoomCopy.youCanSpeakNow)
+                : .info(RoomCopy.youWereDemoted)
+            return
+        }
+
         isRejoining = true
         defer { isRejoining = false }
-
-        // The microphone goes down first, whichever direction this is. Coming
-        // back up is the person's own decision, made against the new token.
         if isMicrophoneEnabled {
             try? await engine.setMicrophoneEnabled(false)
         }
         await engine.disconnect()
-
         do {
             let join = try await service.join(roomId: room.id)
             room = join.room
@@ -334,22 +416,13 @@ public final class LiveRoomViewModel {
         } catch {
             guard suspension?.notice(error) != true else { return }
             let wrapped = APIError.wrapping(error)
-            if wrapped.code == .removedFromRoom {
-                toast = .warning(RoomCopy.removedFromRoom)
-            } else {
-                toast = .error(wrapped.userMessage)
-            }
+            toast = wrapped.code == .removedFromRoom ? .warning(RoomCopy.removedFromRoom) : .error(wrapped.userMessage)
             await leave()
         }
     }
 
     // MARK: - The microphone
 
-    /// Turns the microphone on or off.
-    ///
-    /// Refuses outright when ``canUseMicrophone`` is `false`, which the UI
-    /// already guarantees by not drawing the control — belt and braces on the
-    /// one path where the failure is somebody talking to nobody.
     public func toggleMicrophone() async {
         guard canUseMicrophone, !isTogglingMic else { return }
         isTogglingMic = true
@@ -359,34 +432,60 @@ public final class LiveRoomViewModel {
         do {
             try await engine.setMicrophoneEnabled(target)
             isMicrophoneEnabled = engine.isMicrophoneEnabled
-            analytics.track(
-                target ? .roomMicEnabled : .roomMicDisabled,
-                properties: ["role": role.rawValue]
-            )
+            analytics.track(target ? .roomMicEnabled : .roomMicDisabled, properties: ["role": role.rawValue])
         } catch VoiceEngineError.microphoneDenied {
             analytics.track(.roomMicDenied)
-            // Not an error banner that implies the room broke: the room is
-            // fine, the person is still hearing it, and the sentence says how
-            // to change their mind.
             toast = .warning(RoomCopy.microphoneDenied)
         } catch {
-            toast = .error(
-                (error as? VoiceEngineError)?.userMessage ?? APIError.wrapping(error).userMessage
-            )
+            toast = .error((error as? VoiceEngineError)?.userMessage ?? APIError.wrapping(error).userMessage)
+        }
+    }
+
+    // MARK: - Hands
+
+    /// Asks for the microphone, or withdraws the request.
+    public func toggleHand() async {
+        guard isListening, !isTogglingHand else { return }
+        isTogglingHand = true
+        defer { isTogglingHand = false }
+        let raising = !handRaised
+        do {
+            room = raising
+                ? try await service.raiseHand(roomId: room.id)
+                : try await service.lowerHand(roomId: room.id)
+            if let viewerId {
+                await engine.publish(.hand(userId: viewerId, raised: raising))
+            }
+            toast = raising ? .success(RoomCopy.handRaised) : .info(RoomCopy.handLowered)
+        } catch {
+            guard suspension?.notice(error) != true else { return }
+            toast = .error(APIError.wrapping(error).userMessage)
         }
     }
 
     // MARK: - Host controls
 
-    /// Invites somebody onto the stage.
-    ///
-    /// The promotion changes their role; **their** client re-joins for a token
-    /// that permits publishing. Nothing here can hand them the grant directly,
-    /// and nothing here pretends to.
+    /// Hands somebody the microphone — the answer to a raised hand, or an
+    /// invitation out of the blue.
     public func promote(_ actions: RoomHostActions) async {
         await hostCall(actions, event: .roomSpeakerPromoted) { [service, room] handle in
             try await service.promote(roomId: room.id, handle: handle)
         } success: { RoomCopy.invited(actions.target.name) }
+    }
+
+    /// Lowers somebody's hand without calling on them.
+    public func dismissHand(_ actions: RoomHostActions) async {
+        await hostCall(actions, event: .roomHandDismissed) { [service, room] handle in
+            try await service.dismissHand(roomId: room.id, handle: handle)
+        } success: { RoomCopy.handDismissed(actions.target.name) }
+    }
+
+    /// Mutes a speaker now. They keep the seat.
+    public func mute(_ actions: RoomHostActions) async {
+        await hostCall(actions, event: .roomSpeakerMuted) { [service, room] handle in
+            try await service.mute(roomId: room.id, handle: handle)
+            return room
+        } success: { RoomCopy.muted(actions.target.name) }
     }
 
     /// Moves somebody back to the audience. They stay in the room.
@@ -396,15 +495,29 @@ public final class LiveRoomViewModel {
         } success: { RoomCopy.demoted(actions.target.name) }
     }
 
-    /// Removes somebody from **this room**.
-    ///
-    /// Per-room, and the confirmation copy says so. It is not a block: their
-    /// account is untouched, their posts stay where they are, and they can open
-    /// or join any other room on Sila a second later.
+    /// Removes somebody from **this room**. Undoable with ``readmitLastRemoved()``.
     public func remove(_ actions: RoomHostActions) async {
         await hostCall(actions, event: .roomParticipantRemoved) { [service, room] handle in
             try await service.remove(roomId: room.id, handle: handle)
         } success: { RoomCopy.removed(actions.target.name) }
+        if toast?.text == RoomCopy.removed(actions.target.name) {
+            lastRemoved = actions.target
+        }
+    }
+
+    /// Undoes the last removal.
+    public func readmitLastRemoved() async {
+        guard isHost, let target = lastRemoved else { return }
+        do {
+            room = try await service.readmit(roomId: room.id, handle: target.handle)
+            analytics.track(.roomParticipantReadmitted)
+            lastRemoved = nil
+            toast = .success(RoomCopy.readmitted(target.name))
+            participants = (try? await service.fetchParticipants(roomId: room.id)) ?? participants
+        } catch {
+            guard suspension?.notice(error) != true else { return }
+            toast = .error(APIError.wrapping(error).userMessage)
+        }
     }
 
     private func hostCall(
@@ -422,9 +535,6 @@ public final class LiveRoomViewModel {
             room = try await call(handle)
             analytics.track(event)
             toast = .success(success())
-            // The roster is what the controls are drawn from, so it is re-read
-            // rather than guessed at — a stage that disagrees with the server
-            // is a stage whose menus offer the wrong thing.
             participants = (try? await service.fetchParticipants(roomId: room.id)) ?? participants
         } catch {
             guard suspension?.notice(error) != true else { return }
@@ -432,13 +542,11 @@ public final class LiveRoomViewModel {
         }
     }
 
-    /// Puts the end-room confirmation on screen. **Ends nothing.**
     public func requestEnd() {
         guard isHost, !isEnding else { return }
         isConfirmingEnd = true
     }
 
-    /// Ends the room for everybody, then leaves.
     public func endRoom() async {
         guard isHost, !isEnding else { return }
         isConfirmingEnd = false
@@ -453,28 +561,22 @@ public final class LiveRoomViewModel {
             toast = .error(APIError.wrapping(error).userMessage)
             return
         }
-        // The host leaves their own ended room like anybody else: both halves.
         await leave()
     }
 
     // MARK: - Leaving
 
     /// Leaves the room: `POST /leave` **and** a media disconnect, always both.
-    ///
-    /// The two are started together rather than in sequence. The disconnect is
-    /// local and instant, which is what stops the audio; the leave needs the
-    /// network, and starting it first gives it the best chance of landing when
-    /// this is running inside the seconds iOS grants a terminating app. A
-    /// failure of either does not stop the other, and calling this twice is
-    /// harmless — which matters, because backgrounding, the Leave button and
-    /// termination can all reach it.
     public func leave() async {
         guard !hasLeft else { return }
         hasLeft = true
         isLeaving = true
         pollTask?.cancel()
         pollTask = nil
+        eventTask?.cancel()
+        eventTask = nil
         engine.onChange = nil
+        engine.onRoomEvent = nil
 
         let serverLeave = Task { [service, room] in
             try? await service.leave(roomId: room.id)
@@ -485,36 +587,22 @@ public final class LiveRoomViewModel {
         connection = .idle
         isMicrophoneEnabled = false
         isLeaving = false
+        phase = .left
     }
 
-    /// Called when the app goes into the background. **Deliberately does not
-    /// leave.**
-    ///
-    /// The app declares `UIBackgroundModes: [audio]` precisely so a room
-    /// survives somebody checking a message; tearing it down here would make
-    /// the feature unusable and would be a strange reading of "the user pressed
-    /// Home". What it does do is stop the roster poll — a timer firing every
-    /// eight seconds behind a locked screen buys nothing and costs battery —
-    /// and the next foreground refresh picks the roster back up.
+    /// Backgrounding keeps the audio and stops the poll.
     public func persistThroughBackgrounding() async {
         guard !hasLeft else { return }
         pollTask?.cancel()
         pollTask = nil
     }
 
-    /// Called when the app comes back to the front.
     public func resumeFromBackground() async {
-        guard !hasLeft else { return }
+        guard !hasLeft, phase == .inRoom else { return }
         await refresh()
         startPolling()
     }
 
-    /// Called when the app is going away for good.
-    ///
-    /// Same work as ``leave()``; a separate name so the call site reads as what
-    /// it is, and so a future change to one cannot silently change the other.
-    /// This is the path that stops a terminated app leaving a ghost on the
-    /// room's participant list and a socket nobody owns.
     public func handleTermination() async {
         await leave()
     }

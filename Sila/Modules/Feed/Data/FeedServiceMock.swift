@@ -127,6 +127,14 @@ public actor FeedServiceMock: FeedServiceProtocol {
         try await mutate(postId: postId, call: "setBookmarked") { $0.adjusting(bookmarks: bookmarked ? 1 : -1) }
     }
 
+    public func fetchBookmarks(cursor: String?) async throws -> FeedPage {
+        try await delay()
+        try failIfOffline()
+        // Whatever the viewer has bookmarked in this world.
+        let saved = Self.samplePosts(for: .forYou).filter(\.viewer.bookmarked)
+        return FeedPage(posts: saved, nextCursor: nil, hasMore: false)
+    }
+
     public func deletePost(_ id: UUID) async throws {
         record("deletePost")
         try await delay()

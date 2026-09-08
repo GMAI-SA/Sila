@@ -38,19 +38,22 @@ final class NafathVerificationTests: XCTestCase {
     }
 
     /// A National ID nobody holds: 10 digits, starts with 1.
-    private let validID = "1000000000"
+    private let validID = "1000000008"
 
     // MARK: - Input validation
 
     func testNationalIDValidation() {
-        XCTAssertTrue(NationalID.isValid("1023456789"))
+        XCTAssertTrue(NationalID.isValid("1023456781"))
         XCTAssertTrue(NationalID.isValid("2023456789"), "Iqama numbers start with 2")
-        XCTAssertTrue(NationalID.isValid(" 1023456789 "), "whitespace is not a wrong answer")
-        XCTAssertTrue(NationalID.isValid("١٠٢٣٤٥٦٧٨٩"), "Arabic-Indic digits are the same number")
+        XCTAssertTrue(NationalID.isValid(" 1023456781 "), "whitespace is not a wrong answer")
+        XCTAssertTrue(NationalID.isValid("١٠٢٣٤٥٦٧٨١"), "Arabic-Indic digits are the same number")
 
         XCTAssertFalse(NationalID.isValid("3023456789"), "must start with 1 or 2")
+        XCTAssertFalse(NationalID.isValid("1023456782"), "one digit wrong: the check digit catches it")
+        XCTAssertTrue(NationalID.luhnValid("79927398713"), "the textbook example")
+        XCTAssertFalse(NationalID.luhnValid("79927398710"))
         XCTAssertFalse(NationalID.isValid("102345678"), "nine digits")
-        XCTAssertFalse(NationalID.isValid("10234567890"), "eleven digits")
+        XCTAssertFalse(NationalID.isValid("10234567810"), "eleven digits")
         XCTAssertFalse(NationalID.isValid(""))
         XCTAssertFalse(NationalID.isValid("abcdefghij"))
     }

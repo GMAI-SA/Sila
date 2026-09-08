@@ -31,6 +31,9 @@ public enum FeedRoute: Hashable, Sendable {
     /// arrival — the copy attached to a post is whatever was true when that
     /// page was fetched.
     case profile(handle: String)
+    /// The viewer's own saved posts. Reached from their profile; nothing to
+    /// carry, the list is theirs.
+    case savedPosts
 }
 
 /// Screens reachable inside the Rooms tab's stack.
@@ -40,13 +43,12 @@ public enum FeedRoute: Hashable, Sendable {
 /// torn down when it is popped, and pushing one onto the feed's history would
 /// let somebody swipe back into a room they had already left.
 ///
-/// ``room(_:)`` carries the whole ``RoomJoin`` — the token included — because
-/// the join happened before the push. Doing it the other way round would put a
-/// room screen on the display and only then discover the person had been
-/// removed from that room.
+/// ``room(_:)`` carries the room as the list described it; the room screen
+/// joins on arrival, under a connecting header, and a door that does not open
+/// is a state of that screen with the server's sentence and a way back.
 public enum RoomsRoute: Hashable, Sendable {
-    /// A live room, already joined.
-    case room(RoomJoin)
+    /// A room to join.
+    case room(VoiceRoom)
     /// One account's public page, reached from the participant list.
     case profile(handle: String)
 }
@@ -91,6 +93,12 @@ public final class AppRouter {
     public var presentedComposer: ComposerContext?
     /// App-level toast.
     public var toast: SLToastMessage?
+    /// A link the system handed the app that nothing has opened yet.
+    ///
+    /// Set from `onOpenURL`; the tab view takes it once the session is on the
+    /// feed, so a link tapped while signed out is still honoured after
+    /// signing in rather than dropped on the floor.
+    public var pendingLink: DeepLink?
 
     public init() {}
 

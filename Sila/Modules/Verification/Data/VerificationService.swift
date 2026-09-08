@@ -39,6 +39,18 @@ public final class VerificationService: VerificationServiceProtocol {
         return try await network.send(request, as: VerificationStatusReport.self)
     }
 
+    public func setDateOfBirth(_ day: String) async throws -> VerificationStatusReport {
+        let token = try await tokens.accessToken()
+        let request = try APIRequest.json(
+            "/verification/date-of-birth",
+            body: DateOfBirthBody(dateOfBirth: day),
+            accessToken: token
+        )
+        // Nothing about the answer is tracked: a birthdate is somebody's, and
+        // even "declared" leaks a fact about a person who is not verified yet.
+        return try await network.send(request, as: VerificationStatusReport.self)
+    }
+
     // MARK: Nafath
 
     public func startNafath(nationalID: String) async throws -> NafathStart {

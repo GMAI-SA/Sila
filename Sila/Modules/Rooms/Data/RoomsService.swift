@@ -30,7 +30,13 @@ public final class RoomsService: RoomsServiceProtocol {
 
     public func fetchRooms(status: RoomStatus?, topic: String?, limit: Int) async throws -> [VoiceRoom] {
         let token = try await tokens.accessToken()
-        var query = [URLQueryItem(name: "limit", value: String(clamped(limit)))]
+        // `for_you` asks the server to float the person's own interests and
+        // their country's conversations; nothing is removed by it, so it is
+        // simply always on. Muted topics are absent with or without it.
+        var query = [
+            URLQueryItem(name: "limit", value: String(clamped(limit))),
+            URLQueryItem(name: "for_you", value: "true")
+        ]
         // `status` is only sent when it narrows something. An unrecognised
         // status has no wire value and is treated as "no filter" rather than
         // being spelled out as a word the server would 422 on.
@@ -224,6 +230,70 @@ public final class RoomsService: RoomsServiceProtocol {
         // Recorded as what it is. A removal is per-room; nothing about the
         // account changed, and the event name must not suggest otherwise.
         analytics.track(.roomParticipantRemoved)
+        return room
+    }
+
+    // MARK: - Hands, mute, readmit
+
+    public func raiseHand(roomId: UUID) async throws -> VoiceRoom {
+        let token = try await tokens.accessToken()
+        let room = try await network.send(
+            APIRequest(path: "/rooms/\(path(roomId))/hand", method: .post, accessToken: token),
+            as: VoiceRoom.self
+        )
+        analytics.track(.roomHandRaised)
+        return room
+    }
+
+    public func lowerHand(roomId: UUID) async throws -> VoiceRoom {
+        let token = try await tokens.accessToken()
+        let room = try await network.send(
+            APIRequest(path: "/rooms/\(path(roomId))/hand", method: .delete, accessToken: token),
+            as: VoiceRoom.self
+        )
+        analytics.track(.roomHandLowered)
+        return room
+    }
+
+    public func dismissHand(roomId: UUID, handle: String) async throws -> VoiceRoom {
+        let token = try await tokens.accessToken()
+        let room = try await network.send(
+            APIRequest(
+                path: "/rooms/\(path(roomId))/hands/\(Handle.pathComponent(handle))",
+                method: .delete,
+                accessToken: token
+            ),
+            as: VoiceRoom.self
+        )
+        analytics.track(.roomHandDismissed)
+        return room
+    }
+
+    public func mute(roomId: UUID, handle: String) async throws {
+        let token = try await tokens.accessToken()
+        try await network.send(
+            try APIRequest.json(
+                "/rooms/\(path(roomId))/mute",
+                method: .post,
+                body: RoomHandleRequest(handle: Handle.normalised(handle)),
+                accessToken: token
+            )
+        )
+        analytics.track(.roomSpeakerMuted)
+    }
+
+    public func readmit(roomId: UUID, handle: String) async throws -> VoiceRoom {
+        let token = try await tokens.accessToken()
+        let room = try await network.send(
+            try APIRequest.json(
+                "/rooms/\(path(roomId))/readmit",
+                method: .post,
+                body: RoomHandleRequest(handle: Handle.normalised(handle)),
+                accessToken: token
+            ),
+            as: VoiceRoom.self
+        )
+        analytics.track(.roomParticipantReadmitted)
         return room
     }
 

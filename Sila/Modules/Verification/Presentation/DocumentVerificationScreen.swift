@@ -8,9 +8,10 @@ import SwiftUI
 /// national ID card, a residence permit — including Saudi citizens who would
 /// rather not use Nafath.
 ///
-/// Nothing on these screens is typed. The nationality, birth date and expiry
-/// shown on the review step were read off the document and verified by its
-/// check digits; the only way to change them is a better photograph.
+/// One thing on these screens is typed: the birthdate, first, as a claim the
+/// document is then held to. The nationality, birth date and expiry shown on
+/// the review step were read off the document and verified by its check
+/// digits; the only way to change them is a better photograph.
 @MainActor
 public struct DocumentVerificationScreen: View {
 
@@ -47,9 +48,23 @@ public struct DocumentVerificationScreen: View {
     public var body: some View {
         NavigationStack {
             ScrollView {
-                content
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, SLSpacing.xl)
+                VStack(spacing: SLSpacing.lg) {
+                    if let step = viewModel.progress {
+                        VStack(spacing: SLSpacing.xs) {
+                            SLProgressBar(
+                                value: Double(step.index) / Double(step.count),
+                                label: L10n.t("document.step.progress", step.index, step.count)
+                            )
+                            Text(L10n.t("document.step.progress", step.index, step.count))
+                                .font(SLFont.micro)
+                                .foregroundStyle(SLColor.textMuted)
+                        }
+                        .padding(.horizontal, SLSpacing.lg)
+                    }
+                    content
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.vertical, SLSpacing.xl)
             }
             .tnScreenBackground()
             .tnToast($viewModel.toast)
@@ -74,6 +89,7 @@ public struct DocumentVerificationScreen: View {
     @ViewBuilder
     private var content: some View {
         switch viewModel.phase {
+        case .birthdate: birthdate
         case .chooseDocument: chooseDocument
         case .captureFront:
             DocumentCaptureView(side: .front, documentType: viewModel.documentType ?? .passport) { jpeg, text in
@@ -87,8 +103,8 @@ public struct DocumentVerificationScreen: View {
             .id("back")
         case .review: review
         case .liveness:
-            LivenessCaptureView { selfie, turn, challenges in
-                viewModel.livenessCompleted(selfie: selfie, turn: turn, challenges: challenges)
+            SweepCaptureView { sweep in
+                viewModel.sweepCompleted(sweep)
             }
         case .submitting: submitting
         case .submitted: submitted
@@ -96,7 +112,99 @@ public struct DocumentVerificationScreen: View {
         case .underAge: underAge
         case .documentExpired: documentExpired
         case .useNafath: useNafath
+        case .dateOfBirthMismatch: dateOfBirthMismatch
         }
+    }
+
+    // MARK: Birthdate
+
+    /// The one thing the person types. Asked first, sent as a claim, and
+    /// tested against the document by its check digits — so the wheel says
+    /// "exactly as printed", because a slip here is a mismatch later.
+    private var birthdate: some View {
+        VStack(spacing: SLSpacing.xl) {
+            hero(icon: "calendar", tint: SLColor.primary)
+
+            VStack(spacing: SLSpacing.sm) {
+                Text(L10n.t("document.birthdate.title"))
+                    .font(SLFont.displayL)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text(L10n.t("document.birthdate.message"))
+                    .font(SLFont.bodyLight)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            SLCard(padding: SLSpacing.md) {
+                DatePicker(
+                    L10n.t("document.birthdate.field"),
+                    selection: $viewModel.birthdateSelection,
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .environment(\.calendar, Calendar(identifier: .gregorian))
+                .accessibilityLabel(Text(L10n.t("document.birthdate.field")))
+                .accessibilityHint(Text(L10n.t("document.birthdate.field.hint")))
+            }
+
+            SLButton(
+                L10n.t("document.birthdate.continue"),
+                variant: .primary,
+                isLoading: viewModel.isSavingBirthdate,
+                isEnabled: viewModel.canSubmitBirthdate,
+                accessibilityHint: L10n.t("document.birthdate.continue.hint"),
+                asyncAction: { await viewModel.submitBirthdate() }
+            )
+
+            Text(L10n.t("document.birthdate.privacy"))
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textMuted)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, SLSpacing.lg)
+    }
+
+    /// The zone's birthdate is not the one that was entered. Nothing has been
+    /// uploaded; a wheel can slip, and this offers the two honest ways out.
+    private var dateOfBirthMismatch: some View {
+        VStack(spacing: SLSpacing.xl) {
+            hero(icon: "calendar.badge.exclamationmark", tint: SLColor.warning)
+            VStack(spacing: SLSpacing.sm) {
+                Text(L10n.t("document.mismatch.birthdate.title"))
+                    .font(SLFont.displayL)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text(L10n.t("document.mismatch.birthdate.message"))
+                    .font(SLFont.bodyLight)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(spacing: SLSpacing.md) {
+                SLButton(
+                    L10n.t("document.mismatch.birthdate.change"),
+                    variant: .primary,
+                    icon: "calendar",
+                    accessibilityHint: L10n.t("document.mismatch.birthdate.change.hint")
+                ) {
+                    viewModel.changeBirthdate()
+                }
+                SLButton(
+                    L10n.t("document.capture.retake"),
+                    variant: .secondary,
+                    accessibilityHint: L10n.t("document.retake.hint")
+                ) {
+                    viewModel.retakeFront()
+                }
+            }
+        }
+        .padding(.horizontal, SLSpacing.lg)
+        .padding(.top, SLSpacing.xl)
     }
 
     // MARK: Choose
@@ -183,6 +291,10 @@ public struct DocumentVerificationScreen: View {
                         row(L10n.t("document.review.nationality"), nationalityText)
                         SLDivider()
                         row(L10n.t("document.review.dateOfBirth"), formatted(viewModel.mrz?.dateOfBirth))
+                        if let declared = viewModel.declaredDateOfBirth, let day = ISODay.date(declared) {
+                            SLDivider()
+                            row(L10n.t("document.review.declaredBirthdate"), formatted(day))
+                        }
                         SLDivider()
                         row(L10n.t("document.review.expiry"), formatted(viewModel.mrz?.expiryDate))
                         if let number = viewModel.maskedDocumentNumber {

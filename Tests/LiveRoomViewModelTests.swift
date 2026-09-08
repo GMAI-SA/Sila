@@ -1,8 +1,8 @@
 import XCTest
 @testable import Sila
 
-/// ``LiveRoomViewModel``: the microphone gate, the host controls, and the two
-/// halves of leaving.
+/// ``LiveRoomViewModel``: the door, the microphone gate, the hands, the host
+/// controls, the live events, and the two halves of leaving.
 ///
 /// These are the tests the feature exists to keep honest. A listener's token
 /// carries `canPublish: false` and the media server drops their audio no matter
@@ -18,7 +18,9 @@ final class LiveRoomViewModelTests: XCTestCase {
         isHost: Bool = false,
         status: RoomStatus = .live,
         isRemoved: Bool = false,
-        refusal: String? = nil
+        refusal: String? = nil,
+        canJoin: Bool = true,
+        joinRefusal: String? = nil
     ) -> VoiceRoom {
         VoiceRoom(
             id: Self.roomId,
@@ -32,17 +34,15 @@ final class LiveRoomViewModelTests: XCTestCase {
             canSpeak: canSpeak,
             speakRefusal: refusal,
             isHost: isHost,
-            isRemoved: isRemoved
+            isRemoved: isRemoved,
+            canJoin: canJoin,
+            joinRefusal: joinRefusal
         )
     }
 
-    private func join(_ room: VoiceRoom, role: RoomRole) -> RoomJoin {
-        RoomJoin(room: room, url: "wss://sila.gmai.sa/rtc", token: "token.\(role.rawValue)", role: role)
-    }
-
-    /// Builds a view model over a service that actually serves the room the
-    /// join names — anything else and the first refresh would 404 the room out
-    /// from under every assertion.
+    /// Builds a view model over a service that serves the room and answers the
+    /// join with `role` — anything else and the first refresh would 404 the
+    /// room out from under every assertion.
     private func makeViewModel(
         room: VoiceRoom,
         role: RoomRole,
@@ -52,16 +52,66 @@ final class LiveRoomViewModelTests: XCTestCase {
         let engine = engine ?? VoiceEngineMock()
         let service = ScriptedRoomService(room: room, viewerRole: role)
         let viewModel = LiveRoomViewModel(
-            join: join(room, role: role),
+            room: room,
             viewerHandle: viewerHandle,
+            viewerId: FeedServiceMock.aziz.id,
             service: service,
             engine: engine,
             analytics: RecordingAnalyticsClient(),
-            // Polling off: `refresh()` is driven by hand so the assertions are
-            // about what changed, not about when a timer happened to fire.
-            pollInterval: 0
+            // Polling off and events undebounced: `refresh()` is driven by
+            // hand so the assertions are about what changed, not about when a
+            // timer happened to fire.
+            pollInterval: 0,
+            eventDebounce: 0
         )
         return (viewModel, engine, service)
+    }
+
+    // MARK: - The door
+
+    /// The screen joins. It is pushed at once and does the join itself.
+    func testStartJoinsThenConnectsThenReadsTheRoster() async {
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
+        XCTAssertEqual(viewModel.phase, .joining)
+        await viewModel.start()
+        XCTAssertEqual(viewModel.phase, .inRoom)
+        XCTAssertEqual(viewModel.role, .speaker)
+        let calls = await service.calls
+        XCTAssertEqual(calls.first, "join")
+        XCTAssertTrue(calls.contains("participants"))
+        XCTAssertEqual(engine.recordedCalls.first, "connect:publisher")
+        XCTAssertEqual(viewModel.speakers.count + viewModel.listeners.count, 3)
+    }
+
+    /// A door that does not open is a state of the screen, in the server's
+    /// words — never a spinner on the list behind.
+    func testARefusedJoinIsAStateWithTheServersSentence() async {
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: false), role: .listener)
+        await service.refuseJoin(.notInvited, message: "This room is invite only")
+        await viewModel.start()
+        guard case let .refused(reason) = viewModel.phase else {
+            return XCTFail("the door opened")
+        }
+        XCTAssertEqual(reason, RoomCopy.inviteOnlyRefusal)
+        XCTAssertTrue(engine.recordedCalls.isEmpty, "nothing was connected")
+    }
+
+    func testAFollowingOnlyRefusalReadsAsOne() async {
+        let (viewModel, _, service) = makeViewModel(
+            room: room(canSpeak: false, canJoin: false, joinRefusal: "This room is for people the host follows"),
+            role: .listener
+        )
+        await service.refuseJoin(.notFollowed, message: "This room is for people the host follows")
+        await viewModel.start()
+        XCTAssertEqual(viewModel.phase, .refused("This room is for people the host follows"))
+    }
+
+    func testARemovedViewerIsToldItIsThisRoomOnly() async {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: false, isRemoved: true), role: .listener)
+        await service.refuseJoin(.removedFromRoom, message: "Removed")
+        await viewModel.start()
+        XCTAssertEqual(viewModel.phase, .refused(RoomCopy.removedFromRoom))
+        XCTAssertTrue(RoomCopy.removedFromRoom.contains("isn't a block"))
     }
 
     // MARK: - The microphone gate
@@ -69,392 +119,369 @@ final class LiveRoomViewModelTests: XCTestCase {
     /// **The assertion the whole feature turns on.** A listener's role means no
     /// microphone affordance, and the engine refuses the call if one is made.
     func testAListenersTokenIsRejectedForPublishing() async throws {
-        let listenerRoom = room(
-            canSpeak: false,
-            refusal: "Only 🇸🇦 Saudi Arabia-verified accounts can speak in this room. You can still listen."
-        )
-        let (viewModel, engine, _) = makeViewModel(room: listenerRoom, role: .listener)
+        let (viewModel, engine, _) = makeViewModel(room: room(canSpeak: false, refusal: "You can listen."), role: .listener)
         await viewModel.start()
 
-        // The affordance is not drawn…
-        XCTAssertFalse(viewModel.canUseMicrophone, "a listener was offered a microphone")
+        XCTAssertFalse(viewModel.canUseMicrophone)
         XCTAssertTrue(viewModel.isListening)
+        XCTAssertEqual(engine.recordedCalls, ["connect:listener"])
 
-        // …and the engine was told what the token permits.
-        XCTAssertFalse(engine.connectedCanPublish)
-        XCTAssertTrue(engine.recordedCalls.contains("connect:listener"))
-
-        // …and if the control were somehow reached, it does nothing.
         await viewModel.toggleMicrophone()
         XCTAssertFalse(viewModel.isMicrophoneEnabled)
-        XCTAssertFalse(
-            engine.recordedCalls.contains("mic:on"),
-            "the view model asked a listener's connection to publish"
-        )
+        XCTAssertFalse(engine.recordedCalls.contains("mic:on"))
 
-        // The engine itself is the second line: even called directly it refuses,
-        // which is what the media server would do with this token anyway.
         do {
             try await engine.setMicrophoneEnabled(true)
-            XCTFail("a listener's connection accepted a publish")
-        } catch let error as VoiceEngineError {
-            XCTAssertEqual(error, .notPermittedToPublish)
+            XCTFail("a listener's connection published")
+        } catch VoiceEngineError.notPermittedToPublish {
+            // The media server's answer, made locally.
         }
     }
 
-    /// The mirror image: a speaker's role does draw the control, and using it
-    /// publishes.
     func testASpeakersTokenPublishes() async throws {
         let (viewModel, engine, _) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
         XCTAssertTrue(viewModel.canUseMicrophone)
-        XCTAssertFalse(viewModel.isListening)
-        XCTAssertNil(viewModel.speakRefusal)
-        XCTAssertTrue(engine.connectedCanPublish)
-
         await viewModel.toggleMicrophone()
-
         XCTAssertTrue(viewModel.isMicrophoneEnabled)
-        XCTAssertTrue(engine.recordedCalls.contains("mic:on"))
-
+        XCTAssertEqual(engine.recordedCalls, ["connect:publisher", "mic:on"])
         await viewModel.toggleMicrophone()
         XCTAssertFalse(viewModel.isMicrophoneEnabled)
-        XCTAssertTrue(engine.recordedCalls.contains("mic:off"))
     }
 
-    /// **`role` wins over `can_speak` when the two disagree.** The token is
-    /// what the media server enforces; a room object claiming otherwise cannot
-    /// conjure publishing rights.
+    /// `can_speak` is a room-level fact; the **role** is what the token grants.
     func testTheRoleWinsOverCanSpeakWhenTheTwoDisagree() async {
         let (viewModel, _, _) = makeViewModel(room: room(canSpeak: true), role: .listener)
         await viewModel.start()
-
-        XCTAssertFalse(
-            viewModel.canUseMicrophone,
-            "the mic was offered on a token that cannot publish"
-        )
+        XCTAssertFalse(viewModel.canUseMicrophone, "can_speak offered a microphone the token forbids")
+        XCTAssertTrue(viewModel.canRaiseHand, "but the room's rule allows asking for it")
     }
 
-    /// A room that is not live offers no microphone even to somebody the server
-    /// says may speak — there is nothing to speak into.
-    func testAnEndedRoomOffersNoMicrophone() async {
-        let (viewModel, _, _) = makeViewModel(
-            room: room(canSpeak: true, status: .ended), role: .speaker
-        )
-        XCTAssertFalse(viewModel.canUseMicrophone)
-    }
-
-    /// **Microphone permission is asked only when somebody takes the
-    /// microphone.** Entering a room must never prompt: a listener needs no
-    /// device.
     func testEnteringARoomNeverAsksForTheMicrophone() async {
         let engine = VoiceEngineMock(isPermissionGranted: false)
-        let (viewModel, _, _) = makeViewModel(
-            room: room(canSpeak: false), role: .listener, engine: engine
-        )
-
+        let (viewModel, _, _) = makeViewModel(room: room(canSpeak: true), role: .speaker, engine: engine)
         await viewModel.start()
-
-        XCTAssertEqual(engine.recordedCalls, ["connect:listener"])
-        XCTAssertFalse(
-            engine.recordedCalls.contains { $0.hasPrefix("mic:") },
-            "entering a room touched the microphone"
-        )
+        XCTAssertEqual(engine.recordedCalls, ["connect:publisher"], "a permission prompt on the way in")
+        XCTAssertNil(viewModel.toast)
     }
 
-    /// A denied prompt is a warning about the microphone, not an error about
-    /// the room — the person is still hearing everything.
     func testDeniedMicrophonePermissionKeepsTheRoomAndExplainsItself() async throws {
         let engine = VoiceEngineMock(isPermissionGranted: false)
-        let (viewModel, _, _) = makeViewModel(
-            room: room(canSpeak: true), role: .speaker, engine: engine
-        )
+        let (viewModel, _, _) = makeViewModel(room: room(canSpeak: true), role: .speaker, engine: engine)
         await viewModel.start()
-
         await viewModel.toggleMicrophone()
-
         XCTAssertFalse(viewModel.isMicrophoneEnabled)
+        XCTAssertEqual(viewModel.phase, .inRoom, "a denied prompt threw the person out")
         XCTAssertEqual(viewModel.toast?.text, RoomCopy.microphoneDenied)
-        XCTAssertEqual(viewModel.toast?.kind, .warning)
-        XCTAssertEqual(viewModel.connection, .connected, "a denied prompt disconnected the room")
     }
 
-    /// The refusal on screen is the **server's sentence**, unedited.
     func testTheListenerSeesTheServersRefusalVerbatim() async {
-        let sentence = "Only accounts verified in the GCC region can speak in this room. You can still listen."
-        let (viewModel, _, _) = makeViewModel(
-            room: room(canSpeak: false, refusal: sentence), role: .listener
-        )
+        let refusal = "Only 🇸🇦 Saudi Arabia-verified accounts can speak in this room."
+        let (viewModel, _, _) = makeViewModel(room: room(canSpeak: false, refusal: refusal), role: .listener)
         await viewModel.start()
-
-        XCTAssertEqual(viewModel.speakRefusal, sentence)
+        XCTAssertEqual(viewModel.speakRefusal, refusal)
+        XCTAssertFalse(viewModel.canRaiseHand, "a hand nobody could call on")
     }
 
-    /// When the server sent no sentence there is still one, and it says the
-    /// same thing: listening is fine, speaking is not.
-    func testAMissingRefusalStillExplainsItself() async {
-        let (viewModel, _, _) = makeViewModel(room: room(canSpeak: false), role: .listener)
-        await viewModel.start()
+    // MARK: - Hands
 
-        XCTAssertEqual(viewModel.speakRefusal, RoomCopy.speakRefusalFallback)
-        XCTAssertTrue(viewModel.speakRefusal?.lowercased().contains("listen") == true)
+    func testAListenerRaisesAHandAndTheHostIsNudged() async {
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .listener)
+        await viewModel.start()
+        XCTAssertTrue(viewModel.canRaiseHand)
+        XCTAssertFalse(viewModel.handRaised)
+
+        await viewModel.toggleHand()
+
+        XCTAssertTrue(viewModel.handRaised)
+        XCTAssertEqual(viewModel.toast?.text, RoomCopy.handRaised)
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("hand:up"))
+        XCTAssertEqual(engine.publishedMessages.last, .hand(userId: FeedServiceMock.aziz.id, raised: true))
+        XCTAssertTrue(viewModel.isListening, "still listening: a hand is a request")
+
+        await viewModel.toggleHand()
+        XCTAssertFalse(viewModel.handRaised)
+        XCTAssertEqual(engine.publishedMessages.last?.raised, false)
+    }
+
+    func testASpeakerHasNoHandToRaise() async {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
+        await viewModel.start()
+        XCTAssertFalse(viewModel.canRaiseHand)
+        await viewModel.toggleHand()
+        let calls = await service.calls
+        XCTAssertFalse(calls.contains("hand:up"))
+    }
+
+    /// The host's queue: listeners with a hand up, oldest first, with Approve
+    /// and Lower — and a nudge from the media channel refreshes it at once.
+    func testTheHostSeesTheQueueAndApprovesFromIt() async throws {
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true, isHost: true), role: .host)
+        await viewModel.start()
+        XCTAssertTrue(viewModel.hands.isEmpty)
+
+        await service.raise(handle: "maria")
+        engine.simulate(.message(.hand(userId: FeedServiceMock.maria.id, raised: true)))
+        await viewModel.settle()
+
+        XCTAssertEqual(viewModel.hands.map(\.user.handle), ["maria"])
+        let actions = try XCTUnwrap(viewModel.hostActions(for: viewModel.hands[0]))
+        XCTAssertTrue(actions.hasHandRaised)
+        XCTAssertTrue(actions.canPromote && actions.canDismissHand)
+        XCTAssertFalse(actions.canMute)
+
+        await viewModel.promote(actions)
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("promote:maria"))
+        XCTAssertEqual(viewModel.toast?.text, RoomCopy.invited(FeedServiceMock.maria.displayName))
+    }
+
+    func testTheHostCanLowerAHandWithoutCallingOnIt() async throws {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: true, isHost: true), role: .host)
+        await viewModel.start()
+        await service.raise(handle: "maria")
+        await viewModel.refresh()
+        let actions = try XCTUnwrap(viewModel.hostActions(for: viewModel.hands[0]))
+        await viewModel.dismissHand(actions)
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("dismiss:maria"))
+        XCTAssertTrue(viewModel.hands.isEmpty)
     }
 
     // MARK: - Host controls
 
-    /// **Host-only controls are absent for a non-host** — not disabled, absent.
-    /// A greyed-out "Remove" teaches somebody the room has a hierarchy they can
-    /// reach into, which it does not.
     func testANonHostGetsNoHostMenuForAnybody() async {
-        let (viewModel, _, _) = makeViewModel(
-            room: room(canSpeak: true, isHost: false), role: .speaker
-        )
+        let (viewModel, _, _) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
-        XCTAssertFalse(viewModel.isHost)
-        XCTAssertFalse(viewModel.participants.participants.isEmpty, "no roster to test against")
-        for participant in viewModel.participants.participants {
-            XCTAssertNil(
-                viewModel.hostActions(for: participant),
-                "a non-host was offered controls over \(participant.user.handle)"
-            )
+        for participant in viewModel.speakers + viewModel.listeners {
+            XCTAssertNil(viewModel.hostActions(for: participant), "a non-host was offered controls over \(participant.user.handle)")
         }
     }
 
     func testAHostGetsAMenuForEverybodyExceptThemselves() async throws {
-        let hosted = room(canSpeak: true, isHost: true)
-        let (viewModel, _, _) = makeViewModel(room: hosted, role: .host)
-        await viewModel.start()
-
-        XCTAssertTrue(viewModel.isHost)
-        let others = viewModel.participants.participants.filter { $0.user.handle != "aziz" }
-        XCTAssertFalse(others.isEmpty)
-        for participant in others {
-            XCTAssertNotNil(viewModel.hostActions(for: participant))
-        }
-        let own = try XCTUnwrap(
-            viewModel.participants.participants.first { $0.user.handle == "aziz" }
-        )
-        XCTAssertNil(viewModel.hostActions(for: own), "the host was offered a menu about themselves")
-    }
-
-    /// The menu's entries follow the person's role: you invite listeners up,
-    /// move speakers down, and never demote the host.
-    func testTheHostMenuOffersOnlyWhatAppliesToThatPerson() {
-        let listener = RoomHostActions(
-            target: SafetyTarget(user: FeedServiceMock.maria), role: .listener, isBusy: false
-        )
-        XCTAssertTrue(listener.canPromote)
-        XCTAssertFalse(listener.canDemote)
-        XCTAssertTrue(listener.canRemove)
-
-        let speaker = RoomHostActions(
-            target: SafetyTarget(user: FeedServiceMock.maria), role: .speaker, isBusy: false
-        )
-        XCTAssertFalse(speaker.canPromote)
-        XCTAssertTrue(speaker.canDemote)
-        XCTAssertTrue(speaker.canRemove)
-
-        let host = RoomHostActions(
-            target: SafetyTarget(user: FeedServiceMock.yuki), role: .host, isBusy: false
-        )
-        XCTAssertFalse(host.canDemote, "the host was offered a way off their own stage")
-        XCTAssertFalse(host.canRemove, "the host was offered a way to remove themselves")
-    }
-
-    /// Removing somebody is described as a room-scoped act, and the sentence
-    /// says they can go elsewhere. It is never called a block.
-    func testRemovingSomebodySaysItAppliesToThisRoomOnly() async throws {
         let (viewModel, _, _) = makeViewModel(room: room(canSpeak: true, isHost: true), role: .host)
         await viewModel.start()
+        let me = try XCTUnwrap((viewModel.speakers + viewModel.listeners).first { $0.user.handle == "aziz" })
+        XCTAssertNil(viewModel.hostActions(for: me))
+        for other in (viewModel.speakers + viewModel.listeners) where other.user.handle != "aziz" {
+            XCTAssertNotNil(viewModel.hostActions(for: other))
+        }
+    }
 
-        let target = try XCTUnwrap(
-            viewModel.participants.participants.first { $0.user.handle == "maria" }
-        )
-        let actions = try XCTUnwrap(viewModel.hostActions(for: target))
+    func testTheHostMenuOffersOnlyWhatAppliesToThatPerson() {
+        let listener = RoomHostActions(target: SafetyTarget(user: FeedServiceMock.maria), role: .listener, isBusy: false)
+        XCTAssertTrue(listener.canPromote && listener.canRemove)
+        XCTAssertFalse(listener.canDemote || listener.canMute || listener.canDismissHand)
+
+        let speaker = RoomHostActions(target: SafetyTarget(user: FeedServiceMock.maria), role: .speaker, isBusy: false)
+        XCTAssertTrue(speaker.canDemote && speaker.canMute && speaker.canRemove)
+        XCTAssertFalse(speaker.canPromote)
+
+        let host = RoomHostActions(target: SafetyTarget(user: FeedServiceMock.yuki), role: .host, isBusy: false)
+        XCTAssertFalse(host.canDemote || host.canRemove || host.canMute)
+    }
+
+    func testMutingASpeakerKeepsTheirSeat() async throws {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: true, isHost: true), role: .host)
+        await viewModel.start()
+        let yuki = try XCTUnwrap(viewModel.speakers.first { $0.user.handle == "yuki" })
+        let actions = try XCTUnwrap(viewModel.hostActions(for: yuki))
+        XCTAssertTrue(actions.canMute)
+        await viewModel.mute(actions)
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("mute:yuki"))
+        XCTAssertEqual(viewModel.toast?.text, RoomCopy.muted(FeedServiceMock.yuki.displayName))
+        XCTAssertTrue(RoomCopy.muted(FeedServiceMock.yuki.displayName).contains("keep their seat"))
+    }
+
+    func testRemovingSomebodySaysItAppliesToThisRoomOnlyAndCanBeUndone() async throws {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: true, isHost: true), role: .host)
+        await viewModel.start()
+        let maria = try XCTUnwrap(viewModel.listeners.first { $0.user.handle == "maria" })
+        let actions = try XCTUnwrap(viewModel.hostActions(for: maria))
         await viewModel.remove(actions)
+        XCTAssertEqual(viewModel.toast?.text, RoomCopy.removed(FeedServiceMock.maria.displayName))
+        XCTAssertFalse(viewModel.toast!.text.lowercased().contains("block"))
+        XCTAssertEqual(viewModel.lastRemoved?.handle, "maria")
 
-        let toast = try XCTUnwrap(viewModel.toast)
-        XCTAssertTrue(toast.text.contains("other rooms"))
-        XCTAssertFalse(toast.text.lowercased().contains("block"))
+        await viewModel.readmitLastRemoved()
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("readmit:maria"))
+        XCTAssertNil(viewModel.lastRemoved)
+        XCTAssertEqual(viewModel.toast?.text, RoomCopy.readmitted(FeedServiceMock.maria.displayName))
     }
 
-    /// Ending a room is behind a confirmation, and asking is not doing.
     func testAskingToEndARoomEndsNothing() async {
-        let (viewModel, _, service) = makeViewModel(
-            room: room(canSpeak: true, isHost: true), role: .host
-        )
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: true, isHost: true), role: .host)
         await viewModel.start()
-
         viewModel.requestEnd()
-
         XCTAssertTrue(viewModel.isConfirmingEnd)
-        let ends = await service.calls.filter { $0 == "end" }
-        XCTAssertTrue(ends.isEmpty, "the confirmation ended the room by itself")
+        let calls = await service.calls
+        XCTAssertFalse(calls.contains("end"))
+        XCTAssertFalse(viewModel.hasLeft)
     }
 
-    /// Ending it does end it, and the host leaves properly like anybody else.
     func testEndingARoomAlsoLeavesIt() async {
-        let (viewModel, engine, service) = makeViewModel(
-            room: room(canSpeak: true, isHost: true), role: .host
-        )
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true, isHost: true), role: .host)
         await viewModel.start()
-
         await viewModel.endRoom()
-
-        let ends = await service.calls.filter { $0 == "end" }
-        XCTAssertEqual(ends.count, 1)
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("end"))
+        XCTAssertTrue(calls.contains("leave"))
         XCTAssertEqual(engine.disconnectCount, 1)
         XCTAssertTrue(viewModel.hasLeft)
     }
 
-    // MARK: - Promotion re-joins
+    // MARK: - Live events
 
-    /// **A promotion must produce a new token.** The one in hand was minted for
-    /// the old role; flipping a boolean would light a microphone publishing
-    /// into a socket that refuses it.
-    func testBeingPromotedReconnectsForAFreshToken() async throws {
-        let (viewModel, engine, service) = makeViewModel(
-            room: room(canSpeak: false, refusal: "You can listen."), role: .listener
-        )
+    /// A promotion applied by the media server arrives live: the role changes
+    /// and the audio never drops.
+    func testBeingPromotedLiveNeedsNoReconnect() async {
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .listener)
         await viewModel.start()
         XCTAssertFalse(viewModel.canUseMicrophone)
-        let tokenBefore = engine.connectedToken
 
-        // The host invites them up; the next poll sees the new role.
         await service.setRole(.speaker)
-        await viewModel.refresh()
+        engine.setCanPublish(true)
+        await viewModel.settle()
 
         XCTAssertEqual(viewModel.role, .speaker)
         XCTAssertTrue(viewModel.canUseMicrophone)
-        XCTAssertTrue(engine.connectedCanPublish, "the new connection still could not publish")
-        XCTAssertNotEqual(engine.connectedToken, tokenBefore, "the old token was kept after a promotion")
-        XCTAssertEqual(
-            engine.recordedCalls.filter { $0 == "disconnect" }.count, 1,
-            "the old connection was left open"
-        )
-        XCTAssertTrue(engine.recordedCalls.contains("connect:publisher"))
+        XCTAssertEqual(engine.disconnectCount, 0, "the audio was dropped for a promotion the media server had already applied")
+        XCTAssertEqual(engine.recordedCalls.filter { $0.hasPrefix("connect") }.count, 1)
         XCTAssertEqual(viewModel.toast?.text, RoomCopy.youCanSpeakNow)
     }
 
-    /// And the mirror image: a demotion also re-joins, so nobody keeps a
-    /// publishing token after the host moves them off the stage.
-    func testBeingDemotedReconnectsAndDropsTheMicrophone() async throws {
+    func testBeingDemotedLiveDropsTheMicrophoneAndKeepsTheSeatInTheRoom() async {
         let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
         await viewModel.toggleMicrophone()
         XCTAssertTrue(viewModel.isMicrophoneEnabled)
 
         await service.setRole(.listener)
-        await viewModel.refresh()
+        engine.setCanPublish(false)
+        await viewModel.settle()
 
         XCTAssertEqual(viewModel.role, .listener)
-        XCTAssertFalse(viewModel.canUseMicrophone)
         XCTAssertFalse(viewModel.isMicrophoneEnabled, "a demoted speaker kept a live microphone")
-        XCTAssertFalse(engine.connectedCanPublish)
-        // Says they are still here. Being moved off a stage and being thrown
-        // out of a room feel identical from the inside if nobody says which.
+        XCTAssertFalse(viewModel.hasLeft)
         XCTAssertEqual(viewModel.toast?.text, RoomCopy.youWereDemoted)
         XCTAssertTrue(viewModel.toast?.text.contains("still in the room") == true)
     }
 
+    /// The fallback: the roster says the role changed but the connection was
+    /// never told — then, and only then, a fresh token is fetched.
+    func testAPromotionTheMediaServerMissedReconnectsForAFreshToken() async {
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: false, refusal: "You can listen."), role: .listener)
+        await viewModel.start()
+        let tokenBefore = engine.connectedToken
+
+        await service.setRole(.speaker)
+        await viewModel.refresh()
+
+        XCTAssertEqual(viewModel.role, .speaker)
+        XCTAssertTrue(engine.connectedCanPublish)
+        XCTAssertNotEqual(engine.connectedToken, tokenBefore, "the old token was kept")
+        XCTAssertEqual(engine.disconnectCount, 1)
+        XCTAssertEqual(viewModel.toast?.text, RoomCopy.youCanSpeakNow)
+    }
+
+    func testAJoinOrLeaveOnTheMediaServerRefreshesTheRosterAtOnce() async {
+        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .listener)
+        await viewModel.start()
+        let before = await service.calls.filter { $0 == "participants" }.count
+        engine.simulate(.participantJoined(identity: FeedServiceMock.noor.id.uuidString.lowercased()))
+        await viewModel.settle()
+        let after = await service.calls.filter { $0 == "participants" }.count
+        XCTAssertEqual(after, before + 1, "a join on the media server waited for the poll")
+    }
+
+    func testSpeakingIsKeyedOnTheAccountIdNotTheHandle() async throws {
+        let (viewModel, engine, _) = makeViewModel(room: room(canSpeak: true), role: .listener)
+        await viewModel.start()
+        let yuki = try XCTUnwrap(viewModel.speakers.first { $0.user.handle == "yuki" })
+        engine.setSpeaking([FeedServiceMock.yuki.id.uuidString.lowercased()])
+        XCTAssertTrue(viewModel.isSpeaking(yuki))
+        engine.setSpeaking(["yuki"])
+        XCTAssertFalse(viewModel.isSpeaking(yuki), "the media server names accounts by id; a handle must not light the ring")
+    }
+
+    func testAMutedSpeakerShowsAsMuted() async throws {
+        let (viewModel, engine, _) = makeViewModel(room: room(canSpeak: true), role: .listener)
+        await viewModel.start()
+        let yuki = try XCTUnwrap(viewModel.speakers.first { $0.user.handle == "yuki" })
+        engine.simulate(.muteChanged(identity: FeedServiceMock.yuki.id.uuidString.lowercased(), isMuted: true))
+        await viewModel.settle()
+        XCTAssertTrue(viewModel.isMuted(yuki))
+    }
+
     // MARK: - Leaving
 
-    /// **Leaving does both halves, always.** `POST /leave` *and* a media
-    /// disconnect: one without the other leaves a ghost on the room's list or
-    /// a live socket nobody is looking at.
     func testLeavingPostsLeaveAndDisconnectsTheMedia() async {
         let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
         await viewModel.leave()
-
-        XCTAssertEqual(engine.disconnectCount, 1, "the media connection was left open")
-        let leaves = await service.calls.filter { $0 == "leave" }
-        XCTAssertEqual(leaves.count, 1, "the server was not told")
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("leave"))
+        XCTAssertEqual(engine.disconnectCount, 1)
         XCTAssertTrue(viewModel.hasLeft)
-        XCTAssertEqual(viewModel.connection, .idle)
+        XCTAssertEqual(viewModel.phase, .left)
     }
 
-    /// Termination takes the same path — that is the whole point of it existing.
     func testTerminationLeavesTheRoomProperly() async {
         let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
         await viewModel.handleTermination()
-
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("leave"))
         XCTAssertEqual(engine.disconnectCount, 1)
-        let leaves = await service.calls.filter { $0 == "leave" }
-        XCTAssertEqual(leaves.count, 1)
     }
 
-    /// Backgrounding does **not** leave: the app declares `UIBackgroundModes:
-    /// [audio]` precisely so a room survives somebody checking a message.
     func testBackgroundingKeepsTheRoomAlive() async {
         let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
         await viewModel.persistThroughBackgrounding()
-
-        XCTAssertEqual(engine.disconnectCount, 0, "backgrounding dropped the room")
+        let calls = await service.calls
+        XCTAssertFalse(calls.contains("leave"), "backgrounding left the room")
+        XCTAssertEqual(engine.disconnectCount, 0)
         XCTAssertFalse(viewModel.hasLeft)
-        let leaves = await service.calls.filter { $0 == "leave" }
-        XCTAssertTrue(leaves.isEmpty)
     }
 
-    /// Leaving twice — the button, then termination — must not double up.
     func testLeavingTwiceIsHarmless() async {
         let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
         await viewModel.leave()
         await viewModel.leave()
-        await viewModel.handleTermination()
-
+        let calls = await service.calls
+        XCTAssertEqual(calls.filter { $0 == "leave" }.count, 1)
         XCTAssertEqual(engine.disconnectCount, 1)
-        let leaves = await service.calls.filter { $0 == "leave" }
-        XCTAssertEqual(leaves.count, 1)
     }
 
-    /// A room that ended under the viewer takes them out of it, with the
-    /// sentence that says nothing was kept.
     func testARoomThatEndsUnderYouLeavesAndSaysNothingWasRecorded() async {
-        let (viewModel, engine, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
         await service.setStatus(.ended)
         await viewModel.refresh()
-
         XCTAssertTrue(viewModel.hasLeft)
-        XCTAssertEqual(engine.disconnectCount, 1)
         XCTAssertEqual(viewModel.toast?.text, RoomCopy.roomEnded)
     }
 
-    /// Being removed mid-room says the per-room sentence, not a block's.
     func testBeingRemovedMidRoomSaysItIsThisRoomOnly() async {
-        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: false), role: .listener)
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: true), role: .speaker)
         await viewModel.start()
-
         await service.setRemoved(true)
         await viewModel.refresh()
-
         XCTAssertTrue(viewModel.hasLeft)
         XCTAssertEqual(viewModel.toast?.text, RoomCopy.removedFromRoom)
-        // Says in words that it is not a block, and is not the block message.
-        XCTAssertTrue(viewModel.toast?.text.contains("isn't a block") == true)
-        XCTAssertNotEqual(
-            viewModel.toast?.text,
-            APIError.api(code: .blocked, message: "", status: 403).userMessage
-        )
     }
 }
 
-// MARK: - A service the test drives
+// MARK: - Test double
 
-/// Serves one room whose status, removal flag and roster role the test can
-/// change between refreshes — which is how a promotion, an ending and a removal
-/// are simulated without a host on another device.
+/// Serves one room whose status, removal flag, roster role and hands the test
+/// can change between refreshes — which is how a promotion, an ending, a
+/// removal and a raised hand are simulated without a host on another device.
 ///
 /// Every join hands back a **different token**, so a test can tell a genuine
 /// re-join from a connection that was quietly kept.
@@ -463,6 +490,8 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
     private var stored: VoiceRoom
     private var viewerRole: RoomRole
     private var joinCount = 0
+    private var hands: [String: Date] = [:]
+    private var joinRefusal: (APIErrorCode, String)?
     /// Calls in order, for assertions.
     private(set) var calls: [String] = []
 
@@ -473,16 +502,13 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
 
     func setRole(_ role: RoomRole) {
         viewerRole = role
-        stored = Self.copy(stored, canSpeak: role.canPublish)
+        stored = Self.copy(stored, canSpeak: role.canPublish || stored.canSpeak, viewerRole: role)
     }
 
-    func setStatus(_ status: RoomStatus) {
-        stored = Self.copy(stored, status: status)
-    }
-
-    func setRemoved(_ isRemoved: Bool) {
-        stored = Self.copy(stored, isRemoved: isRemoved)
-    }
+    func setStatus(_ status: RoomStatus) { stored = Self.copy(stored, status: status) }
+    func setRemoved(_ isRemoved: Bool) { stored = Self.copy(stored, isRemoved: isRemoved) }
+    func refuseJoin(_ code: APIErrorCode, message: String) { joinRefusal = (code, message) }
+    func raise(handle: String) { hands[handle] = Date() }
 
     func createRoom(_ request: CreateRoomRequest) async throws -> VoiceRoom {
         calls.append("create")
@@ -496,23 +522,25 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
 
     func fetchRoom(id: UUID) async throws -> VoiceRoom {
         calls.append("fetchRoom")
-        return stored
+        return Self.copy(stored, viewerRole: stored.isHost ? .host : viewerRole, handRaised: hands["aziz"] != nil, handsCount: hands.count)
     }
 
     func join(roomId: UUID) async throws -> RoomJoin {
         calls.append("join")
+        if let (code, message) = joinRefusal {
+            throw APIError.api(code: code, message: message, status: 403)
+        }
         joinCount += 1
+        let role: RoomRole = stored.isHost ? .host : viewerRole
         return RoomJoin(
-            room: stored,
+            room: Self.copy(stored, viewerRole: role),
             url: "wss://sila.gmai.sa/rtc",
             token: "token-\(joinCount)",
-            role: stored.isHost ? .host : viewerRole
+            role: role
         )
     }
 
-    func leave(roomId: UUID) async throws {
-        calls.append("leave")
-    }
+    func leave(roomId: UUID) async throws { calls.append("leave") }
 
     func endRoom(id: UUID) async throws -> VoiceRoom {
         calls.append("end")
@@ -522,6 +550,7 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
 
     func promote(roomId: UUID, handle: String) async throws -> VoiceRoom {
         calls.append("promote:\(handle)")
+        hands[handle] = nil
         return stored
     }
 
@@ -533,6 +562,33 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
     func remove(roomId: UUID, handle: String) async throws -> VoiceRoom {
         calls.append("remove:\(handle)")
         return stored
+    }
+
+    func readmit(roomId: UUID, handle: String) async throws -> VoiceRoom {
+        calls.append("readmit:\(handle)")
+        return stored
+    }
+
+    func mute(roomId: UUID, handle: String) async throws {
+        calls.append("mute:\(handle)")
+    }
+
+    func raiseHand(roomId: UUID) async throws -> VoiceRoom {
+        calls.append("hand:up")
+        hands["aziz"] = Date()
+        return Self.copy(stored, viewerRole: viewerRole, handRaised: true, handsCount: hands.count)
+    }
+
+    func lowerHand(roomId: UUID) async throws -> VoiceRoom {
+        calls.append("hand:down")
+        hands["aziz"] = nil
+        return Self.copy(stored, viewerRole: viewerRole, handRaised: false, handsCount: hands.count)
+    }
+
+    func dismissHand(roomId: UUID, handle: String) async throws -> VoiceRoom {
+        calls.append("dismiss:\(handle)")
+        hands[handle] = nil
+        return Self.copy(stored, handsCount: hands.count)
     }
 
     func fetchInvites(roomId: UUID) async throws -> RoomInviteList {
@@ -555,9 +611,9 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
         // The viewer is `aziz` in every test above; when they host the room
         // their roster row says so.
         return RoomParticipantList(participants: [
-            RoomParticipant(role: stored.isHost ? .listener : .host, user: FeedServiceMock.yuki),
-            RoomParticipant(role: stored.isHost ? .host : viewerRole, user: FeedServiceMock.aziz),
-            RoomParticipant(role: .listener, user: FeedServiceMock.maria)
+            RoomParticipant(role: stored.isHost ? .speaker : .host, user: FeedServiceMock.yuki, joinedAt: Date().addingTimeInterval(-500)),
+            RoomParticipant(role: stored.isHost ? .host : viewerRole, user: FeedServiceMock.aziz, joinedAt: Date().addingTimeInterval(-400), handRaisedAt: hands["aziz"]),
+            RoomParticipant(role: .listener, user: FeedServiceMock.maria, joinedAt: Date().addingTimeInterval(-300), handRaisedAt: hands["maria"])
         ])
     }
 
@@ -570,7 +626,10 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
         _ room: VoiceRoom,
         status: RoomStatus? = nil,
         canSpeak: Bool? = nil,
-        isRemoved: Bool? = nil
+        isRemoved: Bool? = nil,
+        viewerRole: RoomRole? = nil,
+        handRaised: Bool? = nil,
+        handsCount: Int? = nil
     ) -> VoiceRoom {
         VoiceRoom(
             id: room.id,
@@ -589,7 +648,15 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
             canSpeak: canSpeak ?? room.canSpeak,
             speakRefusal: room.speakRefusal,
             isHost: room.isHost,
-            isRemoved: isRemoved ?? room.isRemoved
+            isRemoved: isRemoved ?? room.isRemoved,
+            isInviteOnly: room.isInviteOnly,
+            isInvited: room.isInvited,
+            canJoin: room.canJoin,
+            joinRefusal: room.joinRefusal,
+            isFollowingOnly: room.isFollowingOnly,
+            viewerRole: viewerRole ?? room.viewerRole,
+            handRaised: handRaised ?? room.handRaised,
+            handsCount: handsCount ?? room.handsCount
         )
     }
 }

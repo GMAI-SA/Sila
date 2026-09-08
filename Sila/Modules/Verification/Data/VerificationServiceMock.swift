@@ -63,6 +63,7 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
     private var pollCount = 0
     private var submitted: DocumentCase?
     private var declared: String?
+    private var declaredDay: String?
 
     /// The fixed number the waiting screen shows in mock runs.
     public static let mockRandomNumber = "42"
@@ -105,7 +106,27 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
             throw APIError.api(code: .alreadyVerified, message: "This account is already verified.", status: 409)
         }
         declared = normalised
-        return VerificationStatusReport(status: .unstarted, nationality: normalised)
+        return VerificationStatusReport(status: .unstarted, nationality: normalised, dateOfBirth: declaredDay)
+    }
+
+    public func setDateOfBirth(_ day: String) async throws -> VerificationStatusReport {
+        record("setDateOfBirth")
+        try await delay()
+        try failIfOffline()
+        guard let normalised = ISODay.normalised(day), let date = ISODay.date(normalised), date <= Date() else {
+            throw APIError.api(code: .invalidDateOfBirth, message: "Enter the date of birth printed on your document.", status: 400)
+        }
+        if scenario == .alreadyVerified {
+            throw APIError.api(code: .alreadyVerified, message: "This account is already verified.", status: 409)
+        }
+        // Under thirteen: refused at the claim, before any document — as the
+        // server does it. The scenario decides, like every other outcome.
+        let years = Calendar(identifier: .gregorian).dateComponents([.year], from: date, to: Date()).year ?? 0
+        if scenario == .underMinimumAge || years < 13 {
+            throw APIError.api(code: .underMinimumAge, message: "You must be at least 13 to use Sila.", status: 403)
+        }
+        declaredDay = normalised
+        return VerificationStatusReport(status: .unstarted, nationality: declared, dateOfBirth: normalised)
     }
 
     // MARK: - Nafath

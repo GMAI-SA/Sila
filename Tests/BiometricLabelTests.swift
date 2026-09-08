@@ -37,7 +37,7 @@ final class BiometricLabelTests: XCTestCase {
 
     func testLabelPrefersHandleOverPlaceholderEmail() {
         let account = user(
-            email: "u1998877665@phone.sila.invalid",
+            email: "u1998877664@phone.sila.invalid",
             handle: "noura",
             phone: "+966501234567"
         )
@@ -46,7 +46,7 @@ final class BiometricLabelTests: XCTestCase {
 
     func testLabelFallsBackToPhoneWhenThereIsNoHandle() {
         let account = user(
-            email: "u1998877665@phone.sila.invalid",
+            email: "u1998877664@phone.sila.invalid",
             phone: "+966501234567"
         )
         XCTAssertEqual(account.biometricIdentityLabel, "+966501234567")
@@ -124,7 +124,7 @@ final class BiometricLabelTests: XCTestCase {
         {"access_token": "a1", "refresh_token": "r1",
          "expires_at": "2030-01-01T00:00:00Z",
          "user": {"id": "11111111-2222-3333-4444-555555555555",
-                  "email": "u1998877665@phone.sila.invalid",
+                  "email": "u1998877664@phone.sila.invalid",
                   "email_verified": true, "verification_status": "verified",
                   "created_at": "2026-01-01T00:00:00Z",
                   "handle": "noura", "phone": "+966501234567"}}
@@ -139,7 +139,7 @@ final class BiometricLabelTests: XCTestCase {
             analytics: RecordingAnalyticsClient()
         )
 
-        _ = try await service.signIn(email: "u1998877665@phone.sila.invalid", password: "secret")
+        _ = try await service.signIn(email: "u1998877664@phone.sila.invalid", password: "secret")
         _ = try await service.signInBiometric()
 
         let reason = try XCTUnwrap(biometrics.reasons.first)

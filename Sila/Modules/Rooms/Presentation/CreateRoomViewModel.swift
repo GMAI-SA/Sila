@@ -40,7 +40,13 @@ public final class CreateRoomViewModel {
     /// The only setting here that governs **listening**. The audience picker
     /// above decides who may speak, and it keeps doing that inside a closed
     /// room: being invited is not being handed a microphone.
-    public var isInviteOnly = false
+    /// Who gets through the door.
+    public var access: RoomAccess = .open
+    /// The old switch, kept for callers that think in it.
+    public var isInviteOnly: Bool {
+        get { access == .inviteOnly }
+        set { access = newValue ? .inviteOnly : .open }
+    }
     /// Handles typed into the guest field, as typed. Parsed on submit.
     public var inviteHandlesText = ""
 
@@ -203,7 +209,7 @@ public final class CreateRoomViewModel {
                     // retroactively, which is not a thing.
                     scheduledFor: isScheduled ? scheduledFor : nil,
                     maxSpeakers: maxSpeakers,
-                    isInviteOnly: isInviteOnly,
+                    access: access,
                     inviteHandles: inviteHandles
                 )
             )

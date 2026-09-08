@@ -25,6 +25,16 @@ public protocol VerificationServiceProtocol: Sendable {
     ///   badge exists.
     func setNationality(_ code: String) async throws -> VerificationStatusReport
 
+    /// Records what the person says their birthdate is — asked on the
+    /// document route, tested against the document exactly as the nationality
+    /// is. A child's answer closes the account here, before any document.
+    ///
+    /// - Parameter day: `YYYY-MM-DD`, as printed on the document.
+    /// - Throws: ``APIError`` with ``APIErrorCode/invalidDateOfBirth``,
+    ///   ``APIErrorCode/alreadyVerified``, or ``APIErrorCode/underMinimumAge``
+    ///   (terminal, the server's words).
+    func setDateOfBirth(_ day: String) async throws -> VerificationStatusReport
+
     // MARK: Nafath
 
     /// Opens a Nafath request for `nationalID`.

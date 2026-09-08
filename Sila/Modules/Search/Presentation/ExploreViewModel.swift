@@ -302,6 +302,13 @@ public final class ExploreViewModel {
         }
     }
 
+    /// Drops a post the viewer deleted from the results, now.
+    public func remove(postId: UUID) {
+        let before = posts.count
+        posts.removeAll { $0.id == postId }
+        if posts.count != before { refreshEmptyKind() }
+    }
+
     /// Removes everything by one account from the results, now.
     ///
     /// Called after a block. Explore matters as much as the feed here — arguably

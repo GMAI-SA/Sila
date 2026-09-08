@@ -4,8 +4,8 @@ import Foundation
 
 /// Validates what the person typed before it is allowed anywhere near the wire.
 ///
-/// A Saudi National ID or Iqama is exactly ten digits and starts with `1`
-/// (citizen) or `2` (resident). Arabic-Indic digits are normalised rather than
+/// A Saudi National ID or Iqama is exactly ten digits, starts with `1`
+/// (citizen) or `2` (resident), and ends in a Luhn check digit. Arabic-Indic digits are normalised rather than
 /// rejected — the keyboard is a number pad, but paste is paste.
 ///
 /// The number itself is treated as a secret: it is sent once to
@@ -35,11 +35,33 @@ public enum NationalID {
         return digits
     }
 
-    /// `true` when ``normalised(_:)`` yields ten digits starting with 1 or 2.
+    /// `true` when ``normalised(_:)`` yields ten digits starting with 1 or 2
+    /// whose check digit adds up.
     public static func isValid(_ raw: String) -> Bool {
         let digits = normalised(raw)
         guard digits.count == length else { return false }
-        return digits.first == "1" || digits.first == "2"
+        guard digits.first == "1" || digits.first == "2" else { return false }
+        return luhnValid(digits)
+    }
+
+    /// Whether a digit string passes the mod-10 (Luhn) check.
+    ///
+    /// Saudi National IDs and Iqamas carry a Luhn check digit, so a number
+    /// with a typo — one digit wrong, two adjacent swapped — fails here before
+    /// it is ever sent to the identity service. Not a proof the number exists;
+    /// a proof it was typed as printed.
+    public static func luhnValid(_ digits: String) -> Bool {
+        var total = 0
+        for (index, character) in digits.reversed().enumerated() {
+            guard let value = character.wholeNumberValue else { return false }
+            var n = value
+            if index % 2 == 1 {
+                n *= 2
+                if n > 9 { n -= 9 }
+            }
+            total += n
+        }
+        return total % 10 == 0
     }
 }
 
@@ -162,4 +184,9 @@ struct NafathStartBody: Encodable {
 /// The `POST /verification/nationality` body.
 struct NationalityBody: Encodable {
     let countryCode: String
+}
+
+struct DateOfBirthBody: Encodable {
+    /// `YYYY-MM-DD`.
+    let dateOfBirth: String
 }

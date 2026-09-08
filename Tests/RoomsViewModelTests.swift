@@ -132,41 +132,38 @@ final class RoomsViewModelTests: XCTestCase {
 
     // MARK: - The door
 
-    func testJoiningALiveRoomHandsBackAToken() async throws {
-        let viewModel = makeViewModel()
+    /// The list never joins. A live, open room is simply handed to the room
+    /// screen, which joins under a connecting header.
+    func testALiveRoomOpensWithoutARoundTrip() async throws {
+        let service = RoomsServiceMock(scenario: .populated)
+        let viewModel = makeViewModel(service: service)
         await viewModel.load()
         let room = try XCTUnwrap(viewModel.live.first)
 
-        let join = await viewModel.open(room)
+        XCTAssertTrue(viewModel.open(room))
 
-        let unwrapped = try XCTUnwrap(join)
-        XCTAssertEqual(unwrapped.url, "wss://sila.gmai.sa/rtc")
-        XCTAssertFalse(unwrapped.token.isEmpty)
+        let calls = await service.recordedCalls
+        XCTAssertFalse(calls.contains("join"), "the list joined; that is the room screen's job")
+        XCTAssertNil(viewModel.toast)
     }
 
-    /// A room the viewer cannot speak in is still **joinable**, and the token
-    /// that comes back is a listener's.
-    func testARoomTheViewerCannotSpeakInIsStillJoinableAsAListener() async throws {
+    /// A room the viewer cannot speak in is still **enterable** — scope
+    /// governs the microphone, never the door.
+    func testARoomTheViewerCannotSpeakInStillOpens() async throws {
         let viewModel = makeViewModel(.listenerOnly)
         await viewModel.load()
         let room = try XCTUnwrap(viewModel.live.first)
-
-        let opened = await viewModel.open(room)
-
-        let join = try XCTUnwrap(opened)
-        XCTAssertEqual(join.role, .listener)
-        XCTAssertFalse(join.canPublish, "a listener's token claimed publishing rights")
+        XCTAssertFalse(room.canSpeak)
+        XCTAssertTrue(viewModel.open(room))
     }
 
-    /// **`removed_from_room` produces its own message, and it is not a block's.**
+    /// **A removal produces its own message, and it is not a block's.**
     func testBeingRemovedFromARoomSaysSoAndNeverSaysBlocked() async throws {
         let viewModel = makeViewModel(.removed)
         await viewModel.load()
         let room = try XCTUnwrap(viewModel.live.first { $0.isRemoved })
 
-        let join = await viewModel.open(room)
-
-        XCTAssertNil(join, "a removed viewer was let in")
+        XCTAssertFalse(viewModel.open(room), "a removed viewer was let in")
         let toast = try XCTUnwrap(viewModel.toast)
         XCTAssertEqual(toast.text, RoomCopy.removedFromRoom)
         XCTAssertTrue(toast.text.contains("isn't a block"))
@@ -176,6 +173,27 @@ final class RoomsViewModelTests: XCTestCase {
         )
     }
 
+    /// A closed door the server already described stays shut on the card,
+    /// with the server's own sentence, and costs no round trip.
+    func testAClosedRoomTheViewerMayNotEnterDoesNotOpen() async throws {
+        let service = RoomsServiceMock(scenario: .populated)
+        let viewModel = makeViewModel(service: service)
+        let shut = VoiceRoom(
+            id: UUID(), title: "A closed conversation", host: FeedServiceMock.yuki,
+            isInviteOnly: true, canJoin: false, joinRefusal: "This room is invite only"
+        )
+        XCTAssertFalse(viewModel.open(shut))
+        XCTAssertEqual(viewModel.toast?.text, "This room is invite only")
+        let following = VoiceRoom(
+            id: UUID(), title: "My circle", host: FeedServiceMock.yuki,
+            canJoin: false, isFollowingOnly: true
+        )
+        XCTAssertFalse(viewModel.open(following))
+        XCTAssertEqual(viewModel.toast?.text, RoomCopy.followingOnlyRefusal)
+        let calls = await service.recordedCalls
+        XCTAssertFalse(calls.contains("join"))
+    }
+
     /// A scheduled room is not joinable, and saying so costs no round trip.
     func testAScheduledRoomIsNotJoined() async throws {
         let service = RoomsServiceMock(scenario: .populated)
@@ -183,30 +201,18 @@ final class RoomsViewModelTests: XCTestCase {
         await viewModel.load()
         let room = try XCTUnwrap(viewModel.scheduled.first)
 
-        let join = await viewModel.open(room)
-
-        XCTAssertNil(join)
+        XCTAssertFalse(viewModel.open(room))
         let calls = await service.recordedCalls
         XCTAssertFalse(calls.contains("join"), "a scheduled room was sent to the join endpoint")
         XCTAssertNotNil(viewModel.toast)
     }
 
-    /// **`room_ended` on join.** The row goes, because it is stale by
-    /// definition and leaving it invites a second identical failure.
-    func testAnEndedRoomSaysSoAndLeavesTheList() async throws {
-        let service = EndedRoomService()
-        let viewModel = makeViewModel(service: service)
-        await viewModel.load()
-        let room = try XCTUnwrap(viewModel.live.first)
-
-        let join = await viewModel.open(room)
-
-        XCTAssertNil(join)
+    /// An ended room says so.
+    func testAnEndedRoomSaysSo() async throws {
+        let viewModel = makeViewModel()
+        let ended = VoiceRoom(id: UUID(), title: "Over", status: .ended, host: FeedServiceMock.yuki)
+        XCTAssertFalse(viewModel.open(ended))
         XCTAssertEqual(viewModel.toast?.text, RoomCopy.roomEnded)
-        XCTAssertFalse(
-            viewModel.live.contains { $0.id == room.id },
-            "an ended room stayed on the list"
-        )
     }
 
     // MARK: - Insertion
@@ -228,60 +234,3 @@ final class RoomsViewModelTests: XCTestCase {
     }
 }
 
-/// A service whose rooms have all ended by the time somebody knocks.
-private actor EndedRoomService: RoomsServiceProtocol {
-
-    private let backing = RoomsServiceMock(scenario: .populated)
-
-    func createRoom(_ request: CreateRoomRequest) async throws -> VoiceRoom {
-        try await backing.createRoom(request)
-    }
-
-    func fetchRooms(status: RoomStatus?, topic: String?, limit: Int) async throws -> [VoiceRoom] {
-        try await backing.fetchRooms(status: status, topic: topic, limit: limit)
-    }
-
-    func fetchRoom(id: UUID) async throws -> VoiceRoom {
-        try await backing.fetchRoom(id: id)
-    }
-
-    func join(roomId: UUID) async throws -> RoomJoin {
-        throw APIError.api(code: .roomEnded, message: "Room ended", status: 409)
-    }
-
-    func leave(roomId: UUID) async throws {}
-
-    func endRoom(id: UUID) async throws -> VoiceRoom { try await backing.endRoom(id: id) }
-
-    func promote(roomId: UUID, handle: String) async throws -> VoiceRoom {
-        try await backing.promote(roomId: roomId, handle: handle)
-    }
-
-    func demote(roomId: UUID, handle: String) async throws -> VoiceRoom {
-        try await backing.demote(roomId: roomId, handle: handle)
-    }
-
-    func remove(roomId: UUID, handle: String) async throws -> VoiceRoom {
-        try await backing.remove(roomId: roomId, handle: handle)
-    }
-
-    func fetchParticipants(roomId: UUID) async throws -> RoomParticipantList {
-        try await backing.fetchParticipants(roomId: roomId)
-    }
-
-    func fetchInvites(roomId: UUID) async throws -> RoomInviteList {
-        try await backing.fetchInvites(roomId: roomId)
-    }
-
-    func invite(roomId: UUID, handles: [String]) async throws -> RoomInviteList {
-        try await backing.invite(roomId: roomId, handles: handles)
-    }
-
-    func revokeInvite(roomId: UUID, handle: String) async throws -> RoomInviteList {
-        try await backing.revokeInvite(roomId: roomId, handle: handle)
-    }
-
-    func searchRooms(query: String, limit: Int) async throws -> [VoiceRoom] {
-        try await backing.searchRooms(query: query, limit: limit)
-    }
-}

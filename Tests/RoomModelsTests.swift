@@ -298,4 +298,62 @@ final class RoomModelsTests: XCTestCase {
         XCTAssertEqual(RoomCopy.attendance(speakers: 0, listeners: 0), "0 speaking · 0 listening")
         XCTAssertEqual(RoomCopy.attendance(speakers: 3, listeners: 41), "3 speaking · 41 listening")
     }
+
+    // MARK: - Contract v14
+
+    func testTheDoorTheSeatAndTheHandsDecode() throws {
+        let room = try decode(VoiceRoom.self, Self.room(
+            #", "is_following_only": true, "can_join": false, "join_refusal": "This room is for people the host follows", "viewer_role": "listener", "hand_raised": true, "hands_count": 3, "matches_interests": true"#
+        ))
+        XCTAssertTrue(room.isFollowingOnly)
+        XCTAssertTrue(room.isClosed)
+        XCTAssertFalse(room.canJoin)
+        XCTAssertEqual(room.joinRefusalMessage, "This room is for people the host follows")
+        XCTAssertEqual(room.viewerRole, .listener)
+        XCTAssertTrue(room.handRaised)
+        XCTAssertEqual(room.handsCount, 3)
+        XCTAssertTrue(room.matchesInterests)
+    }
+
+    func testAnOlderServerReadsAsOpenWithNoHands() throws {
+        let room = try decode(VoiceRoom.self, Self.room())
+        XCTAssertFalse(room.isFollowingOnly)
+        XCTAssertFalse(room.isClosed)
+        XCTAssertNil(room.viewerRole)
+        XCTAssertFalse(room.handRaised)
+        XCTAssertEqual(room.handsCount, 0)
+        XCTAssertFalse(room.matchesInterests)
+    }
+
+    func testAFollowingOnlyRefusalHasItsOwnFallback() {
+        let room = VoiceRoom(id: UUID(), title: "Circle", host: FeedServiceMock.yuki, canJoin: false, isFollowingOnly: true)
+        XCTAssertEqual(room.joinRefusalMessage, RoomCopy.followingOnlyRefusal)
+        XCTAssertNotEqual(room.joinRefusalMessage, RoomCopy.inviteOnlyRefusal)
+    }
+
+    func testTheAudienceListsHandsFirstOldestFirst() throws {
+        let earlier = Date().addingTimeInterval(-60)
+        let later = Date()
+        let list = RoomParticipantList(participants: [
+            RoomParticipant(role: .listener, user: FeedServiceMock.maria, joinedAt: earlier),
+            RoomParticipant(role: .listener, user: FeedServiceMock.noor, joinedAt: earlier, handRaisedAt: later),
+            RoomParticipant(role: .listener, user: FeedServiceMock.yuki, joinedAt: later, handRaisedAt: earlier),
+            RoomParticipant(role: .speaker, user: FeedServiceMock.aziz, joinedAt: earlier, handRaisedAt: earlier)
+        ])
+        XCTAssertEqual(list.audience.map(\.user.handle), ["yuki", "noor", "maria"])
+        XCTAssertEqual(list.hands.map(\.user.handle), ["yuki", "noor"], "a speaker's stale hand is not in the queue")
+        XCTAssertEqual(list.role(of: FeedServiceMock.aziz.id), .speaker)
+    }
+
+    func testTheCreateRequestEncodesTheAccessChoice() throws {
+        let following = CreateRoomRequest(title: "Circle", scope: .international, access: .following, inviteHandles: ["@Amy"])
+        let body = String(decoding: try JSONCoding.encoder.encode(following), as: UTF8.self)
+        XCTAssertTrue(body.contains("\"is_following_only\":true"))
+        XCTAssertFalse(body.contains("is_invite_only"))
+        XCTAssertTrue(body.contains("\"invite_handles\":[\"amy\"]"), "both closed kinds take a guest list")
+        let open = CreateRoomRequest(title: "Open", scope: .international, access: .open, inviteHandles: ["amy"])
+        let openBody = String(decoding: try JSONCoding.encoder.encode(open), as: UTF8.self)
+        XCTAssertFalse(openBody.contains("invite_handles"), "an open room takes no guest list")
+        XCTAssertEqual(RoomAccess.of(VoiceRoom(id: UUID(), title: "x", host: FeedServiceMock.yuki, isInviteOnly: true)), .inviteOnly)
+    }
 }

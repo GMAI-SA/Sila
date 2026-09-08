@@ -38,7 +38,8 @@ final class RoomsServiceTests: XCTestCase {
         let network = StubNetworkClient(responses: [
             Self.room, Self.list, Self.room, Self.join, "{}",
             Self.room, Self.room, Self.room, Self.room,
-            #"{"participants": []}"#, Self.list
+            #"{"participants": []}"#, Self.list,
+            Self.room, Self.room, Self.room, "{}", Self.room
         ])
         let service = makeService(network)
 
@@ -53,6 +54,11 @@ final class RoomsServiceTests: XCTestCase {
         _ = try await service.remove(roomId: Self.roomId, handle: "amy")
         _ = try await service.fetchParticipants(roomId: Self.roomId)
         _ = try await service.searchRooms(query: "verification", limit: 20)
+        _ = try await service.raiseHand(roomId: Self.roomId)
+        _ = try await service.lowerHand(roomId: Self.roomId)
+        _ = try await service.dismissHand(roomId: Self.roomId, handle: "amy")
+        try await service.mute(roomId: Self.roomId, handle: "amy")
+        _ = try await service.readmit(roomId: Self.roomId, handle: "amy")
 
         let id = Self.roomId.uuidString.lowercased()
         XCTAssertEqual(network.requests.map { "\($0.method.rawValue) \($0.path)" }, [
@@ -66,7 +72,12 @@ final class RoomsServiceTests: XCTestCase {
             "DELETE /rooms/\(id)/speakers/amy",
             "POST /rooms/\(id)/remove",
             "GET /rooms/\(id)/participants",
-            "GET /search/rooms"
+            "GET /search/rooms",
+            "POST /rooms/\(id)/hand",
+            "DELETE /rooms/\(id)/hand",
+            "DELETE /rooms/\(id)/hands/amy",
+            "POST /rooms/\(id)/mute",
+            "POST /rooms/\(id)/readmit"
         ])
         XCTAssertTrue(network.requests.allSatisfy { $0.accessToken == "access-123" })
     }

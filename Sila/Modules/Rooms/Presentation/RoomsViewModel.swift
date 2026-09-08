@@ -56,7 +56,6 @@ public final class RoomsViewModel {
     /// Why the list could not load. Already user-safe.
     public private(set) var loadError: String?
     /// The room whose join is in flight, if any.
-    public private(set) var openingId: UUID?
     /// Banner message.
     public var toast: SLToastMessage?
 
@@ -109,8 +108,6 @@ public final class RoomsViewModel {
         return live.isEmpty && scheduled.isEmpty ? .noRooms : .none
     }
 
-    /// Whether a specific room's join is in flight.
-    public func isOpening(_ room: VoiceRoom) -> Bool { openingId == room.id }
 
     // MARK: - Loading
 
@@ -222,49 +219,29 @@ public final class RoomsViewModel {
     /// come back as a toast against the row that was tapped.
     ///
     /// - Returns: The join, or `nil` when there is nothing to open.
-    public func open(_ room: VoiceRoom) async -> RoomJoin? {
-        guard openingId == nil else { return nil }
-
-        // A scheduled room is not joinable yet, and the server would say so.
-        // Saying it here costs nothing and is faster than a round trip.
+    /// Whether a tapped room should be opened — pushed to the room screen,
+    /// which does the joining. Says why not when it should not.
+    ///
+    /// The list never joins. It answers the three things it already knows
+    /// without a round trip: a scheduled room is not open yet, an ended one
+    /// never will be, and a closed door the server already described stays
+    /// shut — with the server's own sentence. Everything else is the room
+    /// screen's to find out, under a connecting header rather than a spinner
+    /// on a card.
+    @discardableResult
+    public func open(_ room: VoiceRoom) -> Bool {
         guard room.status.isJoinable else {
-            toast = .info(
-                room.status == .scheduled ? RoomCopy.notLiveYet(room) : RoomCopy.roomEnded
+            toast = .info(room.status == .scheduled ? RoomCopy.notLiveYet(room) : RoomCopy.roomEnded)
+            return false
+        }
+        if let refusal = room.joinRefusalMessage {
+            analytics.track(
+                room.isRemoved ? .roomJoinRefusedRemoved : .roomJoinRefusedNotInvited
             )
-            return nil
+            toast = room.isRemoved ? .warning(refusal) : .info(refusal)
+            return false
         }
-
-        openingId = room.id
-        defer { openingId = nil }
-
-        do {
-            return try await service.join(roomId: room.id)
-        } catch {
-            guard suspension?.notice(error) != true else { return nil }
-            let wrapped = APIError.wrapping(error)
-            if wrapped.code == .notInvited {
-                analytics.track(.roomJoinRefusedNotInvited)
-                // Not a warning: nothing went wrong and nobody decided
-                // anything about this person. The room was never theirs to
-                // enter, and the sentence says only that.
-                toast = .info(RoomCopy.inviteOnlyRefusal)
-                // The row stays: a closed room a stranger can see is one they
-                // were shown before the invitation was withdrawn, and it will
-                // disappear on the next refresh.
-            } else if wrapped.code == .removedFromRoom {
-                analytics.track(.roomJoinRefusedRemoved)
-                // The removal sentence, which is deliberately not a block's.
-                toast = .warning(RoomCopy.removedFromRoom)
-            } else if wrapped.code == .roomEnded || wrapped.code == .notFound {
-                toast = .info(RoomCopy.roomEnded)
-                // The row is stale by definition, so it goes rather than
-                // sitting there inviting a second identical failure.
-                remove(room.id)
-            } else {
-                toast = .error(wrapped.userMessage)
-            }
-            return nil
-        }
+        return true
     }
 
     /// Puts a freshly-created room at the top of the live list.

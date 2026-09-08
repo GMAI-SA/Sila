@@ -42,6 +42,11 @@ public protocol FeedServiceProtocol: Sendable {
     /// Deletes a post the viewer authored.
     /// - Throws: ``APIError`` with ``APIErrorCode/notPostAuthor``.
     func deletePost(_ id: UUID) async throws
+
+    /// What the viewer bookmarked, newest save first — `GET /me/bookmarks`.
+    /// Private: nobody else can read this list, and reading it never tells an
+    /// author their post was saved.
+    func fetchBookmarks(cursor: String?) async throws -> FeedPage
 }
 
 extension FeedServiceProtocol {

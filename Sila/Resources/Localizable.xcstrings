@@ -8841,6 +8841,132 @@
         }
       }
     },
+    "document.birthdate.continue": {
+      "comment": "Birthdate step button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متابعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        }
+      }
+    },
+    "document.birthdate.continue.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يحفظ تاريخ ميلادك وينتقل إلى الوثيقة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saves your date of birth and moves to the document"
+          }
+        }
+      }
+    },
+    "document.birthdate.field": {
+      "comment": "Date picker label.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تاريخ الميلاد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date of birth"
+          }
+        }
+      }
+    },
+    "document.birthdate.field.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضبط اليوم والشهر والسنة المطبوعة في وثيقتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the day, month and year printed on your document"
+          }
+        }
+      }
+    },
+    "document.birthdate.message": {
+      "comment": "Birthdate step body.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمامًا كما هو مطبوع في وثيقتك. يُقارن بالمنطقة المقروءة آليًا في الوثيقة نفسها، فأي خطأ هنا يصبح عدم تطابق لاحقًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exactly as printed on your document. It's checked against the document's own machine-readable zone, so a slip here is a mismatch later."
+          }
+        }
+      }
+    },
+    "document.birthdate.privacy": {
+      "comment": "Privacy note.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يُحتفظ بتاريخ ميلادك للتحقق من عمرك ووثيقتك. ولا يظهر أبدًا في ملفك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your date of birth is kept to check your age and your document. It is never shown on your profile."
+          }
+        }
+      }
+    },
+    "document.birthdate.title": {
+      "comment": "Birthdate step title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تاريخ ميلادك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your date of birth"
+          }
+        }
+      }
+    },
     "document.cancel.hint": {
       "comment": "Accessibility hint on Cancel.",
       "extractionState": "manual",
@@ -8927,6 +9053,96 @@
           "stringUnit": {
             "state": "translated",
             "value": "Photograph the front"
+          }
+        }
+      }
+    },
+    "document.capture.hint.captured": {
+      "comment": "Capture hint after auto-capture.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        }
+      }
+    },
+    "document.capture.hint.closer": {
+      "comment": "Capture hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقترب حتى تملأ الإطار"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move closer so it fills the frame"
+          }
+        }
+      }
+    },
+    "document.capture.hint.holdStill": {
+      "comment": "Capture hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اثبت…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold still…"
+          }
+        }
+      }
+    },
+    "document.capture.hint.lineUp": {
+      "comment": "Capture hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضع الوثيقة داخل الإطار"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Line the document up inside the frame"
+          }
+        }
+      }
+    },
+    "document.capture.hint.zoneFound": {
+      "comment": "Capture hint when the zone is seen.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وجدناها — اثبت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Found it — hold still"
           }
         }
       }
@@ -9165,42 +9381,6 @@
         }
       }
     },
-    "document.liveness.lookStraight": {
-      "comment": "Liveness prompt.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "انظر مباشرة إلى الكاميرا"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Look straight at the camera"
-          }
-        }
-      }
-    },
-    "document.liveness.message": {
-      "comment": "Selfie step body.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اتبع التعليمات. هذا يثبت أن شخصًا يحمل الهاتف، لا صورة."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Follow the prompts. This proves a person is holding the phone, not a photo."
-          }
-        }
-      }
-    },
     "document.liveness.noFace": {
       "comment": "Prompt when no face is detected.",
       "extractionState": "manual",
@@ -9237,110 +9417,74 @@
         }
       }
     },
-    "document.liveness.start.hint": {
+    "document.mismatch.birthdate.change": {
+      "comment": "Mismatch button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيير تاريخ الميلاد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change date of birth"
+          }
+        }
+      }
+    },
+    "document.mismatch.birthdate.change.hint": {
       "comment": "Accessibility hint.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يبدأ تعليمات السيلفي"
+            "value": "يعود إلى خطوة تاريخ الميلاد"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Begins the selfie prompts"
+            "value": "Goes back to the date of birth step"
           }
         }
       }
     },
-    "document.liveness.start.prompt": {
-      "comment": "Prompt before Start is pressed.",
+    "document.mismatch.birthdate.message": {
+      "comment": "Mismatch body.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أمسك الهاتف على مسافة ذراع"
+            "value": "تاريخ الميلاد في هذه الوثيقة ليس التاريخ الذي أدخلته. لم يُرسل شيء. إن أخطأت في اختيار التاريخ فغيّره؛ وإن كانت الصورة لوثيقة أخرى فأعد التقاطها."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hold the phone at arm's length"
+            "value": "The date of birth on this document isn't the one you entered. Nothing has been sent. If the wheel slipped, change the date; if the photo is of the wrong document, retake it."
           }
         }
       }
     },
-    "document.liveness.title": {
-      "comment": "Selfie step headline.",
+    "document.mismatch.birthdate.title": {
+      "comment": "Mismatch title.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "والآن سيلفي سريع"
+            "value": "التاريخان غير متطابقين"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Now a quick selfie"
-          }
-        }
-      }
-    },
-    "document.liveness.turnLeft": {
-      "comment": "Liveness prompt.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "أدر رأسك إلى أحد الجانبين"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turn your head to one side"
-          }
-        }
-      }
-    },
-    "document.liveness.turnRight": {
-      "comment": "Liveness prompt.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "والآن الجانب الآخر"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Now the other side"
-          }
-        }
-      }
-    },
-    "document.liveness.viewport.a11y": {
-      "comment": "Accessibility label of the selfie viewport.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عرض الكاميرا الأمامية"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Front camera view"
+            "value": "The dates don't match"
           }
         }
       }
@@ -9485,6 +9629,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Date of birth"
+          }
+        }
+      }
+    },
+    "document.review.declaredBirthdate": {
+      "comment": "Review row label for the declared birthdate.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما أدخلته"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You entered"
           }
         }
       }
@@ -9651,6 +9813,24 @@
         }
       }
     },
+    "document.step.progress": {
+      "comment": "Progress line over the document flow.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخطوة %lld من %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %lld of %lld"
+          }
+        }
+      }
+    },
     "document.submitted.continue": {
       "comment": "Button that returns to the wall.",
       "extractionState": "manual",
@@ -9755,6 +9935,234 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sending…"
+          }
+        }
+      }
+    },
+    "document.sweep.covered": {
+      "comment": "Progress under the ring: %lld of 8 directions covered.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld اتجاهات من 8"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld اتجاهًا من 8"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "اتجاه واحد من 8"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld اتجاه من 8"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "اتجاهان من 8"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا اتجاهات من 8"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld of 8 directions"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld of 8 directions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "document.sweep.keepGoing": {
+      "comment": "Prompt.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "واصل — تمتلئ الحلقة كلما أدرت رأسك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep going — the ring fills as you turn"
+          }
+        }
+      }
+    },
+    "document.sweep.lookStraight": {
+      "comment": "Prompt.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انظر مباشرة إلى الكاميرا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look straight at the camera"
+          }
+        }
+      }
+    },
+    "document.sweep.message": {
+      "comment": "Sweep step body.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انظر إلى الكاميرا، ثم أدر رأسك ببطء دورة كاملة حتى تمتلئ الحلقة. هذا يثبت أن شخصًا يحمل الهاتف، لا صورة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look at the camera, then turn your head slowly all the way round until the ring fills. This proves a person is holding the phone, not a photo."
+          }
+        }
+      }
+    },
+    "document.sweep.restarted": {
+      "comment": "Prompt after a restart.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فقدناك — انظر مباشرة إلى الكاميرا وابدأ من جديد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lost you — look straight at the camera and start again"
+          }
+        }
+      }
+    },
+    "document.sweep.start.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يبدأ الكاميرا ودوران الرأس"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts the camera and the head-turn"
+          }
+        }
+      }
+    },
+    "document.sweep.start.prompt": {
+      "comment": "Before start.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أمسك الهاتف على بُعد ذراع، ثم ابدأ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold the phone at arm's length, then start"
+          }
+        }
+      }
+    },
+    "document.sweep.title": {
+      "comment": "Sweep step title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "والآن أدر رأسك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now turn your head"
+          }
+        }
+      }
+    },
+    "document.sweep.turn": {
+      "comment": "Prompt.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الآن أدر رأسك ببطء دورة كاملة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now turn your head slowly, all the way round"
+          }
+        }
+      }
+    },
+    "document.sweep.viewport.a11y": {
+      "comment": "Accessibility label.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كاميرا مباشرة تعرض وجهك، مع حلقة تمتلئ كلما أدرت رأسك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live camera showing your face, with a ring that fills as you turn your head"
           }
         }
       }
@@ -10689,6 +11097,24 @@
         }
       }
     },
+    "error.alreadySpeaking": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لديك الميكروفون بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have the microphone."
+          }
+        }
+      }
+    },
     "error.alreadyVerified": {
       "comment": "409 already_verified.",
       "extractionState": "manual",
@@ -10725,6 +11151,24 @@
         }
       }
     },
+    "error.cannotMuteHost": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم زر الميكروفون الخاص بك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use your own microphone button."
+          }
+        }
+      }
+    },
     "error.confirmationRequired": {
       "comment": "Account deletion arrived without the typed confirmation word. DELETE is typed literally and is never translated.",
       "extractionState": "manual",
@@ -10739,6 +11183,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Type DELETE exactly to confirm."
+          }
+        }
+      }
+    },
+    "error.dateOfBirthMismatch": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تاريخ الميلاد في الوثيقة لا يطابق الذي أدخلته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The date of birth on the document doesn't match the one you entered."
+          }
+        }
+      }
+    },
+    "error.dateOfBirthRequired": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل تاريخ ميلادك أولًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your date of birth first."
           }
         }
       }
@@ -10959,6 +11439,24 @@
         }
       }
     },
+    "error.invalidDateOfBirth": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل تاريخ الميلاد المطبوع في وثيقتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the date of birth printed on your document."
+          }
+        }
+      }
+    },
     "error.invalidDocumentType": {
       "comment": "Server refused the document type.",
       "extractionState": "manual",
@@ -11038,13 +11536,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا يبدو هذا رقم هوية وطنية أو إقامة صالحًا."
+            "value": "لا يبدو هذا رقم هوية وطنية أو إقامة صالحًا — تحقق من الأرقام؛ الرقم الأخير رقم تحقق."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "That doesn't look like a valid National ID or Iqama number."
+            "value": "That doesn't look like a valid National ID or Iqama number — check the digits; the last one must add up."
           }
         }
       }
@@ -11103,6 +11601,24 @@
         }
       }
     },
+    "error.livenessMismatch": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يكتمل فحص الوجه بشكل صحيح. حاول مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The face check didn't come through cleanly. Try it again."
+          }
+        }
+      }
+    },
     "error.nationalityMismatch": {
       "comment": "Server refused: proven nationality differs from the claim.",
       "extractionState": "manual",
@@ -11135,6 +11651,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your country flag comes from identity verification. Verify to unlock My Country."
+          }
+        }
+      }
+    },
+    "error.notInRoom": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم إلى الغرفة أولًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join the room first."
           }
         }
       }
@@ -11193,6 +11727,24 @@
         }
       }
     },
+    "error.notRemoved": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يُخرَجوا من هذه الغرفة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They weren't removed from this room."
+          }
+        }
+      }
+    },
     "error.notRoomHost": {
       "comment": "A host-only action attempted by somebody who is not the host.",
       "extractionState": "manual",
@@ -11207,6 +11759,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Only the room's host can do that."
+          }
+        }
+      }
+    },
+    "error.notSpeaking": {
+      "comment": "API error.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليسوا على المنصة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They're not on the stage."
           }
         }
       }
@@ -14157,6 +14727,42 @@
         }
       }
     },
+    "notifications.kind.roomInvite.detail": {
+      "comment": "Settings row detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما يدعوك أحد إلى غرفة مغلقة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When somebody asks you into a closed room."
+          }
+        }
+      }
+    },
+    "notifications.kind.roomInvite.title": {
+      "comment": "Settings row.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دعوات الغرف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room invitations"
+          }
+        }
+      }
+    },
     "notifications.kind.unknown.detail": {
       "comment": "What the catch-all switch governs.",
       "extractionState": "manual",
@@ -14621,6 +15227,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ reposted you"
+          }
+        }
+      }
+    },
+    "notifications.sentence.roomInvite": {
+      "comment": "Notification row.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دعاك %@ إلى غرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ invited you to a room"
           }
         }
       }
@@ -15493,6 +16117,23 @@
         }
       }
     },
+    "post.menu.copyLink": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نسخ الرابط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy link"
+          }
+        }
+      }
+    },
     "post.menu.copyText": {
       "comment": "Long-press menu: copy the post's text.",
       "extractionState": "manual",
@@ -15867,6 +16508,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Undo repost"
+          }
+        }
+      }
+    },
+    "post.repostedBy": {
+      "comment": "Line above a post somebody passed on.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أعاد %@ النشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ reposted"
           }
         }
       }
@@ -16340,19 +16999,18 @@
       }
     },
     "post.share.hint": {
-      "comment": "VoiceOver hint for the share control on a post card.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يفتح قائمة المشاركة مع نص هذا المنشور"
+            "value": "يفتح قائمة المشاركة مع رابط هذا المنشور"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Opens the share sheet with this post's text"
+            "value": "Opens the share sheet with a link to this post"
           }
         }
       }
@@ -19259,6 +19917,59 @@
         }
       }
     },
+    "profile.savedPosts": {
+      "comment": "Owner-profile route to bookmarks.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المنشورات المحفوظة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved posts"
+          }
+        }
+      }
+    },
+    "profile.savedPosts.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المنشورات التي حفظتها. لا يراها أحد غيرك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posts you bookmarked. Only you can see them."
+          }
+        }
+      }
+    },
+    "profile.savedPosts.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح المنشورات التي حفظتها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the posts you bookmarked"
+          }
+        }
+      }
+    },
     "profile.timeline.empty.subtitle": {
       "comment": "Empty profile timeline. %@ is the account's display name. Repeats the exclusion so an empty list is not read as an inactive account.",
       "extractionState": "manual",
@@ -19471,6 +20182,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verified since %@"
+          }
+        }
+      }
+    },
+    "rooms.access.following.explanation": {
+      "comment": "Access option detail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن لمن تتابعهم الدخول، وكذلك من تدعوهم بالاسم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The people you follow can come in, and anyone you invite by name."
+          }
+        }
+      }
+    },
+    "rooms.access.following.title": {
+      "comment": "Access option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من أتابعهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People I follow"
+          }
+        }
+      }
+    },
+    "rooms.access.inviteOnly.title": {
+      "comment": "Access option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من أدعوهم فقط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only people I invite"
+          }
+        }
+      }
+    },
+    "rooms.access.open.title": {
+      "comment": "Access option.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجميع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everyone"
           }
         }
       }
@@ -19715,6 +20498,42 @@
         }
       }
     },
+    "rooms.card.forYou": {
+      "comment": "Chip on a room whose topic the viewer follows.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For you"
+          }
+        }
+      }
+    },
+    "rooms.card.forYou.a11yHint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "موضوع قلت إنك مهتم به"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A topic you said you are interested in"
+          }
+        }
+      }
+    },
     "rooms.connection.connecting": {
       "comment": "Status while the audio transport connects.",
       "extractionState": "manual",
@@ -19783,6 +20602,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not recorded"
+          }
+        }
+      }
+    },
+    "rooms.create.access.a11yHint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يحدد من يمكنه دخول الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chooses who can enter the room"
           }
         }
       }
@@ -19885,6 +20722,24 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "rooms.create.closed.note": {
+      "comment": "Note under a closed access choice.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يسمع هذه الغرفة إلا من تسمح لهم بالدخول. أما من يتحدث فيحدده الجمهور أعلاه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the people you let in can hear this room. Who may speak is still decided by the audience above."
           }
         }
       }
@@ -20045,24 +20900,6 @@
         }
       }
     },
-    "rooms.create.inviteOnly.a11yHint": {
-      "comment": "Accessibility hint on the toggle.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يغلق الغرفة فلا يدخلها إلا من تدعوهم"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Closes the room so only people you invite can enter"
-          }
-        }
-      }
-    },
     "rooms.create.inviteOnly.explanation": {
       "comment": "Explanation under the toggle when it is on.",
       "extractionState": "manual",
@@ -20077,24 +20914,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Only you and the people you invite can enter. The room will not appear in anyone else's list. Who may speak is still decided by the audience above."
-          }
-        }
-      }
-    },
-    "rooms.create.inviteOnlyToggle": {
-      "comment": "Toggle in the create-room sheet.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "بدعوة فقط"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invite only"
           }
         }
       }
@@ -20717,6 +21536,168 @@
         }
       }
     },
+    "rooms.followingOnly.badge": {
+      "comment": "Chip on a following-only room.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من أتابعهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People I follow"
+          }
+        }
+      }
+    },
+    "rooms.followingOnly.refusal": {
+      "comment": "Fallback refusal for a following-only room.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الغرفة لمن يتابعهم المضيف."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room is for people the host follows."
+          }
+        }
+      }
+    },
+    "rooms.hand.lower": {
+      "comment": "Listener control.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خفض اليد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lower hand"
+          }
+        }
+      }
+    },
+    "rooms.hand.lower.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسحب طلبك للتحدث"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraws your request to speak"
+          }
+        }
+      }
+    },
+    "rooms.hand.lowered": {
+      "comment": "Toast.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خُفضت اليد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hand lowered."
+          }
+        }
+      }
+    },
+    "rooms.hand.raise": {
+      "comment": "Listener control.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفع اليد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise hand"
+          }
+        }
+      }
+    },
+    "rooms.hand.raise.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يطلب من المضيف الميكروفون. تواصل الاستماع حتى يقرر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks the host for the microphone. You keep listening until they decide."
+          }
+        }
+      }
+    },
+    "rooms.hand.raised": {
+      "comment": "Listener state after raising a hand.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يدك مرفوعة. المضيف يقرر من يتحدث؛ وما زلت تستمع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your hand is up. The host decides who speaks; you're still listening."
+          }
+        }
+      }
+    },
+    "rooms.host.approveHand": {
+      "comment": "Host: hand the microphone to a raised hand.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبول"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approve"
+          }
+        }
+      }
+    },
     "rooms.host.cannotDemoteHost": {
       "comment": "Refusal when a host tries to move themselves off their own stage.",
       "extractionState": "manual",
@@ -20753,6 +21734,42 @@
         }
       }
     },
+    "rooms.host.dismissHand": {
+      "comment": "Host: dismiss a hand.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خفض يدهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lower their hand"
+          }
+        }
+      }
+    },
+    "rooms.host.handDismissedToast": {
+      "comment": "Toast.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خُفضت يد %@. يمكنهم رفعها مجددًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s hand is lowered. They can raise it again."
+          }
+        }
+      }
+    },
     "rooms.host.inviteToMic": {
       "comment": "Host menu: move a listener onto the stage.",
       "extractionState": "manual",
@@ -20785,6 +21802,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ can speak now."
+          }
+        }
+      }
+    },
+    "rooms.host.mute": {
+      "comment": "Host: mute a speaker.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كتم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute"
+          }
+        }
+      }
+    },
+    "rooms.host.mutedToast": {
+      "comment": "Toast.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم كتم %@. يحتفظون بمقعدهم على المنصة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is muted. They keep their seat on the stage."
+          }
+        }
+      }
+    },
+    "rooms.host.readmit": {
+      "comment": "Undo a removal.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Readmit %@"
+          }
+        }
+      }
+    },
+    "rooms.host.readmittedToast": {
+      "comment": "Toast.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن لـ %@ العودة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ can come back in."
           }
         }
       }
@@ -21191,6 +22280,42 @@
         }
       }
     },
+    "rooms.join.cannotEnter.title": {
+      "comment": "Heading over a refusal.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكنك دخول هذه الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can't enter this room"
+          }
+        }
+      }
+    },
+    "rooms.join.joining": {
+      "comment": "Header while joining.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الانضمام…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joining…"
+          }
+        }
+      }
+    },
     "rooms.join.unverifiedCannotOpen": {
       "comment": "Refusal when an unverified account tries to host. Listening is open to everyone.",
       "extractionState": "manual",
@@ -21259,6 +22384,60 @@
           "stringUnit": {
             "state": "translated",
             "value": "You're listening"
+          }
+        }
+      }
+    },
+    "rooms.live.a11y.handRaised": {
+      "comment": "VoiceOver.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اليد مرفوعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hand raised"
+          }
+        }
+      }
+    },
+    "rooms.live.a11y.muted": {
+      "comment": "VoiceOver.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مكتوم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "muted"
+          }
+        }
+      }
+    },
+    "rooms.live.a11y.speaking": {
+      "comment": "VoiceOver.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتحدث"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "speaking"
           }
         }
       }
@@ -21385,6 +22564,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "End this room?"
+          }
+        }
+      }
+    },
+    "rooms.live.hands.empty": {
+      "comment": "Empty hands queue.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا أحد يطلب التحدث."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody is asking to speak."
+          }
+        }
+      }
+    },
+    "rooms.live.hands.header": {
+      "comment": "Section header for the host.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأيدي المرفوعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raised hands"
           }
         }
       }
@@ -22261,6 +23476,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "You're listening again. You're still in the room, and you weren't removed."
+          }
+        }
+      }
+    },
+    "rooms.youWereMuted": {
+      "comment": "Toast to a muted speaker.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كتم المضيف ميكروفونك. ما زلت على المنصة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The host muted your microphone. You're still on the stage."
           }
         }
       }
@@ -25163,6 +26396,60 @@
         }
       }
     },
+    "saved.empty.subtitle": {
+      "comment": "Empty state body.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط على أيقونة الحفظ في أي منشور ليظهر هنا. أنت وحدك من يرى هذه القائمة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the bookmark on any post to keep it here. Only you can see this list."
+          }
+        }
+      }
+    },
+    "saved.empty.title": {
+      "comment": "Empty state.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا محفوظات بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing saved yet"
+          }
+        }
+      }
+    },
+    "saved.title": {
+      "comment": "Saved posts screen title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المحفوظات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved"
+          }
+        }
+      }
+    },
     "search.empty.failed.action": {
       "comment": "Retry action on a failed search.",
       "extractionState": "manual",
@@ -26070,13 +27357,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أدخل الرقم المكوّن من 10 أرقام الذي يبدأ بـ1 أو 2."
+            "value": "أدخل الرقم المكوّن من 10 أرقام الذي يبدأ بـ1 أو 2. إن كان صحيحًا على البطاقة فتحقق من رقم مكتوب خطأ."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter the 10-digit number that starts with 1 or 2."
+            "value": "Enter the 10-digit number that starts with 1 or 2. If it's right on the card, check for a mistyped digit."
           }
         }
       }
@@ -26124,13 +27411,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "مثال: 1023456789"
+            "value": "مثال: 1023456781"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "e.g. 1023456789"
+            "value": "e.g. 1023456781"
           }
         }
       }

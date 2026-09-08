@@ -67,6 +67,63 @@ public enum VoiceEngineError: Error, Equatable, Sendable {
     }
 }
 
+/// Something the media server said about the room, forwarded so the roster
+/// can react at once instead of on the next poll.
+///
+/// Deliberately coarse. The room screen re-reads the roster from the API on
+/// any of these — the API row is the truth — so the event only has to say
+/// *that* something changed, and, for the two that change what the viewer
+/// may do right now, what.
+public enum VoiceRoomEvent: Equatable, Sendable {
+    /// Somebody's connection arrived.
+    case participantJoined(identity: String)
+    /// Somebody's connection went.
+    case participantLeft(identity: String)
+    /// The server changed what *this* connection may do — a promotion or
+    /// demotion applied live, without a reconnect.
+    case permissionsChanged(canPublish: Bool)
+    /// Somebody's role announcement changed.
+    case metadataChanged(identity: String)
+    /// Somebody's microphone was muted or unmuted — by them, or by the host.
+    case muteChanged(identity: String, isMuted: Bool)
+    /// A data message from another participant.
+    case message(RoomDataMessage)
+}
+
+/// The one data message rooms send: a hand going up or down. Sent *as well
+/// as* the API call, never instead of it — the API row is the queue the host
+/// decides from; this is the nudge that makes the host's screen refresh now.
+public struct RoomDataMessage: Codable, Equatable, Sendable {
+    public static let topic = "sila.room"
+
+    /// `hand` is the only type today.
+    public let type: String
+    /// The account the message is about.
+    public let userId: String
+    /// For `hand`: whether it went up.
+    public let raised: Bool
+
+    public init(type: String = "hand", userId: String, raised: Bool) {
+        self.type = type
+        self.userId = userId
+        self.raised = raised
+    }
+
+    public static func hand(userId: UUID, raised: Bool) -> RoomDataMessage {
+        RoomDataMessage(userId: userId.uuidString.lowercased(), raised: raised)
+    }
+
+    public var isHand: Bool { type == "hand" }
+
+    public func encoded() -> Data {
+        (try? JSONEncoder().encode(self)) ?? Data()
+    }
+
+    public static func decode(_ data: Data) -> RoomDataMessage? {
+        try? JSONDecoder().decode(RoomDataMessage.self, from: data)
+    }
+}
+
 /// The media transport, behind a seam.
 ///
 /// LiveKit lives on the far side of this protocol and **nowhere else in the
@@ -89,10 +146,18 @@ public protocol VoiceEngineProtocol: AnyObject {
     var isMicrophoneEnabled: Bool { get }
     /// Identities the media server says are speaking right now.
     ///
-    /// The identity is the handle, which is what the server puts in the token.
+    /// The identity is the **account id** (lower-cased UUID string), which is
+    /// what the server puts in the token's `sub`. Never the handle.
     var speakingIdentities: Set<String> { get }
+    /// Identities whose microphone is currently muted — including by the host.
+    var mutedIdentities: Set<String> { get }
+    /// What the live connection may do right now. Starts as what the token
+    /// said; changes when the server applies a promotion or demotion live.
+    var canPublish: Bool { get }
     /// Called on the main actor whenever anything above changed.
     var onChange: (@MainActor () -> Void)? { get set }
+    /// Called on the main actor with every room event the media server reports.
+    var onRoomEvent: (@MainActor (VoiceRoomEvent) -> Void)? { get set }
 
     /// Opens the media connection.
     /// - Parameters:
@@ -114,6 +179,11 @@ public protocol VoiceEngineProtocol: AnyObject {
     /// it is called from leave, from termination and from `deinit` paths, and
     /// exactly one of those wins the race.
     func disconnect() async
+
+    /// Sends a data message to everyone in the room. Best-effort: a failure
+    /// costs the host a few seconds of poll latency, never the request itself,
+    /// which went to the API first.
+    func publish(_ message: RoomDataMessage) async
 }
 
 /// The microphone permission prompt, behind a seam.

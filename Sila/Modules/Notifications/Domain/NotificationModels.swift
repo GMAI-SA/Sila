@@ -26,6 +26,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case followRequest = "follow_request"
     /// A private account let the viewer in. No post behind it either.
     case followAccepted = "follow_accepted"
+    /// Somebody asked you into a closed room.
+    case roomInvite = "room_invite"
     /// A kind this build does not recognise.
     case unknown
 
@@ -33,7 +35,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
 
     /// The five kinds the contract names, in the order the settings list shows
     /// them: the noisiest first, because that is the one people come to silence.
-    public static let settable: [NotificationKind] = [.like, .reply, .mention, .repost, .follow]
+    public static let settable: [NotificationKind] = [.like, .reply, .mention, .repost, .follow, .roomInvite]
 
     /// Unrecognised values decode as ``unknown`` rather than throwing — one new
     /// kind on the server must not blank somebody's whole notification list.
@@ -48,7 +50,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     /// whose `post_id` is legitimately `null`.
     public var isAboutAPost: Bool {
         switch self {
-        case .follow, .followRequest, .followAccepted, .unknown: return false
+        case .follow, .followRequest, .followAccepted, .roomInvite, .unknown: return false
         case .like, .repost, .reply, .mention: return true
         }
     }
@@ -63,6 +65,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .mention: return "at"
         case .followRequest: return "person.crop.circle.badge.questionmark"
         case .followAccepted: return "person.crop.circle.badge.checkmark"
+        case .roomInvite: return "waveform.circle.fill"
         case .unknown: return "bell"
         }
     }
@@ -77,6 +80,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .mention: return SLColor.warning
         case .followRequest: return SLColor.primary
         case .followAccepted: return SLColor.secondary
+        case .roomInvite: return SLColor.secondary
         case .unknown: return SLColor.textSecondary
         }
     }
@@ -91,6 +95,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .mention: return L10n.t("notifications.kind.mention.title")
         case .followRequest: return L10n.t("notifications.kind.followRequest.title")
         case .followAccepted: return L10n.t("notifications.kind.followAccepted.title")
+        case .roomInvite: return L10n.t("notifications.kind.roomInvite.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -116,6 +121,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.followRequest.detail")
         case .followAccepted:
             return L10n.t("notifications.kind.followAccepted.detail")
+        case .roomInvite:
+            return L10n.t("notifications.kind.roomInvite.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -143,6 +150,8 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     public let actor: UserSummary
     /// The post it is about, or `nil` for a follow.
     public let postId: UUID?
+    /// The room it is about, for a room invitation.
+    public let roomId: UUID?
     /// The first 140 characters of that post, or `nil` when there is no post —
     /// or when there was one and it is gone — or when the post is covered and
     /// its author wrote no note.
@@ -165,12 +174,14 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         postExcerpt: String? = nil,
         read: Bool = false,
         createdAt: Date = Date(),
-        postSensitive: SensitiveKind? = nil
+        postSensitive: SensitiveKind? = nil,
+        roomId: UUID? = nil
     ) {
         self.id = id
         self.kind = kind
         self.actor = actor
         self.postId = postId
+        self.roomId = roomId
         self.postExcerpt = (postExcerpt?.isEmpty == false) ? postExcerpt : nil
         self.postSensitive = postSensitive
         self.read = read
@@ -180,7 +191,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// Explicit keys are required because ``init(from:)`` is custom, and the
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
-        case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive
+        case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive, roomId
     }
 
     /// Tolerant decoder: one malformed row must not blank the whole page.
@@ -199,6 +210,11 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         }
         kind = (try? container.decode(NotificationKind.self, forKey: .kind)) ?? .unknown
         actor = try container.decode(UserSummary.self, forKey: .actor)
+        if let rawRoom = (try? container.decodeIfPresent(String.self, forKey: .roomId)) ?? nil {
+            roomId = UUID(uuidString: rawRoom)
+        } else {
+            roomId = (try? container.decodeIfPresent(UUID.self, forKey: .roomId)) ?? nil
+        }
         if let raw = (try? container.decodeIfPresent(String.self, forKey: .postId)) ?? nil {
             postId = UUID(uuidString: raw)
         } else {
@@ -436,6 +452,7 @@ public enum NotificationCopy {
         case .mention: return L10n.t("notifications.sentence.mention", name)
         case .followRequest: return L10n.t("notifications.sentence.followRequest", name)
         case .followAccepted: return L10n.t("notifications.sentence.followAccepted", name)
+        case .roomInvite: return L10n.t("notifications.sentence.roomInvite", name)
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.

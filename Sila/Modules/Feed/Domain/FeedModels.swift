@@ -295,6 +295,11 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     /// whose phone is in English, and the English quote inside it.
     public let language: String?
     public let createdAt: Date
+    /// Who passed this post on, when it is on a timeline because they did.
+    /// The post is still ``author``'s; this is the person whose repost put it
+    /// here, and ``repostedAt`` is when. `nil` for a post at its own place.
+    public let repostedBy: UserSummary?
+    public let repostedAt: Date?
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -335,11 +340,15 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         viewer: PostViewerState = PostViewerState(),
         quotedPost: Post? = nil,
         sensitive: SensitiveKind? = nil,
-        sensitiveNote: String? = nil
+        sensitiveNote: String? = nil,
+        repostedBy: UserSummary? = nil,
+        repostedAt: Date? = nil
     ) {
         self.id = id
         self.author = author
         self.text = text
+        self.repostedBy = repostedBy
+        self.repostedAt = repostedAt
         self.sensitive = sensitive
         self.sensitiveNote = sensitive == nil ? nil : ((sensitiveNote?.isEmpty == false) ? sensitiveNote : nil)
         self.imageURLs = imageURLs
@@ -358,7 +367,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     private enum CodingKeys: String, CodingKey {
         case id, author, text, imageUrls, language, createdAt, scope, scopeCountry, scopeRegion
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
-        case sensitive, sensitiveNote
+        case sensitive, sensitiveNote, repostedBy, repostedAt
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -418,6 +427,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
 
         let decodedQuote = (try? container.decodeIfPresent(Post.self, forKey: .quotedPost)) ?? nil
         quoted = decodedQuote.map { .value($0.strippingQuote()) }
+        repostedBy = (try? container.decodeIfPresent(UserSummary.self, forKey: .repostedBy)) ?? nil
+        repostedAt = (try? container.decodeIfPresent(Date.self, forKey: .repostedAt)) ?? nil
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.
@@ -437,7 +448,9 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             viewer: viewer,
             quotedPost: nil,
             sensitive: sensitive,
-            sensitiveNote: sensitiveNote
+            sensitiveNote: sensitiveNote,
+            repostedBy: repostedBy,
+            repostedAt: repostedAt
         )
     }
 }

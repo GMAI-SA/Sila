@@ -130,6 +130,8 @@ public final class VerificationWallViewModel {
 
     /// The nationality the person declared, when the server has one.
     public var declaredNationality: String? { report?.nationality }
+    /// The birthdate the person declared, as `YYYY-MM-DD`, or `nil`.
+    public var declaredDateOfBirth: String? { report?.dateOfBirth }
 
     /// Takes a report another call produced (declaring the nationality
     /// answers with one) so the wall reflects it without a second round trip.

@@ -23,6 +23,7 @@ public struct NotificationsScreen: View {
     @Bindable private var viewModel: NotificationsViewModel
     private let onOpenPost: (@MainActor (Post) -> Void)?
     private let onOpenProfile: (@MainActor (String) -> Void)?
+    private let onOpenRoom: (@MainActor (UUID) -> Void)?
     private let onOpenSettings: (@MainActor () -> Void)?
 
     /// The kind marker is nudged outwards from the avatar by hand, and a raw
@@ -39,11 +40,13 @@ public struct NotificationsScreen: View {
         viewModel: NotificationsViewModel,
         onOpenPost: (@MainActor (Post) -> Void)? = nil,
         onOpenProfile: (@MainActor (String) -> Void)? = nil,
+        onOpenRoom: (@MainActor (UUID) -> Void)? = nil,
         onOpenSettings: (@MainActor () -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
+        self.onOpenRoom = onOpenRoom
         self.onOpenSettings = onOpenSettings
     }
 
@@ -365,6 +368,7 @@ public struct NotificationsScreen: View {
             switch destination {
             case let .post(post): onOpenPost?(post)
             case let .profile(handle): onOpenProfile?(handle)
+            case let .room(id): onOpenRoom?(id)
             }
         }
     }

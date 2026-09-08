@@ -44,6 +44,10 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
     private var rosters: [UUID: [RoomParticipant]] = [:]
     /// Guest lists, by room.
     private var invites: [UUID: [UserSummary]] = [:]
+    /// Who the host removed, by room — readmit puts them back on the roster.
+    private var removed: [UUID: [RoomParticipant]] = [:]
+    /// Whether the viewer's own hand is up, by room.
+    private var viewerHand: Set<UUID> = []
     /// Calls recorded for test assertions, e.g. `"join:…"`.
     public private(set) var recordedCalls: [String] = []
     /// The viewer's own handle, for the host-only refusals.
@@ -169,7 +173,10 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             canSpeak: true,
             speakRefusal: nil,
             isHost: true,
-            isRemoved: false
+            isRemoved: false,
+            isInviteOnly: request.isInviteOnly,
+            isFollowingOnly: request.isFollowingOnly,
+            viewerRole: .host
         )
         stored.insert(room, at: 0)
         rosters[room.id] = [RoomParticipant(role: .host, user: FeedServiceMock.aziz, joinedAt: Date())]
@@ -193,11 +200,11 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             throw APIError.api(code: .roomEnded, message: "Room ended", status: 409)
         }
 
-        // The role, and therefore the token's grant, follows the server's
-        // `can_speak` — never a client-side reading of the scope.
-        let role: RoomRole = room.isHost ? .host : (room.canSpeak ? .speaker : .listener)
+        // Everyone arrives as a listener unless they host — speaking is
+        // something the host grants, exactly as the server does it.
+        let role: RoomRole = room.isHost ? .host : (rosters[roomId]?.first { $0.user.handle == viewerHandle }?.role ?? .listener)
         return RoomJoin(
-            room: room,
+            room: Self.copy(room, viewerRole: role, handRaised: viewerHand.contains(roomId)),
             url: "wss://sila.gmai.sa/rtc",
             // A token shaped like a JWT so nothing downstream can accidentally
             // depend on its contents; the mock's grant is `role`.
@@ -210,6 +217,105 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         recordedCalls.append("leave")
         try await delay()
         try failIfOffline()
+        viewerHand.remove(roomId)
+    }
+
+    // MARK: - Hands, mute, readmit
+
+    public func raiseHand(roomId: UUID) async throws -> VoiceRoom {
+        recordedCalls.append("hand:up")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        let room = try await fetchRoom(id: roomId)
+        guard !room.isHost else {
+            throw APIError.api(code: .alreadySpeaking, message: "You already have the microphone", status: 409)
+        }
+        guard room.canSpeak else {
+            throw APIError.api(code: .scopeNotAllowed, message: room.speakRefusal ?? "You cannot speak in this room", status: 403)
+        }
+        viewerHand.insert(roomId)
+        setHand(Date(), handle: viewerHandle, in: roomId)
+        let updated = Self.copy(room, viewerRole: .listener, handRaised: true, handsCount: hands(in: roomId))
+        replace(updated)
+        return updated
+    }
+
+    public func lowerHand(roomId: UUID) async throws -> VoiceRoom {
+        recordedCalls.append("hand:down")
+        try await delay()
+        try failIfOffline()
+        let room = try await fetchRoom(id: roomId)
+        viewerHand.remove(roomId)
+        setHand(nil, handle: viewerHandle, in: roomId)
+        let updated = Self.copy(room, handRaised: false, handsCount: hands(in: roomId))
+        replace(updated)
+        return updated
+    }
+
+    public func dismissHand(roomId: UUID, handle: String) async throws -> VoiceRoom {
+        recordedCalls.append("hand:dismiss:\(Handle.normalised(handle))")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        let room = try await fetchRoom(id: roomId)
+        try requireHost(room)
+        setHand(nil, handle: handle, in: roomId)
+        let updated = Self.copy(room, handsCount: hands(in: roomId))
+        replace(updated)
+        return updated
+    }
+
+    public func mute(roomId: UUID, handle: String) async throws {
+        recordedCalls.append("mute:\(Handle.normalised(handle))")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        let room = try await fetchRoom(id: roomId)
+        try requireHost(room)
+        let target = Handle.normalised(handle)
+        guard (rosters[roomId] ?? []).contains(where: { $0.user.handle == target && $0.role == .speaker }) else {
+            throw APIError.api(code: .notSpeaking, message: "They are not on the stage", status: 409)
+        }
+    }
+
+    public func readmit(roomId: UUID, handle: String) async throws -> VoiceRoom {
+        recordedCalls.append("readmit:\(Handle.normalised(handle))")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        let room = try await fetchRoom(id: roomId)
+        try requireHost(room)
+        let target = Handle.normalised(handle)
+        guard let index = (removed[roomId] ?? []).firstIndex(where: { $0.user.handle == target }) else {
+            throw APIError.api(code: .notRemoved, message: "They were not removed from this room", status: 409)
+        }
+        let person = removed[roomId]!.remove(at: index)
+        rosters[roomId, default: []].append(person)
+        let updated = Self.copy(room, listenerCount: room.listenerCount + 1)
+        replace(updated)
+        return updated
+    }
+
+    /// Simulates another listener raising a hand, for the host's queue.
+    public func seedHand(handle: String, in roomId: UUID, at date: Date = Date()) {
+        setHand(date, handle: handle, in: roomId)
+        if let room = stored.first(where: { $0.id == roomId }) {
+            replace(Self.copy(room, handsCount: hands(in: roomId)))
+        }
+    }
+
+    private func setHand(_ date: Date?, handle: String, in roomId: UUID) {
+        let target = Handle.normalised(handle)
+        rosters[roomId] = (rosters[roomId] ?? []).map { row in
+            row.user.handle == target
+                ? RoomParticipant(role: row.role, user: row.user, joinedAt: row.joinedAt, handRaisedAt: date)
+                : row
+        }
+    }
+
+    private func hands(in roomId: UUID) -> Int {
+        (rosters[roomId] ?? []).filter(\.hasHandRaised).count
     }
 
     // MARK: - Host controls
@@ -245,7 +351,7 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
 
         let room = try await fetchRoom(id: roomId)
         try requireHost(room)
-        guard room.isInviteOnly else {
+        guard room.isClosed else {
             throw APIError.api(
                 code: .notInviteOnly,
                 message: "An open room does not need invitations.",
@@ -289,8 +395,12 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
 
         let room = try await fetchRoom(id: roomId)
         try requireHost(room)
+        setHand(nil, handle: handle, in: roomId)
         setRole(.speaker, handle: handle, in: roomId)
-        let updated = Self.copy(room, speakerCount: room.speakerCount + 1, listenerCount: max(0, room.listenerCount - 1))
+        let updated = Self.copy(
+            room, speakerCount: room.speakerCount + 1, listenerCount: max(0, room.listenerCount - 1),
+            handsCount: hands(in: roomId)
+        )
         replace(updated)
         return updated
     }
@@ -321,8 +431,10 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         let room = try await fetchRoom(id: roomId)
         try requireHost(room)
         let target = Handle.normalised(handle)
+        let gone = (rosters[roomId] ?? []).filter { $0.user.handle == target }
+        removed[roomId, default: []].append(contentsOf: gone)
         rosters[roomId] = (rosters[roomId] ?? []).filter { $0.user.handle != target }
-        let updated = Self.copy(room, listenerCount: max(0, room.listenerCount - 1))
+        let updated = Self.copy(room, listenerCount: max(0, room.listenerCount - 1), handsCount: hands(in: roomId))
         replace(updated)
         return updated
     }
@@ -344,7 +456,7 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         let target = Handle.normalised(handle)
         rosters[roomId] = (rosters[roomId] ?? []).map { row in
             row.user.handle == target
-                ? RoomParticipant(role: role, user: row.user, joinedAt: row.joinedAt)
+                ? RoomParticipant(role: role, user: row.user, joinedAt: row.joinedAt, handRaisedAt: role == .listener ? row.handRaisedAt : nil)
                 : row
         }
     }
@@ -465,7 +577,10 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         canSpeak: Bool? = nil,
         speakRefusal: String?? = nil,
         isHost: Bool? = nil,
-        isRemoved: Bool? = nil
+        isRemoved: Bool? = nil,
+        viewerRole: RoomRole? = nil,
+        handRaised: Bool? = nil,
+        handsCount: Int? = nil
     ) -> VoiceRoom {
         VoiceRoom(
             id: room.id,
@@ -484,7 +599,15 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             canSpeak: canSpeak ?? room.canSpeak,
             speakRefusal: speakRefusal ?? room.speakRefusal,
             isHost: isHost ?? room.isHost,
-            isRemoved: isRemoved ?? room.isRemoved
+            isRemoved: isRemoved ?? room.isRemoved,
+            isInviteOnly: room.isInviteOnly,
+            isInvited: room.isInvited,
+            canJoin: room.canJoin,
+            joinRefusal: room.joinRefusal,
+            isFollowingOnly: room.isFollowingOnly,
+            viewerRole: viewerRole ?? room.viewerRole,
+            handRaised: handRaised ?? room.handRaised,
+            handsCount: handsCount ?? room.handsCount
         )
     }
 

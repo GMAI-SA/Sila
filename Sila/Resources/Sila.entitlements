@@ -13,6 +13,9 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>webcredentials:sila.gmai.sa</string>
+		<!-- sila.gmai.sa/posts/… and /u/… open in the app; the site's
+		     apple-app-site-association lists those paths. -->
+		<string>applinks:sila.gmai.sa</string>
 	</array>
 </dict>
 </plist>

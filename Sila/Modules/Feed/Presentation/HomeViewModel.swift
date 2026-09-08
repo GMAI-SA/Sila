@@ -270,6 +270,16 @@ public final class HomeViewModel {
         }
     }
 
+    /// Drops a post the viewer deleted from every tab, now.
+    public func remove(postId: UUID) {
+        for tab in FeedTab.allCases {
+            guard var tabState = states[tab], tabState.posts.contains(where: { $0.id == postId }) else { continue }
+            tabState.posts.removeAll { $0.id == postId }
+            if tabState.posts.isEmpty, tabState.hasLoaded { tabState.emptyKind = .noPosts }
+            states[tab] = tabState
+        }
+    }
+
     /// The first copy of a post across all tabs.
     public func findPost(_ id: UUID) -> Post? {
         for tab in FeedTab.allCases {

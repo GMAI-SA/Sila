@@ -17,7 +17,7 @@ import SwiftUI
 public struct RoomsScreen: View {
 
     @Bindable private var viewModel: RoomsViewModel
-    private let onOpen: (@MainActor (RoomJoin) -> Void)?
+    private let onOpen: (@MainActor (VoiceRoom) -> Void)?
     private let onCreate: (@MainActor () -> Void)?
     private let onOpenProfile: (@MainActor (String) -> Void)?
 
@@ -25,12 +25,12 @@ public struct RoomsScreen: View {
 
     /// - Parameters:
     ///   - viewModel: Owns both lists, the query and the join.
-    ///   - onOpen: Pushes the in-room screen with a join already in hand.
+    ///   - onOpen: Pushes the in-room screen, which joins on arrival.
     ///   - onCreate: Opens the create sheet. `nil` hides the affordance.
     ///   - onOpenProfile: Opens a host's page.
     public init(
         viewModel: RoomsViewModel,
-        onOpen: (@MainActor (RoomJoin) -> Void)? = nil,
+        onOpen: (@MainActor (VoiceRoom) -> Void)? = nil,
         onCreate: (@MainActor () -> Void)? = nil,
         onOpenProfile: (@MainActor (String) -> Void)? = nil
     ) {
@@ -209,7 +209,6 @@ public struct RoomsScreen: View {
             ForEach(viewModel.visibleLive) { room in
                 RoomCardView(
                     room: room,
-                    isOpening: viewModel.isOpening(room),
                     onTap: { open(room) },
                     onOpenHost: onOpenProfile.map { handler in { handler(room.host.handle) } }
                 )
@@ -222,7 +221,6 @@ public struct RoomsScreen: View {
             ForEach(viewModel.visibleScheduled) { room in
                 RoomCardView(
                     room: room,
-                    isOpening: viewModel.isOpening(room),
                     onTap: { open(room) },
                     onOpenHost: onOpenProfile.map { handler in { handler(room.host.handle) } }
                 )
@@ -255,10 +253,8 @@ public struct RoomsScreen: View {
     }
 
     private func open(_ room: VoiceRoom) {
-        Task {
-            guard let join = await viewModel.open(room) else { return }
-            onOpen?(join)
-        }
+        guard viewModel.open(room) else { return }
+        onOpen?(room)
     }
 }
 
@@ -274,7 +270,6 @@ public struct RoomsScreen: View {
 struct RoomCardView: View {
 
     let room: VoiceRoom
-    let isOpening: Bool
     let onTap: () -> Void
     var onOpenHost: (() -> Void)?
 
@@ -295,7 +290,15 @@ struct RoomCardView: View {
 
                 chips
 
-                if let refusal = room.speakRefusalMessage, room.status == .live {
+                if let shut = room.joinRefusalMessage, room.status == .live {
+                    // The door, before the microphone: a room the viewer
+                    // cannot enter says so on the card, in the server's words.
+                    Label(shut, systemImage: room.isRemoved ? "person.slash" : "lock.fill")
+                        .font(SLFont.micro)
+                        .foregroundStyle(SLColor.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .slContentDirection(TextDirection.resolve(languageCode: nil, text: shut))
+                } else if let refusal = room.speakRefusalMessage, room.status == .live {
                     // Verbatim. Never rewritten, never shortened.
                     Label(refusal, systemImage: "ear")
                         .font(SLFont.micro)
@@ -321,12 +324,7 @@ struct RoomCardView: View {
         HStack(spacing: SLSpacing.sm) {
             statusPill
             Spacer(minLength: 0)
-            if isOpening {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(SLColor.primary)
-                    .accessibilityHidden(true)
-            } else if room.status == .live {
+            if room.status == .live {
                 Text(room.attendanceSummary)
                     .font(SLFont.micro)
                     .foregroundStyle(SLColor.textMuted)
@@ -403,6 +401,19 @@ struct RoomCardView: View {
                     RoomCopy.inviteOnlyBadge,
                     icon: "lock.fill",
                     accessibilityHint: RoomCopy.inviteOnlyBadge
+                )
+            } else if room.isFollowingOnly {
+                SLChip(
+                    RoomCopy.followingOnlyBadge,
+                    icon: "person.2.fill",
+                    accessibilityHint: RoomCopy.followingOnlyBadge
+                )
+            }
+            if room.matchesInterests {
+                SLChip(
+                    L10n.t("rooms.card.forYou"),
+                    icon: "sparkles",
+                    accessibilityHint: L10n.t("rooms.card.forYou.a11yHint")
                 )
             }
             if let topic = room.topicLabel {

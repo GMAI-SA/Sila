@@ -38,6 +38,8 @@ public enum NotificationDestination: Equatable, Sendable {
     case post(Post)
     /// A follow row — nothing to fetch, the handle is enough.
     case profile(handle: String)
+    /// A room invitation — the room is read on the way in.
+    case room(id: UUID)
 }
 
 /// Drives ``NotificationsScreen``.
@@ -281,6 +283,10 @@ public final class NotificationsViewModel {
             "deleted_post": String(notification.postWasDeleted)
         ])
 
+        if notification.kind == .roomInvite, let roomId = notification.roomId {
+            await markRead(notification)
+            return .room(id: roomId)
+        }
         guard let postId = notification.postId else {
             await markRead(notification)
             return .profile(handle: notification.actor.handle)

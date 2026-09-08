@@ -19,6 +19,12 @@ struct SilaApp: App {
             } else {
                 RootView(container: container)
                     .preferredColorScheme(.dark)
+                    // Universal links (sila.gmai.sa/posts/…, /u/…). Held on the
+                    // router; the tab view opens it when it can.
+                    .onOpenURL { url in
+                        guard let link = DeepLink.parse(url) else { return }
+                        container.router.pendingLink = link
+                    }
                     .task {
                         container.analytics.track(
                             .appLaunched,

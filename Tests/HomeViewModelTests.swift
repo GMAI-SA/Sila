@@ -68,6 +68,10 @@ final class ScriptedFeedService: FeedServiceProtocol, @unchecked Sendable {
         return result
     }
 
+    func fetchBookmarks(cursor: String?) async throws -> FeedPage {
+        FeedPage(posts: [], nextCursor: nil, hasMore: false)
+    }
+
     /// Serves the next scripted page, recording the cursor it was asked for.
     private func nextFeedPage(_ tab: FeedTab, cursor: String?) throws -> FeedPage {
         let (error, page) = lock.withLock { () -> (APIError?, FeedPage) in

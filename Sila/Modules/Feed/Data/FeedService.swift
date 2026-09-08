@@ -42,6 +42,18 @@ public final class FeedService: FeedServiceProtocol {
         return page
     }
 
+    public func fetchBookmarks(cursor: String?) async throws -> FeedPage {
+        let token = try await tokens.accessToken()
+        var query = [URLQueryItem(name: "limit", value: String(clamped(20)))]
+        if let cursor, !cursor.isEmpty {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
+        return try await network.send(
+            APIRequest(path: "/me/bookmarks", accessToken: token, query: query),
+            as: FeedPage.self
+        )
+    }
+
     // MARK: - Posts
 
     public func fetchPost(_ id: UUID) async throws -> Post {

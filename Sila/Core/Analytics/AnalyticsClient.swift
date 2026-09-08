@@ -57,6 +57,10 @@ public enum AnalyticsEvent: String, Sendable {
     /// The person declared a nationality on the wall. Carries nothing — the
     /// claim is about a person and stays with the account.
     case nationalityDeclared = "nationality_declared"
+    /// The birthdate claim was recorded. Never carries the date.
+    case birthdateDeclared = "birthdate_declared"
+    /// The camera found the card and took the photo itself.
+    case documentAutoCaptured = "document_auto_captured"
     /// The person chose a route on the wall. Carries `method`: `nafath` or
     /// `document`.
     case verificationMethodChosen = "verification_method_chosen"
@@ -110,6 +114,7 @@ public enum AnalyticsEvent: String, Sendable {
     /// its size — never the image, and never who it was of.
     case postImageUploaded = "post_image_uploaded"
     case postDeleted = "post_deleted"
+    case savedPostsOpened = "saved_posts_opened"
     /// A composition finished, counting every segment that got through.
     case postPublished = "post_published"
     /// A thread stopped partway, leaving real posts behind.
@@ -322,6 +327,18 @@ public enum AnalyticsEvent: String, Sendable {
     /// Somebody was removed from one room. Per-room; not a block, and this
     /// event must never be read as one.
     case roomParticipantRemoved = "room_participant_removed"
+    /// A listener asked for the microphone.
+    case roomHandRaised = "room_hand_raised"
+    /// And withdrew the request.
+    case roomHandLowered = "room_hand_lowered"
+    /// The host lowered somebody's hand without calling on them.
+    case roomHandDismissed = "room_hand_dismissed"
+    /// The host muted a speaker.
+    case roomSpeakerMuted = "room_speaker_muted"
+    /// The host undid a removal.
+    case roomParticipantReadmitted = "room_participant_readmitted"
+    /// A door that did not open, and why (the code only).
+    case roomJoinRefused = "room_join_refused"
     /// A join was refused because the viewer had been removed from that room.
     case roomJoinRefusedRemoved = "room_join_refused_removed"
     /// The media connection dropped or failed. Carries `state`.

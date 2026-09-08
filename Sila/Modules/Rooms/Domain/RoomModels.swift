@@ -154,6 +154,17 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     public let canJoin: Bool
     /// Why not, in the server's own words. Rendered verbatim.
     public let joinRefusal: String?
+    /// The other closed kind: the people the host follows may enter, and so
+    /// may anyone invited by name.
+    public let isFollowingOnly: Bool
+    /// This viewer's seat while they are in the room, or `nil` outside it.
+    public let viewerRole: RoomRole?
+    /// Whether this viewer's hand is up.
+    public let handRaised: Bool
+    /// How many hands are up — what the host's badge counts.
+    public let handsCount: Int
+    /// The room's topic is one this viewer said they are interested in.
+    public let matchesInterests: Bool
 
     public init(
         id: UUID,
@@ -176,7 +187,12 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         isInviteOnly: Bool = false,
         isInvited: Bool = false,
         canJoin: Bool = true,
-        joinRefusal: String? = nil
+        joinRefusal: String? = nil,
+        isFollowingOnly: Bool = false,
+        viewerRole: RoomRole? = nil,
+        handRaised: Bool = false,
+        handsCount: Int = 0,
+        matchesInterests: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -199,6 +215,11 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         self.isInvited = isInvited
         self.canJoin = canJoin
         self.joinRefusal = (joinRefusal?.isEmpty == false) ? joinRefusal : nil
+        self.isFollowingOnly = isFollowingOnly
+        self.viewerRole = viewerRole
+        self.handRaised = handRaised
+        self.handsCount = max(0, handsCount)
+        self.matchesInterests = matchesInterests
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
@@ -208,6 +229,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         case speakerCount, listenerCount, scheduledFor, startedAt, createdAt
         case canSpeak, speakRefusal, isHost, isRemoved
         case isInviteOnly, isInvited, canJoin, joinRefusal
+        case isFollowingOnly, viewerRole, handRaised, handsCount, matchesInterests
     }
 
     /// Tolerant decoder: one malformed optional must not blank a whole list.
@@ -265,7 +287,15 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         canJoin = (try? container.decode(Bool.self, forKey: .canJoin)) ?? true
         let joinWhy = (try? container.decodeIfPresent(String.self, forKey: .joinRefusal)) ?? nil
         joinRefusal = (joinWhy?.isEmpty == false) ? joinWhy : nil
+        isFollowingOnly = (try? container.decode(Bool.self, forKey: .isFollowingOnly)) ?? false
+        viewerRole = (try? container.decodeIfPresent(RoomRole.self, forKey: .viewerRole)) ?? nil
+        handRaised = (try? container.decode(Bool.self, forKey: .handRaised)) ?? false
+        handsCount = max(0, (try? container.decode(Int.self, forKey: .handsCount)) ?? 0)
+        matchesInterests = (try? container.decode(Bool.self, forKey: .matchesInterests)) ?? false
     }
+
+    /// Either closed kind. Everything about the door keys off this.
+    public var isClosed: Bool { isInviteOnly || isFollowingOnly }
 
     // MARK: Derived
 
@@ -305,7 +335,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         if isRemoved { return RoomCopy.removedFromRoom }
         guard !canJoin else { return nil }
         if let joinRefusal { return joinRefusal }
-        return RoomCopy.inviteOnlyRefusal
+        return isFollowingOnly ? RoomCopy.followingOnlyRefusal : RoomCopy.inviteOnlyRefusal
     }
 
     /// `true` when the viewer may take the microphone **right now**.
@@ -398,23 +428,30 @@ public struct RoomParticipant: Identifiable, Equatable, Sendable, Decodable, Has
     public let user: UserSummary
     /// When they arrived, when the server said.
     public let joinedAt: Date?
+    /// When they raised a hand, or `nil`. The timestamp is the queue.
+    public let handRaisedAt: Date?
 
     /// Identity is the account: one person appears once, whatever their role.
     public var id: UUID { user.id }
 
-    public init(role: RoomRole, user: UserSummary, joinedAt: Date? = nil) {
+    public init(role: RoomRole, user: UserSummary, joinedAt: Date? = nil, handRaisedAt: Date? = nil) {
         self.role = role
         self.user = user
         self.joinedAt = joinedAt
+        self.handRaisedAt = handRaisedAt
     }
 
-    private enum CodingKeys: String, CodingKey { case role, user, joinedAt }
+    /// A listener asking for the microphone.
+    public var hasHandRaised: Bool { handRaisedAt != nil && role == .listener }
+
+    private enum CodingKeys: String, CodingKey { case role, user, joinedAt, handRaisedAt }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         role = (try? container.decode(RoomRole.self, forKey: .role)) ?? .listener
         user = try container.decode(UserSummary.self, forKey: .user)
         joinedAt = (try? container.decodeIfPresent(Date.self, forKey: .joinedAt)) ?? nil
+        handRaisedAt = (try? container.decodeIfPresent(Date.self, forKey: .handRaisedAt)) ?? nil
     }
 }
 
@@ -446,9 +483,26 @@ public struct RoomParticipantList: Equatable, Sendable, Decodable {
             }
     }
 
-    /// The people who are only listening.
+    /// The people who are only listening — hands first, oldest hand first,
+    /// then by arrival.
     public var audience: [RoomParticipant] {
         participants.filter { !$0.role.canPublish }
+            .sorted { lhs, rhs in
+                switch (lhs.handRaisedAt, rhs.handRaisedAt) {
+                case let (l?, r?): return l < r
+                case (.some, .none): return true
+                case (.none, .some): return false
+                case (.none, .none): return (lhs.joinedAt ?? .distantPast) < (rhs.joinedAt ?? .distantPast)
+                }
+            }
+    }
+
+    /// The queue the host decides from: listeners with a hand up, oldest first.
+    public var hands: [RoomParticipant] { audience.filter(\.hasHandRaised) }
+
+    /// The seat the roster gives one account, if it lists them.
+    public func role(of userId: UUID) -> RoomRole? {
+        participants.first { $0.user.id == userId }?.role
     }
 }
 
@@ -503,6 +557,53 @@ public struct RoomJoin: Equatable, Hashable, Sendable, Decodable {
 
 // MARK: - Creating
 
+/// Who gets through the door. Scope decides who may *speak*; this decides who
+/// may *hear*, which is why it is its own choice and not another scope value.
+public enum RoomAccess: String, CaseIterable, Identifiable, Sendable, Equatable {
+    /// Anyone. The default, and the reason scope only ever governed speaking.
+    case open
+    /// The people the host follows, plus anyone invited by name.
+    case following
+    /// Only the people the host names.
+    case inviteOnly
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .open: return L10n.t("rooms.access.open.title")
+        case .following: return L10n.t("rooms.access.following.title")
+        case .inviteOnly: return L10n.t("rooms.access.inviteOnly.title")
+        }
+    }
+
+    public var explanation: String {
+        switch self {
+        case .open: return L10n.t("rooms.create.open.explanation")
+        case .following: return L10n.t("rooms.access.following.explanation")
+        case .inviteOnly: return L10n.t("rooms.create.inviteOnly.explanation")
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .open: return "globe"
+        case .following: return "person.2.fill"
+        case .inviteOnly: return "lock.fill"
+        }
+    }
+
+    /// Whether a guest list applies — both closed kinds take invitations.
+    public var isClosed: Bool { self != .open }
+
+    /// The access a room was opened with.
+    public static func of(_ room: VoiceRoom) -> RoomAccess {
+        if room.isInviteOnly { return .inviteOnly }
+        if room.isFollowingOnly { return .following }
+        return .open
+    }
+}
+
 /// The body of `POST /rooms`.
 ///
 /// Built from a ``ComposeScope`` rather than three loose strings, so the room
@@ -518,8 +619,10 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     public let maxSpeakers: Int?
     /// Whether only invited people may enter.
     public let isInviteOnly: Bool
+    /// Whether the people the host follows may enter (plus invitees).
+    public let isFollowingOnly: Bool
     /// Handles invited as the room opens, so a closed room is one call.
-    /// Always empty unless ``isInviteOnly``.
+    /// Always empty for an open room.
     public let inviteHandles: [String]
 
     /// - Parameters:
@@ -529,9 +632,11 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     ///   - scheduledFor: A future start time, or `nil` to open it now.
     ///   - maxSpeakers: Stage size, or `nil` for the server's default.
     ///   - isInviteOnly: Close the room to everybody but its guests.
-    ///   - inviteHandles: Who to invite. Dropped unless `isInviteOnly`, because
-    ///     the server refuses invitations to an open room rather than
-    ///     quietly ignoring them.
+    ///   - isFollowingOnly: Close the room to everybody but the people the
+    ///     host follows, and its guests.
+    ///   - inviteHandles: Who to invite. Dropped for an open room, because
+    ///     the server refuses invitations to one rather than quietly
+    ///     ignoring them.
     public init(
         title: String,
         topic: String? = nil,
@@ -539,6 +644,7 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         scheduledFor: Date? = nil,
         maxSpeakers: Int? = nil,
         isInviteOnly: Bool = false,
+        isFollowingOnly: Bool = false,
         inviteHandles: [String] = []
     ) {
         self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -549,7 +655,25 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         self.scheduledFor = scheduledFor
         self.maxSpeakers = maxSpeakers
         self.isInviteOnly = isInviteOnly
-        self.inviteHandles = isInviteOnly ? RoomInviteHandles.clean(inviteHandles) : []
+        self.isFollowingOnly = isFollowingOnly && !isInviteOnly
+        self.inviteHandles = (isInviteOnly || isFollowingOnly) ? RoomInviteHandles.clean(inviteHandles) : []
+    }
+
+    /// The same, from an access choice.
+    public init(
+        title: String,
+        topic: String? = nil,
+        scope: ComposeScope,
+        scheduledFor: Date? = nil,
+        maxSpeakers: Int? = nil,
+        access: RoomAccess,
+        inviteHandles: [String] = []
+    ) {
+        self.init(
+            title: title, topic: topic, scope: scope, scheduledFor: scheduledFor, maxSpeakers: maxSpeakers,
+            isInviteOnly: access == .inviteOnly, isFollowingOnly: access == .following,
+            inviteHandles: inviteHandles
+        )
     }
 
     /// Optional fields are omitted rather than sent as `null`: the contract
@@ -567,16 +691,19 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         // Sent only when true, because absence has always meant "open".
         if isInviteOnly {
             try container.encode(true, forKey: .isInviteOnly)
-            if !inviteHandles.isEmpty {
-                try container.encode(inviteHandles, forKey: .inviteHandles)
-            }
+        }
+        if isFollowingOnly {
+            try container.encode(true, forKey: .isFollowingOnly)
+        }
+        if (isInviteOnly || isFollowingOnly) && !inviteHandles.isEmpty {
+            try container.encode(inviteHandles, forKey: .inviteHandles)
         }
     }
 
     /// The keys are camel-cased; the encoder converts them to `snake_case`.
     private enum CodingKeys: String, CodingKey {
         case title, topic, scope, scopeCountry, scopeRegion, scheduledFor, maxSpeakers
-        case isInviteOnly, inviteHandles
+        case isInviteOnly, isFollowingOnly, inviteHandles
     }
 }
 
@@ -699,6 +826,53 @@ public enum RoomCopy {
 
     /// The chip on a closed room's card.
     public static var inviteOnlyBadge: String { L10n.t("rooms.inviteOnly.badge") }
+
+    /// The fallback refusal for a following-only room, for when the server sent none.
+    public static var followingOnlyRefusal: String { L10n.t("rooms.followingOnly.refusal") }
+
+    /// The chip on a following-only room's card.
+    public static var followingOnlyBadge: String { L10n.t("rooms.followingOnly.badge") }
+
+    // MARK: Hands
+
+    public static var raiseHand: String { L10n.t("rooms.hand.raise") }
+    public static var lowerHand: String { L10n.t("rooms.hand.lower") }
+    public static var raiseHandHint: String { L10n.t("rooms.hand.raise.hint") }
+    public static var lowerHandHint: String { L10n.t("rooms.hand.lower.hint") }
+    /// What the person is told once their hand is up: the host decides.
+    public static var handRaised: String { L10n.t("rooms.hand.raised") }
+    public static var handLowered: String { L10n.t("rooms.hand.lowered") }
+    public static var handsHeader: String { L10n.t("rooms.live.hands.header") }
+    public static var handsEmpty: String { L10n.t("rooms.live.hands.empty") }
+    public static var approveHand: String { L10n.t("rooms.host.approveHand") }
+    public static var dismissHand: String { L10n.t("rooms.host.dismissHand") }
+    public static func handDismissed(_ name: String) -> String { L10n.t("rooms.host.handDismissedToast", name) }
+
+    // MARK: Muting
+
+    public static var muteSpeaker: String { L10n.t("rooms.host.mute") }
+    public static func muted(_ name: String) -> String { L10n.t("rooms.host.mutedToast", name) }
+    /// What a speaker is told when the host muted them. Says they keep the
+    /// seat, because a mute and a demotion feel identical until somebody says.
+    public static var youWereMuted: String { L10n.t("rooms.youWereMuted") }
+
+    // MARK: Readmitting
+
+    public static func readmit(_ name: String) -> String { L10n.t("rooms.host.readmit", name) }
+    public static func readmitted(_ name: String) -> String { L10n.t("rooms.host.readmittedToast", name) }
+
+    // MARK: Joining
+
+    /// The header while the room is being joined and the media connected.
+    public static var joining: String { L10n.t("rooms.join.joining") }
+
+    /// The line under the access picker: the door governs hearing, the scope
+    /// above it governs speaking, and the two must not be confused.
+    public static func everyoneCanListenNote(_ access: RoomAccess) -> String {
+        access == .open ? L10n.t("rooms.create.everyoneCanListen") : L10n.t("rooms.create.closed.note")
+    }
+    /// The heading over a door that did not open.
+    public static var cannotEnterTitle: String { L10n.t("rooms.join.cannotEnter.title") }
 
     // MARK: The promise
 

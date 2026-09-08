@@ -42,9 +42,8 @@ public enum DocumentType: String, CaseIterable, Identifiable, Sendable, Equatabl
     }
 }
 
-/// One step of the selfie sequence. The order is the order the person is
-/// asked; the server wants all three reported before it records the
-/// sequence as passed.
+/// One step of the legacy three-pose selfie sequence. Kept for the wire
+/// shape; the flow itself runs the live head-turn (``LivenessSweep``).
 public enum LivenessChallenge: String, CaseIterable, Sendable, Equatable {
     case lookStraight = "look_straight"
     case turnLeft = "turn_left"
@@ -52,14 +51,72 @@ public enum LivenessChallenge: String, CaseIterable, Sendable, Equatable {
 
     /// The value reported in the `liveness` form field.
     public var wireValue: String { rawValue }
+}
 
-    /// What the person is asked to do.
-    public var instruction: String {
-        switch self {
-        case .lookStraight: return L10n.t("document.liveness.lookStraight")
-        case .turnLeft: return L10n.t("document.liveness.turnLeft")
-        case .turnRight: return L10n.t("document.liveness.turnRight")
-        }
+// MARK: - The live head-turn
+
+/// One measured pose of the face: what Vision read, and when.
+public struct LivenessSample: Equatable, Sendable, Codable {
+    /// Radians, as Vision reports them.
+    public let yaw: Double
+    public let pitch: Double
+    /// Seconds since the sweep started.
+    public let t: Double
+
+    public init(yaw: Double, pitch: Double, t: Double) {
+        self.yaw = yaw
+        self.pitch = pitch
+        self.t = t
+    }
+}
+
+/// One sector of the ring, satisfied, with the frame kept at that moment.
+public struct LivenessFrame: Equatable, Sendable {
+    /// 0…7, clockwise from the top.
+    public let sector: Int
+    public let sample: LivenessSample
+    public let jpeg: Data
+
+    public init(sector: Int, sample: LivenessSample, jpeg: Data) {
+        self.sector = sector
+        self.sample = sample
+        self.jpeg = jpeg
+    }
+}
+
+/// The whole head-turn: the straight look, the ring, and how long it took.
+///
+/// This is what proves a face was in front of the camera and moving: eight
+/// frames from eight directions, in the order the ring asked for them, with
+/// the angle the detector measured at each. The server checks the shape of
+/// the trace — coverage, order, time — and a reviewer sees the frames.
+public struct LivenessSweep: Equatable, Sendable {
+    public static let sectors = 8
+
+    public let straight: LivenessSample
+    /// The frame kept at the straight look — the selfie a reviewer compares.
+    public let straightFrame: Data
+    public let frames: [LivenessFrame]
+    public let duration: Double
+
+    public init(straight: LivenessSample, straightFrame: Data, frames: [LivenessFrame], duration: Double) {
+        self.straight = straight
+        self.straightFrame = straightFrame
+        self.frames = frames
+        self.duration = duration
+    }
+
+    /// The `liveness` form field: the trace, without the images.
+    public func traceJSON() -> String {
+        let sectors = frames.map { frame in
+            "{\"sector\":\(frame.sector),\"yaw\":\(Self.number(frame.sample.yaw)),\"pitch\":\(Self.number(frame.sample.pitch)),\"t\":\(Self.number(frame.sample.t))}"
+        }.joined(separator: ",")
+        let straightJSON = "{\"yaw\":\(Self.number(straight.yaw)),\"pitch\":\(Self.number(straight.pitch)),\"t\":\(Self.number(straight.t))}"
+        return "{\"version\":2,\"straight\":\(straightJSON),\"sectors\":[\(sectors)],\"duration\":\(Self.number(duration))}"
+    }
+
+    private static func number(_ value: Double) -> String {
+        String(format: "%.3f", value)
     }
 }
 
@@ -80,6 +137,9 @@ public struct DocumentSubmission: Equatable, Sendable {
     public let turn: Data?
     public let mrz: MRZ?
     public let challenges: [LivenessChallenge]
+    /// The live head-turn, when the sequence was the ring. Legacy three-pose
+    /// submissions carry ``turn`` and ``challenges`` instead.
+    public let sweep: LivenessSweep?
 
     public init(
         documentType: DocumentType,
@@ -88,7 +148,8 @@ public struct DocumentSubmission: Equatable, Sendable {
         selfie: Data,
         turn: Data? = nil,
         mrz: MRZ? = nil,
-        challenges: [LivenessChallenge] = []
+        challenges: [LivenessChallenge] = [],
+        sweep: LivenessSweep? = nil
     ) {
         self.documentType = documentType
         self.front = front
@@ -97,6 +158,7 @@ public struct DocumentSubmission: Equatable, Sendable {
         self.turn = turn
         self.mrz = mrz
         self.challenges = challenges
+        self.sweep = sweep
     }
 
     /// The server's pre-decode limit per image, mirrored so an oversized
@@ -111,7 +173,9 @@ public struct DocumentSubmission: Equatable, Sendable {
         if let mrz, mrz.isValid {
             form.appendField(mrz.text, name: "mrz")
         }
-        if !challenges.isEmpty {
+        if let sweep {
+            form.appendField(sweep.traceJSON(), name: "liveness")
+        } else if !challenges.isEmpty {
             let list = challenges.map(\.wireValue).map { "\"\($0)\"" }.joined(separator: ",")
             form.appendField("[\(list)]", name: "liveness")
         }
@@ -120,7 +184,12 @@ public struct DocumentSubmission: Equatable, Sendable {
             form.appendFile(back, name: "back", filename: "back.jpg", mimeType: "image/jpeg")
         }
         form.appendFile(selfie, name: "selfie", filename: "selfie.jpg", mimeType: "image/jpeg")
-        if let turn {
+        if let sweep {
+            // One part per sector, in trace order — the server pairs them by index.
+            for frame in sweep.frames {
+                form.appendFile(frame.jpeg, name: "frames", filename: "turn_\(frame.sector).jpg", mimeType: "image/jpeg")
+            }
+        } else if let turn {
             form.appendFile(turn, name: "turn", filename: "turn.jpg", mimeType: "image/jpeg")
         }
         return form

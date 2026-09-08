@@ -238,15 +238,36 @@ public struct CreateRoomSheet: View {
     /// rather than sitting unlabelled next to the audience picker.
     private var whoMayEnter: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Toggle(isOn: $viewModel.isInviteOnly) {
-                Text(L10n.t("rooms.create.inviteOnlyToggle"))
-                    .font(SLFont.body)
-                    .foregroundStyle(SLColor.textPrimary)
+            ForEach(RoomAccess.allCases) { option in
+                SLCard(
+                    padding: SLSpacing.md,
+                    accessibilityLabel: "\(option.title). \(option.explanation)",
+                    accessibilityHint: L10n.t("rooms.create.access.a11yHint"),
+                    onTap: { viewModel.access = option }
+                ) {
+                    HStack(spacing: SLSpacing.md) {
+                        Image(systemName: option.icon)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(viewModel.access == option ? SLColor.primary : SLColor.textMuted)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(option.title)
+                                .font(SLFont.bodyEmphasis)
+                                .foregroundStyle(SLColor.textPrimary)
+                            Text(option.explanation)
+                                .font(SLFont.micro)
+                                .foregroundStyle(SLColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: viewModel.access == option ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(viewModel.access == option ? SLColor.primary : SLColor.stroke)
+                    }
+                }
+                .accessibilityAddTraits(viewModel.access == option ? .isSelected : [])
             }
-            .tint(SLColor.primary)
-            .accessibilityHint(Text(L10n.t("rooms.create.inviteOnly.a11yHint")))
 
-            if viewModel.isInviteOnly {
+            if viewModel.access.isClosed {
                 SLTextField(
                     L10n.t("rooms.create.guests.label"),
                     text: $viewModel.inviteHandlesText,
@@ -260,14 +281,10 @@ public struct CreateRoomSheet: View {
                 }
             }
 
-            Text(
-                viewModel.isInviteOnly
-                    ? L10n.t("rooms.create.inviteOnly.explanation")
-                    : L10n.t("rooms.create.open.explanation")
-            )
-            .font(SLFont.micro)
-            .foregroundStyle(SLColor.textMuted)
-            .fixedSize(horizontal: false, vertical: true)
+            Text(RoomCopy.everyoneCanListenNote(viewModel.access))
+                .font(SLFont.micro)
+                .foregroundStyle(SLColor.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

@@ -17,7 +17,12 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
         didSet { if isMicrophoneEnabled != oldValue { onChange?() } }
     }
     public private(set) var speakingIdentities: Set<String> = []
+    public private(set) var mutedIdentities: Set<String> = []
+    public private(set) var canPublish = false
     public var onChange: (@MainActor () -> Void)?
+    public var onRoomEvent: (@MainActor (VoiceRoomEvent) -> Void)?
+    /// Every data message this engine was asked to send.
+    public private(set) var publishedMessages: [RoomDataMessage] = []
 
     /// Calls in order, e.g. `["connect:listener", "mic:on"]`.
     public private(set) var recordedCalls: [String] = []
@@ -48,6 +53,7 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
             throw connectError
         }
         connectedCanPublish = canPublish
+        self.canPublish = canPublish
         connection = .connected
     }
 
@@ -67,11 +73,37 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
         disconnectCount += 1
         isMicrophoneEnabled = false
         connectedCanPublish = false
+        canPublish = false
         speakingIdentities = []
+        mutedIdentities = []
         connection = .idle
     }
 
+    public func publish(_ message: RoomDataMessage) async {
+        recordedCalls.append("data:\(message.type):\(message.raised)")
+        publishedMessages.append(message)
+    }
+
     // MARK: - Test hooks
+
+    /// Simulates the media server applying `UpdateParticipant` to this
+    /// connection — the promotion that needs no reconnect.
+    public func setCanPublish(_ value: Bool) {
+        connectedCanPublish = value
+        canPublish = value
+        if !value, isMicrophoneEnabled { isMicrophoneEnabled = false }
+        onChange?()
+        onRoomEvent?(.permissionsChanged(canPublish: value))
+    }
+
+    /// Simulates any room event arriving from the media server.
+    public func simulate(_ event: VoiceRoomEvent) {
+        if case let .muteChanged(identity, isMuted) = event {
+            if isMuted { mutedIdentities.insert(identity) } else { mutedIdentities.remove(identity) }
+            onChange?()
+        }
+        onRoomEvent?(event)
+    }
 
     /// Simulates the media server reporting who is talking.
     public func setSpeaking(_ identities: Set<String>) {

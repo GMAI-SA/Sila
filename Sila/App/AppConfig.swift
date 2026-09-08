@@ -8,6 +8,9 @@ public enum AppConfig {
 
     /// The single source of truth for the backend origin + version prefix.
     public static let apiBaseURLString = "https://sila.gmai.sa/api/v1"
+    /// The web client. Permalinks a share carries point here, and links here
+    /// open the app when it is installed (universal links).
+    public static let webBaseURLString = "https://sila.gmai.sa"
 
     /// ``apiBaseURLString`` parsed as a `URL`.
     ///

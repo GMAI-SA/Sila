@@ -307,6 +307,9 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     /// The person's appeal against the current decision, when they filed one.
     /// Only ever present while ``status`` is ``VerificationStatus/rejected``.
     public let appeal: VerificationAppealReceipt?
+    /// The birthdate the person declared, as `YYYY-MM-DD`. Asked on the
+    /// document route and tested against the document; `nil` until given.
+    public let dateOfBirth: String?
 
     public init(
         status: VerificationStatus,
@@ -314,7 +317,8 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         submittedAt: Date? = nil,
         reviewedAt: Date? = nil,
         nationality: String? = nil,
-        appeal: VerificationAppealReceipt? = nil
+        appeal: VerificationAppealReceipt? = nil,
+        dateOfBirth: String? = nil
     ) {
         self.status = status
         self.rejectionReason = rejectionReason
@@ -322,10 +326,11 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         self.reviewedAt = reviewedAt
         self.nationality = nationality
         self.appeal = appeal
+        self.dateOfBirth = dateOfBirth
     }
 
     private enum CodingKeys: String, CodingKey {
-        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal
+        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth
     }
 
     public init(from decoder: Decoder) throws {
@@ -336,6 +341,41 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         reviewedAt = try? container.decodeIfPresent(Date.self, forKey: .reviewedAt)
         nationality = CountryCode.normalised(try? container.decodeIfPresent(String.self, forKey: .nationality))
         appeal = try? container.decodeIfPresent(VerificationAppealReceipt.self, forKey: .appeal)
+        dateOfBirth = ISODay.normalised((try? container.decodeIfPresent(String.self, forKey: .dateOfBirth)) ?? nil)
+    }
+}
+
+/// A calendar day as the server writes it: `YYYY-MM-DD`, no time, no zone.
+///
+/// Birthdates travel as days rather than instants on purpose: a `Date` at
+/// midnight UTC displays as the day before in Riyadh, and a birthdate off by
+/// one is a mismatch that closes an account.
+public enum ISODay {
+
+    private static let formatter: DateFormatter = {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    /// The string, when it is a real day; `nil` otherwise.
+    public static func normalised(_ raw: String?) -> String? {
+        guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
+        guard formatter.date(from: raw) != nil else { return nil }
+        return raw
+    }
+
+    /// `date` as a day, read in UTC — which is how the zone parser makes it.
+    public static func string(_ date: Date) -> String {
+        formatter.string(from: date)
+    }
+
+    /// The day as a `Date` at midnight UTC.
+    public static func date(_ day: String) -> Date? {
+        formatter.date(from: day)
     }
 }
 

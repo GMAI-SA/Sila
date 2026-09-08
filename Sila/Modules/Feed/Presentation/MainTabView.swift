@@ -270,6 +270,22 @@ public struct MainTabView: View {
                 pruneStacks(blocking: handle)
             }
         }
+        // Same idea for a deletion: the post leaves both shared lists and any
+        // detail screen open on it, rather than lingering until a refresh.
+        .onChange(of: deletion.deleted) { previous, current in
+            for id in current.subtracting(previous) {
+                viewModel.remove(postId: id)
+                exploreViewModel.remove(postId: id)
+                pruneStacks(deletedPost: id)
+            }
+        }
+        // A link into the app: one waiting from before sign-in, or one that
+        // arrives while the tabs are up.
+        .task { await openPendingLink() }
+        .onChange(of: container.router.pendingLink) { _, link in
+            guard link != nil else { return }
+            Task { await openPendingLink() }
+        }
     }
 
     // MARK: - Safety
@@ -308,6 +324,19 @@ public struct MainTabView: View {
     /// than left for the user to walk back into. Removal is by predicate across
     /// the whole path, not just its tail: the offending screen is often two back
     /// by the time a block is confirmed from a card further in.
+    /// Pops every detail screen showing a post that was just deleted.
+    private func pruneStacks(deletedPost id: UUID) {
+        let isAbout: (FeedRoute) -> Bool = { route in
+            guard case let .postDetail(post) = route else { return false }
+            return post.id == id
+        }
+        container.router.feedPath.removeAll(where: isAbout)
+        container.router.messagesPath.removeAll(where: isAbout)
+        container.router.explorePath.removeAll(where: isAbout)
+        container.router.profilePath.removeAll(where: isAbout)
+        container.router.notificationsPath.removeAll(where: isAbout)
+    }
+
     private func pruneStacks(blocking handle: String) {
         let target = Handle.normalised(handle)
         guard !target.isEmpty else { return }
@@ -317,6 +346,8 @@ public struct MainTabView: View {
             case let .postDetail(post): return Handle.normalised(post.author.handle) == target
             case let .conversation(conversation):
                 return Handle.normalised(conversation.other.handle) == target
+            case .savedPosts:
+                return false
             }
         }
         container.router.feedPath.removeAll(where: isAbout)
@@ -513,7 +544,7 @@ public struct MainTabView: View {
             )) {
                 RoomsScreen(
                     viewModel: roomsViewModel,
-                    onOpen: { join in container.router.roomsPath.append(.room(join)) },
+                    onOpen: { room in container.router.roomsPath.append(.room(room)) },
                     onCreate: roomCreationHandler,
                     onOpenProfile: openRoomProfile
                 )
@@ -532,6 +563,7 @@ public struct MainTabView: View {
                     viewModel: notificationsViewModel,
                     onOpenPost: openPost,
                     onOpenProfile: openProfile,
+                    onOpenRoom: openRoomFromNotification,
                     onOpenSettings: {
                         guard container.flags.preferences else {
                             stub(StubFeature.notificationSettings)
@@ -609,11 +641,13 @@ public struct MainTabView: View {
                         container.suspension.clear()
                         container.router.popFeedToRoot()
                         Task { await container.session.signOut() }
-                    }
+                    },
+                    onOpenSaved: openSavedPosts
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
-                ownPost: ownPostMenu(for:)
+                ownPost: ownPostMenu(for:),
+                hiddenPostIds: deletion.deleted
             )
             .tnNavigationBar(title: profileTitle)
         } else {
@@ -655,6 +689,36 @@ public struct MainTabView: View {
     // MARK: - Navigation
 
     /// Pushes a route onto the stack the user is currently looking at.
+    /// Opens the link the router is holding, then clears it.
+    ///
+    /// A post is fetched first so the detail screen gets the server's copy —
+    /// the link only carries an id. Not found, deleted or blocked: the
+    /// server's sentence, as a toast, and nothing is pushed.
+    private func openPendingLink() async {
+        guard let link = container.router.pendingLink else { return }
+        container.router.pendingLink = nil
+        switch link {
+        case let .post(id):
+            do {
+                let post = try await container.feedService.fetchPost(id)
+                selection = .home
+                container.router.feedPath.append(.postDetail(post))
+                container.analytics.track(.postOpened, properties: ["source": "link"])
+            } catch {
+                guard container.suspension.notice(error) != true else { return }
+                container.router.show(.error((error as? APIError)?.userMessage ?? L10n.t("feed.error.pullToRefresh")))
+            }
+        case let .profile(handle):
+            selection = .home
+            openProfile(handle)
+        }
+    }
+
+    /// Pushes the viewer's saved posts onto the current tab's stack.
+    private func openSavedPosts() {
+        push(.savedPosts)
+    }
+
     private func push(_ route: FeedRoute) {
         switch selection {
         case .home: container.router.feedPath.append(route)
@@ -697,11 +761,20 @@ public struct MainTabView: View {
         )
     }
 
-    /// Joins a room and pushes it. Used after creating one.
+    /// Pushes a room; the room screen joins. Used after creating one.
     private func openRoom(_ room: VoiceRoom) {
+        guard roomsViewModel.open(room) else { return }
+        container.router.roomsPath.append(.room(room))
+    }
+
+    /// A room invitation was tapped: read the room, switch to the Rooms tab,
+    /// and push it. The room screen does the joining.
+    private func openRoomFromNotification(_ roomId: UUID) {
+        guard container.flags.rooms else { return }
         Task {
-            guard let join = await roomsViewModel.open(room) else { return }
-            container.router.roomsPath.append(.room(join))
+            guard let room = try? await container.roomsService.fetchRoom(id: roomId) else { return }
+            selection = .rooms
+            container.router.roomsPath = [.room(room)]
         }
     }
 
@@ -720,11 +793,12 @@ public struct MainTabView: View {
     @ViewBuilder
     private func roomsDestination(for route: RoomsRoute) -> some View {
         switch route {
-        case let .room(join):
+        case let .room(room):
             LiveRoomScreen(
                 viewModel: LiveRoomViewModel(
-                    join: join,
+                    room: room,
                     viewerHandle: container.session.user?.handle ?? "",
+                    viewerId: container.session.user?.id,
                     service: container.roomsService,
                     // One engine per room. A shared one would mean the second
                     // room somebody opened silently stole the first's socket.
@@ -755,11 +829,13 @@ public struct MainTabView: View {
                     onOpenAccount: accountHandler,
                     onOpenPreferences: preferencesHandler,
                     onOpenLanguage: languageHandler,
-                    onOpenSafety: safetyHandler
+                    onOpenSafety: safetyHandler,
+                    onOpenSaved: openSavedPosts
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
-                ownPost: ownPostMenu(for:)
+                ownPost: ownPostMenu(for:),
+                hiddenPostIds: deletion.deleted
             )
             .tnNavigationBar(title: "@\(handle)")
         }
@@ -811,6 +887,22 @@ public struct MainTabView: View {
                 exploreViewModel.merge(updated)
             })
 
+        case .savedPosts:
+            SavedPostsScreen(
+                viewModel: SavedPostsViewModel(
+                    service: container.feedService,
+                    analytics: container.analytics,
+                    suspension: container.suspension
+                ),
+                onOpenPost: openPost,
+                onOpenProfile: openProfile,
+                onCompose: composeHandler,
+                onStub: stub,
+                postSafetyMenu: safetyMenu(for:),
+                ownPost: ownPostMenu(for:),
+                hiddenPostIds: deletion.deleted
+            )
+
         case let .profile(handle):
             ProfileScreenHost(
                 makeViewModel: { profileViewModel(handle: handle) },
@@ -826,11 +918,13 @@ public struct MainTabView: View {
                     onOpenAccount: accountHandler,
                     onOpenPreferences: preferencesHandler,
                     onOpenLanguage: languageHandler,
-                    onOpenSafety: safetyHandler
+                    onOpenSafety: safetyHandler,
+                    onOpenSaved: openSavedPosts
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
-                ownPost: ownPostMenu(for:)
+                ownPost: ownPostMenu(for:),
+                hiddenPostIds: deletion.deleted
             )
             .tnNavigationBar(title: "@\(handle)")
         }

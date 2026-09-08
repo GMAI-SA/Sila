@@ -56,10 +56,11 @@ public protocol RoomsServiceProtocol: Sendable {
     /// Ends the room for everybody, `POST /rooms/{id}/end`. Host only.
     func endRoom(id: UUID) async throws -> VoiceRoom
 
-    /// Invites somebody onto the stage, `POST /rooms/{id}/speakers`. Host only.
+    /// Hands somebody the microphone, `POST /rooms/{id}/speakers`. Host only.
     ///
-    /// The promoted account has to **re-join** to receive a token that permits
-    /// publishing; this call changes the role, not the grant already issued.
+    /// The answer to a raised hand, or an invitation out of the blue. The
+    /// server tells the media server at once, so the person's audio never
+    /// drops; the next token they are issued carries the seat too.
     func promote(roomId: UUID, handle: String) async throws -> VoiceRoom
 
     /// Moves somebody back to the audience,
@@ -98,6 +99,29 @@ public protocol RoomsServiceProtocol: Sendable {
 
     /// Who is in the room, `GET /rooms/{id}/participants`.
     func fetchParticipants(roomId: UUID) async throws -> RoomParticipantList
+
+    // MARK: Hands
+
+    /// Asks for the microphone, `POST /rooms/{id}/hand`. A request, never a
+    /// right: the host decides.
+    /// - Throws: ``APIErrorCode/alreadySpeaking`` from the stage,
+    ///   ``APIErrorCode/scopeNotAllowed`` when the room's rule could never let
+    ///   this person speak, ``APIErrorCode/notInRoom`` before joining.
+    func raiseHand(roomId: UUID) async throws -> VoiceRoom
+
+    /// Never mind, `DELETE /rooms/{id}/hand`. Idempotent.
+    func lowerHand(roomId: UUID) async throws -> VoiceRoom
+
+    /// The host lowers somebody's hand without calling on them,
+    /// `DELETE /rooms/{id}/hands/{handle}`. Not a removal, not a mark.
+    func dismissHand(roomId: UUID, handle: String) async throws -> VoiceRoom
+
+    /// Mutes a speaker's microphone now, `POST /rooms/{id}/mute`. Host only.
+    /// Soft — they keep the seat; ``demote(roomId:handle:)`` is the hard stop.
+    func mute(roomId: UUID, handle: String) async throws
+
+    /// Undoes a removal, `POST /rooms/{id}/readmit`. Host only.
+    func readmit(roomId: UUID, handle: String) async throws -> VoiceRoom
 
     /// Searches room titles and topics, `GET /search/rooms`.
     /// - Returns: An empty array — with no request made — for a query shorter

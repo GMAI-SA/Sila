@@ -201,6 +201,29 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// Not a removal: nobody decided anything about this person, the room was
     /// never open to them.
     case notInvited = "not_invited"
+    /// A following-only room the host does not follow the viewer into.
+    case notFollowed = "not_followed"
+    /// A hand raised from the stage: they already hold the microphone.
+    case alreadySpeaking = "already_speaking"
+    /// A hand raised before joining.
+    case notInRoom = "not_in_room"
+    /// A mute aimed at somebody who is not on the stage.
+    case notSpeaking = "not_speaking"
+    /// A readmit for somebody who was never removed.
+    case notRemoved = "not_removed"
+    /// The host cannot mute themselves through this path.
+    case cannotMuteHost = "cannot_mute_host"
+    /// The declared birthdate and the document disagree. Terminal, like the
+    /// nationality mismatch, and for the same reason.
+    case dateOfBirthMismatch = "date_of_birth_mismatch"
+    /// The document route was started before the birthdate was declared.
+    case dateOfBirthRequired = "date_of_birth_required"
+    /// A birthdate in the future, or an impossible age.
+    case invalidDateOfBirth = "invalid_date_of_birth"
+    /// More head-turn frames than the ring has sectors.
+    case tooManyFrames = "too_many_frames"
+    /// The frames and the trace do not agree.
+    case livenessMismatch = "liveness_mismatch"
     /// Invitations were sent for a room anybody may enter (HTTP 400).
     case notInviteOnly = "not_invite_only"
 
@@ -374,6 +397,26 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.roomNotFound")
             case .notInvited:
                 return L10n.t("rooms.inviteOnly.refusal")
+            case .notFollowed:
+                return L10n.t("rooms.followingOnly.refusal")
+            case .alreadySpeaking:
+                return L10n.t("error.alreadySpeaking")
+            case .notInRoom:
+                return L10n.t("error.notInRoom")
+            case .notSpeaking:
+                return L10n.t("error.notSpeaking")
+            case .notRemoved:
+                return L10n.t("error.notRemoved")
+            case .cannotMuteHost:
+                return L10n.t("error.cannotMuteHost")
+            case .dateOfBirthMismatch:
+                return L10n.t("error.dateOfBirthMismatch")
+            case .dateOfBirthRequired:
+                return L10n.t("error.dateOfBirthRequired")
+            case .invalidDateOfBirth:
+                return L10n.t("error.invalidDateOfBirth")
+            case .tooManyFrames, .livenessMismatch:
+                return L10n.t("error.livenessMismatch")
             case .notInviteOnly:
                 return L10n.t("error.notInviteOnly")
             case .unknown:

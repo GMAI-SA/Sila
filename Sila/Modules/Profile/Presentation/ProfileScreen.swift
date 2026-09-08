@@ -20,19 +20,23 @@ public struct ProfileOwnerActions {
     public var onOpenSafety: (@MainActor () -> Void)?
     /// Ends the session.
     public var onSignOut: (@MainActor () -> Void)?
+    /// Opens the viewer's saved posts.
+    public var onOpenSaved: (@MainActor () -> Void)?
 
     public init(
         onOpenAccount: (@MainActor () -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil,
         onOpenLanguage: (@MainActor () -> Void)? = nil,
         onOpenSafety: (@MainActor () -> Void)? = nil,
-        onSignOut: (@MainActor () -> Void)? = nil
+        onSignOut: (@MainActor () -> Void)? = nil,
+        onOpenSaved: (@MainActor () -> Void)? = nil
     ) {
         self.onOpenAccount = onOpenAccount
         self.onOpenPreferences = onOpenPreferences
         self.onOpenLanguage = onOpenLanguage
         self.onOpenSafety = onOpenSafety
         self.onSignOut = onSignOut
+        self.onOpenSaved = onOpenSaved
     }
 
     /// `true` when nothing at all was supplied.
@@ -40,6 +44,7 @@ public struct ProfileOwnerActions {
         onOpenAccount == nil && onOpenPreferences == nil
             && onOpenLanguage == nil
             && onOpenSafety == nil && onSignOut == nil
+            && onOpenSaved == nil
     }
 }
 
@@ -70,6 +75,8 @@ public struct ProfileScreen: View {
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// Posts deleted this session, hidden without waiting for a refresh.
+    private let hiddenPostIds: Set<UUID>
     /// The waiting list, presented over the viewer's own private profile.
     @State private var isShowingRequests = false
 
@@ -95,7 +102,8 @@ public struct ProfileScreen: View {
         ownerActions: ProfileOwnerActions = ProfileOwnerActions(),
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
-        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
+        hiddenPostIds: Set<UUID> = []
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -106,6 +114,7 @@ public struct ProfileScreen: View {
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
         self.ownPost = ownPost
+        self.hiddenPostIds = hiddenPostIds
     }
 
     public var body: some View {
@@ -304,7 +313,7 @@ public struct ProfileScreen: View {
                     .padding(.vertical, SLSpacing.xl)
 
                 } else {
-                    ForEach(viewModel.posts) { post in
+                    ForEach(viewModel.posts.filter { !hiddenPostIds.contains($0.id) }) { post in
                         PostCardView(post: post, actions: actions(for: post))
                             .task { await viewModel.loadMoreIfNeeded(currentPost: post) }
 
@@ -612,6 +621,16 @@ public struct ProfileScreen: View {
                     )
                 }
 
+                if let open = ownerActions.onOpenSaved {
+                    settingsEntry(
+                        icon: "bookmark",
+                        title: L10n.t("profile.savedPosts"),
+                        detail: L10n.t("profile.savedPosts.detail"),
+                        hint: L10n.t("profile.savedPosts.hint"),
+                        open: open
+                    )
+                }
+
                 if let open = ownerActions.onOpenAccount {
                     settingsEntry(
                         icon: "person.text.rectangle",
@@ -759,6 +778,8 @@ public struct ProfileScreenHost: View {
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// Posts deleted this session, hidden without waiting for a refresh.
+    private let hiddenPostIds: Set<UUID>
 
     /// - Parameters:
     ///   - makeViewModel: Called **once**, when the destination first appears.
@@ -779,7 +800,8 @@ public struct ProfileScreenHost: View {
         ownerActions: ProfileOwnerActions = ProfileOwnerActions(),
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
-        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
+        hiddenPostIds: Set<UUID> = []
     ) {
         self._viewModel = State(initialValue: makeViewModel())
         self.onOpenPost = onOpenPost
@@ -790,6 +812,7 @@ public struct ProfileScreenHost: View {
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
         self.ownPost = ownPost
+        self.hiddenPostIds = hiddenPostIds
     }
 
     public var body: some View {
@@ -802,7 +825,8 @@ public struct ProfileScreenHost: View {
             ownerActions: ownerActions,
             safetyMenu: safetyMenu,
             postSafetyMenu: postSafetyMenu,
-            ownPost: ownPost
+            ownPost: ownPost,
+            hiddenPostIds: hiddenPostIds
         )
     }
 }

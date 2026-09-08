@@ -139,6 +139,27 @@ public struct PostCardView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            if let reposter = post.repostedBy {
+                // Why this post is here: somebody passed it on. Above the
+                // author, in the reposter's own name direction, and a tap
+                // opens the reposter — the post itself is still its author's.
+                Button {
+                    actions.onOpenAuthor(reposter)
+                } label: {
+                    Label(
+                        L10n.t("post.repostedBy", reposter.displayName),
+                        systemImage: "arrow.2.squarepath"
+                    )
+                    .font(SLFont.micro)
+                    .foregroundStyle(SLColor.textMuted)
+                    .lineLimit(1)
+                    .slContentDirection(TextDirection.resolve(languageCode: nil, text: reposter.displayName))
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, style == .detail ? 0 : 56)
+                .accessibilityLabel(Text(L10n.t("post.repostedBy", reposter.displayName)))
+            }
+
             authorBlock
 
             if let kind = post.sensitive {
@@ -470,7 +491,7 @@ public struct PostCardView: View {
                 action: { actions.onBookmark(post) }
             )
 
-            ShareLink(item: shareText) {
+            ShareLink(item: Permalink.post(post.id), message: Text(shareText)) {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 14))
                     .foregroundStyle(SLColor.textSecondary)
@@ -582,8 +603,14 @@ public struct PostCardView: View {
             Label(L10n.t("post.menu.copyText"), systemImage: "doc.on.doc")
         }
 
-        ShareLink(item: shareText) {
+        ShareLink(item: Permalink.post(post.id), message: Text(shareText)) {
             Label(L10n.t("common.share"), systemImage: "square.and.arrow.up")
+        }
+
+        Button {
+            UIPasteboard.general.url = Permalink.post(post.id)
+        } label: {
+            Label(L10n.t("post.menu.copyLink"), systemImage: "link")
         }
 
         Button {
@@ -614,8 +641,9 @@ public struct PostCardView: View {
 
     // MARK: - Text helpers
 
-    /// What the share sheet carries. No permalink is fabricated — the backend
-    /// does not expose a public post URL yet.
+    /// The words that travel with the permalink in the share sheet. The link
+    /// itself is ``Permalink/post(_:)`` — sila.gmai.sa opens the post on the
+    /// web, or in the app where it is installed.
     private var shareText: String {
         L10n.t("post.share.body", post.author.displayName, post.author.atHandle, post.text)
     }

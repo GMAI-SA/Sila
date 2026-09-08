@@ -13,6 +13,7 @@ public struct PendingVerificationWallScreen: View {
     @State private var isChoosingMethod = false
     @State private var isPickingNationality = false
     @State private var isSavingNationality = false
+    @State private var routeAfterPicking: VerificationRoute?
     @State private var chooseAfterPicking = false
     @State private var reopenPickerAfterChoosing = false
     @State private var pendingRoute: VerificationRoute?
@@ -129,6 +130,12 @@ public struct PendingVerificationWallScreen: View {
         // The claim comes first. Once it is saved the chooser opens — after
         // this sheet has gone, for the same reason as below.
         .sheet(isPresented: $isPickingNationality, onDismiss: {
+            if let next = routeAfterPicking {
+                // A Saudi claim has one door. No chooser: straight to Nafath.
+                routeAfterPicking = nil
+                route = next
+                return
+            }
             if chooseAfterPicking {
                 chooseAfterPicking = false
                 isChoosingMethod = true
@@ -208,7 +215,8 @@ public struct PendingVerificationWallScreen: View {
                     DocumentVerificationScreen(
                         viewModel: DocumentVerificationViewModel(
                             service: verification,
-                            analytics: analytics
+                            analytics: analytics,
+                            declaredDateOfBirth: viewModel.declaredDateOfBirth
                         ),
                         onSubmitted: {
                             route = nil
@@ -246,7 +254,12 @@ public struct PendingVerificationWallScreen: View {
             let report = try await verification.setNationality(code)
             viewModel.adopt(report)
             analytics.track(.nationalityDeclared)
-            chooseAfterPicking = true
+            if DocumentVerificationViewModel.nafathOnly.contains(code.uppercased()) {
+                analytics.track(.verificationMethodChosen, properties: ["method": "nafath_only"])
+                routeAfterPicking = .nafath
+            } else {
+                chooseAfterPicking = true
+            }
             isPickingNationality = false
         } catch let error as APIError {
             viewModel.toast = .error(error.userMessage)
@@ -341,9 +354,12 @@ public struct PendingVerificationWallScreen: View {
                 return
             }
             analytics.track(.verificationStarted, properties: ["status": viewModel.status.rawValue])
-            // No claim yet: ask for it first. The chooser follows on its own.
+            // No claim yet: ask for it first. The chooser follows on its own —
+            // unless the claim is Saudi, whose one door is Nafath.
             if viewModel.declaredNationality == nil {
                 isPickingNationality = true
+            } else if DocumentVerificationViewModel.nafathOnly.contains(viewModel.declaredNationality ?? "") {
+                route = .nafath
             } else {
                 isChoosingMethod = true
             }

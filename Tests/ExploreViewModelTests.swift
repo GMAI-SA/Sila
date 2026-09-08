@@ -212,6 +212,7 @@ final class ExploreViewModelTests: XCTestCase {
             func setReposted(_ reposted: Bool, postId: UUID) async throws -> PostMetrics { throw APIError.transport("no") }
             func setBookmarked(_ bookmarked: Bool, postId: UUID) async throws -> PostMetrics { throw APIError.transport("no") }
             func deletePost(_ id: UUID) async throws {}
+            func fetchBookmarks(cursor: String?) async throws -> FeedPage { .empty }
         }
 
         let search = ScriptedSearchService()
@@ -228,6 +229,10 @@ final class ExploreViewModelTests: XCTestCase {
         XCTAssertFalse(after.viewer.liked, "The optimistic like must be undone")
         XCTAssertEqual(after.metrics.likes, before.metrics.likes)
         XCTAssertEqual(viewModel.toast?.kind, .error)
+    }
+
+    func fetchBookmarks(cursor: String?) async throws -> FeedPage {
+        FeedPage(posts: [], nextCursor: nil, hasMore: false)
     }
 
     // MARK: - Freshly written posts
