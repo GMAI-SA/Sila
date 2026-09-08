@@ -43,6 +43,10 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
     public let purgeAfter: Date?
     /// Posts held back from everyone but approved followers.
     public let isPrivate: Bool
+    /// The name the identity check confirmed. Read-only here: the account
+    /// may hide it (``hideVerifiedName``), never change it.
+    public let verifiedName: String?
+    public let hideVerifiedName: Bool
 
     /// Creates an account record.
     public init(
@@ -57,7 +61,9 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
         verificationStatus: VerificationStatus = .unstarted,
         deletionRequestedAt: Date? = nil,
         purgeAfter: Date? = nil,
-        isPrivate: Bool = false
+        isPrivate: Bool = false,
+        verifiedName: String? = nil,
+        hideVerifiedName: Bool = false
     ) {
         self.id = id
         self.email = email
@@ -71,6 +77,8 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
         self.deletionRequestedAt = deletionRequestedAt
         self.purgeAfter = purgeAfter
         self.isPrivate = isPrivate
+        self.verifiedName = verifiedName
+        self.hideVerifiedName = hideVerifiedName
     }
 
     /// Explicit keys are mandatory because ``init(from:)`` is custom; the raw
@@ -80,7 +88,7 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case id, email, handle, displayName, bio, phone, countryCode, verificationStatus
         case avatarPath = "avatarUrl"
-        case deletionRequestedAt, purgeAfter, isPrivate
+        case deletionRequestedAt, purgeAfter, isPrivate, verifiedName, hideVerifiedName
     }
 
     /// Tolerant decoder: a settings screen that refuses to open because one
@@ -99,6 +107,8 @@ public struct Account: Equatable, Sendable, Decodable, Identifiable {
         bio = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .bio))
         // Absent on a server that predates private accounts: public, then.
         isPrivate = ((try? container.decodeIfPresent(Bool.self, forKey: .isPrivate)) ?? nil) ?? false
+        verifiedName = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .verifiedName))
+        hideVerifiedName = ((try? container.decodeIfPresent(Bool.self, forKey: .hideVerifiedName)) ?? nil) ?? false
         avatarPath = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .avatarPath))
         phone = Account.nonEmpty(try? container.decodeIfPresent(String.self, forKey: .phone))
         countryCode = CountryCode.normalised(
@@ -189,22 +199,27 @@ public struct ProfileUpdate: Encodable, Equatable, Sendable {
     /// them (`false`), or leave it alone (`nil`). Reopening approves every
     /// pending request server-side.
     public var isPrivate: Bool?
+    /// Keep the verified name off the profile. There is no field to change
+    /// that name — it is the identity's, not the account's.
+    public var hideVerifiedName: Bool?
 
     public init(
         displayName: String? = nil,
         handle: String? = nil,
         bio: String? = nil,
-        isPrivate: Bool? = nil
+        isPrivate: Bool? = nil,
+        hideVerifiedName: Bool? = nil
     ) {
         self.displayName = displayName
         self.handle = handle
         self.bio = bio
         self.isPrivate = isPrivate
+        self.hideVerifiedName = hideVerifiedName
     }
 
     /// `true` when the body would change nothing.
     public var isEmpty: Bool {
-        displayName == nil && handle == nil && bio == nil && isPrivate == nil
+        displayName == nil && handle == nil && bio == nil && isPrivate == nil && hideVerifiedName == nil
     }
 
     /// The fields of `edited` that differ from `stored`.
@@ -229,6 +244,9 @@ public struct ProfileUpdate: Encodable, Equatable, Sendable {
         if edited.isPrivate != stored.isPrivate {
             update.isPrivate = edited.isPrivate
         }
+        if edited.hideVerifiedName != stored.hideVerifiedName {
+            update.hideVerifiedName = edited.hideVerifiedName
+        }
         return update
     }
 }
@@ -244,12 +262,21 @@ public struct ProfileDraft: Equatable, Sendable {
     public var bio: String
     /// The private switch, as set.
     public var isPrivate: Bool
+    /// Keep the verified name off the public profile.
+    public var hideVerifiedName: Bool
 
-    public init(displayName: String = "", handle: String = "", bio: String = "", isPrivate: Bool = false) {
+    public init(
+        displayName: String = "",
+        handle: String = "",
+        bio: String = "",
+        isPrivate: Bool = false,
+        hideVerifiedName: Bool = false
+    ) {
         self.displayName = displayName
         self.handle = handle
         self.bio = bio
         self.isPrivate = isPrivate
+        self.hideVerifiedName = hideVerifiedName
     }
 
     /// The draft that matches an account exactly.
@@ -258,6 +285,7 @@ public struct ProfileDraft: Equatable, Sendable {
         self.handle = account.handle ?? ""
         self.bio = account.bio ?? ""
         self.isPrivate = account.isPrivate
+        self.hideVerifiedName = account.hideVerifiedName
     }
 
     /// A copy with whitespace stripped and the handle lowercased — the exact
@@ -268,7 +296,8 @@ public struct ProfileDraft: Equatable, Sendable {
             displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
             handle: handle.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
             bio: bio.trimmingCharacters(in: .whitespacesAndNewlines),
-            isPrivate: isPrivate
+            isPrivate: isPrivate,
+            hideVerifiedName: hideVerifiedName
         )
     }
 

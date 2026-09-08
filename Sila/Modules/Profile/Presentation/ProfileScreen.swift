@@ -22,6 +22,8 @@ public struct ProfileOwnerActions {
     public var onSignOut: (@MainActor () -> Void)?
     /// Opens the viewer's saved posts.
     public var onOpenSaved: (@MainActor () -> Void)?
+    /// Opens the viewer's groups.
+    public var onOpenGroups: (@MainActor () -> Void)?
 
     public init(
         onOpenAccount: (@MainActor () -> Void)? = nil,
@@ -29,7 +31,8 @@ public struct ProfileOwnerActions {
         onOpenLanguage: (@MainActor () -> Void)? = nil,
         onOpenSafety: (@MainActor () -> Void)? = nil,
         onSignOut: (@MainActor () -> Void)? = nil,
-        onOpenSaved: (@MainActor () -> Void)? = nil
+        onOpenSaved: (@MainActor () -> Void)? = nil,
+        onOpenGroups: (@MainActor () -> Void)? = nil
     ) {
         self.onOpenAccount = onOpenAccount
         self.onOpenPreferences = onOpenPreferences
@@ -37,6 +40,7 @@ public struct ProfileOwnerActions {
         self.onOpenSafety = onOpenSafety
         self.onSignOut = onSignOut
         self.onOpenSaved = onOpenSaved
+        self.onOpenGroups = onOpenGroups
     }
 
     /// `true` when nothing at all was supplied.
@@ -44,7 +48,7 @@ public struct ProfileOwnerActions {
         onOpenAccount == nil && onOpenPreferences == nil
             && onOpenLanguage == nil
             && onOpenSafety == nil && onSignOut == nil
-            && onOpenSaved == nil
+            && onOpenSaved == nil && onOpenGroups == nil
     }
 }
 
@@ -470,6 +474,23 @@ public struct ProfileScreen: View {
                         }
                     }
 
+                    if let confirmed = profile.user.verifiedName, confirmed != profile.displayName {
+                        // What the identity check confirmed, beneath what the
+                        // person chose. Absent when they keep it private.
+                        HStack(spacing: SLSpacing.xs) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(SLColor.primary)
+                            Text(confirmed)
+                                .font(SLFont.caption)
+                                .foregroundStyle(SLColor.textSecondary)
+                                .lineLimit(1)
+                                .slContentDirection(TextDirection.resolve(languageCode: nil, text: confirmed))
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(Text(L10n.t("profile.verifiedName.a11y", confirmed)))
+                    }
+
                     HStack(spacing: SLSpacing.sm) {
                         Text(profile.atHandle)
                             .font(SLFont.mono)
@@ -627,6 +648,16 @@ public struct ProfileScreen: View {
                         title: L10n.t("profile.savedPosts"),
                         detail: L10n.t("profile.savedPosts.detail"),
                         hint: L10n.t("profile.savedPosts.hint"),
+                        open: open
+                    )
+                }
+
+                if let open = ownerActions.onOpenGroups {
+                    settingsEntry(
+                        icon: "person.3",
+                        title: L10n.t("profile.groups.title"),
+                        detail: L10n.t("profile.groups.detail"),
+                        hint: L10n.t("profile.groups.hint"),
                         open: open
                     )
                 }

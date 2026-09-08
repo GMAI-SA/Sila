@@ -149,6 +149,78 @@ public final class RoomsService: RoomsServiceProtocol {
         return room
     }
 
+    // MARK: - Groups
+
+    public func fetchGroups() async throws -> [UserGroup] {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(path: "/me/groups", accessToken: token),
+            as: UserGroupList.self
+        ).groups
+    }
+
+    public func createGroup(name: String, handles: [String]) async throws -> UserGroup {
+        let token = try await tokens.accessToken()
+        let group = try await network.send(
+            try APIRequest.json(
+                "/me/groups",
+                method: .post,
+                body: GroupCreateBody(
+                    name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                    handles: RoomInviteHandles.clean(handles)
+                ),
+                accessToken: token
+            ),
+            as: UserGroup.self
+        )
+        analytics.track(.groupCreated, properties: ["members": String(group.memberCount)])
+        return group
+    }
+
+    public func renameGroup(id: UUID, name: String) async throws -> UserGroup {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            try APIRequest.json(
+                "/me/groups/\(path(id))",
+                method: .patch,
+                body: GroupRenameBody(name: name.trimmingCharacters(in: .whitespacesAndNewlines)),
+                accessToken: token
+            ),
+            as: UserGroup.self
+        )
+    }
+
+    public func deleteGroup(id: UUID) async throws {
+        let token = try await tokens.accessToken()
+        try await network.send(APIRequest(path: "/me/groups/\(path(id))", method: .delete, accessToken: token))
+        analytics.track(.groupDeleted)
+    }
+
+    public func addGroupMembers(id: UUID, handles: [String]) async throws -> UserGroup {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            try APIRequest.json(
+                "/me/groups/\(path(id))/members",
+                method: .post,
+                body: RoomInviteBody(handles: RoomInviteHandles.clean(handles)),
+                accessToken: token
+            ),
+            as: UserGroup.self
+        )
+    }
+
+    public func removeGroupMember(id: UUID, handle: String) async throws -> UserGroup {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(
+                path: "/me/groups/\(path(id))/members/\(Handle.pathComponent(handle))",
+                method: .delete,
+                accessToken: token
+            ),
+            as: UserGroup.self
+        )
+    }
+
     public func fetchInvites(roomId: UUID) async throws -> RoomInviteList {
         let token = try await tokens.accessToken()
         return try await network.send(

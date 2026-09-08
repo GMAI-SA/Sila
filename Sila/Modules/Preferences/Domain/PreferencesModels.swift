@@ -30,6 +30,9 @@ public struct TopicOption: Identifiable, Hashable, Sendable, Decodable {
     private enum CodingKeys: String, CodingKey {
         case id
         case detail = "description"
+        case label
+        case labelAr
+        case descriptionAr
     }
 
     /// Tolerant decoder: one malformed row must not blank the whole taxonomy.
@@ -40,8 +43,26 @@ public struct TopicOption: Identifiable, Hashable, Sendable, Decodable {
         let rawId = ((try? container.decode(String.self, forKey: .id)) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         id = rawId
-        detail = (try? container.decode(String.self, forKey: .detail)) ?? ""
-        label = TopicOption.makeLabel(from: rawId)
+        // The server sends English and Arabic; the app takes the one it is
+        // rendering in. A server that sends neither still gets a readable
+        // label derived from the id, so a picker never shows `real_estate`.
+        let english = (try? container.decode(String.self, forKey: .detail)) ?? ""
+        let englishLabel = (try? container.decodeIfPresent(String.self, forKey: .label)) ?? nil
+        let arabicLabel = (try? container.decodeIfPresent(String.self, forKey: .labelAr)) ?? nil
+        let arabicDetail = (try? container.decodeIfPresent(String.self, forKey: .descriptionAr)) ?? nil
+        let arabic = L10n.languageCode == "ar"
+        if arabic, let arabicDetail, !arabicDetail.isEmpty {
+            detail = arabicDetail
+        } else {
+            detail = english
+        }
+        if arabic, let arabicLabel, !arabicLabel.isEmpty {
+            label = arabicLabel
+        } else if let englishLabel, !englishLabel.isEmpty {
+            label = englishLabel
+        } else {
+            label = TopicOption.makeLabel(from: rawId)
+        }
     }
 
     /// `true` when the row carries a usable id.

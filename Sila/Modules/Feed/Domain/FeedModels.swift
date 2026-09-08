@@ -23,6 +23,9 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
     /// ISO-3166 alpha-2 from the verified identity — `nil` when unverified.
     public let countryCode: String?
     /// When the checkmark was earned.
+    /// The name verification confirmed, when the account shows it. Set by the
+    /// identity check, never by the person; they may hide it, not change it.
+    public let verifiedName: String?
     public let verifiedSince: Date?
 
     public init(
@@ -32,7 +35,8 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
         avatarURL: URL? = nil,
         isVerified: Bool,
         countryCode: String? = nil,
-        verifiedSince: Date? = nil
+        verifiedSince: Date? = nil,
+        verifiedName: String? = nil
     ) {
         self.id = id
         self.handle = handle
@@ -41,12 +45,13 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
         self.isVerified = isVerified
         self.countryCode = CountryCode.normalised(countryCode)
         self.verifiedSince = verifiedSince
+        self.verifiedName = verifiedName
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
-        case id, handle, displayName, isVerified, countryCode, verifiedSince
+        case id, handle, displayName, isVerified, countryCode, verifiedSince, verifiedName
         case avatarURL = "avatarUrl"
     }
 
@@ -77,6 +82,8 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
             (try? container.decodeIfPresent(String.self, forKey: .countryCode)) ?? nil
         )
         verifiedSince = (try? container.decodeIfPresent(Date.self, forKey: .verifiedSince)) ?? nil
+        let confirmed = (try? container.decodeIfPresent(String.self, forKey: .verifiedName)) ?? nil
+        verifiedName = (confirmed?.isEmpty == false) ? confirmed : nil
     }
 
     /// Two-letter monogram for ``SLAvatar``.
@@ -522,11 +529,20 @@ public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
     public var id: String { rawValue }
 
     /// Segmented-control label.
-    public var title: String {
+    public var title: String { title(countryCode: nil) }
+
+    /// The same, naming the viewer's verified country when it is known:
+    /// "Saudi Arabia" rather than "My country". The generic label stays for
+    /// an account that has no country yet.
+    public func title(countryCode: String?) -> String {
         switch self {
         case .forYou: return L10n.t("feed.tab.forYou")
         case .following: return L10n.t("feed.tab.following")
-        case .myCountry: return L10n.t("feed.tab.myCountry")
+        case .myCountry:
+            if let code = countryCode, let name = CountryCode.name(code, locale: L10n.locale) {
+                return name
+            }
+            return L10n.t("feed.tab.myCountry")
         case .international: return L10n.t("feed.tab.international")
         }
     }

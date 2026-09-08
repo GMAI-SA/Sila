@@ -48,6 +48,8 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
     private var removed: [UUID: [RoomParticipant]] = [:]
     /// Whether the viewer's own hand is up, by room.
     private var viewerHand: Set<UUID> = []
+    /// The viewer's groups.
+    private var groups: [UserGroup] = []
     /// Calls recorded for test assertions, e.g. `"join:…"`.
     public private(set) var recordedCalls: [String] = []
     /// The viewer's own handle, for the host-only refusals.
@@ -331,6 +333,114 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         let ended = Self.copy(room, status: .ended)
         replace(ended)
         return ended
+    }
+
+    // MARK: - Groups
+
+    public func fetchGroups() async throws -> [UserGroup] {
+        recordedCalls.append("fetchGroups")
+        try await delay()
+        try failIfOffline()
+        return groups
+    }
+
+    public func createGroup(name: String, handles: [String]) async throws -> UserGroup {
+        let cleaned = RoomInviteHandles.clean(handles)
+        recordedCalls.append("createGroup:\(name):\(cleaned.joined(separator: ","))")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw APIError.api(code: .invalidName, message: "Give the group a name.", status: 400)
+        }
+        guard !groups.contains(where: { $0.name == trimmed }) else {
+            throw APIError.api(code: .groupExists, message: "You already have a group with that name.", status: 409)
+        }
+        let group = UserGroup(id: UUID(), name: trimmed, members: try Self.people(cleaned))
+        groups.append(group)
+        return group
+    }
+
+    public func renameGroup(id: UUID, name: String) async throws -> UserGroup {
+        recordedCalls.append("renameGroup:\(name)")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        guard let index = groups.firstIndex(where: { $0.id == id }) else { throw Self.noSuchGroup }
+        let renamed = UserGroup(
+            id: id,
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            members: groups[index].members
+        )
+        groups[index] = renamed
+        return renamed
+    }
+
+    public func deleteGroup(id: UUID) async throws {
+        recordedCalls.append("deleteGroup")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        guard groups.contains(where: { $0.id == id }) else { throw Self.noSuchGroup }
+        groups.removeAll { $0.id == id }
+    }
+
+    public func addGroupMembers(id: UUID, handles: [String]) async throws -> UserGroup {
+        let cleaned = RoomInviteHandles.clean(handles)
+        recordedCalls.append("addGroupMembers:\(cleaned.joined(separator: ","))")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        guard let index = groups.firstIndex(where: { $0.id == id }) else { throw Self.noSuchGroup }
+        var members = groups[index].members
+        for person in try Self.people(cleaned) where !members.contains(where: { $0.handle == person.handle }) {
+            members.append(person)
+        }
+        let updated = UserGroup(id: id, name: groups[index].name, members: members)
+        groups[index] = updated
+        return updated
+    }
+
+    public func removeGroupMember(id: UUID, handle: String) async throws -> UserGroup {
+        recordedCalls.append("removeGroupMember:\(handle)")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        guard let index = groups.firstIndex(where: { $0.id == id }) else { throw Self.noSuchGroup }
+        let target = Handle.normalised(handle)
+        let updated = UserGroup(
+            id: id,
+            name: groups[index].name,
+            members: groups[index].members.filter { Handle.normalised($0.handle) != target }
+        )
+        groups[index] = updated
+        return updated
+    }
+
+    /// Seeds a group, for previews and tests.
+    @discardableResult
+    public func seedGroup(name: String, handles: [String]) -> UserGroup {
+        let group = UserGroup(
+            id: UUID(),
+            name: name,
+            members: (try? Self.people(RoomInviteHandles.clean(handles))) ?? []
+        )
+        groups.append(group)
+        return group
+    }
+
+    private static var noSuchGroup: APIError {
+        APIError.api(code: .notFound, message: "No such group.", status: 404)
+    }
+
+    /// Handles as people. The server refuses the whole call when one handle
+    /// belongs to nobody, so the mock does too.
+    private static func people(_ handles: [String]) throws -> [UserSummary] {
+        for handle in handles where handle == "nobody" {
+            throw APIError.api(code: .userNotFound, message: "No account with handle @\(handle).", status: 404)
+        }
+        return handles.map { UserSummary(id: UUID(), handle: $0, displayName: "@\($0)", isVerified: true) }
     }
 
     public func fetchInvites(roomId: UUID) async throws -> RoomInviteList {

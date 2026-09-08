@@ -157,6 +157,11 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     /// The other closed kind: the people the host follows may enter, and so
     /// may anyone invited by name.
     public let isFollowingOnly: Bool
+    /// The group this room was opened for, when it was — the third closed
+    /// kind. Only the host and the group's members ever see such a room.
+    public let groupId: UUID?
+    /// The host's own label for that group ("Family").
+    public let groupName: String?
     /// This viewer's seat while they are in the room, or `nil` outside it.
     public let viewerRole: RoomRole?
     /// Whether this viewer's hand is up.
@@ -192,7 +197,9 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         viewerRole: RoomRole? = nil,
         handRaised: Bool = false,
         handsCount: Int = 0,
-        matchesInterests: Bool = false
+        matchesInterests: Bool = false,
+        groupId: UUID? = nil,
+        groupName: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -220,6 +227,8 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         self.handRaised = handRaised
         self.handsCount = max(0, handsCount)
         self.matchesInterests = matchesInterests
+        self.groupId = groupId
+        self.groupName = groupName
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
@@ -230,6 +239,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         case canSpeak, speakRefusal, isHost, isRemoved
         case isInviteOnly, isInvited, canJoin, joinRefusal
         case isFollowingOnly, viewerRole, handRaised, handsCount, matchesInterests
+        case groupId, groupName
     }
 
     /// Tolerant decoder: one malformed optional must not blank a whole list.
@@ -292,10 +302,16 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         handRaised = (try? container.decode(Bool.self, forKey: .handRaised)) ?? false
         handsCount = max(0, (try? container.decode(Int.self, forKey: .handsCount)) ?? 0)
         matchesInterests = (try? container.decode(Bool.self, forKey: .matchesInterests)) ?? false
+        groupId = (try? container.decodeIfPresent(UUID.self, forKey: .groupId)) ?? nil
+        let groupLabel = (try? container.decodeIfPresent(String.self, forKey: .groupName)) ?? nil
+        groupName = (groupLabel?.isEmpty == false) ? groupLabel : nil
     }
 
-    /// Either closed kind. Everything about the door keys off this.
-    public var isClosed: Bool { isInviteOnly || isFollowingOnly }
+    /// Any closed kind. Everything about the door keys off this.
+    public var isClosed: Bool { isInviteOnly || isFollowingOnly || groupId != nil }
+
+    /// A room opened for one of the host's groups.
+    public var isGroupOnly: Bool { groupId != nil }
 
     // MARK: Derived
 
@@ -335,6 +351,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         if isRemoved { return RoomCopy.removedFromRoom }
         guard !canJoin else { return nil }
         if let joinRefusal { return joinRefusal }
+        if groupId != nil { return RoomCopy.groupOnlyRefusal }
         return isFollowingOnly ? RoomCopy.followingOnlyRefusal : RoomCopy.inviteOnlyRefusal
     }
 
@@ -566,6 +583,8 @@ public enum RoomAccess: String, CaseIterable, Identifiable, Sendable, Equatable 
     case following
     /// Only the people the host names.
     case inviteOnly
+    /// The people in one of the host's groups, plus anyone invited by name.
+    case group
 
     public var id: String { rawValue }
 
@@ -574,6 +593,7 @@ public enum RoomAccess: String, CaseIterable, Identifiable, Sendable, Equatable 
         case .open: return L10n.t("rooms.access.open.title")
         case .following: return L10n.t("rooms.access.following.title")
         case .inviteOnly: return L10n.t("rooms.access.inviteOnly.title")
+        case .group: return L10n.t("rooms.access.group.title")
         }
     }
 
@@ -582,6 +602,7 @@ public enum RoomAccess: String, CaseIterable, Identifiable, Sendable, Equatable 
         case .open: return L10n.t("rooms.create.open.explanation")
         case .following: return L10n.t("rooms.access.following.explanation")
         case .inviteOnly: return L10n.t("rooms.create.inviteOnly.explanation")
+        case .group: return L10n.t("rooms.access.group.explanation")
         }
     }
 
@@ -590,6 +611,7 @@ public enum RoomAccess: String, CaseIterable, Identifiable, Sendable, Equatable 
         case .open: return "globe"
         case .following: return "person.2.fill"
         case .inviteOnly: return "lock.fill"
+        case .group: return "person.3.fill"
         }
     }
 
@@ -598,6 +620,7 @@ public enum RoomAccess: String, CaseIterable, Identifiable, Sendable, Equatable 
 
     /// The access a room was opened with.
     public static func of(_ room: VoiceRoom) -> RoomAccess {
+        if room.groupId != nil { return .group }
         if room.isInviteOnly { return .inviteOnly }
         if room.isFollowingOnly { return .following }
         return .open
@@ -624,6 +647,8 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     /// Handles invited as the room opens, so a closed room is one call.
     /// Always empty for an open room.
     public let inviteHandles: [String]
+    /// One of the host's groups, for a room opened to its members.
+    public let groupId: UUID?
 
     /// - Parameters:
     ///   - title: What to call it. Trimmed.
@@ -645,7 +670,8 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         maxSpeakers: Int? = nil,
         isInviteOnly: Bool = false,
         isFollowingOnly: Bool = false,
-        inviteHandles: [String] = []
+        inviteHandles: [String] = [],
+        groupId: UUID? = nil
     ) {
         self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.topic = (topic?.isEmpty == false) ? topic : nil
@@ -654,9 +680,12 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         self.scopeRegion = scope.scopeRegion
         self.scheduledFor = scheduledFor
         self.maxSpeakers = maxSpeakers
-        self.isInviteOnly = isInviteOnly
-        self.isFollowingOnly = isFollowingOnly && !isInviteOnly
-        self.inviteHandles = (isInviteOnly || isFollowingOnly) ? RoomInviteHandles.clean(inviteHandles) : []
+        // One door: a group room is neither of the other two closed kinds.
+        self.groupId = groupId
+        self.isInviteOnly = isInviteOnly && groupId == nil
+        self.isFollowingOnly = isFollowingOnly && !isInviteOnly && groupId == nil
+        let closed = isInviteOnly || isFollowingOnly || groupId != nil
+        self.inviteHandles = closed ? RoomInviteHandles.clean(inviteHandles) : []
     }
 
     /// The same, from an access choice.
@@ -667,12 +696,14 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         scheduledFor: Date? = nil,
         maxSpeakers: Int? = nil,
         access: RoomAccess,
-        inviteHandles: [String] = []
+        inviteHandles: [String] = [],
+        groupId: UUID? = nil
     ) {
         self.init(
             title: title, topic: topic, scope: scope, scheduledFor: scheduledFor, maxSpeakers: maxSpeakers,
             isInviteOnly: access == .inviteOnly, isFollowingOnly: access == .following,
-            inviteHandles: inviteHandles
+            inviteHandles: inviteHandles,
+            groupId: access == .group ? groupId : nil
         )
     }
 
@@ -695,7 +726,8 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         if isFollowingOnly {
             try container.encode(true, forKey: .isFollowingOnly)
         }
-        if (isInviteOnly || isFollowingOnly) && !inviteHandles.isEmpty {
+        try container.encodeIfPresent(groupId, forKey: .groupId)
+        if (isInviteOnly || isFollowingOnly || groupId != nil) && !inviteHandles.isEmpty {
             try container.encode(inviteHandles, forKey: .inviteHandles)
         }
     }
@@ -703,7 +735,7 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     /// The keys are camel-cased; the encoder converts them to `snake_case`.
     private enum CodingKeys: String, CodingKey {
         case title, topic, scope, scopeCountry, scopeRegion, scheduledFor, maxSpeakers
-        case isInviteOnly, isFollowingOnly, inviteHandles
+        case isInviteOnly, isFollowingOnly, inviteHandles, groupId
     }
 }
 
@@ -832,6 +864,14 @@ public enum RoomCopy {
 
     /// The chip on a following-only room's card.
     public static var followingOnlyBadge: String { L10n.t("rooms.followingOnly.badge") }
+
+    /// The fallback refusal for a group room, for when the server sent none.
+    public static var groupOnlyRefusal: String { L10n.t("rooms.groupOnly.refusal") }
+
+    /// The chip on a group room's card: the host's own label for the group.
+    public static func groupBadge(_ name: String?) -> String {
+        name.map { L10n.t("rooms.groupOnly.badge", $0) } ?? L10n.t("rooms.access.group.title")
+    }
 
     // MARK: Hands
 
@@ -1077,3 +1117,62 @@ public enum RoomCopy {
     /// What "Leave" does.
     public static var leaveHint: String { L10n.t("rooms.leave.hint") }
 }
+
+// MARK: - Groups
+
+/// A private list of people the viewer keeps — "Family", "Work".
+///
+/// The owner's alone: members are never told, nobody else can read it, and
+/// its one use so far is a room's door (``RoomAccess/group``).
+public struct UserGroup: Identifiable, Hashable, Sendable, Decodable {
+
+    public let id: UUID
+    public let name: String
+    public let memberCount: Int
+    /// Everybody in it, oldest first.
+    public let members: [UserSummary]
+
+    public init(id: UUID, name: String, memberCount: Int? = nil, members: [UserSummary] = []) {
+        self.id = id
+        self.name = name
+        self.memberCount = memberCount ?? members.count
+        self.members = members
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, name, memberCount, members }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        let people = (try? container.decode([UserSummary].self, forKey: .members)) ?? []
+        members = people
+        memberCount = max(people.count, (try? container.decode(Int.self, forKey: .memberCount)) ?? 0)
+    }
+}
+
+/// `GET /me/groups` answers `{"groups": [...]}`.
+struct UserGroupList: Decodable {
+    let groups: [UserGroup]
+
+    init(from decoder: Decoder) throws {
+        if let single = try? decoder.singleValueContainer(), let rows = try? single.decode([UserGroup].self) {
+            groups = rows
+            return
+        }
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        groups = (try? container.decode([UserGroup].self, forKey: .groups)) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey { case groups }
+}
+
+struct GroupCreateBody: Encodable {
+    let name: String
+    let handles: [String]
+}
+
+struct GroupRenameBody: Encodable {
+    let name: String
+}
+

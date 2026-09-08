@@ -79,9 +79,12 @@ final class AccountModelsTests: XCTestCase {
 
         XCTAssertFalse(properties.contains("phoneVerified"))
         XCTAssertFalse(properties.contains("isPhoneVerified"))
+        // The identity name (`verifiedName`, and the switch that hides it) is
+        // the one other "verified" thing here — a name the identity check
+        // confirmed, never a phone flag. Anything else fails this test.
         XCTAssertEqual(
             properties.filter { $0.lowercased().contains("verif") },
-            ["verificationStatus"],
+            ["verificationStatus", "verifiedName", "hideVerifiedName"],
             "the only verification on this model is identity verification"
         )
     }

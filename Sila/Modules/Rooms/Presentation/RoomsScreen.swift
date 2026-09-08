@@ -385,8 +385,9 @@ struct RoomCardView: View {
             SLCountryBadge(countryCode: room.host.countryCode)
             Spacer(minLength: 0)
         }
-        .contentShape(Rectangle())
-        .onTapGesture { onOpenHost?() }
+        // Deliberately not a tap target of its own. It sat across the whole
+        // card's width and opened the host's profile, so a tap meant for the
+        // room landed on a person instead. The host is one tap away inside.
     }
 
     private var chips: some View {
@@ -408,6 +409,10 @@ struct RoomCardView: View {
                     icon: "person.2.fill",
                     accessibilityHint: RoomCopy.followingOnlyBadge
                 )
+            }
+            if room.isGroupOnly {
+                let badge = RoomCopy.groupBadge(room.groupName)
+                SLChip(badge, icon: "person.3.fill", accessibilityHint: badge)
             }
             if room.matchesInterests {
                 SLChip(

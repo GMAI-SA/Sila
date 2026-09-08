@@ -127,6 +127,17 @@ public protocol RoomsServiceProtocol: Sendable {
     /// - Returns: An empty array — with no request made — for a query shorter
     ///   than ``RoomConstants/minimumQueryLength``.
     func searchRooms(query: String, limit: Int) async throws -> [VoiceRoom]
+
+    // MARK: Groups
+
+    /// The viewer's own groups, oldest first.
+    func fetchGroups() async throws -> [UserGroup]
+    /// Makes a group, optionally with its first members.
+    func createGroup(name: String, handles: [String]) async throws -> UserGroup
+    func renameGroup(id: UUID, name: String) async throws -> UserGroup
+    func deleteGroup(id: UUID) async throws
+    func addGroupMembers(id: UUID, handles: [String]) async throws -> UserGroup
+    func removeGroupMember(id: UUID, handle: String) async throws -> UserGroup
 }
 
 extension RoomsServiceProtocol {
@@ -141,3 +152,26 @@ extension RoomsServiceProtocol {
         try await searchRooms(query: query, limit: RoomConstants.searchLimit)
     }
 }
+
+/// Groups are optional for a transport: a scripted service in a test, or a
+/// backend without them, reads as "no groups" rather than failing to compile
+/// or to list rooms. The real service implements every call.
+extension RoomsServiceProtocol {
+    public func fetchGroups() async throws -> [UserGroup] { [] }
+    public func createGroup(name: String, handles: [String]) async throws -> UserGroup {
+        throw APIError.transport("groups are not available here")
+    }
+    public func renameGroup(id: UUID, name: String) async throws -> UserGroup {
+        throw APIError.transport("groups are not available here")
+    }
+    public func deleteGroup(id: UUID) async throws {
+        throw APIError.transport("groups are not available here")
+    }
+    public func addGroupMembers(id: UUID, handles: [String]) async throws -> UserGroup {
+        throw APIError.transport("groups are not available here")
+    }
+    public func removeGroupMember(id: UUID, handle: String) async throws -> UserGroup {
+        throw APIError.transport("groups are not available here")
+    }
+}
+

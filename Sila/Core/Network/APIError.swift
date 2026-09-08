@@ -203,6 +203,20 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case notInvited = "not_invited"
     /// A following-only room the host does not follow the viewer into.
     case notFollowed = "not_followed"
+    /// A group room the viewer is not a member of.
+    case notInGroup = "not_in_group"
+    /// A room asked for two kinds of door at once.
+    case oneDoor = "one_door"
+    /// A room opened for a group the host does not own.
+    case groupNotFound = "group_not_found"
+    /// A second group with the same name.
+    case groupExists = "group_exists"
+    /// The group cap.
+    case tooManyGroups = "too_many_groups"
+    /// A group with no name.
+    case invalidName = "invalid_name"
+    /// The member cap.
+    case groupFull = "group_full"
     /// A hand raised from the stage: they already hold the microphone.
     case alreadySpeaking = "already_speaking"
     /// A hand raised before joining.
@@ -399,6 +413,20 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("rooms.inviteOnly.refusal")
             case .notFollowed:
                 return L10n.t("rooms.followingOnly.refusal")
+            case .notInGroup:
+                return L10n.t("rooms.groupOnly.refusal")
+            case .oneDoor:
+                return L10n.t("error.oneDoor")
+            case .groupNotFound:
+                return L10n.t("error.groupNotFound")
+            case .groupExists:
+                return L10n.t("error.groupExists")
+            case .tooManyGroups:
+                return L10n.t("error.tooManyGroups")
+            case .invalidName:
+                return L10n.t("error.invalidName")
+            case .groupFull:
+                return L10n.t("error.groupFull")
             case .alreadySpeaking:
                 return L10n.t("error.alreadySpeaking")
             case .notInRoom:

@@ -49,6 +49,12 @@ public final class CreateRoomViewModel {
     }
     /// Handles typed into the guest field, as typed. Parsed on submit.
     public var inviteHandlesText = ""
+    /// The viewer's groups, for ``RoomAccess/group``. Loaded on first need.
+    public private(set) var groups: [UserGroup] = []
+    /// `true` while the groups are loading.
+    public private(set) var isLoadingGroups = false
+    /// The group a group room is for.
+    public var selectedGroupId: UUID?
 
     /// The taxonomy, once it has arrived.
     public private(set) var topics: [TopicOption] = []
@@ -123,6 +129,33 @@ public final class CreateRoomViewModel {
             && !trimmedTitle.isEmpty
             && remainingTitleCharacters >= 0
             && ScopePicker.isAvailable(scope, for: author)
+            && (access != .group || selectedGroup != nil)
+    }
+
+    /// The chosen group, when the choice still names one of the viewer's.
+    public var selectedGroup: UserGroup? {
+        guard let selectedGroupId else { return nil }
+        return groups.first { $0.id == selectedGroupId }
+    }
+
+    /// Reads the viewer's groups, and keeps a lone group selected so the
+    /// common case — one "Family" — is a single tap.
+    public func loadGroups() async {
+        guard !isLoadingGroups else { return }
+        isLoadingGroups = true
+        defer { isLoadingGroups = false }
+        do {
+            groups = try await service.fetchGroups()
+            if selectedGroup == nil, groups.count == 1 { selectedGroupId = groups[0].id }
+        } catch {
+            guard suspension?.notice(error) != true else { return }
+            createError = APIError.wrapping(error).userMessage
+        }
+    }
+
+    /// The groups editor, sharing this screen's service.
+    public func makeGroupsViewModel() -> GroupsViewModel {
+        GroupsViewModel(service: service, analytics: analytics, suspension: suspension)
     }
 
     /// The chosen topic as a readable label, or `nil`.
@@ -210,7 +243,8 @@ public final class CreateRoomViewModel {
                     scheduledFor: isScheduled ? scheduledFor : nil,
                     maxSpeakers: maxSpeakers,
                     access: access,
-                    inviteHandles: inviteHandles
+                    inviteHandles: inviteHandles,
+                    groupId: selectedGroupId
                 )
             )
             onCreated?(room)

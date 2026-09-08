@@ -115,6 +115,10 @@ public enum AnalyticsEvent: String, Sendable {
     case postImageUploaded = "post_image_uploaded"
     case postDeleted = "post_deleted"
     case savedPostsOpened = "saved_posts_opened"
+    case groupCreated = "group_created"
+    case groupDeleted = "group_deleted"
+    case groupsOpened = "groups_opened"
+    case roomParticipantOpened = "room_participant_opened"
     /// A composition finished, counting every segment that got through.
     case postPublished = "post_published"
     /// A thread stopped partway, leaving real posts behind.

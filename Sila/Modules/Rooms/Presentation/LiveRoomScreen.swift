@@ -24,6 +24,9 @@ public struct LiveRoomScreen: View {
     @Bindable private var viewModel: LiveRoomViewModel
     private let onLeave: @MainActor () -> Void
     private let onOpenProfile: (@MainActor (String) -> Void)?
+    /// The person whose sheet is up. A tap on a tile opens this, never the
+    /// profile directly — a thumb brushing the audience grid used to navigate.
+    @State private var selected: ParticipantSelection?
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
 
     @Environment(\.scenePhase) private var scenePhase
@@ -90,6 +93,9 @@ public struct LiveRoomScreen: View {
                 onClose: { isManagingInvites = false }
             )
         }
+        .sheet(item: $selected) { selection in
+            participantSheet(for: selection)
+        }
         .task { await viewModel.start() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -123,6 +129,33 @@ public struct LiveRoomScreen: View {
         .tnToast($viewModel.toast)
     }
 
+    /// The tapped person's sheet, built from the roster's current copy so the
+    /// host's verbs match what they can do right now, not what was true on
+    /// the tap. A separate function keeps `body` small enough to type-check.
+    private func participantSheet(for selection: ParticipantSelection) -> some View {
+        let participant: RoomParticipant = viewModel.participants.participants.first { $0.id == selection.id } ?? selection.participant
+        let target = SafetyTarget(user: participant.user)
+        let promote: @MainActor (RoomHostActions) async -> Void = { actions in await viewModel.promote(actions) }
+        let dismiss: @MainActor (RoomHostActions) async -> Void = { actions in await viewModel.dismissHand(actions) }
+        let mute: @MainActor (RoomHostActions) async -> Void = { actions in await viewModel.mute(actions) }
+        let demote: @MainActor (RoomHostActions) async -> Void = { actions in await viewModel.demote(actions) }
+        let remove: @MainActor (RoomHostActions) async -> Void = { actions in await viewModel.remove(actions) }
+        return RoomParticipantSheet(
+            participant: participant,
+            hostActions: viewModel.hostActions(for: participant),
+            safetyMenu: safetyMenu?(target),
+            isSpeaking: viewModel.isSpeaking(participant),
+            isMuted: viewModel.isMuted(participant),
+            onOpenProfile: onOpenProfile,
+            onPromote: promote,
+            onDismissHand: dismiss,
+            onMute: mute,
+            onDemote: demote,
+            onRemove: remove,
+            onClose: { selected = nil }
+        )
+    }
+
     // MARK: - The two states
 
     private var inRoom: some View {
@@ -132,7 +165,7 @@ public struct LiveRoomScreen: View {
                     header
                     connectionBanner
                     if viewModel.phase == .joining {
-                        skeleton
+                        joining
                     } else {
                         stage
                         if viewModel.isHost { handsQueue }
@@ -194,6 +227,9 @@ public struct LiveRoomScreen: View {
                     SLChip(RoomCopy.inviteOnlyBadge, icon: "lock.fill", accessibilityHint: RoomCopy.inviteOnlyBadge)
                 } else if viewModel.room.isFollowingOnly {
                     SLChip(RoomCopy.followingOnlyBadge, icon: "person.2.fill", accessibilityHint: RoomCopy.followingOnlyBadge)
+                } else if viewModel.room.isGroupOnly {
+                    let badge = RoomCopy.groupBadge(viewModel.room.groupName)
+                    SLChip(badge, icon: "person.3.fill", accessibilityHint: badge)
                 }
                 if let topic = viewModel.room.topicLabel {
                     SLChip(topic, icon: "number")
@@ -237,6 +273,44 @@ public struct LiveRoomScreen: View {
             .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.surface1))
             .accessibilityElement(children: .combine)
         }
+    }
+
+    /// The door opening: one clear state with the host's face, what is
+    /// happening, and a way out — in place of a grid of grey circles.
+    private var joining: some View {
+        VStack(spacing: SLSpacing.md) {
+            SLAvatar(
+                url: viewModel.room.host.avatarURL,
+                initials: viewModel.room.host.initials,
+                size: .lg,
+                isVerified: viewModel.room.host.isVerified,
+                displayName: viewModel.room.host.displayName
+            )
+            HStack(spacing: SLSpacing.sm) {
+                ProgressView().controlSize(.small).tint(SLColor.primary)
+                Text(RoomCopy.joining)
+                    .font(SLFont.bodyEmphasis)
+                    .foregroundStyle(SLColor.textPrimary)
+            }
+            Text(L10n.t("rooms.live.joining.hint"))
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            SLButton(
+                L10n.t("common.cancel"),
+                variant: .ghost,
+                size: .compact,
+                isLoading: viewModel.isLeaving,
+                asyncAction: {
+                    await viewModel.leave()
+                    onLeave()
+                }
+            )
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, SLSpacing.xl)
+        .accessibilityElement(children: .combine)
     }
 
     private var skeleton: some View {
@@ -342,7 +416,7 @@ public struct LiveRoomScreen: View {
         .padding(SLSpacing.md)
         .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.primary.opacity(0.08)))
         .contentShape(Rectangle())
-        .onTapGesture { onOpenProfile?(participant.user.handle) }
+        .onTapGesture { selected = ParticipantSelection(participant) }
     }
 
     private var audience: some View {
@@ -434,7 +508,7 @@ public struct LiveRoomScreen: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { onOpenProfile?(participant.user.handle) }
+        .onTapGesture { selected = ParticipantSelection(participant) }
         .contextMenu {
             if let actions = viewModel.hostActions(for: participant) {
                 hostMenuItems(actions)
@@ -683,3 +757,16 @@ public struct LiveRoomScreen: View {
     }
     .preferredColorScheme(.dark)
 }
+
+/// A tapped participant, as sheet state. Keyed on the account id so the
+/// sheet can re-read the roster's current copy of the person.
+private struct ParticipantSelection: Identifiable {
+    let id: UUID
+    let participant: RoomParticipant
+
+    init(_ participant: RoomParticipant) {
+        id = participant.id
+        self.participant = participant
+    }
+}
+

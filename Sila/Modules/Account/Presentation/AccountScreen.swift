@@ -325,6 +325,42 @@ public struct AccountScreen: View {
                     )))
             }
 
+            if let confirmed = viewModel.account?.verifiedName {
+                // The identity's name, not the account's: shown so the person
+                // knows what verification confirmed, never as a field.
+                VStack(alignment: .leading, spacing: SLSpacing.xs) {
+                    Text(L10n.t("account.profile.verifiedName.label"))
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textSecondary)
+                    HStack(spacing: SLSpacing.sm) {
+                        SLVerifiedBadge(size: 16, isPulsing: false)
+                        Text(confirmed)
+                            .font(SLFont.bodyEmphasis)
+                            .foregroundStyle(SLColor.textPrimary)
+                            .slContentDirection(TextDirection.resolve(languageCode: nil, text: confirmed))
+                        Spacer(minLength: 0)
+                    }
+                    Text(L10n.t("account.profile.verifiedName.hint"))
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+
+                Toggle(isOn: $viewModel.profileDraft.hideVerifiedName) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.t("account.profile.hideVerifiedName.label"))
+                            .font(SLFont.bodyEmphasis)
+                            .foregroundStyle(SLColor.textPrimary)
+                        Text(L10n.t("account.profile.hideVerifiedName.hint"))
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .tint(SLColor.primary)
+            }
+
             // A preference about who may *read*, not about who may find: the
             // name, handle and bio stay public so the account can be asked.
             // The one consequence people do not expect — going public lets

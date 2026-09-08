@@ -3073,6 +3073,40 @@
         }
       }
     },
+    "account.profile.hideVerifiedName.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيظهر في ملفك اسمك المعروض ومعرّفك فقط."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only your display name and handle will show on your profile."
+          }
+        }
+      }
+    },
+    "account.profile.hideVerifiedName.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إخفاء اسمي الموثّق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide my verified name"
+          }
+        }
+      }
+    },
     "account.profile.private.goingPublic": {
       "comment": "Warning shown when the switch is being turned off.",
       "extractionState": "manual",
@@ -3213,6 +3247,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Profile saved."
+          }
+        }
+      }
+    },
+    "account.profile.verifiedName.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من التحقق من هويتك. لا يمكن تغييره، لكن يمكنك إخفاءه عن ملفك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From your identity check. It can't be changed, but you can keep it off your profile."
+          }
+        }
+      }
+    },
+    "account.profile.verifiedName.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاسم الموثّق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified name"
           }
         }
       }
@@ -11313,6 +11381,57 @@
         }
       }
     },
+    "error.groupExists": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لديك مجموعة بهذا الاسم بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have a group with that name."
+          }
+        }
+      }
+    },
+    "error.groupFull": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتسع المجموعة لمئتي شخص كحد أقصى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A group holds at most 200 people."
+          }
+        }
+      }
+    },
+    "error.groupNotFound": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه المجموعة ليست لك أو لم تعد موجودة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That group isn't yours or no longer exists."
+          }
+        }
+      }
+    },
     "error.handleTaken": {
       "comment": "The requested handle is already in use.",
       "extractionState": "manual",
@@ -11525,6 +11644,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "The document's machine-readable zone couldn't be verified. Retake the photo in good light."
+          }
+        }
+      }
+    },
+    "error.invalidName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أعطِ المجموعة اسمًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give the group a name."
           }
         }
       }
@@ -11777,6 +11913,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "They're not on the stage."
+          }
+        }
+      }
+    },
+    "error.oneDoor": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "للغرفة نوع واحد من الأبواب: مجموعة، أو دعوات، أو من تتابعهم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A room has one kind of door: a group, invitations, or the people you follow."
           }
         }
       }
@@ -12179,6 +12332,23 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "error.tooManyGroups": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك الاحتفاظ بخمسين مجموعة كحد أقصى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can keep at most 50 groups."
           }
         }
       }
@@ -13668,6 +13838,527 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@K"
+          }
+        }
+      }
+    },
+    "groups.created": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُنشئت المجموعة «%@»"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group “%@” created"
+          }
+        }
+      }
+    },
+    "groups.delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف المجموعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete group"
+          }
+        }
+      }
+    },
+    "groups.delete.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف المجموعة %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the group %@"
+          }
+        }
+      }
+    },
+    "groups.delete.confirm.button": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "groups.delete.confirm.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الغرف المفتوحة لها تبقى مغلقة على من دُعوا بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rooms opened for it stay closed, to the people already invited."
+          }
+        }
+      }
+    },
+    "groups.delete.confirm.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف «%@»؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete “%@”?"
+          }
+        }
+      }
+    },
+    "groups.deleted": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حُذفت المجموعة «%@»"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group “%@” deleted"
+          }
+        }
+      }
+    },
+    "groups.edit.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعديل المجموعة %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the group %@"
+          }
+        }
+      }
+    },
+    "groups.empty.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنشئ واحدة أعلاه، ثم افتح لها غرفة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make one above, then open a room for it."
+          }
+        }
+      }
+    },
+    "groups.empty.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا مجموعات بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No groups yet"
+          }
+        }
+      }
+    },
+    "groups.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قوائم خاصة بأشخاص تحتفظ بها لتفتح لهم غرفًا. لا يُخبَر أحد بأنه فيها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private lists of people you keep, to open rooms for. Nobody is told they're in one."
+          }
+        }
+      }
+    },
+    "groups.member.added": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أُضيف %lld أشخاص"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أُضيف %lld شخصًا"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أُضيف شخص واحد"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أُضيف %lld شخص"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أُضيف شخصان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لم يُضف أحد"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added %lld person"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added %lld people"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "groups.member.remove.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة %@ من المجموعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@ from the group"
+          }
+        }
+      }
+    },
+    "groups.member.removed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُزيل @%@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed @%@"
+          }
+        }
+      }
+    },
+    "groups.members.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إضافة أشخاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add people"
+          }
+        }
+      }
+    },
+    "groups.members.count": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld أشخاص"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld شخصًا"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "شخص واحد"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld شخص"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "شخصان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا أحد"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld person"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld people"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "groups.new.create": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إنشاء المجموعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create group"
+          }
+        }
+      }
+    },
+    "groups.new.handles.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المعرّفات، مفصولة بمسافات أو فواصل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handles, separated by spaces or commas"
+          }
+        }
+      }
+    },
+    "groups.new.handles.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأشخاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People"
+          }
+        }
+      }
+    },
+    "groups.new.handles.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مثال: @aziz، @noura"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@handle, @handle"
+          }
+        }
+      }
+    },
+    "groups.new.name.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسم المجموعة. أنت وحدك تراه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The group's name. Only you see it."
+          }
+        }
+      }
+    },
+    "groups.new.name.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجموعة جديدة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New group"
+          }
+        }
+      }
+    },
+    "groups.new.name.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "العائلة، العمل، الأصدقاء…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family, work, friends…"
+          }
+        }
+      }
+    },
+    "groups.pick": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختيار"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose"
+          }
+        }
+      }
+    },
+    "groups.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المجموعات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groups"
           }
         }
       }
@@ -19417,6 +20108,57 @@
         }
       }
     },
+    "profile.groups.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قوائم خاصة بأشخاص، للغرف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private lists of people, for rooms"
+          }
+        }
+      }
+    },
+    "profile.groups.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح مجموعاتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens your groups"
+          }
+        }
+      }
+    },
+    "profile.groups.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المجموعات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groups"
+          }
+        }
+      }
+    },
     "profile.language.detail": {
       "comment": "Settings row detail.",
       "extractionState": "manual",
@@ -20168,6 +20910,23 @@
         }
       }
     },
+    "profile.verifiedName.a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاسم الموثّق: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified name: %@"
+          }
+        }
+      }
+    },
     "profile.verifiedSince": {
       "comment": "When the checkmark was earned. %@ is a month and year.",
       "extractionState": "manual",
@@ -20218,6 +20977,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "People I follow"
+          }
+        }
+      }
+    },
+    "rooms.access.group.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فقط الأشخاص في مجموعة تحتفظ بها، إضافة إلى من تدعوه بالاسم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the people in a group you keep, plus anyone you invite by name."
+          }
+        }
+      }
+    },
+    "rooms.access.group.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إحدى مجموعاتي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One of my groups"
           }
         }
       }
@@ -20776,6 +21569,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "Everyone on Sila can listen to your room. The audience you pick decides who may take the microphone."
+          }
+        }
+      }
+    },
+    "rooms.create.group.manage": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إدارة المجموعات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage groups"
+          }
+        }
+      }
+    },
+    "rooms.create.group.none": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا مجموعات لديك بعد. أنشئ واحدة لتفتح لها غرفة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have no groups yet. Make one to open a room for it."
+          }
+        }
+      }
+    },
+    "rooms.create.group.pick": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أي مجموعة؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which group?"
           }
         }
       }
@@ -21568,6 +22412,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "This room is for people the host follows."
+          }
+        }
+      }
+    },
+    "rooms.groupOnly.badge": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجموعة: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group: %@"
+          }
+        }
+      }
+    },
+    "rooms.groupOnly.refusal": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الغرفة لمجموعة اختارها المضيف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room is for a group the host chose"
           }
         }
       }
@@ -22676,6 +23554,23 @@
         }
       }
     },
+    "rooms.live.joining.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الاتصال بالغرفة. ستستمع أولًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting to the room. You'll be listening first."
+          }
+        }
+      }
+    },
     "rooms.live.leave": {
       "comment": "Button that leaves a room without ending it.",
       "extractionState": "manual",
@@ -22744,6 +23639,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "Room"
+          }
+        }
+      }
+    },
+    "rooms.live.participant.role.host": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المضيف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host"
+          }
+        }
+      }
+    },
+    "rooms.live.participant.role.listener": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستمع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening"
+          }
+        }
+      }
+    },
+    "rooms.live.participant.role.speaker": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتحدث"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speaking"
+          }
+        }
+      }
+    },
+    "rooms.live.participant.role.speakerMuted": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على المنصة، مكتوم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On stage, muted"
+          }
+        }
+      }
+    },
+    "rooms.live.participant.viewProfile": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض الملف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View profile"
           }
         }
       }

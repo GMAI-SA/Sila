@@ -9,6 +9,8 @@ public struct HomeScreen: View {
 
     @Bindable private var viewModel: HomeViewModel
     private let onOpenPost: @MainActor (Post) -> Void
+    /// The viewer's verified country, which names the country tab.
+    private let countryCode: String?
     private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
@@ -40,8 +42,10 @@ public struct HomeScreen: View {
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
-        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
+        countryCode: String? = nil
     ) {
+        self.countryCode = countryCode
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
@@ -61,7 +65,7 @@ public struct HomeScreen: View {
                     set: { tab in Task { await viewModel.select(tab) } }
                 ),
                 accessibilityHint: { $0.accessibilityHint },
-                title: { $0.title }
+                title: { $0.title(countryCode: countryCode) }
             )
 
             preferencesBar

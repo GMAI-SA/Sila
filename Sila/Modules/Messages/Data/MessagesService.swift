@@ -29,10 +29,13 @@ public final class MessagesService: MessagesServiceProtocol {
         // server's default, and a URL that states its defaults is a URL whose
         // logs cannot be read at a glance.
         let query = requests ? [URLQueryItem(name: "requests", value: "true")] : []
+        // The server wraps the list: `{"conversations": [...]}`. Decoding a bare
+        // array here was why the Messages tab said it could not read the
+        // response — the request itself was answering 200 all along.
         return try await network.send(
             APIRequest(path: "/conversations", accessToken: token, query: query),
-            as: [Conversation].self
-        )
+            as: ConversationsEnvelope.self
+        ).conversations
     }
 
     public func fetchCounts() async throws -> MessageCounts {
@@ -50,8 +53,8 @@ public final class MessagesService: MessagesServiceProtocol {
                 path: "/conversations/\(conversationId.uuidString.lowercased())/messages",
                 accessToken: token
             ),
-            as: [DirectMessage].self
-        )
+            as: MessagesEnvelope.self
+        ).messages
     }
 
     // MARK: - Writing
@@ -113,3 +116,38 @@ public final class MessagesService: MessagesServiceProtocol {
         let conversationId: UUID
     }
 }
+
+/// `GET /conversations` answers `{"conversations": [...]}`.
+struct ConversationsEnvelope: Decodable {
+    let conversations: [Conversation]
+
+    init(from decoder: Decoder) throws {
+        // Tolerate a bare array too, so a server that drops the wrapper does
+        // not put the tab back into the state this type exists to fix.
+        if let container = try? decoder.singleValueContainer(), let rows = try? container.decode([Conversation].self) {
+            conversations = rows
+            return
+        }
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        conversations = try container.decodeIfPresent([Conversation].self, forKey: .conversations) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey { case conversations }
+}
+
+/// `GET /conversations/{id}/messages` answers `{"messages": [...]}`.
+struct MessagesEnvelope: Decodable {
+    let messages: [DirectMessage]
+
+    init(from decoder: Decoder) throws {
+        if let container = try? decoder.singleValueContainer(), let rows = try? container.decode([DirectMessage].self) {
+            messages = rows
+            return
+        }
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        messages = try container.decodeIfPresent([DirectMessage].self, forKey: .messages) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey { case messages }
+}
+

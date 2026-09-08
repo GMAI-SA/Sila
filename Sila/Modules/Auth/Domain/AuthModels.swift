@@ -100,6 +100,9 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     /// placeholder — and optional everywhere else. Decoded tolerantly like
     /// every other optional here.
     public let phone: String?
+    /// Your own verified name, hidden or not, and whether it is hidden.
+    public let verifiedName: String?
+    public let hideVerifiedName: Bool
 
     public init(
         id: UUID,
@@ -111,7 +114,9 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         handle: String? = nil,
         countryCode: String? = nil,
         avatarURL: URL? = nil,
-        phone: String? = nil
+        phone: String? = nil,
+        verifiedName: String? = nil,
+        hideVerifiedName: Bool = false
     ) {
         self.id = id
         self.email = email
@@ -123,11 +128,13 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         self.countryCode = CountryCode.normalised(countryCode)
         self.avatarURL = avatarURL
         self.phone = phone
+        self.verifiedName = verifiedName
+        self.hideVerifiedName = hideVerifiedName
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
-        case handle, countryCode, phone
+        case handle, countryCode, phone, verifiedName, hideVerifiedName
         case avatarURL = "avatarUrl"
     }
 
@@ -159,6 +166,9 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
             (try? container.decodeIfPresent(String.self, forKey: .avatarURL)) ?? nil
         )
         phone = (try? container.decodeIfPresent(String.self, forKey: .phone)) ?? nil
+        let confirmed = (try? container.decodeIfPresent(String.self, forKey: .verifiedName)) ?? nil
+        verifiedName = (confirmed?.isEmpty == false) ? confirmed : nil
+        hideVerifiedName = ((try? container.decodeIfPresent(Bool.self, forKey: .hideVerifiedName)) ?? nil) ?? false
     }
 
     /// The handle as it is rendered, with the `@`, when the account has one.

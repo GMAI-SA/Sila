@@ -18,6 +18,7 @@ public struct CreateRoomSheet: View {
     @Bindable private var viewModel: CreateRoomViewModel
     private let onClose: @MainActor () -> Void
     private let onCreated: (@MainActor (VoiceRoom) -> Void)?
+    @State private var isManagingGroups = false
 
     @FocusState private var isTitleFocused: Bool
 
@@ -267,6 +268,10 @@ public struct CreateRoomSheet: View {
                 .accessibilityAddTraits(viewModel.access == option ? .isSelected : [])
             }
 
+            if viewModel.access == .group {
+                groupPicker
+            }
+
             if viewModel.access.isClosed {
                 SLTextField(
                     L10n.t("rooms.create.guests.label"),
@@ -285,6 +290,73 @@ public struct CreateRoomSheet: View {
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+        .task(id: viewModel.access) {
+            if viewModel.access == .group { await viewModel.loadGroups() }
+        }
+        .sheet(isPresented: $isManagingGroups) {
+            GroupsSheet(
+                viewModel: viewModel.makeGroupsViewModel(),
+                onClose: {
+                    isManagingGroups = false
+                    Task { await viewModel.loadGroups() }
+                },
+                onPick: { group in
+                    viewModel.selectedGroupId = group.id
+                    isManagingGroups = false
+                    Task { await viewModel.loadGroups() }
+                }
+            )
+        }
+    }
+
+    /// Which of the viewer's groups the room is for. One group is picked for
+    /// them; none at all sends them to make one.
+    private var groupPicker: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            Text(L10n.t("rooms.create.group.pick"))
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textSecondary)
+            if viewModel.isLoadingGroups && viewModel.groups.isEmpty {
+                SLSkeletonRow(lineCount: 2)
+            } else if viewModel.groups.isEmpty {
+                Text(L10n.t("rooms.create.group.none"))
+                    .font(SLFont.micro)
+                    .foregroundStyle(SLColor.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ForEach(viewModel.groups) { group in
+                    let isPicked = viewModel.selectedGroupId == group.id
+                    Button {
+                        viewModel.selectedGroupId = group.id
+                    } label: {
+                        HStack(spacing: SLSpacing.sm) {
+                            Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(isPicked ? SLColor.primary : SLColor.stroke)
+                            Text(group.name)
+                                .font(SLFont.bodyEmphasis)
+                                .foregroundStyle(SLColor.textPrimary)
+                                .lineLimit(1)
+                                .slContentDirection(TextDirection.resolve(languageCode: nil, text: group.name))
+                            Spacer(minLength: 0)
+                            Text(L10n.plural("groups.members.count", group.memberCount))
+                                .font(SLFont.micro)
+                                .foregroundStyle(SLColor.textMuted)
+                        }
+                        .padding(.vertical, SLSpacing.xs)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(isPicked ? .isSelected : [])
+                }
+            }
+            SLButton(
+                L10n.t("rooms.create.group.manage"),
+                variant: .ghost,
+                size: .compact,
+                icon: "person.3",
+                action: { isManagingGroups = true }
+            )
         }
     }
 

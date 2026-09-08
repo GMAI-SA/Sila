@@ -31,6 +31,7 @@ public struct MainTabView: View {
     @State private var isShowingAccount = false
     /// `true` while the blocked / muted / reported lists are up.
     @State private var isShowingSafety = false
+    @State private var isShowingGroups = false
     /// `true` while the five notification switches are up.
     @State private var isShowingNotificationSettings = false
     /// `true` while the app-language picker is up.
@@ -196,6 +197,17 @@ public struct MainTabView: View {
                     }
                 )
             }
+            .tint(SLColor.primary)
+        }
+        .sheet(isPresented: $isShowingGroups) {
+            GroupsSheet(
+                viewModel: GroupsViewModel(
+                    service: container.roomsService,
+                    analytics: container.analytics,
+                    suspension: container.suspension
+                ),
+                onClose: { isShowingGroups = false }
+            )
             .tint(SLColor.primary)
         }
         .sheet(isPresented: $isShowingSafety) {
@@ -507,7 +519,8 @@ public struct MainTabView: View {
                     onCompose: composeHandler,
                     onOpenPreferences: preferencesHandler,
                     safetyMenu: safetyMenu(for:),
-                    ownPost: ownPostMenu(for:)
+                    ownPost: ownPostMenu(for:),
+                    countryCode: container.session.user?.countryCode
                 )
                 .tnNavigationBar(title: L10n.t("feed.home.navTitle"))
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -642,7 +655,8 @@ public struct MainTabView: View {
                         container.router.popFeedToRoot()
                         Task { await container.session.signOut() }
                     },
-                    onOpenSaved: openSavedPosts
+                    onOpenSaved: openSavedPosts,
+                    onOpenGroups: openGroups
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
@@ -712,6 +726,11 @@ public struct MainTabView: View {
             selection = .home
             openProfile(handle)
         }
+    }
+
+    /// Presents the viewer's groups.
+    private func openGroups() {
+        isShowingGroups = true
     }
 
     /// Pushes the viewer's saved posts onto the current tab's stack.
@@ -830,7 +849,8 @@ public struct MainTabView: View {
                     onOpenPreferences: preferencesHandler,
                     onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler,
-                    onOpenSaved: openSavedPosts
+                    onOpenSaved: openSavedPosts,
+                    onOpenGroups: openGroups
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
@@ -919,7 +939,8 @@ public struct MainTabView: View {
                     onOpenPreferences: preferencesHandler,
                     onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler,
-                    onOpenSaved: openSavedPosts
+                    onOpenSaved: openSavedPosts,
+                    onOpenGroups: openGroups
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
