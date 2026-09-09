@@ -79,22 +79,40 @@ public struct SLCard<Content: View>: View {
     }
 }
 
+/// A card that can be tapped, drawn pressed, and **scrolled past**.
+///
+/// This was a `DragGesture(minimumDistance: 0)` alongside an `onTapGesture`,
+/// which is the ordinary way to get a pressed state — and the reason a stack
+/// of cards could not be scrolled. A zero-distance drag claims the touch the
+/// moment a finger lands, so a scroll that began on a card never reached the
+/// scroll view: the profile's settings rows had to be dragged from the gaps
+/// between them. A `Button` with a style that reports its own press state
+/// gets the highlight for free and leaves the pan where it belongs, because
+/// SwiftUI already knows how to defer a button's press inside a scroll view.
 private struct TapBehaviour: ViewModifier {
     let onTap: (() -> Void)?
     @Binding var isPressed: Bool
 
     func body(content: Content) -> some View {
         if let onTap {
-            content
-                .onTapGesture(perform: onTap)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { _ in isPressed = true }
-                        .onEnded { _ in isPressed = false }
-                )
+            Button(action: onTap) { content }
+                .buttonStyle(PressReportingButtonStyle(isPressed: $isPressed))
         } else {
             content
         }
+    }
+}
+
+/// Hands the button's own press state back to the card, and styles nothing:
+/// the card has already drawn itself.
+private struct PressReportingButtonStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .onChange(of: configuration.isPressed) { _, pressed in
+                isPressed = pressed
+            }
     }
 }
 

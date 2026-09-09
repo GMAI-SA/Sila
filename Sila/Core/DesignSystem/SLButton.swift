@@ -126,13 +126,13 @@ public struct SLButton: View {
             .animation(.spring(response: 0.28, dampingFraction: 0.7), value: isPressed)
             .animation(.easeInOut(duration: 0.2), value: isLoading)
         }
-        .buttonStyle(.plain)
+        // The press state comes from the button itself rather than from a
+        // zero-distance drag beside it. That drag claimed the touch as soon
+        // as a finger landed, so a scroll starting on a button never reached
+        // the scroll view — a list of them could only be dragged from the
+        // gaps between them.
+        .buttonStyle(SLPressReportingStyle(isPressed: $isPressed))
         .disabled(!isInteractive)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in if isInteractive { isPressed = true } }
-                .onEnded { _ in isPressed = false }
-        )
         .accessibilityLabel(Text(title))
         .accessibilityHint(Text(accessibilityHintText ?? L10n.t("ds.button.defaultHint", title)))
         .accessibilityAddTraits(.isButton)
@@ -193,3 +193,17 @@ public struct SLButton: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(SLColor.background)
 }
+
+/// Reports a button's own press state and styles nothing: ``SLButton`` has
+/// already drawn itself, including the press.
+struct SLPressReportingStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .onChange(of: configuration.isPressed) { _, pressed in
+                isPressed = pressed
+            }
+    }
+}
+
