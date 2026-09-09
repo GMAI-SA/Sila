@@ -48,6 +48,7 @@
 		2820B50CEB2136DE78ACFE06 /* RegisterScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786FAF9F11C71095662250F6 /* RegisterScreen.swift */; };
 		2A7C2E43AC1C982900D3EB3B /* SweepCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987972D9D62B320FC5C57F86 /* SweepCaptureView.swift */; };
 		2AC343501E65D6B120CD154C /* PreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC42B92A995B5A3857BFF6E2 /* PreferencesService.swift */; };
+		2B27EF7BAD2EC42C87A24F9D /* RoomExpressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51351180EB40BD828B64A09 /* RoomExpressionTests.swift */; };
 		2B7C6BA63B68B626EE74D698 /* PreferencesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6CE09D4BCE161193DA6F8D /* PreferencesViewModel.swift */; };
 		2B843B828CA38D49428475BD /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9365550F50E1F8D5C6E2E /* HomeViewModel.swift */; };
 		2C2C1C821D7EFFACC5FBDD0E /* PostDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A877CA2351D4DF671FC04CB /* PostDetailViewModel.swift */; };
@@ -440,6 +441,7 @@
 		A36B5BC6BD8E3C2B6BF31029 /* LivePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePreferencesTests.swift; sourceTree = "<group>"; };
 		A3CD8A1392FFB7D5305BB689 /* RoomInvitesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomInvitesTests.swift; sourceTree = "<group>"; };
 		A4300E9DEF699167FCC7C4D3 /* SearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchServiceTests.swift; sourceTree = "<group>"; };
+		A51351180EB40BD828B64A09 /* RoomExpressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomExpressionTests.swift; sourceTree = "<group>"; };
 		A5283812A248380257DD127B /* ReplyComposerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplyComposerBar.swift; sourceTree = "<group>"; };
 		A8B204472383AA0961250F71 /* SLDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLDivider.swift; sourceTree = "<group>"; };
 		AA1F9BE9BFB7B0790305D08B /* SLShimmer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLShimmer.swift; sourceTree = "<group>"; };
@@ -812,6 +814,7 @@
 				10B94325C2FB64855C65A80A /* ProfileServiceTests.swift */,
 				77655FE604AB4868A6EF9329 /* ProfileViewModelTests.swift */,
 				987EBC32A86E607791764A54 /* RegisterViewModelTests.swift */,
+				A51351180EB40BD828B64A09 /* RoomExpressionTests.swift */,
 				A3CD8A1392FFB7D5305BB689 /* RoomInvitesTests.swift */,
 				AF35AF202945D7217ABDA609 /* RoomModelsTests.swift */,
 				E097BEDD65326739374D932B /* RoomsServiceTests.swift */,
@@ -1718,6 +1721,7 @@
 				125748E9A648EA13D67613A9 /* ProfileServiceTests.swift in Sources */,
 				797E9BD8D19F9C307B272F67 /* ProfileViewModelTests.swift in Sources */,
 				E8941769AAEABCF49F35AF69 /* RegisterViewModelTests.swift in Sources */,
+				2B27EF7BAD2EC42C87A24F9D /* RoomExpressionTests.swift in Sources */,
 				D788929C9981971D5DF2061C /* RoomInvitesTests.swift in Sources */,
 				0A4BE605E112144F73720F23 /* RoomModelsTests.swift in Sources */,
 				4596BE0A5EB36A6812F94F3C /* RoomsServiceTests.swift in Sources */,
@@ -1857,7 +1861,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sila/Resources/Sila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;
@@ -1906,7 +1910,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sila/Resources/Sila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;

@@ -23,6 +23,8 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
     public var onRoomEvent: (@MainActor (VoiceRoomEvent) -> Void)?
     /// Every data message this engine was asked to send.
     public private(set) var publishedMessages: [RoomDataMessage] = []
+    /// Who each message was addressed to; empty means the whole room.
+    public private(set) var publishedDestinations: [[String]] = []
 
     /// Calls in order, e.g. `["connect:listener", "mic:on"]`.
     public private(set) var recordedCalls: [String] = []
@@ -79,7 +81,8 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
         connection = .idle
     }
 
-    public func publish(_ message: RoomDataMessage) async {
+    public func publish(_ message: RoomDataMessage, to identities: [String]) async {
+        publishedDestinations.append(identities)
         recordedCalls.append("data:\(message.type):\(message.raised)")
         publishedMessages.append(message)
     }

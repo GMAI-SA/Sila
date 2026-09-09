@@ -79,6 +79,8 @@ public struct ProfileScreen: View {
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// Opens a thread with this person. Absent where messaging is not wired.
+    private let onMessage: (@MainActor (UserSummary) -> Void)?
     /// Posts deleted this session, hidden without waiting for a refresh.
     private let hiddenPostIds: Set<UUID>
     /// The waiting list, presented over the viewer's own private profile.
@@ -107,6 +109,7 @@ public struct ProfileScreen: View {
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
+        onMessage: (@MainActor (UserSummary) -> Void)? = nil,
         hiddenPostIds: Set<UUID> = []
     ) {
         self.viewModel = viewModel
@@ -118,6 +121,7 @@ public struct ProfileScreen: View {
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
         self.ownPost = ownPost
+        self.onMessage = onMessage
         self.hiddenPostIds = hiddenPostIds
     }
 
@@ -601,6 +605,23 @@ public struct ProfileScreen: View {
                 action: { Task { await viewModel.toggleFollow() } }
             )
             .frame(width: 132)
+
+            if let onMessage {
+                // Writing to somebody starts here, where you are already
+                // looking at them, rather than only from an existing thread.
+                Button {
+                    onMessage(profile.user)
+                } label: {
+                    Image(systemName: "envelope")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(SLColor.primary)
+                        .frame(width: 40, height: 34)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(Text(L10n.t("profile.message.a11yLabel", profile.displayName)))
+                .accessibilityHint(Text(L10n.t("profile.message.a11yHint")))
+                .accessibilityIdentifier("profile.message")
+            }
         } else if let onOpenAccount = ownerActions.onOpenAccount {
             SLButton(
                 L10n.t("profile.editProfile"),
@@ -809,6 +830,8 @@ public struct ProfileScreenHost: View {
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// Opens a thread with this person. Absent where messaging is not wired.
+    private let onMessage: (@MainActor (UserSummary) -> Void)?
     /// Posts deleted this session, hidden without waiting for a refresh.
     private let hiddenPostIds: Set<UUID>
 
@@ -832,6 +855,7 @@ public struct ProfileScreenHost: View {
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
+        onMessage: (@MainActor (UserSummary) -> Void)? = nil,
         hiddenPostIds: Set<UUID> = []
     ) {
         self._viewModel = State(initialValue: makeViewModel())
@@ -843,6 +867,7 @@ public struct ProfileScreenHost: View {
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
         self.ownPost = ownPost
+        self.onMessage = onMessage
         self.hiddenPostIds = hiddenPostIds
     }
 
@@ -857,6 +882,7 @@ public struct ProfileScreenHost: View {
             safetyMenu: safetyMenu,
             postSafetyMenu: postSafetyMenu,
             ownPost: ownPost,
+            onMessage: onMessage,
             hiddenPostIds: hiddenPostIds
         )
     }

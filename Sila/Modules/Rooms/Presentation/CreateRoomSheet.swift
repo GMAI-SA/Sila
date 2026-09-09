@@ -55,6 +55,14 @@ public struct CreateRoomSheet: View {
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.danger)
                         .fixedSize(horizontal: false, vertical: true)
+                } else if let reason = viewModel.blockingReason {
+                    // Why the button below is off. Said here rather than left
+                    // to the reader to work out from a greyed-out control.
+                    Label(reason, systemImage: "info.circle")
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("rooms.create.blocked")
                 }
 
                 SLButton(

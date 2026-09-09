@@ -14,7 +14,7 @@ public final class ChatViewModel {
     /// Set when the person deleting one of their own messages needs to confirm.
     public var pendingDeletion: DirectMessage?
 
-    public let conversation: Conversation
+    public private(set) var conversation: Conversation
     private let viewerId: UUID?
     private let service: MessagesServiceProtocol
 
@@ -53,6 +53,9 @@ public final class ChatViewModel {
     }
 
     public func load() async {
+        // Nothing to read yet: this thread starts when the first message is
+        // sent, and asking the server for an id it never minted would 404.
+        guard !conversation.isDraft else { return }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -60,6 +63,18 @@ public final class ChatViewModel {
             try? await service.markRead(conversationId: conversation.id)
         } catch {
             toast = .error(APIError.wrapping(error).userMessage)
+        }
+    }
+
+    /// Finds the thread the server made for the first message, so the screen
+    /// stops being a draft and can read itself.
+    private func adoptRealConversation() async {
+        let handle = Handle.normalised(conversation.other.handle)
+        for list in [try? await service.fetchConversations(), try? await service.fetchRequests()] {
+            if let found = list?.first(where: { Handle.normalised($0.other.handle) == handle }) {
+                conversation = found
+                return
+            }
         }
     }
 
@@ -75,6 +90,7 @@ public final class ChatViewModel {
             // Cleared only after the server accepted it. Clearing first would
             // lose somebody's words to a dropped connection.
             draft = ""
+            if conversation.isDraft { await adoptRealConversation() }
             await load()
         } catch {
             toast = .error(APIError.wrapping(error).userMessage)

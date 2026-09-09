@@ -55,6 +55,12 @@ public final class ConversationsViewModel {
     /// able to put a number on somebody's attention.
     public var badgeCount: Int { counts.unread }
 
+    /// The thread with somebody, when one has already been read.
+    public func conversation(with handle: String) -> Conversation? {
+        let target = Handle.normalised(handle)
+        return (inbox + requests).first { Handle.normalised($0.other.handle) == target }
+    }
+
     public func load() async {
         isLoading = true
         defer { isLoading = false; hasLoaded = true }

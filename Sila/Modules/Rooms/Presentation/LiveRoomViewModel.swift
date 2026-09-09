@@ -302,6 +302,12 @@ public final class LiveRoomViewModel {
     private func handle(_ event: VoiceRoomEvent) {
         guard !hasLeft else { return }
         switch event {
+        case let .message(message) where message.isReaction:
+            receive(reaction: message)
+            return  // Nothing on the roster changed; do not spend a read on it.
+        case let .message(message) where message.isChat:
+            receive(chat: message)
+            return
         case let .permissionsChanged(canPublish):
             if canPublish, !role.canPublish {
                 role = .speaker
@@ -321,6 +327,126 @@ public final class LiveRoomViewModel {
         }
         adoptEngineState()
         scheduleRefresh()
+    }
+
+    // MARK: - Reactions and chat
+
+    /// Emoji currently floating up the screen. Cleared as they age out.
+    public private(set) var reactions: [RoomReaction] = []
+    /// What has been said in this room's chat, oldest first, capped.
+    public private(set) var chat: [RoomChatMessage] = []
+    /// The line being typed.
+    public var chatDraft = ""
+    /// Whether the next line goes to the host alone.
+    public var chatToHostOnly = false
+    /// True while the chat panel is up; unread stops counting when it is.
+    public var isChatOpen = false {
+        didSet { if isChatOpen { unreadChat = 0 } }
+    }
+    /// Lines that arrived while the panel was closed.
+    public private(set) var unreadChat = 0
+
+    /// How long a reaction stays on screen.
+    static let reactionLifetime: TimeInterval = 4
+    /// How many lines a room keeps. Old ones fall off the top: this is a
+    /// conversation happening now, not a transcript.
+    static let chatLimit = 200
+    static let chatCharacterLimit = 240
+
+    /// Sends an emoji to the room. Anybody may — listening is not silence.
+    public func react(_ emoji: String) async {
+        guard let viewerId, !hasLeft else { return }
+        show(RoomReaction(emoji: emoji, name: L10n.t("rooms.chat.you")))
+        analytics.track(.roomReactionSent, properties: ["emoji": emoji])
+        await engine.publish(
+            .reaction(emoji, userId: viewerId, handle: viewerHandle, name: viewerDisplayName)
+        )
+    }
+
+    /// True when there is something to send.
+    public var canSendChat: Bool {
+        let trimmed = chatDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed.count <= Self.chatCharacterLimit && !hasLeft
+    }
+
+    /// Says a line, to the room or to the host alone.
+    public func sendChat() async {
+        let text = chatDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canSendChat, let viewerId else { return }
+        let toHost = chatToHostOnly && !isHost
+        chatDraft = ""
+        append(
+            RoomChatMessage(
+                userId: viewerId.uuidString.lowercased(),
+                handle: viewerHandle,
+                name: L10n.t("rooms.chat.you"),
+                text: text,
+                toHost: toHost,
+                isMine: true
+            )
+        )
+        analytics.track(.roomChatSent, properties: ["to_host": String(toHost)])
+        // Addressed to the host's connection when it is private, so "only the
+        // host" is true on the wire and not a promise other clients keep.
+        let destinations = toHost ? [hostIdentity].compactMap { $0 } : []
+        await engine.publish(
+            .chat(text, userId: viewerId, handle: viewerHandle, name: viewerDisplayName, toHost: toHost),
+            to: destinations
+        )
+    }
+
+    /// The media server's name for the host — the account id, as everywhere.
+    private var hostIdentity: String? {
+        participants.participants.first { $0.role.isHost }?.user.id.uuidString.lowercased()
+            ?? room.host.id.uuidString.lowercased()
+    }
+
+    /// The viewer's own name, for what others see on a reaction or a line.
+    private var viewerDisplayName: String {
+        participants.participants.first { $0.user.id == viewerId }?.user.displayName ?? viewerHandle
+    }
+
+    private func receive(reaction message: RoomDataMessage) {
+        guard let emoji = message.emoji, !emoji.isEmpty else { return }
+        guard message.userId != viewerId?.uuidString.lowercased() else { return }  // ours is already up
+        show(RoomReaction(emoji: emoji, name: message.name ?? message.handle))
+    }
+
+    private func receive(chat message: RoomDataMessage) {
+        guard let text = message.text, !text.isEmpty else { return }
+        guard message.userId != viewerId?.uuidString.lowercased() else { return }  // ours is already listed
+        append(
+            RoomChatMessage(
+                userId: message.userId,
+                handle: message.handle,
+                name: message.name ?? message.handle ?? L10n.t("rooms.chat.someone"),
+                text: String(text.prefix(Self.chatCharacterLimit)),
+                toHost: message.toHost
+            )
+        )
+        if !isChatOpen { unreadChat += 1 }
+    }
+
+    private func show(_ reaction: RoomReaction) {
+        reactions.append(reaction)
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.reactionLifetime * 1_000_000_000))
+            await MainActor.run { self?.expireReactions() }
+        }
+    }
+
+    /// Takes down everything past its moment. Called on a timer rather than
+    /// per reaction so a burst does not queue a hundred separate removals.
+    public func expireReactions() {
+        let cutoff = Date().addingTimeInterval(-Self.reactionLifetime)
+        reactions.removeAll { $0.sentAt <= cutoff }
+    }
+
+    private func append(_ message: RoomChatMessage) {
+        chat.append(message)
+        if chat.count > Self.chatLimit {
+            chat.removeFirst(chat.count - Self.chatLimit)
+        }
     }
 
     /// Coalesces a burst of events into one roster read.

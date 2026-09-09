@@ -40,6 +40,29 @@ public struct Conversation: Identifiable, Hashable, Sendable {
         self.lastMessageAt = lastMessageAt
         self.lastMessage = lastMessage
     }
+
+    /// A conversation with somebody you have never written to.
+    ///
+    /// Messages are addressed by handle and the server owns the
+    /// one-thread-per-pair rule, so a first message needs no thread to exist
+    /// first. This stands in until the server has one, and carries the id
+    /// nobody holds so it can never be mistaken for a real thread.
+    public static func draft(with person: UserSummary) -> Conversation {
+        Conversation(
+            id: Conversation.draftId,
+            other: person,
+            accepted: true,
+            isRequest: false,
+            unreadCount: 0,
+            lastMessageAt: nil,
+            lastMessage: nil
+        )
+    }
+
+    static let draftId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+
+    /// True while this thread exists only on this screen.
+    public var isDraft: Bool { id == Conversation.draftId }
 }
 
 /// One message in a thread.

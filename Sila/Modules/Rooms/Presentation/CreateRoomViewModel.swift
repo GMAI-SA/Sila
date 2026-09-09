@@ -162,6 +162,25 @@ public final class CreateRoomViewModel {
             && (access != .group || selectedGroup != nil)
     }
 
+    /// Why the start button is off, in the person's own terms — or `nil`
+    /// when it is on. A disabled button that says nothing is a dead end: the
+    /// screen knows exactly what is missing, so it says so.
+    public var blockingReason: String? {
+        if !canHost { return RoomCopy.unverifiedCannotOpen }
+        if trimmedTitle.isEmpty { return RoomCopy.titleMissing }
+        if remainingTitleCharacters < 0 { return RoomCopy.titleTooLong(trimmedTitle.count) }
+        if !ScopePicker.isAvailable(scope, for: author) {
+            return scopeOptions.first { $0.scope == scope }?.unavailableReason
+                ?? L10n.t("rooms.create.blocked.audience")
+        }
+        if access == .group && selectedGroup == nil {
+            return groups.isEmpty
+                ? L10n.t("rooms.create.group.none")
+                : L10n.t("rooms.create.blocked.group")
+        }
+        return nil
+    }
+
     /// The chosen group, when the choice still names one of the viewer's.
     public var selectedGroup: UserGroup? {
         guard let selectedGroupId else { return nil }

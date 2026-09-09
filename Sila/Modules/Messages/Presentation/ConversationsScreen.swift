@@ -13,15 +13,23 @@ public struct ConversationsScreen: View {
     @Bindable private var viewModel: ConversationsViewModel
     private let onOpen: @MainActor (Conversation) -> Void
     private let onOpenProfile: @MainActor (String) -> Void
+    /// Where "New message" gets its people.
+    private let people: PeopleDirectory?
+    private let viewerHandle: String
+    @State private var isPicking = false
 
     public init(
         viewModel: ConversationsViewModel,
         onOpen: @escaping @MainActor (Conversation) -> Void,
-        onOpenProfile: @escaping @MainActor (String) -> Void = { _ in }
+        onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
+        people: PeopleDirectory? = nil,
+        viewerHandle: String = ""
     ) {
         self.viewModel = viewModel
         self.onOpen = onOpen
         self.onOpenProfile = onOpenProfile
+        self.people = people
+        self.viewerHandle = viewerHandle
     }
 
     public var body: some View {
@@ -43,6 +51,35 @@ public struct ConversationsScreen: View {
         }
         .navigationTitle(L10n.t("messages.title"))
         .tnScreenBackground()
+        .toolbar {
+            if people != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isPicking = true
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .foregroundStyle(SLColor.primary)
+                    }
+                    .accessibilityLabel(Text(L10n.t("messages.new")))
+                    .accessibilityHint(Text(L10n.t("messages.new.a11yHint")))
+                    .accessibilityIdentifier("messages.new")
+                }
+            }
+        }
+        .sheet(isPresented: $isPicking) {
+            if let directory = people {
+                PeoplePickerSheet(
+                    viewModel: PeoplePickerViewModel(directory: directory, viewerHandle: viewerHandle),
+                    onPick: { chosen in
+                        // One thread at a time: a message goes to a person,
+                        // not to a list. The first tick is the one that counts.
+                        guard let person = chosen.first else { return }
+                        onOpen(Conversation.draft(with: person))
+                    },
+                    onClose: { isPicking = false }
+                )
+            }
+        }
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
         .tnToast($viewModel.toast)
@@ -68,7 +105,9 @@ public struct ConversationsScreen: View {
                     : L10n.t("messages.empty.requests.title"),
                 subtitle: viewModel.folder == .inbox
                     ? L10n.t("messages.empty.inbox.subtitle")
-                    : L10n.t("messages.empty.requests.subtitle")
+                    : L10n.t("messages.empty.requests.subtitle"),
+                actionTitle: viewModel.folder == .inbox && people != nil ? L10n.t("messages.new") : nil,
+                action: viewModel.folder == .inbox && people != nil ? { isPicking = true } : nil
             )
             .padding(.top, SLSpacing.xxl)
         } else {
@@ -101,7 +140,7 @@ public struct ConversationsScreen: View {
         Button {
             onOpen(conversation)
         } label: {
-            HStack(alignment: .top, spacing: SLSpacing.md) {
+            HStack(alignment: .center, spacing: SLSpacing.md) {
                 // Its own button, like every other avatar in the app: tapping a
                 // face opens that person.
                 Button {
@@ -131,6 +170,12 @@ public struct ConversationsScreen: View {
                         if let country = conversation.other.countryCode {
                             SLCountryBadge(countryCode: country)
                         }
+
+                        Text(conversation.other.atHandle)
+                            .font(SLFont.micro)
+                            .foregroundStyle(SLColor.textMuted)
+                            .lineLimit(1)
+                            .layoutPriority(-1)
 
                         Spacer(minLength: 0)
 
@@ -172,7 +217,13 @@ public struct ConversationsScreen: View {
                 }
 
                 if conversation.unreadCount > 0 {
-                    SLBadge(String(conversation.unreadCount), style: .verified)
+                    // Beside the name, not above it: a count floating at the
+                    // top of a two-line row reads as belonging to nothing.
+                    SLBadge(SLFormat.number(conversation.unreadCount), style: .verified)
+                } else {
+                    Image(systemName: "chevron.forward")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(SLColor.textMuted)
                 }
             }
             .padding(.horizontal, SLSpacing.lg)

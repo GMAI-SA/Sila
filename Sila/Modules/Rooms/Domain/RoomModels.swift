@@ -1176,3 +1176,72 @@ struct GroupRenameBody: Encodable {
     let name: String
 }
 
+// MARK: - What a room says without speaking
+
+/// An emoji somebody sent, on its way up the screen.
+///
+/// Deliberately not stored anywhere: a reaction is a moment in a live room,
+/// like a nod. It exists for a couple of seconds and then it is gone.
+public struct RoomReaction: Identifiable, Equatable, Sendable {
+    public let id = UUID()
+    public let emoji: String
+    public let name: String?
+    public let sentAt: Date
+
+    public init(emoji: String, name: String? = nil, sentAt: Date = Date()) {
+        self.emoji = emoji
+        self.name = name
+        self.sentAt = sentAt
+    }
+
+    /// The emoji a room offers. Short on purpose: a strip somebody can hit
+    /// with a thumb while listening, not a keyboard.
+    public static let palette = ["👏", "❤️", "😂", "🔥", "💯", "🙏", "😮", "🤔"]
+}
+
+/// A line said in a room's text chat.
+///
+/// Ephemeral in the same way the audio is: it lives while the room does and
+/// is not kept afterwards. Nothing here reaches the API.
+public struct RoomChatMessage: Identifiable, Equatable, Sendable {
+    public let id = UUID()
+    public let userId: String
+    public let handle: String?
+    public let name: String
+    public let text: String
+    /// Sent to the host alone. Addressed on the wire, so only they receive it.
+    public let toHost: Bool
+    public let sentAt: Date
+    /// Written by the person reading it.
+    public let isMine: Bool
+
+    public init(
+        userId: String,
+        handle: String? = nil,
+        name: String,
+        text: String,
+        toHost: Bool = false,
+        sentAt: Date = Date(),
+        isMine: Bool = false
+    ) {
+        self.userId = userId
+        self.handle = handle
+        self.name = name
+        self.text = text
+        self.toHost = toHost
+        self.sentAt = sentAt
+        self.isMine = isMine
+    }
+}
+
+extension RoomCopy {
+    /// The chat panel.
+    public static var chatTitle: String { L10n.t("rooms.chat.title") }
+    public static var chatPlaceholder: String { L10n.t("rooms.chat.placeholder") }
+    public static var chatEmpty: String { L10n.t("rooms.chat.empty") }
+    public static var chatToEveryone: String { L10n.t("rooms.chat.audience.everyone") }
+    public static var chatToHost: String { L10n.t("rooms.chat.audience.host") }
+    public static var chatPrivateNote: String { L10n.t("rooms.chat.private.note") }
+    public static var reactionsLabel: String { L10n.t("rooms.reactions.label") }
+}
+

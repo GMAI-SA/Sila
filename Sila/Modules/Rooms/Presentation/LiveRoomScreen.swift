@@ -96,6 +96,9 @@ public struct LiveRoomScreen: View {
         .sheet(item: $selected) { selection in
             participantSheet(for: selection)
         }
+        .sheet(isPresented: $viewModel.isChatOpen) {
+            roomChat
+        }
         .task { await viewModel.start() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -156,6 +159,121 @@ public struct LiveRoomScreen: View {
         )
     }
 
+    /// The room's text chat: a line to everybody, or to the host alone.
+    private var roomChat: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: SLSpacing.sm) {
+                            if viewModel.chat.isEmpty {
+                                Text(RoomCopy.chatEmpty)
+                                    .font(SLFont.caption)
+                                    .foregroundStyle(SLColor.textMuted)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, SLSpacing.xl)
+                            }
+                            ForEach(viewModel.chat) { line in
+                                chatLine(line)
+                                    .id(line.id)
+                            }
+                        }
+                        .padding(SLSpacing.lg)
+                    }
+                    .onChange(of: viewModel.chat.count) { _, _ in
+                        withAnimation { proxy.scrollTo(viewModel.chat.last?.id, anchor: .bottom) }
+                    }
+                }
+
+                composer
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .tnScreenBackground()
+            .tnNavigationBar(title: RoomCopy.chatTitle)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(L10n.t("common.done")) { viewModel.isChatOpen = false }
+                        .foregroundStyle(SLColor.textSecondary)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func chatLine(_ line: RoomChatMessage) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: SLSpacing.xs) {
+                Text(line.name)
+                    .font(SLFont.micro)
+                    .foregroundStyle(line.isMine ? SLColor.primary : SLColor.textSecondary)
+                    .lineLimit(1)
+                if line.toHost {
+                    Label(RoomCopy.chatToHost, systemImage: "lock.fill")
+                        .font(SLFont.micro)
+                        .foregroundStyle(SLColor.warning)
+                        .labelStyle(.titleAndIcon)
+                }
+                Spacer(minLength: 0)
+            }
+            Text(line.text)
+                .font(SLFont.body)
+                .foregroundStyle(SLColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .slContentDirection(TextDirection.resolve(languageCode: nil, text: line.text))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var composer: some View {
+        VStack(spacing: SLSpacing.xs) {
+            Rectangle().fill(SLColor.stroke).frame(height: 1)
+
+            if !viewModel.isHost {
+                // Who hears it, chosen before it is typed rather than after.
+                Picker("", selection: $viewModel.chatToHostOnly) {
+                    Text(RoomCopy.chatToEveryone).tag(false)
+                    Text(RoomCopy.chatToHost).tag(true)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, SLSpacing.lg)
+                .padding(.top, SLSpacing.sm)
+            }
+
+            HStack(spacing: SLSpacing.sm) {
+                TextField(RoomCopy.chatPlaceholder, text: $viewModel.chatDraft, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...4)
+                    .font(SLFont.body)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .padding(.horizontal, SLSpacing.md)
+                    .padding(.vertical, SLSpacing.sm)
+                    .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.surface1))
+                    .overlay(RoundedRectangle(cornerRadius: SLRadius.md).strokeBorder(SLColor.stroke, lineWidth: 1))
+
+                Button {
+                    Task { await viewModel.sendChat() }
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(viewModel.canSendChat ? SLColor.primary : SLColor.stroke)
+                }
+                .disabled(!viewModel.canSendChat)
+                .accessibilityLabel(Text(L10n.t("rooms.chat.send.a11yLabel")))
+            }
+            .padding(.horizontal, SLSpacing.lg)
+
+            Text(viewModel.chatToHostOnly && !viewModel.isHost ? RoomCopy.chatPrivateNote : L10n.t("rooms.chat.notKept"))
+                .font(SLFont.micro)
+                .foregroundStyle(SLColor.textMuted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, SLSpacing.lg)
+                .padding(.bottom, SLSpacing.sm)
+        }
+        .background(SLColor.surface1)
+    }
+
     // MARK: - The two states
 
     private var inRoom: some View {
@@ -179,6 +297,7 @@ public struct LiveRoomScreen: View {
             .refreshable { await viewModel.refresh() }
 
             if viewModel.phase == .inRoom {
+                floatingReactions
                 controlBar
             }
         }
@@ -618,8 +737,71 @@ public struct LiveRoomScreen: View {
 
     // MARK: - Controls
 
+    /// The strip anybody can hit while listening, and the way into the chat.
+    private var expression: some View {
+        HStack(spacing: SLSpacing.xs) {
+            ForEach(RoomReaction.palette, id: \.self) { emoji in
+                Button {
+                    Task { await viewModel.react(emoji) }
+                } label: {
+                    Text(emoji)
+                        .font(.system(size: 20))
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(SLColor.surface2))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(L10n.t("rooms.reactions.send.a11yLabel", emoji)))
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                viewModel.isChatOpen = true
+            } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(SLColor.primary)
+                        .frame(width: 40, height: 34)
+                    if viewModel.unreadChat > 0 {
+                        Text(SLFormat.number(viewModel.unreadChat))
+                            .font(SLFont.micro)
+                            .foregroundStyle(SLColor.background)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(SLColor.primary))
+                            .offset(x: 4, y: -2)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .accessibilityLabel(Text(L10n.t("rooms.chat.open.a11yLabel")))
+        }
+        .padding(.horizontal, SLSpacing.lg)
+        .padding(.top, SLSpacing.sm)
+    }
+
+    /// Emoji on their way up, over the stage. Purely decorative: everything
+    /// they mean is already said by the emoji itself.
+    private var floatingReactions: some View {
+        HStack(alignment: .bottom, spacing: SLSpacing.sm) {
+            ForEach(viewModel.reactions.suffix(6)) { reaction in
+                Text(reaction.emoji)
+                    .font(.system(size: 26))
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.horizontal, SLSpacing.lg)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .animation(.easeOut(duration: 0.25), value: viewModel.reactions)
+    }
+
     private var controlBar: some View {
         VStack(spacing: SLSpacing.sm) {
+            expression
             if viewModel.isListening {
                 listeningState
             }

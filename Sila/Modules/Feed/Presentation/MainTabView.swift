@@ -603,7 +603,9 @@ public struct MainTabView: View {
                     onOpen: { conversation in
                         container.router.messagesPath.append(.conversation(conversation))
                     },
-                    onOpenProfile: openProfile
+                    onOpenProfile: openProfile,
+                    people: container.peopleDirectory,
+                    viewerHandle: container.session.user?.handle ?? ""
                 )
                 .navigationDestination(for: FeedRoute.self) { route in
                     destination(for: route)
@@ -663,6 +665,7 @@ public struct MainTabView: View {
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
+                onMessage: openConversation,
                 hiddenPostIds: deletion.deleted
             )
             .tnNavigationBar(title: profileTitle)
@@ -728,6 +731,17 @@ public struct MainTabView: View {
             selection = .home
             openProfile(handle)
         }
+    }
+
+    /// Opens a thread with somebody, from wherever they were tapped.
+    ///
+    /// The thread may not exist yet: messages are addressed by handle and the
+    /// server owns the one-per-pair rule, so a draft stands in until the
+    /// first message has been sent.
+    private func openConversation(with person: UserSummary) {
+        selection = .messages
+        let existing = conversationsViewModel.conversation(with: person.handle)
+        container.router.messagesPath.append(.conversation(existing ?? Conversation.draft(with: person)))
     }
 
     /// Presents the viewer's groups.
@@ -859,6 +873,7 @@ public struct MainTabView: View {
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
+                onMessage: openConversation,
                 hiddenPostIds: deletion.deleted
             )
             .tnNavigationBar(title: "@\(handle)")
@@ -949,6 +964,7 @@ public struct MainTabView: View {
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
+                onMessage: openConversation,
                 hiddenPostIds: deletion.deleted
             )
             .tnNavigationBar(title: "@\(handle)")

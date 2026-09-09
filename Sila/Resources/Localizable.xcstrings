@@ -14703,6 +14703,40 @@
         }
       }
     },
+    "messages.new": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رسالة جديدة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New message"
+          }
+        }
+      }
+    },
+    "messages.new.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر من تكتب إليه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose somebody to write to"
+          }
+        }
+      }
+    },
     "messages.preview.deleted": {
       "extractionState": "manual",
       "localizations": {
@@ -20574,6 +20608,40 @@
         }
       }
     },
+    "profile.message.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح محادثة مع هذا الشخص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens a conversation with this person"
+          }
+        }
+      }
+    },
+    "profile.message.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مراسلة %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message %@"
+          }
+        }
+      }
+    },
     "profile.private.badge": {
       "comment": "Badge beside a private account's name.",
       "extractionState": "manual",
@@ -21562,6 +21630,193 @@
         }
       }
     },
+    "rooms.chat.audience.everyone": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجميع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everyone"
+          }
+        }
+      }
+    },
+    "rooms.chat.audience.host": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المضيف فقط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host only"
+          }
+        }
+      }
+    },
+    "rooms.chat.empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يُقل شيء بعد. والاستماع جيد أيضًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing said yet. Listening is fine too."
+          }
+        }
+      }
+    },
+    "rooms.chat.notKept": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الدردشة والتفاعلات تبقى ما دامت الغرفة قائمة فقط."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat and reactions last only while the room does."
+          }
+        }
+      }
+    },
+    "rooms.chat.open.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح دردشة الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the room chat"
+          }
+        }
+      }
+    },
+    "rooms.chat.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قل شيئًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Say something"
+          }
+        }
+      }
+    },
+    "rooms.chat.private.note": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرى هذا المضيف وحده"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the host sees this"
+          }
+        }
+      }
+    },
+    "rooms.chat.send.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        }
+      }
+    },
+    "rooms.chat.someone": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أحدهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone"
+          }
+        }
+      }
+    },
+    "rooms.chat.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الدردشة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat"
+          }
+        }
+      }
+    },
+    "rooms.chat.you": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You"
+          }
+        }
+      }
+    },
     "rooms.connection.connecting": {
       "comment": "Status while the audio transport connects.",
       "extractionState": "manual",
@@ -21684,6 +21939,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "That audience isn't available to you yet."
+          }
+        }
+      }
+    },
+    "rooms.create.blocked.audience": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر جمهورًا يمكنك فتح غرفة له."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick an audience you can open a room for."
+          }
+        }
+      }
+    },
+    "rooms.create.blocked.group": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر المجموعة التي هذه الغرفة لها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick which group this room is for."
           }
         }
       }
@@ -24156,6 +24445,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "This room hasn't started. %@"
+          }
+        }
+      }
+    },
+    "rooms.reactions.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفاعل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "React"
+          }
+        }
+      }
+    },
+    "rooms.reactions.send.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send %@"
           }
         }
       }

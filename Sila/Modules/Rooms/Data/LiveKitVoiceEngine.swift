@@ -126,12 +126,20 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
 
     // MARK: - Data
 
-    public func publish(_ message: RoomDataMessage) async {
-        // Best-effort by contract: the API call this accompanies already
-        // succeeded, and a lost nudge costs the host one poll interval.
+    public func publish(_ message: RoomDataMessage, to identities: [String]) async {
+        // Best-effort by contract: a hand's API call already succeeded, and a
+        // lost nudge costs the host one poll interval. A reaction or a line of
+        // chat is ephemeral by design — there is nothing to retry it against.
+        //
+        // Addressed when identities are named, so "only the host" is a
+        // property of the wire rather than a promise the receivers keep.
         try? await room.localParticipant.publish(
             data: message.encoded(),
-            options: DataPublishOptions(topic: RoomDataMessage.topic, reliable: true)
+            options: DataPublishOptions(
+                destinationIdentities: identities.map { Participant.Identity(from: $0) },
+                topic: RoomDataMessage.topic,
+                reliable: true
+            )
         )
     }
 

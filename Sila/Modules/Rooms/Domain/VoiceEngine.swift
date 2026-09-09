@@ -90,30 +90,110 @@ public enum VoiceRoomEvent: Equatable, Sendable {
     case message(RoomDataMessage)
 }
 
-/// The one data message rooms send: a hand going up or down. Sent *as well
-/// as* the API call, never instead of it — the API row is the queue the host
-/// decides from; this is the nudge that makes the host's screen refresh now.
+/// What travels over a room's data channel.
+///
+/// Three kinds, all of them ephemeral: a hand going up or down, a reaction,
+/// and a line of text. The hand is sent *as well as* the API call, never
+/// instead of it — the API row is the queue the host decides from, and this
+/// is the nudge that refreshes their screen now. Reactions and chat have no
+/// API at all: like the audio, they exist while the room does and are not
+/// kept afterwards, which is what lets a listener join in without asking
+/// anybody for permission first.
 public struct RoomDataMessage: Codable, Equatable, Sendable {
     public static let topic = "sila.room"
 
-    /// `hand` is the only type today.
+    /// `hand`, `reaction` or `chat`.
     public let type: String
-    /// The account the message is about.
+    /// The account the message is about, or from.
     public let userId: String
     /// For `hand`: whether it went up.
     public let raised: Bool
+    /// For `reaction`: the emoji.
+    public let emoji: String?
+    /// For `chat`: what was said.
+    public let text: String?
+    /// Who sent it, so a receiver can render without a roster lookup — a
+    /// listener is not on the stage and may not be on the page the host has.
+    public let handle: String?
+    public let name: String?
+    /// For `chat`: sent to the host alone rather than to the room. Addressed
+    /// on the wire too, so "only the host" means only the host receives it.
+    public let toHost: Bool
 
-    public init(type: String = "hand", userId: String, raised: Bool) {
+    public init(
+        type: String = "hand",
+        userId: String,
+        raised: Bool = false,
+        emoji: String? = nil,
+        text: String? = nil,
+        handle: String? = nil,
+        name: String? = nil,
+        toHost: Bool = false
+    ) {
         self.type = type
         self.userId = userId
         self.raised = raised
+        self.emoji = emoji
+        self.text = text
+        self.handle = handle
+        self.name = name
+        self.toHost = toHost
     }
 
     public static func hand(userId: UUID, raised: Bool) -> RoomDataMessage {
         RoomDataMessage(userId: userId.uuidString.lowercased(), raised: raised)
     }
 
+    /// An emoji, from anybody in the room including the audience.
+    public static func reaction(_ emoji: String, userId: UUID, handle: String?, name: String?) -> RoomDataMessage {
+        RoomDataMessage(
+            type: "reaction",
+            userId: userId.uuidString.lowercased(),
+            emoji: emoji,
+            handle: handle,
+            name: name
+        )
+    }
+
+    /// A line of text, to the room or to the host alone.
+    public static func chat(
+        _ text: String,
+        userId: UUID,
+        handle: String?,
+        name: String?,
+        toHost: Bool
+    ) -> RoomDataMessage {
+        RoomDataMessage(
+            type: "chat",
+            userId: userId.uuidString.lowercased(),
+            text: text,
+            handle: handle,
+            name: name,
+            toHost: toHost
+        )
+    }
+
     public var isHand: Bool { type == "hand" }
+    public var isReaction: Bool { type == "reaction" && !(emoji ?? "").isEmpty }
+    public var isChat: Bool { type == "chat" && !(text ?? "").isEmpty }
+
+    private enum CodingKeys: String, CodingKey {
+        case type, userId, raised, emoji, text, handle, name, toHost
+    }
+
+    /// Tolerant: a build that has never heard of a type still decodes the
+    /// fields it knows rather than dropping the whole message.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = (try? container.decode(String.self, forKey: .type)) ?? "hand"
+        userId = (try? container.decode(String.self, forKey: .userId)) ?? ""
+        raised = ((try? container.decode(Bool.self, forKey: .raised)) ?? nil) ?? false
+        emoji = (try? container.decodeIfPresent(String.self, forKey: .emoji)) ?? nil
+        text = (try? container.decodeIfPresent(String.self, forKey: .text)) ?? nil
+        handle = (try? container.decodeIfPresent(String.self, forKey: .handle)) ?? nil
+        name = (try? container.decodeIfPresent(String.self, forKey: .name)) ?? nil
+        toHost = ((try? container.decodeIfPresent(Bool.self, forKey: .toHost)) ?? nil) ?? false
+    }
 
     public func encoded() -> Data {
         (try? JSONEncoder().encode(self)) ?? Data()
@@ -183,7 +263,8 @@ public protocol VoiceEngineProtocol: AnyObject {
     /// Sends a data message to everyone in the room. Best-effort: a failure
     /// costs the host a few seconds of poll latency, never the request itself,
     /// which went to the API first.
-    func publish(_ message: RoomDataMessage) async
+    /// Sends a data message to the room, or to named identities only.
+    func publish(_ message: RoomDataMessage, to identities: [String]) async
 }
 
 /// The microphone permission prompt, behind a seam.
@@ -211,3 +292,11 @@ public struct StaticMicrophonePermission: MicrophonePermissionRequesting {
 
     public func requestPermission() async -> Bool { isGranted }
 }
+
+extension VoiceEngineProtocol {
+    /// To everybody in the room.
+    public func publish(_ message: RoomDataMessage) async {
+        await publish(message, to: [])
+    }
+}
+
