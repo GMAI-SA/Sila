@@ -177,7 +177,7 @@ public final class NotificationsViewModel {
             notifications = []
             cursor = nil
             hasMore = false
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -214,7 +214,7 @@ public final class NotificationsViewModel {
             // Stop the pager rather than hammering a failing endpoint on every
             // scroll; pull-to-refresh is the way back.
             hasMore = false
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -265,7 +265,7 @@ public final class NotificationsViewModel {
             }
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

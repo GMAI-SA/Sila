@@ -78,7 +78,7 @@ public final class CommunityViewModel {
             await loadTabContents()
         } catch {
             guard suspension?.notice(error) != true else { return }
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -113,7 +113,7 @@ public final class CommunityViewModel {
             postsCursor = page.nextCursor
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -154,7 +154,7 @@ public final class CommunityViewModel {
             }
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -170,7 +170,7 @@ public final class CommunityViewModel {
             community = community.map(Self.withMemberCount(+1))
             toast = .success(L10n.t("communities.member.approved", member.user.displayName))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -182,7 +182,7 @@ public final class CommunityViewModel {
             pending.removeAll { $0.id == member.id }
             members.removeAll { $0.id == member.id }
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -192,7 +192,7 @@ public final class CommunityViewModel {
             members.removeAll { $0.id == member.id }
             toast = .info(L10n.t("communities.member.removed", member.user.displayName))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -203,7 +203,7 @@ public final class CommunityViewModel {
                 members[index] = CommunityMember(user: member.user, role: role, status: member.status)
             }
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -213,7 +213,7 @@ public final class CommunityViewModel {
             try await service.invite(slug: slug, handles: people.map(\.handle))
             toast = .success(L10n.plural("communities.invited", people.count))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

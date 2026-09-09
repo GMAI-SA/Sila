@@ -62,7 +62,7 @@ public final class ChatViewModel {
             messages = try await service.fetchMessages(conversationId: conversation.id)
             try? await service.markRead(conversationId: conversation.id)
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -93,7 +93,7 @@ public final class ChatViewModel {
             if conversation.isDraft { await adoptRealConversation() }
             await load()
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -114,7 +114,7 @@ public final class ChatViewModel {
             // somebody otherwise would be a promise this platform cannot keep.
             toast = .success(L10n.t("messages.deleted"))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 }

@@ -128,7 +128,7 @@ public final class ExploreViewModel {
             trending = try await search.trendingTags()
         } catch {
             trending = []
-            trendingError = APIError.wrapping(error).userMessage
+            trendingError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -220,11 +220,11 @@ public final class ExploreViewModel {
                 "people": String(found.count)
             ])
         } catch {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, let message = APIError.wrapping(error).presentableMessage else { return }
             posts = []
             people = []
             hasMore = false
-            emptyKind = .failed(APIError.wrapping(error).userMessage)
+            emptyKind = .failed(message)
         }
     }
 
@@ -252,7 +252,7 @@ public final class ExploreViewModel {
         } catch {
             // Stop the pager rather than hammering a failing endpoint.
             hasMore = false
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -377,7 +377,7 @@ public final class ExploreViewModel {
                 updated.viewer = snapshot.viewer
                 return updated
             }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

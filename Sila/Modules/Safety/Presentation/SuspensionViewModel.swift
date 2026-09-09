@@ -168,7 +168,7 @@ public final class SuspensionViewModel {
         } catch {
             // Not routed to itself: this endpoint answers *because* the account
             // is suspended, so a failure here is the network and nothing else.
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
         }
     }
 

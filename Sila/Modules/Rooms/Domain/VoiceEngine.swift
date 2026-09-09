@@ -53,6 +53,9 @@ public enum VoiceEngineError: Error, Equatable, Sendable {
     case notPermittedToPublish
     /// Anything the transport reported.
     case transport(String)
+    /// The app abandoned its own connection attempt (the screen went away).
+    /// Nothing to tell anybody.
+    case cancelled
 
     /// A sentence safe to put in front of somebody.
     public var userMessage: String {
@@ -63,6 +66,8 @@ public enum VoiceEngineError: Error, Equatable, Sendable {
             return L10n.t("rooms.voice.notPermittedToPublish")
         case let .transport(message):
             return message
+        case .cancelled:
+            return L10n.t("feed.error.pullToRefresh")
         }
     }
 }

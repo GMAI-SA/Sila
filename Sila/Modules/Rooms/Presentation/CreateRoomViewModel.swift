@@ -198,7 +198,7 @@ public final class CreateRoomViewModel {
             if selectedGroup == nil, groups.count == 1 { selectedGroupId = groups[0].id }
         } catch {
             guard suspension?.notice(error) != true else { return }
-            createError = APIError.wrapping(error).userMessage
+            createError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -303,7 +303,7 @@ public final class CreateRoomViewModel {
             return room
         } catch {
             guard suspension?.notice(error) != true else { return nil }
-            createError = APIError.wrapping(error).userMessage
+            createError = APIError.wrapping(error).presentableMessage
             return nil
         }
     }

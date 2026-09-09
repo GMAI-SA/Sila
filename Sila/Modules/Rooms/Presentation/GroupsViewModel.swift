@@ -65,7 +65,7 @@ public final class GroupsViewModel {
             toast = .success(L10n.plural("groups.member.added", chosen.count))
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -96,7 +96,7 @@ public final class GroupsViewModel {
             hasLoaded = true
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -115,7 +115,7 @@ public final class GroupsViewModel {
             toast = .success(L10n.t("groups.created", group.name))
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -134,7 +134,7 @@ public final class GroupsViewModel {
             guard suspension?.notice(error) != true else { return }
             // `user_not_found` names the first handle nobody holds, and the
             // server added nothing — so the field stands, uncorrected.
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -147,7 +147,7 @@ public final class GroupsViewModel {
             toast = .info(L10n.t("groups.member.removed", handle))
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -172,7 +172,7 @@ public final class GroupsViewModel {
         } catch {
             guard suspension?.notice(error) != true else { return }
             pendingDeletion = nil
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

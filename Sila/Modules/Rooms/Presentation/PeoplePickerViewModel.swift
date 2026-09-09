@@ -39,7 +39,7 @@ public final class PeoplePickerViewModel {
             known = try await directory.knownPeople(of: viewerHandle).filter { !excluded.contains(Handle.normalised($0.handle)) }
             hasLoaded = true
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

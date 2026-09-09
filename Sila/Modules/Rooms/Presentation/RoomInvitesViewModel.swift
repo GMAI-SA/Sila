@@ -62,7 +62,7 @@ public final class RoomInvitesViewModel {
             invited = try await service.invite(roomId: roomId, handles: wanted).invited
             toast = .success(L10n.plural("rooms.invites.added", wanted.count))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -80,7 +80,7 @@ public final class RoomInvitesViewModel {
         do {
             invited = try await service.fetchInvites(roomId: roomId).invited
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -114,7 +114,7 @@ public final class RoomInvitesViewModel {
             invited = try await service.revokeInvite(roomId: roomId, handle: handle).invited
             toast = .info(L10n.t("rooms.invites.revoked", handle))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 }

@@ -59,9 +59,9 @@ public final class CommunitiesViewModel {
         } catch {
             guard suspension?.notice(error) != true else { return }
             if communities.isEmpty {
-                loadError = APIError.wrapping(error).userMessage
+                loadError = APIError.wrapping(error).presentableMessage
             } else {
-                toast = .error(APIError.wrapping(error).userMessage)
+                toast = .error(for: error)
             }
             hasLoaded = true
         }

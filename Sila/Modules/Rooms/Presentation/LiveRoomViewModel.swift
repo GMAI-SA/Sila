@@ -267,6 +267,8 @@ public final class LiveRoomViewModel {
     private func connectMedia() async {
         do {
             try await engine.connect(url: mediaURL, token: mediaToken, canPublish: role.canPublish)
+        } catch VoiceEngineError.cancelled {
+            // The screen left before the media connected; nobody to tell.
         } catch {
             analytics.track(.roomMediaFailed, properties: ["stage": "connect"])
             toast = .error(
@@ -570,6 +572,7 @@ public final class LiveRoomViewModel {
         } catch VoiceEngineError.microphoneDenied {
             analytics.track(.roomMicDenied)
             toast = .warning(RoomCopy.microphoneDenied)
+        } catch VoiceEngineError.cancelled {
         } catch {
             toast = .error((error as? VoiceEngineError)?.userMessage ?? APIError.wrapping(error).userMessage)
         }
@@ -593,7 +596,7 @@ public final class LiveRoomViewModel {
             toast = raising ? .success(RoomCopy.handRaised) : .info(RoomCopy.handLowered)
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -650,7 +653,7 @@ public final class LiveRoomViewModel {
             participants = (try? await service.fetchParticipants(roomId: room.id)) ?? participants
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -672,7 +675,7 @@ public final class LiveRoomViewModel {
             participants = (try? await service.fetchParticipants(roomId: room.id)) ?? participants
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -692,7 +695,7 @@ public final class LiveRoomViewModel {
             analytics.track(.roomEnded)
         } catch {
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
             return
         }
         await leave()

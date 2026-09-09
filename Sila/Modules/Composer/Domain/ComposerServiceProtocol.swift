@@ -111,6 +111,9 @@ extension APIError {
     /// a `userMessage` to show.
     /// - Parameter error: Anything a service can throw.
     public static func wrapping(_ error: Error) -> APIError {
-        (error as? APIError) ?? .transport(error.localizedDescription)
+        if let api = error as? APIError { return api }
+        if error is CancellationError { return .cancelled }
+        if let url = error as? URLError, url.code == .cancelled { return .cancelled }
+        return .transport(error.localizedDescription)
     }
 }

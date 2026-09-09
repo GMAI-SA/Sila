@@ -96,8 +96,9 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
             self.canPublish = room.localParticipant.permissions.canPublish
             refreshMuted()
         } catch {
-            connection = .failed(APIError.wrapping(error).userMessage)
-            throw VoiceEngineError.transport(error.localizedDescription)
+            let wrapped = APIError.wrapping(error)
+            connection = wrapped.isCancellation ? .idle : .failed(wrapped.userMessage)
+            throw wrapped.isCancellation ? VoiceEngineError.cancelled : .transport(error.localizedDescription)
         }
     }
 

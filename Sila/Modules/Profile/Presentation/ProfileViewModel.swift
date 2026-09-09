@@ -192,7 +192,7 @@ public final class ProfileViewModel {
         do {
             followRequests = try await service.fetchFollowRequests()
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -289,7 +289,7 @@ public final class ProfileViewModel {
             posts = []
             cursor = nil
             hasMore = false
-            postsError = APIError.wrapping(error).userMessage
+            postsError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -315,7 +315,7 @@ public final class ProfileViewModel {
             // Stop the pager rather than hammering a failing endpoint on every
             // scroll; pull-to-refresh is the way back.
             hasMore = false
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -482,7 +482,7 @@ public final class ProfileViewModel {
                 updated.viewer = snapshot.viewer
                 return updated
             }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -493,6 +493,9 @@ public final class ProfileViewModel {
     }
 
     private func adopt(loadFailure error: Error) {
+        // A load the screen itself cancelled (a newer one superseded it) is
+        // not a failure; whatever the screen shows is still right.
+        guard !APIError.wrapping(error).isCancellation else { return }
         profile = nil
         posts = []
         cursor = nil

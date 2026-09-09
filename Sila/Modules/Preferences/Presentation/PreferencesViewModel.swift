@@ -195,7 +195,7 @@ public final class PreferencesViewModel {
                 "narrows": String(saved.narrowsToInterests)
             ])
         } catch {
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -284,7 +284,7 @@ public final class PreferencesViewModel {
         } catch {
             // The edits stay exactly where they were. Resetting them would lose
             // work in order to make the screen agree with the server.
-            saveError = APIError.wrapping(error).userMessage
+            saveError = APIError.wrapping(error).presentableMessage
             toast = .error(saveError ?? L10n.t("preferences.save.failed"))
             analytics.track(.preferencesSaveFailed, properties: [
                 "code": (error as? APIError)?.code?.rawValue ?? "transport"

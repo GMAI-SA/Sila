@@ -86,7 +86,10 @@ public final class URLSessionNetworkClient: NetworkClient {
         do {
             (data, response) = try await session.data(for: urlRequest)
         } catch let error as URLError {
-            throw APIError.transport(error.localizedDescription)
+            // -999: the app cancelled its own request. Not a network failure.
+            throw error.code == .cancelled ? APIError.cancelled : .transport(error.localizedDescription)
+        } catch is CancellationError {
+            throw APIError.cancelled
         } catch {
             throw APIError.transport(error.localizedDescription)
         }

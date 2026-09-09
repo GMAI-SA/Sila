@@ -70,7 +70,7 @@ public final class NotificationSettingsViewModel {
         do {
             preferences = try await service.fetchPreferences().notifications
         } catch {
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -108,7 +108,7 @@ public final class NotificationSettingsViewModel {
             ])
         } catch {
             preferences = snapshot
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 }

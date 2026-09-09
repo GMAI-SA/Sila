@@ -326,7 +326,7 @@ public final class ComposerViewModel {
         do {
             attachments.append(try await composer.uploadImage(data))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

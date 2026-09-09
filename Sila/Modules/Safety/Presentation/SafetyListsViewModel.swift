@@ -140,7 +140,7 @@ public final class SafetyListsViewModel {
             _ = try? await mutes
             _ = try? await filed
             guard suspension?.notice(error) != true else { return }
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
             return
         }
 
@@ -175,7 +175,7 @@ public final class SafetyListsViewModel {
         } catch {
             blocked = snapshot
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -196,7 +196,7 @@ public final class SafetyListsViewModel {
         } catch {
             muted = snapshot
             guard suspension?.notice(error) != true else { return }
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 }

@@ -153,7 +153,7 @@ public final class RoomsViewModel {
             guard suspension?.notice(error) != true else { return }
             live = []
             scheduled = []
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -204,7 +204,7 @@ public final class RoomsViewModel {
             guard !Task.isCancelled else { return }
             guard suspension?.notice(error) != true else { return }
             results = []
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

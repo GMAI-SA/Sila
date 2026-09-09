@@ -77,7 +77,7 @@ public final class ConversationsViewModel {
             counts = try await countsTask
             analytics.track(.messagesOpened, properties: ["folder": folder.rawValue])
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 
@@ -90,7 +90,7 @@ public final class ConversationsViewModel {
             await load()
             toast = .success(L10n.t("messages.request.accepted"))
         } catch {
-            toast = .error(APIError.wrapping(error).userMessage)
+            toast = .error(for: error)
         }
     }
 

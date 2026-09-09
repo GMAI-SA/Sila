@@ -52,6 +52,12 @@ public struct SLToastMessage: Identifiable, Equatable, Sendable {
     public static func success(_ text: String) -> SLToastMessage { .init(kind: .success, text: text) }
     /// Convenience constructor for an error toast.
     public static func error(_ text: String) -> SLToastMessage { .init(kind: .error, text: text) }
+    /// An error toast for a thrown error — or `nil` when the error is the app
+    /// cancelling its own request, which is not something to tell anybody.
+    public static func error(for error: Error) -> SLToastMessage? {
+        let wrapped = APIError.wrapping(error)
+        return wrapped.isCancellation ? nil : .init(kind: .error, text: wrapped.userMessage)
+    }
     /// Convenience constructor for a warning toast.
     public static func warning(_ text: String) -> SLToastMessage { .init(kind: .warning, text: text) }
     /// Convenience constructor for an informational toast.

@@ -296,7 +296,7 @@ public final class AccountViewModel {
             // A 403 here would be surprising — `GET /me/account` admits a
             // deactivated account — but if it happens it is still a route.
             if handledDeactivation(error) { hasLoaded = true; return }
-            loadError = APIError.wrapping(error).userMessage
+            loadError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -321,7 +321,7 @@ public final class AccountViewModel {
             guard !handledDeactivation(error) else { return }
             // The edits stay where they are: throwing away someone's work to
             // make a screen agree with the server is the worse failure.
-            profileError = APIError.wrapping(error).userMessage
+            profileError = APIError.wrapping(error).presentableMessage
             toast = .error(profileError ?? L10n.t("account.profile.toast.saveFailed"))
         }
     }
@@ -363,7 +363,7 @@ public final class AccountViewModel {
             toast = .success(L10n.t("account.avatar.toast.updated"))
         } catch {
             guard !handledDeactivation(error) else { return }
-            avatarError = APIError.wrapping(error).userMessage
+            avatarError = APIError.wrapping(error).presentableMessage
             toast = .error(avatarError ?? L10n.t("account.avatar.toast.uploadFailed"))
         }
     }
@@ -380,7 +380,7 @@ public final class AccountViewModel {
             toast = .success(L10n.t("account.avatar.toast.removed"))
         } catch {
             guard !handledDeactivation(error) else { return }
-            avatarError = APIError.wrapping(error).userMessage
+            avatarError = APIError.wrapping(error).presentableMessage
             toast = .error(avatarError ?? L10n.t("account.avatar.toast.removeFailed"))
         }
     }
@@ -406,7 +406,7 @@ public final class AccountViewModel {
             passwordRepeat = ""
         } catch {
             guard !handledDeactivation(error) else { return }
-            passwordError = APIError.wrapping(error).userMessage
+            passwordError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -440,7 +440,7 @@ public final class AccountViewModel {
             emailCode = ""
         } catch {
             guard !handledDeactivation(error) else { return }
-            emailError = APIError.wrapping(error).userMessage
+            emailError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -518,7 +518,7 @@ public final class AccountViewModel {
             toast = .success(successMessage)
         } catch {
             guard !handledDeactivation(error) else { return }
-            phoneError = APIError.wrapping(error).userMessage
+            phoneError = APIError.wrapping(error).presentableMessage
         }
     }
 
@@ -536,7 +536,7 @@ public final class AccountViewModel {
             exportFile = try Self.writeExport(data)
         } catch {
             guard !handledDeactivation(error) else { return }
-            exportError = APIError.wrapping(error).userMessage
+            exportError = APIError.wrapping(error).presentableMessage
             toast = .error(exportError ?? L10n.t("account.export.toast.failed"))
         }
     }
@@ -580,7 +580,7 @@ public final class AccountViewModel {
             analytics.track(.accountDeletionRouted, properties: ["source": "requested"])
         } catch {
             guard !handledDeactivation(error) else { return }
-            deletionError = APIError.wrapping(error).userMessage
+            deletionError = APIError.wrapping(error).presentableMessage
         }
     }
 

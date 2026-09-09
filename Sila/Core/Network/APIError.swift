@@ -275,6 +275,10 @@ public enum APIError: Error, Equatable, Sendable {
     case decoding(String)
     /// URLSession failed (offline, DNS, TLS, timeout…).
     case transport(String)
+    /// The request was cancelled — almost always by the app itself, when a
+    /// screen went away or a newer request replaced this one. Never the
+    /// person's problem, and never worth a message.
+    case cancelled
     /// No credentials available for a call that requires them.
     case unauthenticated
     /// The device refused or failed the biometric prompt.
@@ -491,6 +495,11 @@ public enum APIError: Error, Equatable, Sendable {
             return message.isEmpty ? L10n.t("error.httpStatus", SLFormat.number(status)) : message
         case .decoding:
             return L10n.t("error.decoding")
+        case .cancelled:
+            // Nothing went wrong that anybody can act on. Callers check
+            // `isCancellation` and say nothing; this exists so a stray path
+            // that ignores that still says something harmless.
+            return L10n.t("feed.error.pullToRefresh")
         case let .transport(message):
             return L10n.t("error.transport", message)
         case .unauthenticated:
@@ -515,3 +524,27 @@ struct APIErrorEnvelope: Decodable {
 struct APIErrorStringEnvelope: Decodable {
     let detail: String
 }
+
+extension APIError {
+    /// Whether this is the app cancelling its own request.
+    ///
+    /// A SwiftUI `.task` is cancelled whenever its view goes away, a
+    /// `refreshable` can be interrupted, and a search supersedes the request
+    /// before it. All three arrive here as a cancellation, and showing
+    /// "Network problem: cancelled" for any of them tells somebody their
+    /// connection failed when nothing did.
+    /// ``userMessage``, or `nil` for a cancellation — for the screens that
+    /// keep an error as optional state rather than showing a toast.
+    public var presentableMessage: String? {
+        isCancellation ? nil : userMessage
+    }
+
+    public var isCancellation: Bool {
+        if case .cancelled = self { return true }
+        if case let .transport(message) = self {
+            return message.lowercased() == "cancelled"
+        }
+        return false
+    }
+}
+
