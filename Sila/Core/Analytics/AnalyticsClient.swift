@@ -121,6 +121,11 @@ public enum AnalyticsEvent: String, Sendable {
     case roomParticipantOpened = "room_participant_opened"
     case roomReactionSent = "room_reaction_sent"
     case roomChatSent = "room_chat_sent"
+    case communityCreated = "community_created"
+    case communityJoined = "community_joined"
+    case communityLeft = "community_left"
+    case communityClosed = "community_closed"
+    case communityOpened = "community_opened"
     /// A composition finished, counting every segment that got through.
     case postPublished = "post_published"
     /// A thread stopped partway, leaving real posts behind.

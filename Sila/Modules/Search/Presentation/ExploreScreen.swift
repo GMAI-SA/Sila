@@ -14,6 +14,8 @@ public struct ExploreScreen: View {
     private let onOpenPost: @MainActor (Post) -> Void
     private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
+    /// Opens the communities list. Absent where communities are not wired.
+    private let onOpenCommunities: (@MainActor () -> Void)?
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
@@ -32,6 +34,7 @@ public struct ExploreScreen: View {
         viewModel: ExploreViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onStub: @escaping @MainActor (String) -> Void,
+        onOpenCommunities: (@MainActor () -> Void)? = nil,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
@@ -41,6 +44,7 @@ public struct ExploreScreen: View {
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
         self.onStub = onStub
+        self.onOpenCommunities = onOpenCommunities
         self.onCompose = onCompose
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
@@ -51,6 +55,35 @@ public struct ExploreScreen: View {
             searchField
 
             if !viewModel.isShowingTrending {
+                if let onOpenCommunities {
+                    Button(action: onOpenCommunities) {
+                        HStack(spacing: SLSpacing.sm) {
+                            Image(systemName: "person.3.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(SLColor.primary)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(CommunityCopy.title)
+                                    .font(SLFont.bodyEmphasis)
+                                    .foregroundStyle(SLColor.textPrimary)
+                                Text(L10n.t("communities.explore.hint"))
+                                    .font(SLFont.micro)
+                                    .foregroundStyle(SLColor.textMuted)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.forward")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(SLColor.textMuted)
+                        }
+                        .padding(.horizontal, SLSpacing.lg)
+                        .padding(.vertical, SLSpacing.md)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("explore.communities")
+
+                    SLDivider()
+                }
+
                 SLSegmentedControl(
                     items: ExploreViewModel.ResultTab.allCases,
                     selection: Binding(

@@ -20,13 +20,23 @@ public enum ComposerContext: Identifiable, Hashable, Sendable {
     /// A new post quoting `post`. The quote is rendered beneath the editor and
     /// the scope picker is shown, because a quote is a post of its own.
     case quote(Post)
+    /// A post written inside a community. The community's own scope governs
+    /// it, so there is no picker — the same reason a reply has none.
+    case community(Community)
 
     public var id: String {
         switch self {
         case .newPost: return "new"
         case let .reply(post): return "reply-\(post.id.uuidString)"
         case let .quote(post): return "quote-\(post.id.uuidString)"
+        case let .community(community): return "community-\(community.id.uuidString)"
         }
+    }
+
+    /// The community being written in, when there is one.
+    public var community: Community? {
+        if case let .community(community) = self { return community }
+        return nil
     }
 
     /// The post being replied to, when there is one.
@@ -43,7 +53,7 @@ public enum ComposerContext: Identifiable, Hashable, Sendable {
 
     /// Whether the composer offers a scope picker. Replies inherit their
     /// parent's audience, so offering a choice there would be a lie.
-    public var showsScopePicker: Bool { replyTarget == nil }
+    public var showsScopePicker: Bool { replyTarget == nil && community == nil }
 
     /// Screen title.
     public var title: String {
@@ -51,6 +61,7 @@ public enum ComposerContext: Identifiable, Hashable, Sendable {
         case .newPost: return L10n.t("composer.title.newPost")
         case .reply: return L10n.t("composer.title.reply")
         case .quote: return L10n.t("composer.title.quote")
+        case let .community(community): return community.name
         }
     }
 
@@ -64,6 +75,7 @@ public enum ComposerContext: Identifiable, Hashable, Sendable {
         case .newPost: return L10n.t("composer.action.post")
         case .reply: return L10n.t("composer.action.reply")
         case .quote: return L10n.t("composer.action.post")
+        case .community: return L10n.t("composer.action.post")
         }
     }
 }

@@ -49,6 +49,7 @@ public struct MainTabView: View {
     /// the two above are: a model rebuilt on every tab switch would take the
     /// badge with it.
     @State private var conversationsViewModel: ConversationsViewModel
+    @State private var communitiesViewModel: CommunitiesViewModel
     /// Blocking, muting and reporting for every card and every header below.
     ///
     /// One instance for the whole shell rather than one per screen. The block
@@ -82,6 +83,13 @@ public struct MainTabView: View {
             initialValue: NotificationsViewModel(
                 service: container.notificationsService,
                 feed: container.feedService,
+                analytics: container.analytics,
+                suspension: container.suspension
+            )
+        )
+        self._communitiesViewModel = State(
+            initialValue: CommunitiesViewModel(
+                service: container.communitiesService,
                 analytics: container.analytics,
                 suspension: container.suspension
             )
@@ -197,6 +205,27 @@ public struct MainTabView: View {
                     }
                 )
             }
+            .tint(SLColor.primary)
+        }
+        .sheet(isPresented: Binding(
+            get: { container.router.isCreatingCommunity },
+            set: { container.router.isCreatingCommunity = $0 }
+        )) {
+            CreateCommunitySheet(
+                viewModel: CreateCommunityViewModel(
+                    author: ComposerAuthor(user: container.session.user),
+                    service: container.communitiesService,
+                    preferences: container.preferencesService,
+                    analytics: container.analytics,
+                    suspension: container.suspension,
+                    onCreated: { community in communitiesViewModel.insert(community) }
+                ),
+                onClose: { container.router.isCreatingCommunity = false },
+                onCreated: { community in
+                    // Straight into the space that was just opened.
+                    push(.community(slug: community.slug))
+                }
+            )
             .tint(SLColor.primary)
         }
         .sheet(isPresented: $isShowingGroups) {
@@ -360,7 +389,7 @@ public struct MainTabView: View {
             case let .postDetail(post): return Handle.normalised(post.author.handle) == target
             case let .conversation(conversation):
                 return Handle.normalised(conversation.other.handle) == target
-            case .savedPosts:
+            case .savedPosts, .community, .communities:
                 return false
             }
         }
@@ -540,6 +569,7 @@ public struct MainTabView: View {
                     viewModel: exploreViewModel,
                     onOpenPost: openPost,
                     onStub: stub,
+                    onOpenCommunities: { push(.communities) },
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
                     safetyMenu: safetyMenu(for:),
@@ -744,6 +774,52 @@ public struct MainTabView: View {
         container.router.messagesPath.append(.conversation(existing ?? Conversation.draft(with: person)))
     }
 
+    /// One community's screen, wherever it was opened from.
+    ///
+    /// `push` takes a rooms route because the only thing a community pushes
+    /// onto its own stack is a room; everything else opens where it already
+    /// belongs — a post on the feed stack, a profile beside it.
+    @ViewBuilder
+    private func communityScreen(slug: String, push: @escaping (RoomsRoute) -> Void) -> some View {
+        CommunityScreen(
+            viewModel: CommunityViewModel(
+                slug: slug,
+                service: container.communitiesService,
+                feed: container.feedService,
+                analytics: container.analytics,
+                suspension: container.suspension
+            ),
+            onOpenPost: openPost,
+            onOpenProfile: openProfile,
+            onOpenRoom: { room in push(.room(room)) },
+            onCompose: { community in composeHandler?(.community(community)) },
+            postActions: { post in communityPostActions(post) },
+            people: container.peopleDirectory,
+            viewerHandle: container.session.user?.handle ?? ""
+        )
+    }
+
+    /// A community card's actions: the same engagement the feed offers, with
+    /// the home feed kept in step so a like there is a like everywhere.
+    private func communityPostActions(_ post: Post) -> PostCardActions {
+        PostCardActions(
+            onOpen: openPost,
+            onLike: { post in Task { await viewModel.toggleLike(post) } },
+            onRepost: { post in Task { await viewModel.toggleRepost(post) } },
+            onBookmark: { post in Task { await viewModel.toggleBookmark(post) } },
+            onReply: { post in composeHandler?(.reply(to: post)) },
+            onReplyBlocked: { post in viewModel.replyBlocked(post) },
+            onQuote: { post in composeHandler?(.quote(post)) },
+            onMention: openProfile,
+            onHashtag: { _ in stub(StubFeature.hashtagSearch) },
+            onOpenQuoted: openPost,
+            onOpenAuthor: { author in openProfile(author.handle) },
+            onStub: stub,
+            safetyMenu: safetyMenu(for:),
+            ownPost: ownPostMenu(for:)
+        )
+    }
+
     /// Presents the viewer's groups.
     private func openGroups() {
         isShowingGroups = true
@@ -829,6 +905,9 @@ public struct MainTabView: View {
     @ViewBuilder
     private func roomsDestination(for route: RoomsRoute) -> some View {
         switch route {
+        case let .community(slug):
+            communityScreen(slug: slug, push: { container.router.roomsPath.append($0) })
+
         case let .room(room):
             LiveRoomScreen(
                 viewModel: LiveRoomViewModel(
@@ -906,6 +985,21 @@ public struct MainTabView: View {
     @ViewBuilder
     private func destination(for route: FeedRoute) -> some View {
         switch route {
+        case .communities:
+            CommunitiesScreen(
+                viewModel: communitiesViewModel,
+                onOpen: { community in push(.community(slug: community.slug)) },
+                onCreate: { container.router.isCreatingCommunity = true }
+            )
+
+        case let .community(slug):
+            communityScreen(slug: slug, push: { route in
+                if case let .room(room) = route {
+                    selection = .rooms
+                    openRoom(room)
+                }
+            })
+
         case let .conversation(conversation):
             ChatScreen(
                 viewModel: ChatViewModel(

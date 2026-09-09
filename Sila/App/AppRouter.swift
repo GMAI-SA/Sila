@@ -34,6 +34,11 @@ public enum FeedRoute: Hashable, Sendable {
     /// The viewer's own saved posts. Reached from their profile; nothing to
     /// carry, the list is theirs.
     case savedPosts
+    /// A community, by its address. Read again on arrival, like a profile:
+    /// the copy attached to a card is whatever was true when it was fetched.
+    case community(slug: String)
+    /// Communities to browse.
+    case communities
 }
 
 /// Screens reachable inside the Rooms tab's stack.
@@ -51,6 +56,8 @@ public enum RoomsRoute: Hashable, Sendable {
     case room(VoiceRoom)
     /// One account's public page, reached from the participant list.
     case profile(handle: String)
+    /// The community a room belongs to.
+    case community(slug: String)
 }
 
 /// Navigation coordinator.
@@ -87,6 +94,8 @@ public final class AppRouter {
     public var roomsPath: [RoomsRoute] = []
     /// `true` while the create-room sheet is up.
     public var isCreatingRoom = false
+    /// `true` while the create-community sheet is up.
+    public var isCreatingCommunity = false
     /// Legal document currently presented in a sheet, if any.
     public var presentedLegalDocument: LegalDocument?
     /// The composer currently presented as a sheet, if any.

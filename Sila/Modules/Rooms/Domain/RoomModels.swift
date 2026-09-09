@@ -162,6 +162,10 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     public let groupId: UUID?
     /// The host's own label for that group ("Family").
     public let groupName: String?
+    /// The community this room is in — the fourth closed kind.
+    public let communityId: UUID?
+    public let communitySlug: String?
+    public let communityName: String?
     /// This viewer's seat while they are in the room, or `nil` outside it.
     public let viewerRole: RoomRole?
     /// Whether this viewer's hand is up.
@@ -199,7 +203,10 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         handsCount: Int = 0,
         matchesInterests: Bool = false,
         groupId: UUID? = nil,
-        groupName: String? = nil
+        groupName: String? = nil,
+        communityId: UUID? = nil,
+        communitySlug: String? = nil,
+        communityName: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -229,6 +236,9 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         self.matchesInterests = matchesInterests
         self.groupId = groupId
         self.groupName = groupName
+        self.communityId = communityId
+        self.communitySlug = communitySlug
+        self.communityName = communityName
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
@@ -239,7 +249,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         case canSpeak, speakRefusal, isHost, isRemoved
         case isInviteOnly, isInvited, canJoin, joinRefusal
         case isFollowingOnly, viewerRole, handRaised, handsCount, matchesInterests
-        case groupId, groupName
+        case groupId, groupName, communityId, communitySlug, communityName
     }
 
     /// Tolerant decoder: one malformed optional must not blank a whole list.
@@ -305,10 +315,15 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         groupId = (try? container.decodeIfPresent(UUID.self, forKey: .groupId)) ?? nil
         let groupLabel = (try? container.decodeIfPresent(String.self, forKey: .groupName)) ?? nil
         groupName = (groupLabel?.isEmpty == false) ? groupLabel : nil
+        communityId = (try? container.decodeIfPresent(UUID.self, forKey: .communityId)) ?? nil
+        let slug = (try? container.decodeIfPresent(String.self, forKey: .communitySlug)) ?? nil
+        communitySlug = (slug?.isEmpty == false) ? slug : nil
+        let communityLabel = (try? container.decodeIfPresent(String.self, forKey: .communityName)) ?? nil
+        communityName = (communityLabel?.isEmpty == false) ? communityLabel : nil
     }
 
     /// Any closed kind. Everything about the door keys off this.
-    public var isClosed: Bool { isInviteOnly || isFollowingOnly || groupId != nil }
+    public var isClosed: Bool { isInviteOnly || isFollowingOnly || groupId != nil || communityId != nil }
 
     /// A room opened for one of the host's groups.
     public var isGroupOnly: Bool { groupId != nil }
@@ -351,6 +366,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         if isRemoved { return RoomCopy.removedFromRoom }
         guard !canJoin else { return nil }
         if let joinRefusal { return joinRefusal }
+        if communityId != nil { return L10n.t("rooms.communityOnly.refusal") }
         if groupId != nil { return RoomCopy.groupOnlyRefusal }
         return isFollowingOnly ? RoomCopy.followingOnlyRefusal : RoomCopy.inviteOnlyRefusal
     }

@@ -58,6 +58,9 @@ public struct PostDraft: Equatable, Sendable {
     /// Their words about what is covered. Sent only with a category; the
     /// server refuses a note on its own, and so does ``CreatePostBody``.
     public var sensitiveNote: String
+    /// The community this is written in, when it is written in one. The
+    /// community's own scope governs it, so no picker is shown there.
+    public var communityId: UUID?
 
     public init(
         text: String,
@@ -66,7 +69,8 @@ public struct PostDraft: Equatable, Sendable {
         quotedPostId: UUID? = nil,
         imageURLs: [String] = [],
         sensitive: SensitiveKind? = nil,
-        sensitiveNote: String = ""
+        sensitiveNote: String = "",
+        communityId: UUID? = nil
     ) {
         self.text = text
         self.scope = scope
@@ -75,6 +79,7 @@ public struct PostDraft: Equatable, Sendable {
         self.quotedPostId = quotedPostId
         self.sensitive = sensitive
         self.sensitiveNote = sensitiveNote
+        self.communityId = communityId
     }
 
     /// The text as it goes over the wire.
@@ -111,6 +116,7 @@ struct CreatePostBody: Encodable, Equatable {
     /// deserve to be.
     let sensitive: String?
     let sensitiveNote: String?
+    let communityId: String?
 
     init(draft: PostDraft) {
         self.text = draft.trimmedText
@@ -123,6 +129,7 @@ struct CreatePostBody: Encodable, Equatable {
         self.sensitive = draft.sensitive?.wireValue
         let note = draft.sensitiveNote.trimmingCharacters(in: .whitespacesAndNewlines)
         self.sensitiveNote = (draft.sensitive != nil && !note.isEmpty) ? String(note.prefix(80)) : nil
+        self.communityId = draft.communityId?.uuidString.lowercased()
     }
 }
 

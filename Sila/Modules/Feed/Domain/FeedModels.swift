@@ -307,6 +307,11 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     /// here, and ``repostedAt`` is when. `nil` for a post at its own place.
     public let repostedBy: UserSummary?
     public let repostedAt: Date?
+    /// The community this was posted in, when it was one. The name rides
+    /// along so a card can say where it came from without a second call.
+    public let communityId: UUID?
+    public let communitySlug: String?
+    public let communityName: String?
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -349,13 +354,19 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         sensitive: SensitiveKind? = nil,
         sensitiveNote: String? = nil,
         repostedBy: UserSummary? = nil,
-        repostedAt: Date? = nil
+        repostedAt: Date? = nil,
+        communityId: UUID? = nil,
+        communitySlug: String? = nil,
+        communityName: String? = nil
     ) {
         self.id = id
         self.author = author
         self.text = text
         self.repostedBy = repostedBy
         self.repostedAt = repostedAt
+        self.communityId = communityId
+        self.communitySlug = communitySlug
+        self.communityName = communityName
         self.sensitive = sensitive
         self.sensitiveNote = sensitive == nil ? nil : ((sensitiveNote?.isEmpty == false) ? sensitiveNote : nil)
         self.imageURLs = imageURLs
@@ -375,6 +386,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case id, author, text, imageUrls, language, createdAt, scope, scopeCountry, scopeRegion
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
+        case communityId, communitySlug, communityName
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -436,6 +448,11 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         quoted = decodedQuote.map { .value($0.strippingQuote()) }
         repostedBy = (try? container.decodeIfPresent(UserSummary.self, forKey: .repostedBy)) ?? nil
         repostedAt = (try? container.decodeIfPresent(Date.self, forKey: .repostedAt)) ?? nil
+        communityId = (try? container.decodeIfPresent(UUID.self, forKey: .communityId)) ?? nil
+        let slug = (try? container.decodeIfPresent(String.self, forKey: .communitySlug)) ?? nil
+        communitySlug = (slug?.isEmpty == false) ? slug : nil
+        let name = (try? container.decodeIfPresent(String.self, forKey: .communityName)) ?? nil
+        communityName = (name?.isEmpty == false) ? name : nil
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.
@@ -457,7 +474,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             sensitive: sensitive,
             sensitiveNote: sensitiveNote,
             repostedBy: repostedBy,
-            repostedAt: repostedAt
+            repostedAt: repostedAt,
+            communityId: communityId,
+            communitySlug: communitySlug,
+            communityName: communityName
         )
     }
 }

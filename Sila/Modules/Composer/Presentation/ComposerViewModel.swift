@@ -365,7 +365,8 @@ public final class ComposerViewModel {
             // thread must not attach them a second time.
             imageURLs: continuationId == nil ? attachments : [],
             sensitive: sensitive,
-            sensitiveNote: sensitiveNote
+            sensitiveNote: sensitiveNote,
+            communityId: context.community?.id
         )
 
         if !report.posted.isEmpty {

@@ -48,6 +48,7 @@ public final class AppContainer {
     public let notificationsService: NotificationsServiceProtocol
     /// Live voice rooms — listing, joining, hosting.
     public let roomsService: RoomsServiceProtocol
+    public let communitiesService: CommunitiesServiceProtocol
     /// Where pickers get their people: the viewer's followers and following,
     /// plus search. Built on demand from the two services it reads.
     public var peopleDirectory: PeopleDirectory {
@@ -99,6 +100,7 @@ public final class AppContainer {
         safetyService: SafetyServiceProtocol? = nil,
         notificationsService: NotificationsServiceProtocol? = nil,
         roomsService: RoomsServiceProtocol? = nil,
+        communitiesService: CommunitiesServiceProtocol? = nil,
         messagesService: MessagesServiceProtocol? = nil,
         languageService: LanguageServiceProtocol? = nil
     ) {
@@ -311,6 +313,20 @@ public final class AppContainer {
             )
         } else {
             self.roomsService = RoomsService(
+                network: network,
+                tokens: tokens,
+                analytics: analytics
+            )
+        }
+
+        if let communitiesService {
+            self.communitiesService = communitiesService
+        } else if flags.useMockRooms {
+            // Communities ride with the rooms flag: both are the "spaces"
+            // half of the product, and a demo build wants them consistent.
+            self.communitiesService = CommunitiesServiceMock()
+        } else {
+            self.communitiesService = CommunitiesService(
                 network: network,
                 tokens: tokens,
                 analytics: analytics

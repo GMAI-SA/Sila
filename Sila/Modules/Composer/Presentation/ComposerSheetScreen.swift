@@ -296,6 +296,7 @@ public struct ComposerSheetScreen: View {
         case .newPost: return L10n.t("composer.placeholder.newPost")
         case let .reply(post): return L10n.t("composer.placeholder.replyTo", post.author.atHandle)
         case .quote: return L10n.t("composer.placeholder.quote")
+        case let .community(community): return L10n.t("composer.placeholder.community", community.name)
         }
     }
 

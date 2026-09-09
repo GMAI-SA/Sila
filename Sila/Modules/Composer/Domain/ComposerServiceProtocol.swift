@@ -59,7 +59,8 @@ extension ComposerServiceProtocol {
         quotedPostId: UUID? = nil,
         imageURLs: [String] = [],
         sensitive: SensitiveKind? = nil,
-        sensitiveNote: String = ""
+        sensitiveNote: String = "",
+        communityId: UUID? = nil
     ) async -> ThreadPostReport {
         var queue = segments
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -81,7 +82,11 @@ extension ComposerServiceProtocol {
                 // the pictures on every link would post them four times.
                 imageURLs: posted.isEmpty ? imageURLs : [],
                 sensitive: sensitive,
-                sensitiveNote: sensitiveNote
+                sensitiveNote: sensitiveNote,
+                // Every segment of a thread written in a community belongs to
+                // it: the server puts a reply in its parent's community
+                // anyway, and saying so is cheaper than relying on that.
+                communityId: communityId
             )
             do {
                 let post = try await createPost(draft)

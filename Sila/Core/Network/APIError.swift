@@ -205,6 +205,21 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case notFollowed = "not_followed"
     /// A group room the viewer is not a member of.
     case notInGroup = "not_in_group"
+    /// A room inside a community the viewer has not joined.
+    case notInCommunity = "not_in_community"
+    /// A community address somebody else holds.
+    case slugTaken = "slug_taken"
+    case slugReserved = "slug_reserved"
+    case invalidSlug = "invalid_slug"
+    /// Writing where you are not a member, or where the scope shuts you out.
+    case cannotPostHere = "cannot_post_here"
+    /// Reading a private community from outside it.
+    case notAMember = "not_a_member"
+    case notAnAdmin = "not_an_admin"
+    case alreadyMember = "already_member"
+    case removedFromCommunity = "removed_from_community"
+    case communityClosed = "community_closed"
+    case tooManyCommunities = "too_many_communities"
     /// A room asked for two kinds of door at once.
     case oneDoor = "one_door"
     /// A room opened for a group the host does not own.
@@ -415,6 +430,28 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("rooms.followingOnly.refusal")
             case .notInGroup:
                 return L10n.t("rooms.groupOnly.refusal")
+            case .notInCommunity:
+                return L10n.t("rooms.communityOnly.refusal")
+            case .slugTaken:
+                return L10n.t("error.slugTaken")
+            case .slugReserved:
+                return L10n.t("error.slugReserved")
+            case .invalidSlug:
+                return L10n.t("error.invalidSlug")
+            case .cannotPostHere:
+                return L10n.t("error.cannotPostHere")
+            case .notAMember:
+                return L10n.t("error.notAMember")
+            case .notAnAdmin:
+                return L10n.t("error.notAnAdmin")
+            case .alreadyMember:
+                return L10n.t("error.alreadyMember")
+            case .removedFromCommunity:
+                return L10n.t("error.removedFromCommunity")
+            case .communityClosed:
+                return L10n.t("error.communityClosed")
+            case .tooManyCommunities:
+                return L10n.t("error.tooManyCommunities")
             case .oneDoor:
                 return L10n.t("error.oneDoor")
             case .groupNotFound:
