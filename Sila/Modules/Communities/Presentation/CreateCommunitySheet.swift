@@ -90,7 +90,6 @@ public struct CreateCommunitySheet: View {
                 error: viewModel.slugError,
                 accessibilityHint: L10n.t("communities.create.address.a11yHint")
             )
-            .onChange(of: viewModel.slug) { _, _ in viewModel.markSlugEdited() }
             Text(L10n.t("communities.create.address.hint", "/c/\(viewModel.normalisedSlug)"))
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)

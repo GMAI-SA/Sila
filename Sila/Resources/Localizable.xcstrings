@@ -7302,6 +7302,23 @@
         }
       }
     },
+    "communities.create.blocked.aboutLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه النبذة طويلة جدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That description is too long."
+          }
+        }
+      }
+    },
     "communities.create.blocked.address": {
       "extractionState": "manual",
       "localizations": {
@@ -7332,6 +7349,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Give the community a name."
+          }
+        }
+      }
+    },
+    "communities.create.blocked.nameLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الاسم طويل جدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That name is too long."
+          }
+        }
+      }
+    },
+    "communities.create.blocked.rules": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتسع المجتمع لعشر قواعد كحد أقصى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A community holds at most ten rules."
           }
         }
       }
@@ -16911,6 +16962,108 @@
         }
       }
     },
+    "notifications.kind.communityAccepted.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حين يقبلك مجتمع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a community lets you in."
+          }
+        }
+      }
+    },
+    "notifications.kind.communityAccepted.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قُبلت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted"
+          }
+        }
+      }
+    },
+    "notifications.kind.communityInvite.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حين يدعوك أحد إلى مجتمع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When somebody asks you into a community."
+          }
+        }
+      }
+    },
+    "notifications.kind.communityInvite.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دعوات المجتمعات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Community invitations"
+          }
+        }
+      }
+    },
+    "notifications.kind.communityJoinRequest.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حين يطلب أحد الانضمام إلى مجتمع تديره."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When somebody asks to join a community you run."
+          }
+        }
+      }
+    },
+    "notifications.kind.communityJoinRequest.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلبات الانضمام"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requests to join"
+          }
+        }
+      }
+    },
     "notifications.kind.follow.detail": {
       "comment": "What the follow switch governs.",
       "extractionState": "manual",
@@ -17537,6 +17690,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "A post marked as violent content"
+          }
+        }
+      }
+    },
+    "notifications.sentence.communityAccepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قَبِلك %1$@ في %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ let you into %2$@"
+          }
+        }
+      }
+    },
+    "notifications.sentence.communityInvite": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دعاك %1$@ إلى %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ invited you to %2$@"
+          }
+        }
+      }
+    },
+    "notifications.sentence.communityJoinRequest": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طلب %1$@ الانضمام إلى %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ asked to join %2$@"
           }
         }
       }

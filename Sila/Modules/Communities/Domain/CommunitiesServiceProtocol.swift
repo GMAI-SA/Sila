@@ -14,7 +14,8 @@ public protocol CommunitiesServiceProtocol: Sendable {
     func leave(slug: String) async throws
     func invite(slug: String, handles: [String]) async throws
     func approve(slug: String, handle: String) async throws
-    func remove(slug: String, handle: String) async throws
+    /// Removes somebody. `ban` keeps them out; declining a request does not.
+    func remove(slug: String, handle: String, ban: Bool) async throws
     func setRole(slug: String, handle: String, role: CommunityRole) async throws
 
     func fetchPosts(slug: String, cursor: String?) async throws -> FeedPage
@@ -30,6 +31,10 @@ extension CommunitiesServiceProtocol {
         limit: Int = 20
     ) async throws -> [Community] {
         try await fetchCommunities(mine: mine, forYou: forYou, topic: topic, limit: limit)
+    }
+
+    public func remove(slug: String, handle: String) async throws {
+        try await remove(slug: slug, handle: handle, ban: true)
     }
 
     public func fetchMembers(slug: String) async throws -> [CommunityMember] {

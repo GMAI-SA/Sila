@@ -58,6 +58,9 @@ public final class CommunityViewModel {
     /// The button under the header, or `nil` when there is nothing to press.
     public var doorTitle: String? {
         guard let community else { return nil }
+        // The owner cannot leave their own community — the server says so
+        // with a 409, and offering the button is a promise it will not keep.
+        if community.viewerRole == .owner { return nil }
         if community.isMember { return CommunityCopy.leave }
         if community.isPending { return CommunityCopy.requested }
         return community.canJoin ? CommunityCopy.join : nil
@@ -86,12 +89,18 @@ public final class CommunityViewModel {
         case .posts:
             await loadPosts()
         case .rooms:
-            rooms = (try? await service.fetchRooms(slug: slug)) ?? []
+            // A failed read leaves what is on screen and says so, rather than
+            // wiping the tab to an empty state that reads as "there are none".
+            if let found = try? await service.fetchRooms(slug: slug) { rooms = found }
+            else if rooms.isEmpty { toast = .error(L10n.t("feed.error.pullToRefresh")) }
         case .members:
-            members = (try? await service.fetchMembers(slug: slug, status: "active")) ?? []
-            pending = community.isAdmin
-                ? ((try? await service.fetchMembers(slug: slug, status: "pending")) ?? [])
-                : []
+            if let found = try? await service.fetchMembers(slug: slug, status: "active") { members = found }
+            else if members.isEmpty { toast = .error(L10n.t("feed.error.pullToRefresh")) }
+            if community.isAdmin, let waiting = try? await service.fetchMembers(slug: slug, status: "pending") {
+                pending = waiting
+            } else if !community.isAdmin {
+                pending = []
+            }
         case .about:
             break
         }
@@ -118,6 +127,9 @@ public final class CommunityViewModel {
             postsCursor = page.nextCursor
         } catch {
             guard suspension?.notice(error) != true else { return }
+            // Put the cursor back: one failed page must not end paging for
+            // the life of the screen.
+            postsCursor = cursor
         }
     }
 
@@ -130,7 +142,7 @@ public final class CommunityViewModel {
         do {
             if community.isMember {
                 try await service.leave(slug: slug)
-                self.community = try await service.fetchCommunity(slug: slug)
+                self.community = try? await service.fetchCommunity(slug: slug)
                 toast = .info(L10n.t("communities.left", community.name))
             } else {
                 let joined = try await service.join(slug: slug)
@@ -152,7 +164,10 @@ public final class CommunityViewModel {
         do {
             try await service.approve(slug: slug, handle: member.user.handle)
             pending.removeAll { $0.id == member.id }
-            members.append(member)
+            // They are in now: the row must say so, and the header's count
+            // must move with it.
+            members.append(CommunityMember(user: member.user, role: .member, status: "active"))
+            community = community.map(Self.withMemberCount(+1))
             toast = .success(L10n.t("communities.member.approved", member.user.displayName))
         } catch {
             toast = .error(APIError.wrapping(error).userMessage)
@@ -161,7 +176,9 @@ public final class CommunityViewModel {
 
     public func decline(_ member: CommunityMember) async {
         do {
-            try await service.remove(slug: slug, handle: member.user.handle)
+            // Declining a request is not a ban: they may ask again, or be
+            // invited later. Only "remove" keeps somebody out.
+            try await service.remove(slug: slug, handle: member.user.handle, ban: false)
             pending.removeAll { $0.id == member.id }
             members.removeAll { $0.id == member.id }
         } catch {
@@ -171,7 +188,7 @@ public final class CommunityViewModel {
 
     public func remove(_ member: CommunityMember) async {
         do {
-            try await service.remove(slug: slug, handle: member.user.handle)
+            try await service.remove(slug: slug, handle: member.user.handle, ban: true)
             members.removeAll { $0.id == member.id }
             toast = .info(L10n.t("communities.member.removed", member.user.displayName))
         } catch {
@@ -200,12 +217,38 @@ public final class CommunityViewModel {
         }
     }
 
+    /// Whether the viewer may change this person's role. The owner only.
+    public func canSetRole(for member: CommunityMember) -> Bool {
+        community?.viewerRole == .owner && member.role != .owner
+    }
+
     /// Whether the viewer may act on this person at all.
     public func canManage(_ member: CommunityMember) -> Bool {
         guard let community, community.isAdmin else { return false }
         if member.role == .owner { return false }
         if member.role == .admin { return community.viewerRole == .owner }
         return true
+    }
+
+    /// A copy of a community with its member count moved by `delta`.
+    private static func withMemberCount(_ delta: Int) -> (Community) -> Community {
+        { community in
+            Community(
+                id: community.id, slug: community.slug, name: community.name,
+                description: community.description, avatarURL: community.avatarURL,
+                owner: community.owner, visibility: community.visibility,
+                joinPolicy: community.joinPolicy, scope: community.scope,
+                scopeCountry: community.scopeCountry, scopeRegion: community.scopeRegion,
+                topic: community.topic, verifiedOnly: community.verifiedOnly,
+                memberCount: max(0, community.memberCount + delta), rules: community.rules,
+                createdAt: community.createdAt, viewerRole: community.viewerRole,
+                isMember: community.isMember, isPending: community.isPending,
+                isInvited: community.isInvited, canView: community.canView,
+                canJoin: community.canJoin, joinRefusal: community.joinRefusal,
+                canPost: community.canPost, postRefusal: community.postRefusal,
+                matchesInterests: community.matchesInterests
+            )
+        }
     }
 
     /// Merges a post changed elsewhere back into the timeline.

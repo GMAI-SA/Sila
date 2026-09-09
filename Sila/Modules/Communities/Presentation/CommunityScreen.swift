@@ -380,13 +380,13 @@ public struct CommunityScreen: View {
                 .accessibilityLabel(Text(L10n.t("communities.members.decline")))
             } else if viewModel.canManage(member) {
                 Menu {
-                    if member.role == .member {
+                    if viewModel.canSetRole(for: member), member.role == .member {
                         Button {
                             Task { await viewModel.setRole(.admin, for: member) }
                         } label: {
                             Label(L10n.t("communities.members.makeAdmin"), systemImage: "star")
                         }
-                    } else {
+                    } else if viewModel.canSetRole(for: member) {
                         Button {
                             Task { await viewModel.setRole(.member, for: member) }
                         } label: {

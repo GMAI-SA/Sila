@@ -135,13 +135,14 @@ public final class CommunitiesService: CommunitiesServiceProtocol {
         )
     }
 
-    public func remove(slug: String, handle: String) async throws {
+    public func remove(slug: String, handle: String, ban: Bool) async throws {
         let token = try await tokens.accessToken()
         _ = try await network.sendData(
             APIRequest(
                 path: "/communities/\(path(slug))/members/\(Handle.pathComponent(handle))",
                 method: .delete,
-                accessToken: token
+                accessToken: token,
+                query: [URLQueryItem(name: "ban", value: ban ? "true" : "false")]
             )
         )
     }

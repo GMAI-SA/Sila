@@ -83,10 +83,11 @@ extension ComposerServiceProtocol {
                 imageURLs: posted.isEmpty ? imageURLs : [],
                 sensitive: sensitive,
                 sensitiveNote: sensitiveNote,
-                // Every segment of a thread written in a community belongs to
-                // it: the server puts a reply in its parent's community
-                // anyway, and saying so is cheaper than relying on that.
-                communityId: communityId
+                // Only the opening segment names the community. The rest are
+                // replies, and the server puts a reply in its parent's
+                // community — naming it again is a 400 that stranded every
+                // segment after the first.
+                communityId: posted.isEmpty && parentId == replyToPostId ? communityId : nil
             )
             do {
                 let post = try await createPost(draft)

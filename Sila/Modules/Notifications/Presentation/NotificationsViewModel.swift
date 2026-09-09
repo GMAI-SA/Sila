@@ -40,6 +40,8 @@ public enum NotificationDestination: Equatable, Sendable {
     case profile(handle: String)
     /// A room invitation — the room is read on the way in.
     case room(id: UUID)
+    /// A community, by its address.
+    case community(slug: String)
 }
 
 /// Drives ``NotificationsScreen``.
@@ -286,6 +288,11 @@ public final class NotificationsViewModel {
         if notification.kind == .roomInvite, let roomId = notification.roomId {
             await markRead(notification)
             return .room(id: roomId)
+        }
+        // A community row opens the community, not the person who sent it.
+        if let slug = notification.communitySlug, !slug.isEmpty {
+            await markRead(notification)
+            return .community(slug: slug)
         }
         guard let postId = notification.postId else {
             await markRead(notification)

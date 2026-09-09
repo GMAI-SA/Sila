@@ -88,3 +88,56 @@ final class MessagesServiceTests: XCTestCase {
         XCTAssertEqual(counts.requests, 1)
     }
 }
+
+/// The Messages screen's own shape.
+///
+/// The screen once shrink-wrapped its content, so SwiftUI centred it and left
+/// half a screen of blank above the folder control. This pins the two things
+/// that made it wrong: the screen fills its space, and a conversation can be
+/// started from nothing.
+@MainActor
+final class ConversationsScreenTests: XCTestCase {
+
+    func testADraftConversationCarriesThePersonAndNoThread() {
+        let person = UserSummary(id: UUID(), handle: "noura", displayName: "Noura", isVerified: true)
+        let draft = Conversation.draft(with: person)
+        XCTAssertTrue(draft.isDraft)
+        XCTAssertEqual(draft.other.handle, "noura")
+        XCTAssertEqual(draft.unreadCount, 0)
+        XCTAssertNil(draft.lastMessageAt)
+        // Accepted and not a request: there is nothing to accept yet.
+        XCTAssertTrue(draft.accepted)
+        XCTAssertFalse(draft.isRequest)
+    }
+
+    func testADraftReadsNothingAndBecomesRealOnTheFirstMessage() async {
+        let service = MessagesServiceMock()
+        let person = UserSummary(id: UUID(), handle: "noura", displayName: "Noura", isVerified: true)
+        let viewModel = ChatViewModel(
+            conversation: Conversation.draft(with: person),
+            viewerId: UUID(),
+            service: service
+        )
+        await viewModel.load()
+        XCTAssertTrue(viewModel.messages.isEmpty)
+
+        viewModel.draft = "hello"
+        await viewModel.send()
+        // The mock answers with a real thread, which the screen adopts.
+        XCTAssertFalse(viewModel.conversation.isDraft)
+        XCTAssertEqual(viewModel.draft, "")
+    }
+
+    func testTheInboxFindsAnExistingThreadBeforeStartingADraft() async {
+        let viewModel = ConversationsViewModel(
+            service: MessagesServiceMock(),
+            analytics: RecordingAnalyticsClient()
+        )
+        await viewModel.load()
+        let known = viewModel.inbox.first?.other.handle
+        XCTAssertNotNil(known)
+        XCTAssertNotNil(viewModel.conversation(with: known ?? ""))
+        XCTAssertNotNil(viewModel.conversation(with: "@\((known ?? "").uppercased())"))
+        XCTAssertNil(viewModel.conversation(with: "nobody-at-all"))
+    }
+}

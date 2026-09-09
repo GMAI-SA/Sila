@@ -609,6 +609,7 @@ public struct MainTabView: View {
                     onOpenPost: openPost,
                     onOpenProfile: openProfile,
                     onOpenRoom: openRoomFromNotification,
+                    onOpenCommunity: { slug in push(.community(slug: slug)) },
                     onOpenSettings: {
                         guard container.flags.preferences else {
                             stub(StubFeature.notificationSettings)

@@ -49,15 +49,20 @@ public struct ConversationsScreen: View {
 
             content
         }
-        .navigationTitle(L10n.t("messages.title"))
+        // Without this the stack shrink-wraps its content and SwiftUI centres
+        // it, which put half a screen of blank above the folders. Every other
+        // tab fills; this one was the exception.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .tnScreenBackground()
+        .tnNavigationBar(title: L10n.t("messages.title"))
         .toolbar {
             if people != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         isPicking = true
                     } label: {
-                        Image(systemName: "square.and.pencil")
+                        Image(systemName: "square.and.pencil.circle.fill")
+                            .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(SLColor.primary)
                     }
                     .accessibilityLabel(Text(L10n.t("messages.new")))
@@ -109,7 +114,8 @@ public struct ConversationsScreen: View {
                 actionTitle: viewModel.folder == .inbox && people != nil ? L10n.t("messages.new") : nil,
                 action: viewModel.folder == .inbox && people != nil ? { isPicking = true } : nil
             )
-            .padding(.top, SLSpacing.xxl)
+            .padding(.top, SLSpacing.xl)
+            .frame(maxWidth: .infinity)
         } else {
             ScrollView {
                 LazyVStack(spacing: 0) {

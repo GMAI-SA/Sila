@@ -151,8 +151,8 @@ public actor CommunitiesServiceMock: CommunitiesServiceProtocol {
         members[idOf(slug)]?.removeAll { $0.user.handle == Handle.normalised(handle) }
     }
 
-    public func remove(slug: String, handle: String) async throws {
-        recordedCalls.append("remove:\(handle)")
+    public func remove(slug: String, handle: String, ban: Bool) async throws {
+        recordedCalls.append("remove:\(handle):ban=\(ban)")
         try failIfOffline()
         members[idOf(slug)]?.removeAll { $0.user.handle == Handle.normalised(handle) }
     }

@@ -13,7 +13,15 @@ public final class CreateCommunityViewModel {
             if !hasEditedSlug { slug = Self.suggestedSlug(from: name) }
         }
     }
-    public var slug = "" { didSet { slugError = nil } }
+    public var slug = "" {
+        didSet {
+            slugError = nil
+            // Only a slug the person typed counts as theirs. Without this the
+            // name's own updates looked like edits and froze the suggestion
+            // after the first character.
+            if slug != Self.suggestedSlug(from: name) { hasEditedSlug = true }
+        }
+    }
     public var about = ""
     public var visibility: CommunityVisibility = .public
     public var joinPolicy: CommunityJoinPolicy = .open
@@ -77,14 +85,17 @@ public final class CreateCommunityViewModel {
         if !canOpen { return L10n.t("communities.create.unverified") }
         if trimmedName.count < 2 { return L10n.t("communities.create.blocked.name") }
         if !Self.isValidSlug(normalisedSlug) { return L10n.t("communities.create.blocked.address") }
+        if trimmedName.count > Self.maximumNameLength { return L10n.t("communities.create.blocked.nameLong") }
+        if about.trimmingCharacters(in: .whitespacesAndNewlines).count > Self.maximumAboutLength {
+            return L10n.t("communities.create.blocked.aboutLong")
+        }
+        if rules.count > Self.maximumRules { return L10n.t("communities.create.blocked.rules") }
         if !ScopePicker.isAvailable(scope, for: author) {
             return scopeOptions.first { $0.scope == scope }?.unavailableReason
                 ?? L10n.t("rooms.create.blocked.audience")
         }
         return nil
     }
-
-    public func markSlugEdited() { hasEditedSlug = true }
 
     public func loadTopics() async {
         guard topics.isEmpty else { return }
@@ -130,6 +141,12 @@ public final class CreateCommunityViewModel {
     /// A name turned into an address: lower case, spaces to underscores,
     /// everything else dropped. Arabic names carry no Latin letters, so the
     /// suggestion can come back empty — the field is then the person's to fill.
+    /// The server's own limits, so a long name is refused here with a
+    /// sentence rather than there with a 422 the client cannot read.
+    static let maximumNameLength = 60
+    static let maximumAboutLength = 300
+    static let maximumRules = 10
+
     static func suggestedSlug(from name: String) -> String {
         var out = ""
         for character in name.lowercased() {

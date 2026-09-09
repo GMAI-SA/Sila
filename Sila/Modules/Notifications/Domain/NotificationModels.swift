@@ -28,6 +28,12 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case followAccepted = "follow_accepted"
     /// Somebody asked you into a closed room.
     case roomInvite = "room_invite"
+    /// Somebody asked you into a community.
+    case communityInvite = "community_invite"
+    /// Somebody asked to join a community you run.
+    case communityJoinRequest = "community_join_request"
+    /// A community you asked to join let you in.
+    case communityAccepted = "community_accepted"
     /// A kind this build does not recognise.
     case unknown
 
@@ -50,7 +56,9 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     /// whose `post_id` is legitimately `null`.
     public var isAboutAPost: Bool {
         switch self {
-        case .follow, .followRequest, .followAccepted, .roomInvite, .unknown: return false
+        case .follow, .followRequest, .followAccepted, .roomInvite, .unknown,
+             .communityInvite, .communityJoinRequest, .communityAccepted:
+            return false
         case .like, .repost, .reply, .mention: return true
         }
     }
@@ -66,6 +74,9 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .followRequest: return "person.crop.circle.badge.questionmark"
         case .followAccepted: return "person.crop.circle.badge.checkmark"
         case .roomInvite: return "waveform.circle.fill"
+        case .communityInvite: return "person.3.fill"
+        case .communityJoinRequest: return "person.crop.circle.badge.questionmark"
+        case .communityAccepted: return "person.crop.circle.badge.checkmark"
         case .unknown: return "bell"
         }
     }
@@ -81,6 +92,9 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .followRequest: return SLColor.primary
         case .followAccepted: return SLColor.secondary
         case .roomInvite: return SLColor.secondary
+        case .communityInvite: return SLColor.primary
+        case .communityJoinRequest: return SLColor.warning
+        case .communityAccepted: return SLColor.secondary
         case .unknown: return SLColor.textSecondary
         }
     }
@@ -96,6 +110,9 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .followRequest: return L10n.t("notifications.kind.followRequest.title")
         case .followAccepted: return L10n.t("notifications.kind.followAccepted.title")
         case .roomInvite: return L10n.t("notifications.kind.roomInvite.title")
+        case .communityInvite: return L10n.t("notifications.kind.communityInvite.title")
+        case .communityJoinRequest: return L10n.t("notifications.kind.communityJoinRequest.title")
+        case .communityAccepted: return L10n.t("notifications.kind.communityAccepted.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -123,6 +140,12 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.followAccepted.detail")
         case .roomInvite:
             return L10n.t("notifications.kind.roomInvite.detail")
+        case .communityInvite:
+            return L10n.t("notifications.kind.communityInvite.detail")
+        case .communityJoinRequest:
+            return L10n.t("notifications.kind.communityJoinRequest.detail")
+        case .communityAccepted:
+            return L10n.t("notifications.kind.communityAccepted.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -152,6 +175,10 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     public let postId: UUID?
     /// The room it is about, for a room invitation.
     public let roomId: UUID?
+    /// The community a community notification points at, and its address.
+    public let communityId: UUID?
+    public let communitySlug: String?
+    public let communityName: String?
     /// The first 140 characters of that post, or `nil` when there is no post —
     /// or when there was one and it is gone — or when the post is covered and
     /// its author wrote no note.
@@ -175,13 +202,19 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         read: Bool = false,
         createdAt: Date = Date(),
         postSensitive: SensitiveKind? = nil,
-        roomId: UUID? = nil
+        roomId: UUID? = nil,
+        communityId: UUID? = nil,
+        communitySlug: String? = nil,
+        communityName: String? = nil
     ) {
         self.id = id
         self.kind = kind
         self.actor = actor
         self.postId = postId
         self.roomId = roomId
+        self.communityId = communityId
+        self.communitySlug = communitySlug
+        self.communityName = communityName
         self.postExcerpt = (postExcerpt?.isEmpty == false) ? postExcerpt : nil
         self.postSensitive = postSensitive
         self.read = read
@@ -192,6 +225,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
         case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive, roomId
+        case communityId, communitySlug, communityName
     }
 
     /// Tolerant decoder: one malformed row must not blank the whole page.
@@ -215,6 +249,11 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         } else {
             roomId = (try? container.decodeIfPresent(UUID.self, forKey: .roomId)) ?? nil
         }
+        communityId = (try? container.decodeIfPresent(UUID.self, forKey: .communityId)) ?? nil
+        let slug = (try? container.decodeIfPresent(String.self, forKey: .communitySlug)) ?? nil
+        communitySlug = (slug?.isEmpty == false) ? slug : nil
+        let label = (try? container.decodeIfPresent(String.self, forKey: .communityName)) ?? nil
+        communityName = (label?.isEmpty == false) ? label : nil
         if let raw = (try? container.decodeIfPresent(String.self, forKey: .postId)) ?? nil {
             postId = UUID(uuidString: raw)
         } else {
@@ -238,7 +277,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
 
     /// The sentence the row leads with.
     public var sentence: String {
-        NotificationCopy.sentence(kind, actor: actor.displayName)
+        NotificationCopy.sentence(kind, actor: actor.displayName, community: communityName)
     }
 
     /// The whole row as one line for VoiceOver.
@@ -442,8 +481,11 @@ public enum NotificationCopy {
     /// - Parameters:
     ///   - kind: What happened.
     ///   - actor: The display name of whoever did it.
-    public static func sentence(_ kind: NotificationKind, actor: String) -> String {
+    public static func sentence(_ kind: NotificationKind, actor: String, community: String? = nil) -> String {
         let name = actor.isEmpty ? L10n.t("notifications.sentence.someone") : actor
+        // A community row names the space, which is the part that makes it
+        // legible: "Noura invited you to Riyadh runners".
+        let place = (community?.isEmpty == false) ? community! : L10n.t("communities.title")
         switch kind {
         case .follow: return L10n.t("notifications.sentence.follow", name)
         case .like: return L10n.t("notifications.sentence.like", name)
@@ -453,6 +495,9 @@ public enum NotificationCopy {
         case .followRequest: return L10n.t("notifications.sentence.followRequest", name)
         case .followAccepted: return L10n.t("notifications.sentence.followAccepted", name)
         case .roomInvite: return L10n.t("notifications.sentence.roomInvite", name)
+        case .communityInvite: return L10n.t("notifications.sentence.communityInvite", name, place)
+        case .communityJoinRequest: return L10n.t("notifications.sentence.communityJoinRequest", name, place)
+        case .communityAccepted: return L10n.t("notifications.sentence.communityAccepted", name, place)
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.
