@@ -159,10 +159,13 @@ public final class NotificationsViewModel {
             isLoading = true
         }
         loadError = nil
+        var abandoned = false
         defer {
             isLoading = false
             isRefreshing = false
-            hasLoaded = true
+            // A load that was cut short has not loaded: saying it had would
+            // show an empty list as if there were nothing to show.
+            if !abandoned { hasLoaded = true }
         }
 
         do {
@@ -174,6 +177,10 @@ public final class NotificationsViewModel {
             adopt(page, appending: false)
         } catch {
             guard suspension?.notice(error) != true else { return }
+            if APIError.wrapping(error).isCancellation {
+                abandoned = true
+                return
+            }
             notifications = []
             cursor = nil
             hasMore = false
@@ -211,6 +218,7 @@ public final class NotificationsViewModel {
             adopt(page, appending: true)
         } catch {
             guard suspension?.notice(error) != true else { return }
+            guard !APIError.wrapping(error).isCancellation else { return }
             // Stop the pager rather than hammering a failing endpoint on every
             // scroll; pull-to-refresh is the way back.
             hasMore = false
@@ -312,9 +320,11 @@ public final class NotificationsViewModel {
             let wrapped = APIError.wrapping(error)
             // The excerpt already told the user this post was gone; the toast
             // is what confirms the tap did something rather than nothing.
-            toast = wrapped.code == .postNotFound
-                ? .info(L10n.t("notifications.open.postGone"))
-                : .error(wrapped.userMessage)
+            if wrapped.code == .postNotFound {
+                toast = .info(L10n.t("notifications.open.postGone"))
+            } else if let message = wrapped.presentableMessage {
+                toast = .error(message)
+            }
             return nil
         }
     }

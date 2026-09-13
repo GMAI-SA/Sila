@@ -73,6 +73,11 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case noCountry = "no_country"
     /// A post body longer than ``FeedConstants/maximumPostLength``.
     case textTooLong = "text_too_long"
+    /// The request body failed a field rule (HTTP 422) — a name too short, a
+    /// note too long. The message on the error is already a sentence for
+    /// the person, built from the field that failed, never the server's own
+    /// wording.
+    case validationError = "validation_error"
     /// Delete or edit attempted on someone else's post.
     case notPostAuthor = "not_post_author"
     /// The requested handle is already in use.
@@ -295,6 +300,8 @@ public enum APIError: Error, Equatable, Sendable {
         switch self {
         case let .api(code, message, _):
             switch code {
+            case .validationError:
+                return message.isEmpty ? L10n.t("error.validation") : message
             case .emailTaken:
                 return L10n.t("error.emailTaken")
             case .invalidCredentials:
@@ -517,7 +524,72 @@ struct APIErrorEnvelope: Decodable {
     struct Detail: Decodable {
         let code: String
         let message: String
+        /// Present on `validation_error`: what was wrong with which field.
+        let fields: [ValidationField]?
     }
+}
+
+/// One field the server refused, in either envelope the server sends.
+struct ValidationField: Decodable {
+    /// The pydantic rule that failed: `string_too_short`, `string_too_long`, …
+    let type: String
+    /// The rule's parameters — `min_length`, `max_length` — when it has any.
+    let limits: [String: Int]
+
+    private enum CodingKeys: String, CodingKey { case type, ctx }
+
+    init(type: String, limits: [String: Int] = [:]) {
+        self.type = type
+        self.limits = limits
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = (try? container.decode(String.self, forKey: .type)) ?? ""
+        // Only the integer limits are read; a rule's other context is the
+        // server's own business and is not shown to anybody.
+        limits = ((try? container.decode([String: LenientInt].self, forKey: .ctx)) ?? [:])
+            .compactMapValues(\.value)
+    }
+
+    /// A sentence for the person who typed into the field — never the
+    /// server's own wording, which is for developers.
+    var userMessage: String {
+        switch type {
+        case "string_too_short":
+            if let minimum = limits["min_length"] { return L10n.plural("error.validation.tooShort", minimum) }
+        case "string_too_long":
+            if let maximum = limits["max_length"] { return L10n.plural("error.validation.tooLong", maximum) }
+        default:
+            break
+        }
+        return L10n.t("error.validation")
+    }
+}
+
+/// An integer that may arrive as a number or as a string, or be something
+/// else entirely — in which case it is nothing rather than a decode failure.
+struct LenientInt: Decodable {
+    let value: Int?
+
+    init(from decoder: Decoder) throws {
+        let single = try decoder.singleValueContainer()
+        if let number = try? single.decode(Int.self) {
+            value = number
+        } else if let text = try? single.decode(String.self) {
+            value = Int(text)
+        } else {
+            value = nil
+        }
+    }
+}
+
+/// FastAPI's own 422: a bare list of `{loc, msg, type, ctx}`.
+///
+/// The server wraps these itself now, but a client must never depend on
+/// that — a reply in this shape was what put raw JSON on somebody's screen.
+struct APIValidationListEnvelope: Decodable {
+    let detail: [ValidationField]
 }
 
 /// Fallback shape for FastAPI's plain-string `detail`.

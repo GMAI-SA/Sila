@@ -98,10 +98,9 @@ public final class RoomInvitesViewModel {
             handlesText = ""
             toast = .success(L10n.plural("rooms.invites.added", wanted.count))
         } catch {
-            let wrapped = APIError.wrapping(error)
             // `user_not_found` names the first handle nobody holds, and the
             // server wrote nothing — so the whole field stands, uncorrected.
-            toast = .error(wrapped.userMessage)
+            toast = .error(for: error)
         }
     }
 

@@ -63,13 +63,16 @@ public final class NotificationSettingsViewModel {
     public func reload() async {
         isLoading = true
         loadError = nil
+        var abandoned = false
         defer {
             isLoading = false
-            hasLoaded = true
+            if !abandoned { hasLoaded = true }
         }
         do {
             preferences = try await service.fetchPreferences().notifications
         } catch {
+            // Cut short: nothing loaded, nothing failed, ask again next time.
+            abandoned = APIError.wrapping(error).isCancellation
             loadError = APIError.wrapping(error).presentableMessage
         }
     }

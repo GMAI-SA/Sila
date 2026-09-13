@@ -120,7 +120,11 @@ public final class GifPickerViewModel {
             if !isSearching { list = fetched }
             loadState = .loaded
         } catch {
-            guard let message = APIError.wrapping(error).presentableMessage else { return }
+            guard let message = APIError.wrapping(error).presentableMessage else {
+                // Abandoned, not failed: leave the state ready to load again.
+                loadState = list == nil ? .idle : .loaded
+                return
+            }
             loadState = .failed(message)
         }
     }
@@ -133,7 +137,10 @@ public final class GifPickerViewModel {
             list = fetched
             loadState = .loaded
         } catch {
-            guard let message = APIError.wrapping(error).presentableMessage else { return }
+            guard let message = APIError.wrapping(error).presentableMessage else {
+                loadState = list == nil ? .idle : .loaded
+                return
+            }
             loadState = .failed(message)
         }
     }

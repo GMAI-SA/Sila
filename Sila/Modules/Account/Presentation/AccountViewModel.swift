@@ -321,6 +321,7 @@ public final class AccountViewModel {
             guard !handledDeactivation(error) else { return }
             // The edits stay where they are: throwing away someone's work to
             // make a screen agree with the server is the worse failure.
+            guard !APIError.wrapping(error).isCancellation else { return }
             profileError = APIError.wrapping(error).presentableMessage
             toast = .error(profileError ?? L10n.t("account.profile.toast.saveFailed"))
         }
@@ -459,7 +460,7 @@ public final class AccountViewModel {
         } catch {
             guard !handledDeactivation(error) else { return }
             let wrapped = APIError.wrapping(error)
-            emailError = wrapped.userMessage
+            emailError = wrapped.presentableMessage
             // The address can be claimed while the code sits in an inbox, and
             // the server re-checks at exactly this moment. When that is what
             // happened the code is spent and the whole flow has to start again,
@@ -611,7 +612,7 @@ public final class AccountViewModel {
                 toast = .success(L10n.t("account.recovery.toast.nothingToCancel"))
                 return
             }
-            recoveryError = wrapped.userMessage
+            recoveryError = wrapped.presentableMessage
         }
     }
 

@@ -149,7 +149,13 @@ final class HashtagTests: XCTestCase {
         cancelled.feedError = .cancelled
         let quiet = makeViewModel(feed: cancelled)
         await quiet.load()
-        XCTAssertEqual(quiet.loadState, .loading, "an abandoned load leaves no failure behind")
+        XCTAssertEqual(quiet.loadState, .idle, "an abandoned load leaves no failure behind, and no spinner either")
         XCTAssertNil(quiet.toast)
+        // …so the next appearance asks again instead of finding a guard.
+        cancelled.feedError = nil
+        cancelled.hashtagPages = [HashtagPage(posts: [FeedServiceMock.internationalRoot], tag: "riyadh")]
+        await quiet.load()
+        XCTAssertEqual(quiet.loadState, .loaded)
+        XCTAssertEqual(quiet.posts.count, 1)
     }
 }

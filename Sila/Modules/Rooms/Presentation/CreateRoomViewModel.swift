@@ -158,6 +158,7 @@ public final class CreateRoomViewModel {
             && !isCreating
             && !trimmedTitle.isEmpty
             && remainingTitleCharacters >= 0
+            && trimmedTitle.count >= RoomConstants.minimumTitleLength
             && ScopePicker.isAvailable(scope, for: author)
             && (access != .group || selectedGroup != nil)
     }
@@ -168,6 +169,7 @@ public final class CreateRoomViewModel {
     public var blockingReason: String? {
         if !canHost { return RoomCopy.unverifiedCannotOpen }
         if trimmedTitle.isEmpty { return RoomCopy.titleMissing }
+        if trimmedTitle.count < RoomConstants.minimumTitleLength { return RoomCopy.titleTooShort }
         if remainingTitleCharacters < 0 { return RoomCopy.titleTooLong(trimmedTitle.count) }
         if !ScopePicker.isAvailable(scope, for: author) {
             return scopeOptions.first { $0.scope == scope }?.unavailableReason
@@ -271,6 +273,10 @@ public final class CreateRoomViewModel {
         }
         guard !trimmedTitle.isEmpty else {
             titleError = RoomCopy.titleMissing
+            return nil
+        }
+        guard trimmedTitle.count >= RoomConstants.minimumTitleLength else {
+            titleError = RoomCopy.titleTooShort
             return nil
         }
         guard remainingTitleCharacters >= 0 else {

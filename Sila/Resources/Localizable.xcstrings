@@ -14447,6 +14447,156 @@
         }
       }
     },
+    "error.validation": {
+      "extractionState": "manual",
+      "comment": "A form field the server refused, when the field cannot be named.",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بعض ما أدخلته لم يُقبل. راجعه وحاول مجددًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some of what you entered wasn't accepted. Check it and try again."
+          }
+        }
+      }
+    },
+    "error.validation.tooLong": {
+      "extractionState": "manual",
+      "comment": "%lld is the server's maximum length.",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا لا يقبل أي حرف."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يقبل حرفًا واحدًا على الأكثر."
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يقبل حرفين على الأكثر."
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يقبل %lld أحرف على الأكثر."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يقبل %lld حرفًا على الأكثر."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يقبل %lld حرف على الأكثر."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That can be at most %lld character."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That can be at most %lld characters."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "error.validation.tooShort": {
+      "extractionState": "manual",
+      "comment": "%lld is the server's minimum length for the field the person just typed into.",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا الحقل مطلوب."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يحتاج حرفًا واحدًا على الأقل."
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يحتاج حرفين على الأقل."
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يحتاج %lld أحرف على الأقل."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يحتاج %lld حرفًا على الأقل."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "هذا يحتاج %lld حرف على الأقل."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That needs at least %lld character."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That needs at least %lld characters."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "error.verificationUnavailable": {
       "comment": "503 verification_unavailable.",
       "extractionState": "manual",
@@ -25479,6 +25629,72 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "That title is %lld characters over the limit."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rooms.create.titleTooShort": {
+      "extractionState": "manual",
+      "comment": "Why the Open button is off: the name is under the server's minimum.",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعطِ الغرفة اسمًا."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعطِ الغرفة اسمًا من حرف واحد على الأقل."
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعطِ الغرفة اسمًا من حرفين على الأقل."
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعطِ الغرفة اسمًا من %lld أحرف على الأقل."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعطِ الغرفة اسمًا من %lld حرفًا على الأقل."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعطِ الغرفة اسمًا من %lld حرف على الأقل."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Give the room a name of at least %lld character."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Give the room a name of at least %lld characters."
                 }
               }
             }

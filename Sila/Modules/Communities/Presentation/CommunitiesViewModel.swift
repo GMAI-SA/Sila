@@ -58,6 +58,8 @@ public final class CommunitiesViewModel {
             hasLoaded = true
         } catch {
             guard suspension?.notice(error) != true else { return }
+            // Abandoned: not loaded, not failed. The next appearance asks again.
+            guard !APIError.wrapping(error).isCancellation else { return }
             if communities.isEmpty {
                 loadError = APIError.wrapping(error).presentableMessage
             } else {

@@ -119,6 +119,9 @@ public final class HashtagViewModel {
             hasMore = page.hasMore && page.nextCursor != nil
         } catch {
             guard suspension?.notice(error) != true else { return }
+            // A cancelled page — the card that asked for it scrolled away —
+            // is not the end of the list; the next card asks again.
+            guard !APIError.wrapping(error).isCancellation else { return }
             hasMore = false
             toast = .error(for: error)
         }
@@ -175,7 +178,13 @@ public final class HashtagViewModel {
         } catch {
             guard mine == generation else { return }
             guard suspension?.notice(error) != true else { return }
-            guard let message = APIError.wrapping(error).presentableMessage else { return }
+            guard let message = APIError.wrapping(error).presentableMessage else {
+                // Abandoned mid-flight (the screen went away): back to where
+                // it was, so the next appearance loads rather than finding a
+                // spinner it must not touch.
+                loadState = posts.isEmpty ? .idle : .loaded
+                return
+            }
             if posts.isEmpty {
                 loadState = .failed(message)
             } else {

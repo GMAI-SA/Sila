@@ -827,6 +827,9 @@ public enum RoomConstants {
     public static let searchDebounce: TimeInterval = 0.35
     /// Longest room title the field accepts.
     public static let maximumTitleLength = 120
+    /// The server's minimum. Two letters is not a name anybody could find
+    /// the room by.
+    public static let minimumTitleLength = 3
     /// How often a live room re-reads its participant list.
     public static let participantPollInterval: TimeInterval = 8
     /// Stage sizes the create sheet offers.
@@ -1162,6 +1165,10 @@ public enum RoomCopy {
 
     /// - Parameter count: The length of the title that was typed. The sentence
     ///   counts the *overshoot*, which is what the plural agrees with.
+    public static var titleTooShort: String {
+        L10n.plural("rooms.create.titleTooShort", RoomConstants.minimumTitleLength)
+    }
+
     public static func titleTooLong(_ count: Int) -> String {
         L10n.plural("rooms.create.titleTooLong", count - RoomConstants.maximumTitleLength)
     }

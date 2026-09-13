@@ -66,6 +66,10 @@ public enum AppConfig {
 
     /// Request timeout in seconds.
     public static let requestTimeout: TimeInterval = 30
+    /// How long a request may wait for the network to come back before it is
+    /// given up as offline. Long enough to cover a lift or a network handoff,
+    /// short enough that a genuinely offline phone is told so.
+    public static let connectivityWait: TimeInterval = 45
 
     /// `true` when the process was launched by the unit-test runner.
     ///

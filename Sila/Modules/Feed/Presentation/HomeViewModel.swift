@@ -140,11 +140,17 @@ public final class HomeViewModel {
         } catch {
             var updated = state(for: tab)
             updated.isLoadingMore = false
+            if APIError.wrapping(error).isCancellation {
+                // The row that asked for the page scrolled away, taking its
+                // task with it. Nothing failed: the next row asks again.
+                states[tab] = updated
+                return
+            }
             // Stop the pager rather than hammering a failing endpoint on every
             // scroll; pull-to-refresh is the way back.
             updated.hasMore = false
             states[tab] = updated
-            toast = .error(userMessage(for: error))
+            toast = .error(for: error)
         }
     }
 
@@ -186,6 +192,14 @@ public final class HomeViewModel {
             var updated = state(for: tab)
             updated.isLoading = false
             updated.isRefreshing = false
+            if APIError.wrapping(error).isCancellation {
+                // Abandoned, not failed. `hasLoaded` stays as it was, so a
+                // first load that never finished is asked for again on the
+                // next appearance, and a refresh that was cut short leaves
+                // the page it was refreshing alone.
+                states[tab] = updated
+                return
+            }
             updated.hasLoaded = true
             updated.hasMore = false
 
@@ -198,7 +212,7 @@ public final class HomeViewModel {
                 updated.emptyKind = .failed(userMessage(for: error))
             } else {
                 // Keep what is already on screen and say so in a banner.
-                toast = .error(userMessage(for: error))
+                toast = .error(for: error)
             }
             states[tab] = updated
         }
@@ -266,7 +280,7 @@ public final class HomeViewModel {
                 updated.viewer = snapshot.viewer
                 return updated
             }
-            toast = .error(userMessage(for: error))
+            toast = .error(for: error)
         }
     }
 

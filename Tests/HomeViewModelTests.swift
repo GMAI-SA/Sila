@@ -69,7 +69,8 @@ final class ScriptedFeedService: FeedServiceProtocol, @unchecked Sendable {
     }
 
     func fetchBookmarks(cursor: String?) async throws -> FeedPage {
-        FeedPage(posts: [], nextCursor: nil, hasMore: false)
+        if let feedError = lock.withLock({ feedError }) { throw feedError }
+        return FeedPage(posts: [], nextCursor: nil, hasMore: false)
     }
 
     /// Hashtag pages to serve, consumed front to back; the last one repeats.

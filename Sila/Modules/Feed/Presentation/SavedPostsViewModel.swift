@@ -76,8 +76,9 @@ public final class SavedPostsViewModel {
             hasMore = page.hasMore && page.nextCursor != nil
         } catch {
             guard suspension?.notice(error) != true else { return }
+            guard !APIError.wrapping(error).isCancellation else { return }
             hasMore = false
-            toast = .error(userMessage(for: error))
+            toast = .error(for: error)
         }
     }
 
@@ -142,11 +143,15 @@ public final class SavedPostsViewModel {
             loadState = .loaded
         } catch {
             guard suspension?.notice(error) != true else { return }
+            guard let message = APIError.wrapping(error).presentableMessage else {
+                loadState = posts.isEmpty ? .idle : .loaded
+                return
+            }
             if posts.isEmpty {
-                loadState = .failed(userMessage(for: error))
+                loadState = .failed(message)
             } else {
                 loadState = .loaded
-                toast = .error(userMessage(for: error))
+                toast = .error(message)
             }
         }
     }
@@ -176,7 +181,7 @@ public final class SavedPostsViewModel {
                 updated.viewer = snapshot.viewer
                 return updated
             }
-            toast = .error(userMessage(for: error))
+            toast = .error(for: error)
         }
     }
 

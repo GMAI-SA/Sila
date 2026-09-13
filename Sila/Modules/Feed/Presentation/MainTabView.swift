@@ -151,35 +151,47 @@ public struct MainTabView: View {
         ) { context in
             ComposerSheetHost { composerViewModel(for: context) }
         }
+        // Every sheet below owns its view model through `Owned`: a sheet's
+        // content closure is re-run on every update of this view, and a model
+        // built inline was replaced mid-load — the request it was waiting on
+        // cancelled, the edits it held gone.
         .sheet(isPresented: $isShowingPreferences) {
-            NavigationStack {
-                PreferencesScreen(
-                    viewModel: preferencesViewModel(),
-                    onClose: { isShowingPreferences = false }
-                )
+            Owned({ preferencesViewModel() }) { viewModel in
+                NavigationStack {
+                    PreferencesScreen(
+                        viewModel: viewModel,
+                        onClose: { isShowingPreferences = false }
+                    )
+                }
+                .tint(SLColor.primary)
             }
-            .tint(SLColor.primary)
         }
         .sheet(isPresented: $isShowingAccount) {
-            NavigationStack {
-                AccountScreen(
-                    viewModel: accountViewModel(),
-                    onClose: { isShowingAccount = false }
-                )
+            Owned({ accountViewModel() }) { viewModel in
+                NavigationStack {
+                    AccountScreen(
+                        viewModel: viewModel,
+                        onClose: { isShowingAccount = false }
+                    )
+                }
+                .tint(SLColor.primary)
             }
-            .tint(SLColor.primary)
         }
         .sheet(isPresented: $isShowingNotificationSettings) {
-            NavigationStack {
-                NotificationSettingsSheet(
-                    viewModel: NotificationSettingsViewModel(
-                        service: container.preferencesService,
-                        analytics: container.analytics
-                    ),
-                    onClose: { isShowingNotificationSettings = false }
+            Owned({
+                NotificationSettingsViewModel(
+                    service: container.preferencesService,
+                    analytics: container.analytics
                 )
+            }) { viewModel in
+                NavigationStack {
+                    NotificationSettingsSheet(
+                        viewModel: viewModel,
+                        onClose: { isShowingNotificationSettings = false }
+                    )
+                }
+                .tint(SLColor.primary)
             }
-            .tint(SLColor.primary)
         }
         .sheet(isPresented: $isShowingLanguage) {
             NavigationStack {
@@ -198,21 +210,23 @@ public struct MainTabView: View {
                 set: { container.router.isCreatingRoom = $0 }
             )
         ) {
-            NavigationStack {
-                CreateRoomSheet(
-                    viewModel: createRoomViewModel(),
-                    onClose: { container.router.isCreatingRoom = false },
-                    // Straight into the room that was just opened, when it is
-                    // one. A scheduled room has nothing to walk into yet, so it
-                    // is left on the list where it belongs.
-                    onCreated: { room in
-                        guard room.status.isJoinable else { return }
-                        selection = .rooms
-                        openRoom(room)
-                    }
-                )
+            Owned({ createRoomViewModel() }) { viewModel in
+                NavigationStack {
+                    CreateRoomSheet(
+                        viewModel: viewModel,
+                        onClose: { container.router.isCreatingRoom = false },
+                        // Straight into the room that was just opened, when it is
+                        // one. A scheduled room has nothing to walk into yet, so it
+                        // is left on the list where it belongs.
+                        onCreated: { room in
+                            guard room.status.isJoinable else { return }
+                            selection = .rooms
+                            openRoom(room)
+                        }
+                    )
+                }
+                .tint(SLColor.primary)
             }
-            .tint(SLColor.primary)
         }
         .sheet(isPresented: Binding(
             get: { container.router.isCreatingCommunity },
@@ -249,17 +263,19 @@ public struct MainTabView: View {
             .tint(SLColor.primary)
         }
         .sheet(isPresented: $isShowingSafety) {
-            NavigationStack {
-                SafetyListsScreen(
-                    viewModel: safetyListsViewModel(),
-                    onClose: { isShowingSafety = false },
-                    onOpenProfile: { handle in
-                        isShowingSafety = false
-                        openProfile(handle)
-                    }
-                )
+            Owned({ safetyListsViewModel() }) { viewModel in
+                NavigationStack {
+                    SafetyListsScreen(
+                        viewModel: viewModel,
+                        onClose: { isShowingSafety = false },
+                        onOpenProfile: { handle in
+                            isShowingSafety = false
+                            openProfile(handle)
+                        }
+                    )
+                }
+                .tint(SLColor.primary)
             }
-            .tint(SLColor.primary)
         }
         // The block confirmation, the report sheet and the safety toast, hosted
         // once above the tab bar. They have to outlive whatever card or row they
@@ -1022,8 +1038,11 @@ public struct MainTabView: View {
             communityScreen(slug: slug, push: { container.router.roomsPath.append($0) })
 
         case let .room(room):
-            LiveRoomScreen(
-                viewModel: LiveRoomViewModel(
+            // Owned, keyed on the room: a destination closure is re-run on
+            // every update of this view, and a room model built inline was
+            // replaced under a live connection.
+            Owned({
+                LiveRoomViewModel(
                     room: room,
                     viewerHandle: container.session.user?.handle ?? "",
                     viewerId: container.session.user?.id,
@@ -1034,18 +1053,23 @@ public struct MainTabView: View {
                     analytics: container.analytics,
                     suspension: container.suspension,
                     people: container.peopleDirectory
-                ),
-                onLeave: {
-                    // Back to the list, and anything pushed above the room —
-                    // a profile opened from the participant list — goes with
-                    // it: it was reached through a room that has been left.
-                    container.router.roomsPath.removeAll()
-                    // The count on the row behind is stale by exactly one.
-                    Task { await roomsViewModel.reload(isRefresh: true) }
-                },
-                onOpenProfile: openRoomProfile,
-                safetyMenu: { target in safety.menu(for: target) }
-            )
+                )
+            }) { viewModel in
+                LiveRoomScreen(
+                    viewModel: viewModel,
+                    onLeave: {
+                        // Back to the list, and anything pushed above the room —
+                        // a profile opened from the participant list — goes with
+                        // it: it was reached through a room that has been left.
+                        container.router.roomsPath.removeAll()
+                        // The count on the row behind is stale by exactly one.
+                        Task { await roomsViewModel.reload(isRefresh: true) }
+                    },
+                    onOpenProfile: openRoomProfile,
+                    safetyMenu: { target in safety.menu(for: target) }
+                )
+            }
+            .id(room.id)
 
         case let .profile(handle):
             ProfileScreenHost(
@@ -1116,15 +1140,20 @@ public struct MainTabView: View {
             })
 
         case let .conversation(conversation):
-            ChatScreen(
-                viewModel: ChatViewModel(
+            Owned({
+                ChatViewModel(
                     conversation: conversation,
                     viewerId: container.session.user?.id,
                     service: container.messagesService
-                ),
-                onOpenProfile: openProfile,
-                safetyMenu: safetyMenu(for:)
-            )
+                )
+            }) { viewModel in
+                ChatScreen(
+                    viewModel: viewModel,
+                    onOpenProfile: openProfile,
+                    safetyMenu: safetyMenu(for:)
+                )
+            }
+            .id(conversation.id)
 
         case let .postDetail(post):
             // Engagement changed on the detail screen must not be lost when the
@@ -1209,26 +1238,31 @@ public struct MainTabView: View {
         for post: Post,
         onDismiss: @escaping @MainActor (Post) -> Void
     ) -> some View {
-        PostDetailScreen(
-            viewModel: PostDetailViewModel(
+        Owned({
+            PostDetailViewModel(
                 post: post,
                 service: container.feedService,
                 analytics: container.analytics
-            ),
-            onOpenPost: openPost,
-            onStub: stub,
-            onOpenProfile: openProfile,
-            onDismiss: onDismiss,
-            safetyMenu: safetyMenu(for:),
-            // `nil` when the phase is off, which restores the Phase-3 stub bar.
-            composerService: container.flags.composer ? container.composerService : nil,
-            searchService: container.flags.composer ? container.searchService : nil,
-            author: ComposerAuthor(user: container.session.user),
-            analytics: container.analytics,
-            onCompose: composeHandler,
-            onOpenHashtag: openHashtag,
-                    onOpenRoom: openRoomCard
-        )
+            )
+        }) { viewModel in
+            PostDetailScreen(
+                viewModel: viewModel,
+                onOpenPost: openPost,
+                onStub: stub,
+                onOpenProfile: openProfile,
+                onDismiss: onDismiss,
+                safetyMenu: safetyMenu(for:),
+                // `nil` when the phase is off, which restores the Phase-3 stub bar.
+                composerService: container.flags.composer ? container.composerService : nil,
+                searchService: container.flags.composer ? container.searchService : nil,
+                author: ComposerAuthor(user: container.session.user),
+                analytics: container.analytics,
+                onCompose: composeHandler,
+                onOpenHashtag: openHashtag,
+                onOpenRoom: openRoomCard
+            )
+        }
+        .id(post.id)
     }
 
     // MARK: - Tab bar

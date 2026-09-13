@@ -74,9 +74,11 @@ public final class PostDetailViewModel {
             replyCursor = page.nextCursor
             hasMoreReplies = page.hasMore && page.nextCursor != nil
         } catch {
+            // Abandoned mid-flight: keep whatever was there and say nothing.
+            guard !APIError.wrapping(error).isCancellation else { return }
             replies = []
             hasMoreReplies = false
-            toast = .error(userMessage(for: error))
+            toast = .error(for: error)
         }
     }
 
@@ -93,8 +95,9 @@ public final class PostDetailViewModel {
             replyCursor = page.nextCursor
             hasMoreReplies = page.hasMore && page.nextCursor != nil
         } catch {
+            guard !APIError.wrapping(error).isCancellation else { return }
             hasMoreReplies = false
-            toast = .error(userMessage(for: error))
+            toast = .error(for: error)
         }
     }
 
@@ -214,7 +217,7 @@ public final class PostDetailViewModel {
                 updated.viewer = snapshot.viewer
                 return updated
             }
-            toast = .error(userMessage(for: error))
+            toast = .error(for: error)
         }
     }
 

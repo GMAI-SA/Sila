@@ -91,11 +91,18 @@ public final class CommunityViewModel {
         case .rooms:
             // A failed read leaves what is on screen and says so, rather than
             // wiping the tab to an empty state that reads as "there are none".
-            if let found = try? await service.fetchRooms(slug: slug) { rooms = found }
-            else if rooms.isEmpty { toast = .error(L10n.t("feed.error.pullToRefresh")) }
+            // A cancelled one — the tab changed under it — says nothing.
+            do {
+                rooms = try await service.fetchRooms(slug: slug)
+            } catch {
+                if rooms.isEmpty, let message = APIError.wrapping(error).presentableMessage { toast = .error(message) }
+            }
         case .members:
-            if let found = try? await service.fetchMembers(slug: slug, status: "active") { members = found }
-            else if members.isEmpty { toast = .error(L10n.t("feed.error.pullToRefresh")) }
+            do {
+                members = try await service.fetchMembers(slug: slug, status: "active")
+            } catch {
+                if members.isEmpty, let message = APIError.wrapping(error).presentableMessage { toast = .error(message) }
+            }
             if community.isAdmin, let waiting = try? await service.fetchMembers(slug: slug, status: "pending") {
                 pending = waiting
             } else if !community.isAdmin {

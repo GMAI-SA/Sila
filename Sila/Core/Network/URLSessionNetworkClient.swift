@@ -48,7 +48,15 @@ public final class URLSessionNetworkClient: NetworkClient {
         } else {
             let configuration = URLSessionConfiguration.default
             configuration.timeoutIntervalForRequest = AppConfig.requestTimeout
-            configuration.waitsForConnectivity = false
+            // A phone changes networks constantly — leaving Wi-Fi for cellular,
+            // walking out of a lift. Failing the instant there is no route
+            // turned every one of those moments into an error somebody had to
+            // dismiss; waiting for the route to come back, briefly, turns them
+            // into a pause nobody notices. The resource timeout is the cap on
+            // that wait, so an offline phone still hears "no connection"
+            // rather than nothing.
+            configuration.waitsForConnectivity = true
+            configuration.timeoutIntervalForResource = AppConfig.connectivityWait
             self.session = URLSession(configuration: configuration)
         }
     }
@@ -149,17 +157,35 @@ public final class URLSessionNetworkClient: NetworkClient {
     /// Translates an error body into the richest ``APIError`` we can manage.
     static func makeError(status: Int, data: Data) -> APIError {
         if let envelope = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data) {
+            let code = APIErrorCode(serverCode: envelope.detail.code)
             return .api(
-                code: APIErrorCode(serverCode: envelope.detail.code),
-                message: envelope.detail.message,
+                code: code,
+                // A validation reply's wording is rebuilt here from the field
+                // that failed; the server's sentence is for developers.
+                message: code == .validationError
+                    ? Self.validationMessage(envelope.detail.fields ?? [])
+                    : envelope.detail.message,
                 status: status
             )
+        }
+        if let envelope = try? JSONDecoder().decode(APIValidationListEnvelope.self, from: data) {
+            return .api(code: .validationError, message: Self.validationMessage(envelope.detail), status: status)
         }
         if let envelope = try? JSONDecoder().decode(APIErrorStringEnvelope.self, from: data) {
             return .http(status: status, message: envelope.detail)
         }
         if status == 401 { return .unauthenticated }
+        if status == 422 {
+            // Whatever shape this is, it is a refused form, and a screen must
+            // say so in words rather than in the server's JSON.
+            return .api(code: .validationError, message: L10n.t("error.validation"), status: status)
+        }
         let raw = String(data: data, encoding: .utf8) ?? ""
         return .http(status: status, message: raw)
+    }
+
+    /// The first refused field's sentence; the person fixes one thing at a time.
+    static func validationMessage(_ fields: [ValidationField]) -> String {
+        fields.first?.userMessage ?? L10n.t("error.validation")
     }
 }
