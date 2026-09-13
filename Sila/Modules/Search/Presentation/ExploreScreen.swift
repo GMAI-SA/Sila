@@ -17,6 +17,9 @@ public struct ExploreScreen: View {
     /// Opens the communities list. Absent where communities are not wired.
     private let onOpenCommunities: (@MainActor () -> Void)?
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
+    /// Opens a hashtag's page — a trending row, or a `#tag` in a result.
+    /// Absent, a tag falls back to being a search.
+    private let onOpenHashtag: (@MainActor (String) -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
@@ -37,6 +40,7 @@ public struct ExploreScreen: View {
         onOpenCommunities: (@MainActor () -> Void)? = nil,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
+        onOpenHashtag: (@MainActor (String) -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
     ) {
@@ -46,6 +50,7 @@ public struct ExploreScreen: View {
         self.onStub = onStub
         self.onOpenCommunities = onOpenCommunities
         self.onCompose = onCompose
+        self.onOpenHashtag = onOpenHashtag
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
     }
@@ -247,8 +252,15 @@ public struct ExploreScreen: View {
 
     private func trendingRow(_ tag: TrendingTag, rank: Int) -> some View {
         Button {
-            viewModel.select(tag)
             isFieldFocused = false
+            // A tag is a place now: the row opens its page. Without one
+            // wired, it searches, as it always did.
+            if let onOpenHashtag {
+                viewModel.recordTrendingOpen(tag)
+                onOpenHashtag(tag.tag)
+            } else {
+                viewModel.select(tag)
+            }
         } label: {
             HStack(spacing: SLSpacing.md) {
                 // A rank is a position, not a quantity: left-to-right in both
@@ -417,9 +429,15 @@ public struct ExploreScreen: View {
             },
             // A tapped `@mention` opens the person, not a search for their
             // name — the same thing it does in every other post on the app.
-            // `#hashtags` still search, because a tag is a query and nothing else.
+            // A `#hashtag` opens its page; with none wired, it searches.
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { tag in viewModel.updateQuery("#\(tag)", immediately: true) },
+            onHashtag: { tag in
+                if let onOpenHashtag {
+                    onOpenHashtag(tag)
+                } else {
+                    viewModel.updateQuery("#\(tag)", immediately: true)
+                }
+            },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

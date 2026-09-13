@@ -48,19 +48,8 @@ public struct RoomsScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
         .tnNavigationBar(title: L10n.t("rooms.nav.title"))
-        .toolbar {
-            if let onCreate {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: onCreate) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(SLColor.primary)
-                    }
-                    .accessibilityLabel(Text(RoomCopy.createTitle))
-                    .accessibilityHint(Text(RoomCopy.createExplanation))
-                }
-            }
-        }
+        // No `+` in the bar: opening a room is the floating button's job on
+        // this tab, in the same corner writing a post is on Home.
         .task { await viewModel.load() }
         .tnToast($viewModel.toast)
     }

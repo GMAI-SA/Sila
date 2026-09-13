@@ -312,6 +312,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public let communityId: UUID?
     public let communitySlug: String?
     public let communityName: String?
+    /// The animated picture, when the post carries one.
+    public let gif: Gif?
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -357,11 +359,13 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         repostedAt: Date? = nil,
         communityId: UUID? = nil,
         communitySlug: String? = nil,
-        communityName: String? = nil
+        communityName: String? = nil,
+        gif: Gif? = nil
     ) {
         self.id = id
         self.author = author
         self.text = text
+        self.gif = gif
         self.repostedBy = repostedBy
         self.repostedAt = repostedAt
         self.communityId = communityId
@@ -386,7 +390,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case id, author, text, imageUrls, language, createdAt, scope, scopeCountry, scopeRegion
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
-        case communityId, communitySlug, communityName
+        case communityId, communitySlug, communityName, gif
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -453,6 +457,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         communitySlug = (slug?.isEmpty == false) ? slug : nil
         let name = (try? container.decodeIfPresent(String.self, forKey: .communityName)) ?? nil
         communityName = (name?.isEmpty == false) ? name : nil
+        // A GIF that cannot be decoded costs the picture, never the post.
+        gif = (try? container.decodeIfPresent(Gif.self, forKey: .gif)) ?? nil
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.
@@ -477,7 +483,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             repostedAt: repostedAt,
             communityId: communityId,
             communitySlug: communitySlug,
-            communityName: communityName
+            communityName: communityName,
+            gif: gif
         )
     }
 }

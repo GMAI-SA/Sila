@@ -93,6 +93,9 @@ public actor PreferencesServiceMock: PreferencesServiceProtocol {
             next.interests = topics.filter { $0.stance == "interested" }.map(\.topic).sorted()
             next.mutedTopics = topics.filter { $0.stance == "muted" }.map(\.topic).sorted()
         }
+        if let sort = update.hashtagSort {
+            next.hashtagSort = HashtagSort(wire: sort)
+        }
         if let enabled = update.filterInternationalByInterests {
             next.filterInternationalByInterests = enabled
         }

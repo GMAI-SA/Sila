@@ -152,6 +152,8 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
     /// the feed-preferences screen — the person who wants likes silenced is
     /// standing in the notifications list when they decide that.
     public var notifications: NotificationPreferences
+    /// How a hashtag's page is ordered for this account.
+    public var hashtagSort: HashtagSort
 
     /// Creates a preference set. The defaults match the server's.
     public init(
@@ -160,9 +162,11 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         filterInternationalByInterests: Bool = false,
         showUntaggedPosts: Bool = true,
         mutedCountries: [String] = [],
-        notifications: NotificationPreferences = NotificationPreferences()
+        notifications: NotificationPreferences = NotificationPreferences(),
+        hashtagSort: HashtagSort = .newest
     ) {
         self.notifications = notifications
+        self.hashtagSort = hashtagSort
         self.interests = interests.sorted()
         self.mutedTopics = mutedTopics.sorted()
         self.filterInternationalByInterests = filterInternationalByInterests
@@ -179,6 +183,7 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         case showUntaggedPosts
         case mutedCountries
         case notifications
+        case hashtagSort
     }
 
     /// Tolerant decoder.
@@ -204,6 +209,7 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         notifications =
             ((try? container.decodeIfPresent(NotificationPreferences.self, forKey: .notifications)) ?? nil)
             ?? NotificationPreferences()
+        hashtagSort = HashtagSort(wire: (try? container.decode(String.self, forKey: .hashtagSort)) ?? nil)
     }
 
     // MARK: Stances
@@ -326,19 +332,24 @@ public struct PreferencesUpdate: Encodable, Equatable, Sendable {
     /// ``NotificationPreferences/payload`` always states every kind rather than
     /// only the one that changed.
     public var notifications: [String: Bool]?
+    /// New order for hashtag pages. The wire value, so the encoder needs no
+    /// special case.
+    public var hashtagSort: String?
 
     public init(
         topics: [TopicStancePayload]? = nil,
         filterInternationalByInterests: Bool? = nil,
         showUntaggedPosts: Bool? = nil,
         mutedCountries: [String]? = nil,
-        notifications: [String: Bool]? = nil
+        notifications: [String: Bool]? = nil,
+        hashtagSort: HashtagSort? = nil
     ) {
         self.topics = topics
         self.filterInternationalByInterests = filterInternationalByInterests
         self.showUntaggedPosts = showUntaggedPosts
         self.mutedCountries = mutedCountries
         self.notifications = notifications
+        self.hashtagSort = hashtagSort?.rawValue
     }
 
     /// A body that makes the server's state equal `preferences` exactly.

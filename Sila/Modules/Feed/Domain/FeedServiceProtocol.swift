@@ -47,6 +47,13 @@ public protocol FeedServiceProtocol: Sendable {
     /// Private: nobody else can read this list, and reading it never tells an
     /// author their post was saved.
     func fetchBookmarks(cursor: String?) async throws -> FeedPage
+
+    /// A hashtag's header — `GET /hashtags/{tag}` (contract v17).
+    func fetchHashtag(_ tag: String) async throws -> HashtagHeader
+
+    /// One page of a hashtag — `GET /hashtags/{tag}/posts`. A `nil` sort asks
+    /// for the order the account keeps in its preferences.
+    func fetchHashtagPosts(_ tag: String, sort: HashtagSort?, cursor: String?) async throws -> HashtagPage
 }
 
 extension FeedServiceProtocol {

@@ -60,6 +60,10 @@ public final class ComposerViewModel {
     /// `true` while an image is on its way up. The Post button stays live: text
     /// is not held hostage to a picture.
     public private(set) var isUploadingImage = false
+    /// The GIF attached to the opening segment, if any. One per post.
+    public private(set) var gif: Gif?
+    /// `true` while the GIF picker sheet is up.
+    public var isShowingGifPicker = false
     /// Mention candidates for the segment being typed.
     public private(set) var mentionSuggestions: [UserSummary] = []
     /// `true` while `/search/users` is in flight for the current prefix.
@@ -75,6 +79,9 @@ public final class ComposerViewModel {
 
     private let composer: ComposerServiceProtocol
     private let search: SearchServiceProtocol?
+    /// The GIF library. `nil` hides the GIF button rather than showing one
+    /// that opens an empty sheet.
+    public let gifs: GifServiceProtocol?
     private let analytics: AnalyticsClient
     private let mentionDebounce: TimeInterval
     private let onPosted: @MainActor ([Post]) -> Void
@@ -102,8 +109,10 @@ public final class ComposerViewModel {
         author: ComposerAuthor,
         composer: ComposerServiceProtocol,
         search: SearchServiceProtocol? = nil,
+        gifs: GifServiceProtocol? = nil,
         analytics: AnalyticsClient,
         mentionDebounce: TimeInterval = ComposerConstants.mentionDebounce,
+        openGifPicker: Bool = false,
         onPosted: @escaping @MainActor ([Post]) -> Void = { _ in },
         onClose: @escaping @MainActor () -> Void = {}
     ) {
@@ -111,6 +120,8 @@ public final class ComposerViewModel {
         self.author = author
         self.composer = composer
         self.search = search
+        self.gifs = gifs
+        self.isShowingGifPicker = openGifPicker && gifs != nil
         self.analytics = analytics
         self.mentionDebounce = mentionDebounce
         self.onPosted = onPosted
@@ -147,18 +158,41 @@ public final class ComposerViewModel {
     /// `true` when there is anything the user would be upset to lose.
     public var hasContent: Bool {
         segments.contains { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            || gif != nil || !attachments.isEmpty
     }
 
     /// `true` when the Post button should be live.
     ///
     /// Every non-empty segment must be inside the limit, at least one segment
-    /// must have content, and — for a reply — the server must have said the
-    /// viewer may reply at all.
+    /// must have content — or a GIF or a picture, which can stand alone —
+    /// and, for a reply, the server must have said the viewer may reply.
     public var canPost: Bool {
         guard !isPosting, canReplyHere else { return false }
         let filled = segments.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        guard !filled.isEmpty else { return false }
+        guard !filled.isEmpty else { return gif != nil || !attachments.isEmpty }
         return filled.allSatisfy { ComposerTextMetrics.make($0.text).canPost }
+    }
+
+    // MARK: - GIF
+
+    /// Opens the picker. Records it, because "did anybody use this" is the
+    /// question that decides whether the library is worth its key.
+    public func openGifPicker() {
+        guard gifs != nil else { return }
+        analytics.track(.gifPickerOpened)
+        isShowingGifPicker = true
+    }
+
+    /// Attaches the picked GIF to the opening segment, replacing any other.
+    public func attach(gif: Gif) {
+        self.gif = gif
+        isShowingGifPicker = false
+        analytics.track(.gifAttached, properties: ["provider": gif.provider, "shared_before": gif.id == nil ? "no" : "yes"])
+    }
+
+    /// Takes the GIF off the draft.
+    public func removeGif() {
+        gif = nil
     }
 
     /// Whether the viewer is allowed to reply into this thread at all.
@@ -366,7 +400,9 @@ public final class ComposerViewModel {
             imageURLs: continuationId == nil ? attachments : [],
             sensitive: sensitive,
             sensitiveNote: sensitiveNote,
-            communityId: context.community?.id
+            communityId: context.community?.id,
+            // Same again for the GIF.
+            gif: continuationId == nil ? gif : nil
         )
 
         if !report.posted.isEmpty {

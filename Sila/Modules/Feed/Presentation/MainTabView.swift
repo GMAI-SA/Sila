@@ -128,11 +128,18 @@ public struct MainTabView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ZStack {
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // No action slot: the bar is five destinations, and writing lives
-            // at the top of the feed it writes into.
+                // The one thing this tab starts, in the bottom corner where a
+                // thumb already is; held, everything the app can start.
+                if let action = floatingAction {
+                    action
+                }
+            }
+
+            // No action slot: the bar is destinations only.
             SLTabBar(items: tabBarItems, selection: $selection)
         }
         .tnScreenBackground()
@@ -389,7 +396,7 @@ public struct MainTabView: View {
             case let .postDetail(post): return Handle.normalised(post.author.handle) == target
             case let .conversation(conversation):
                 return Handle.normalised(conversation.other.handle) == target
-            case .savedPosts, .community, .communities:
+            case .savedPosts, .community, .communities, .hashtag:
                 return false
             }
         }
@@ -523,13 +530,98 @@ public struct MainTabView: View {
             author: ComposerAuthor(user: container.session.user),
             composer: container.composerService,
             search: container.searchService,
+            gifs: container.gifService,
             analytics: container.analytics,
+            openGifPicker: container.router.composerOpensGifPicker,
             onPosted: { posted in
                 viewModel.insert(newPosts: posted)
                 exploreViewModel.insert(posted)
             },
             onClose: { container.router.dismissComposer() }
         )
+    }
+
+    // MARK: - Floating action
+
+    /// The bottom-corner button for the current tab, or `nil` on the tabs
+    /// that start nothing (notifications, messages, profile).
+    private var floatingAction: SLFloatingActionButton? {
+        // Only at the root of a tab. A pushed screen has its own bottom edge to
+        // answer for — a thread's reply bar, a room's controls — and a button
+        // floating over one of those is a button in the way.
+        guard isAtTabRoot else { return nil }
+        switch selection {
+        case .home, .explore:
+            guard container.flags.composer else { return nil }
+            return SLFloatingActionButton(
+                icon: "square.and.pencil",
+                accessibilityLabel: L10n.t("feed.fab.post.a11yLabel"),
+                accessibilityHint: L10n.t("feed.fab.post.a11yHint"),
+                options: floatingOptions,
+                onExpand: { container.analytics.track(.actionMenuOpened, properties: ["tab": selection.rawValue]) },
+                onTap: openComposer
+            )
+        case .rooms:
+            guard let create = roomCreationHandler else { return nil }
+            return SLFloatingActionButton(
+                icon: "waveform",
+                accessibilityLabel: L10n.t("feed.fab.room.a11yLabel"),
+                accessibilityHint: L10n.t("feed.fab.room.a11yHint"),
+                options: floatingOptions,
+                onExpand: { container.analytics.track(.actionMenuOpened, properties: ["tab": selection.rawValue]) },
+                onTap: create
+            )
+        case .notifications, .messages, .profile:
+            return nil
+        }
+    }
+
+    /// Whether the tab is showing its own first screen rather than something
+    /// pushed on top of it.
+    private var isAtTabRoot: Bool {
+        switch selection {
+        case .home: return container.router.feedPath.isEmpty
+        case .explore: return container.router.explorePath.isEmpty
+        case .rooms: return container.router.roomsPath.isEmpty
+        case .messages: return container.router.messagesPath.isEmpty
+        case .notifications: return container.router.notificationsPath.isEmpty
+        case .profile: return container.router.profilePath.isEmpty
+        }
+    }
+
+    /// Everything the app can start, top to bottom. The same list on every
+    /// tab that has the button, so holding it never needs learning twice.
+    private var floatingOptions: [SLFloatingActionOption] {
+        var options: [SLFloatingActionOption] = []
+        if container.flags.composer {
+            options.append(SLFloatingActionOption(
+                id: "post", title: L10n.t("feed.fab.option.post"), glyph: .symbol("square.and.pencil"), action: openComposer
+            ))
+            options.append(SLFloatingActionOption(
+                id: "gif", title: L10n.t("feed.fab.option.gif"), glyph: .text("GIF"),
+                action: {
+                    container.analytics.track(.composerOpened, properties: ["context": "gif"])
+                    container.router.openComposerWithGif()
+                }
+            ))
+        }
+        if let create = roomCreationHandler {
+            options.append(SLFloatingActionOption(
+                id: "room", title: L10n.t("feed.fab.option.room"), glyph: .symbol("waveform"), action: create
+            ))
+        }
+        return options
+    }
+
+    // MARK: - Hashtags
+
+    /// Opens a tag's page on the current tab's stack. A tag tapped inside the
+    /// Rooms tab — in a community's posts — opens on Home, which has a stack
+    /// for documents.
+    private func openHashtag(_ tag: String) {
+        let normalised = HashtagViewModel.normalised(tag)
+        guard !normalised.isEmpty else { return }
+        push(.hashtag(tag: normalised))
     }
 
     // MARK: - Screens
@@ -548,6 +640,7 @@ public struct MainTabView: View {
                     onStub: stub,
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
+                    onOpenHashtag: openHashtag,
                     onOpenPreferences: preferencesHandler,
                     safetyMenu: safetyMenu(for:),
                     ownPost: ownPostMenu(for:),
@@ -572,6 +665,7 @@ public struct MainTabView: View {
                     onOpenCommunities: { push(.communities) },
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
+                    onOpenHashtag: openHashtag,
                     safetyMenu: safetyMenu(for:),
                     ownPost: ownPostMenu(for:)
                 )
@@ -697,7 +791,8 @@ public struct MainTabView: View {
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
                 onMessage: openConversation,
-                hiddenPostIds: deletion.deleted
+                hiddenPostIds: deletion.deleted,
+                onOpenHashtag: openHashtag
             )
             .tnNavigationBar(title: profileTitle)
         } else {
@@ -812,7 +907,7 @@ public struct MainTabView: View {
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in composeHandler?(.quote(post)) },
             onMention: openProfile,
-            onHashtag: { _ in stub(StubFeature.hashtagSearch) },
+            onHashtag: openHashtag,
             onOpenQuoted: openPost,
             onOpenAuthor: { author in openProfile(author.handle) },
             onStub: stub,
@@ -845,6 +940,11 @@ public struct MainTabView: View {
         case .rooms:
             if case let .profile(handle) = route {
                 container.router.roomsPath.append(.profile(handle: handle))
+            } else {
+                // A document reached from a room — a tag in a community's
+                // post — opens on Home, whose stack holds documents.
+                selection = .home
+                container.router.feedPath.append(route)
             }
         }
     }
@@ -954,7 +1054,8 @@ public struct MainTabView: View {
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
                 onMessage: openConversation,
-                hiddenPostIds: deletion.deleted
+                hiddenPostIds: deletion.deleted,
+                onOpenHashtag: openHashtag
             )
             .tnNavigationBar(title: "@\(handle)")
         }
@@ -1031,6 +1132,26 @@ public struct MainTabView: View {
                 onOpenPost: openPost,
                 onOpenProfile: openProfile,
                 onCompose: composeHandler,
+                onOpenHashtag: openHashtag,
+                onStub: stub,
+                postSafetyMenu: safetyMenu(for:),
+                ownPost: ownPostMenu(for:),
+                hiddenPostIds: deletion.deleted
+            )
+
+        case let .hashtag(tag):
+            HashtagScreen(
+                viewModel: HashtagViewModel(
+                    tag: tag,
+                    service: container.feedService,
+                    preferences: container.preferencesService,
+                    analytics: container.analytics,
+                    suspension: container.suspension
+                ),
+                onOpenPost: openPost,
+                onOpenProfile: openProfile,
+                onOpenHashtag: openHashtag,
+                onCompose: composeHandler,
                 onStub: stub,
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
@@ -1060,7 +1181,8 @@ public struct MainTabView: View {
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
                 onMessage: openConversation,
-                hiddenPostIds: deletion.deleted
+                hiddenPostIds: deletion.deleted,
+                onOpenHashtag: openHashtag
             )
             .tnNavigationBar(title: "@\(handle)")
         }
@@ -1087,7 +1209,8 @@ public struct MainTabView: View {
             searchService: container.flags.composer ? container.searchService : nil,
             author: ComposerAuthor(user: container.session.user),
             analytics: container.analytics,
-            onCompose: composeHandler
+            onCompose: composeHandler,
+            onOpenHashtag: openHashtag
         )
     }
 
@@ -1179,7 +1302,6 @@ public struct MainTabView: View {
         static let report = "Report"
         static let replying = "Replying"
         static let quotePosts = "Quote posts"
-        static let hashtagSearch = "Hashtag search"
         static let identityVerification = "Identity verification"
 
         static func displayName(_ identifier: String) -> String {
@@ -1191,7 +1313,6 @@ public struct MainTabView: View {
             case report: return L10n.t("feed.stub.name.report")
             case replying: return L10n.t("feed.stub.name.replying")
             case quotePosts: return L10n.t("feed.stub.name.quotePosts")
-            case hashtagSearch: return L10n.t("feed.stub.name.hashtagSearch")
             case identityVerification: return L10n.t("feed.stub.name.identityVerification")
             // A stub added later without a matching key still says something
             // truthful, in English, rather than rendering a key.

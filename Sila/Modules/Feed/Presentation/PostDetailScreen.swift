@@ -17,6 +17,8 @@ public struct PostDetailScreen: View {
     private let onStub: @MainActor (String) -> Void
     private let onDismiss: @MainActor (Post) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
+    /// Opens a hashtag's page from any card in the thread.
+    private let onOpenHashtag: (@MainActor (String) -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
@@ -54,7 +56,8 @@ public struct PostDetailScreen: View {
         searchService: SearchServiceProtocol? = nil,
         author: ComposerAuthor = ComposerAuthor(isVerified: false),
         analytics: AnalyticsClient = ConsoleAnalyticsClient(),
-        onCompose: (@MainActor (ComposerContext) -> Void)? = nil
+        onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
+        onOpenHashtag: (@MainActor (String) -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -62,6 +65,7 @@ public struct PostDetailScreen: View {
         self.onStub = onStub
         self.onDismiss = onDismiss
         self.onCompose = onCompose
+        self.onOpenHashtag = onOpenHashtag
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
 
@@ -291,7 +295,7 @@ public struct PostDetailScreen: View {
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { _ in onStub(MainTabView.StubFeature.hashtagSearch) },
+            onHashtag: { tag in onOpenHashtag?(tag) },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

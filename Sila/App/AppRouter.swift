@@ -39,6 +39,8 @@ public enum FeedRoute: Hashable, Sendable {
     case community(slug: String)
     /// Communities to browse.
     case communities
+    /// Every post carrying one hashtag. The tag without its `#`.
+    case hashtag(tag: String)
 }
 
 /// Screens reachable inside the Rooms tab's stack.
@@ -100,6 +102,9 @@ public final class AppRouter {
     public var presentedLegalDocument: LegalDocument?
     /// The composer currently presented as a sheet, if any.
     public var presentedComposer: ComposerContext?
+    /// `true` when the next composer should open straight onto the GIF
+    /// picker — the floating button's GIF choice. Read once, then cleared.
+    public var composerOpensGifPicker = false
     /// App-level toast.
     public var toast: SLToastMessage?
     /// A link the system handed the app that nothing has opened yet.
@@ -201,6 +206,12 @@ extension AppRouter: ComposerLaunching {
     /// Conforming here is what lets Feed and Explore start a composition
     /// without importing the Composer module's screens.
     public func openComposer(_ context: ComposerContext) {
+        presentedComposer = context
+    }
+
+    /// Presents the composer with the GIF picker already up.
+    public func openComposerWithGif(_ context: ComposerContext = .newPost) {
+        composerOpensGifPicker = true
         presentedComposer = context
     }
 }

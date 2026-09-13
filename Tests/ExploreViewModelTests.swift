@@ -213,6 +213,10 @@ final class ExploreViewModelTests: XCTestCase {
             func setBookmarked(_ bookmarked: Bool, postId: UUID) async throws -> PostMetrics { throw APIError.transport("no") }
             func deletePost(_ id: UUID) async throws {}
             func fetchBookmarks(cursor: String?) async throws -> FeedPage { .empty }
+            func fetchHashtag(_ tag: String) async throws -> HashtagHeader { HashtagHeader(tag: tag, postCount: 0) }
+            func fetchHashtagPosts(_ tag: String, sort: HashtagSort?, cursor: String?) async throws -> HashtagPage {
+                HashtagPage(posts: [], tag: tag)
+            }
         }
 
         let search = ScriptedSearchService()

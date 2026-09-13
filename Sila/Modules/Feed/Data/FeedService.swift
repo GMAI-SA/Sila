@@ -54,6 +54,40 @@ public final class FeedService: FeedServiceProtocol {
         )
     }
 
+    // MARK: - Hashtags
+
+    public func fetchHashtag(_ tag: String) async throws -> HashtagHeader {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(path: "/hashtags/\(Self.tagComponent(tag))", accessToken: token),
+            as: HashtagHeader.self
+        )
+    }
+
+    public func fetchHashtagPosts(_ tag: String, sort: HashtagSort?, cursor: String?) async throws -> HashtagPage {
+        let token = try await tokens.accessToken()
+        var query = [URLQueryItem(name: "limit", value: String(clamped(20)))]
+        if let sort { query.append(URLQueryItem(name: "sort", value: sort.rawValue)) }
+        if let cursor, !cursor.isEmpty { query.append(URLQueryItem(name: "cursor", value: cursor)) }
+        let page = try await network.send(
+            APIRequest(path: "/hashtags/\(Self.tagComponent(tag))/posts", accessToken: token, query: query),
+            as: HashtagPage.self
+        )
+        analytics.track(.hashtagLoaded, properties: [
+            "sort": page.sort.rawValue,
+            "count": String(page.posts.count),
+            "page": cursor == nil ? "first" : "next"
+        ])
+        return page
+    }
+
+    /// The tag as a path segment: no `#`, percent-encoded so an Arabic tag
+    /// travels intact.
+    static func tagComponent(_ tag: String) -> String {
+        let bare = tag.trimmingCharacters(in: .whitespacesAndNewlines).drop(while: { $0 == "#" })
+        return String(bare).addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? String(bare)
+    }
+
     // MARK: - Posts
 
     public func fetchPost(_ id: UUID) async throws -> Post {

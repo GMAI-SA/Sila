@@ -62,6 +62,15 @@ public struct ComposerSheetScreen: View {
             .tnNavigationBar(title: viewModel.context.title)
             .toolbar { toolbarContent }
             .tnToast($viewModel.toast)
+            .sheet(isPresented: $viewModel.isShowingGifPicker) {
+                if let gifs = viewModel.gifs {
+                    GifPickerSheet(
+                        viewModel: GifPickerViewModel(service: gifs, country: viewModel.author.countryCode),
+                        onPick: { gif in viewModel.attach(gif: gif) },
+                        onClose: { viewModel.isShowingGifPicker = false }
+                    )
+                }
+            }
             .onAppear { focusedSegment = viewModel.segments.first?.id }
             .confirmationDialog(
                 L10n.t("composer.discard.title"),
@@ -121,7 +130,24 @@ public struct ComposerSheetScreen: View {
                 }
             }
 
-            HStack(spacing: SLSpacing.sm) {
+            if let gif = viewModel.gif {
+                ZStack(alignment: .topTrailing) {
+                    GifMediaView(gif, maxHeight: 180)
+                    Button {
+                        viewModel.removeGif()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 22))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(SLColor.textPrimary, SLColor.surface1)
+                    }
+                    .padding(SLSpacing.xs)
+                    .accessibilityLabel(Text(L10n.t("composer.gif.remove")))
+                    .accessibilityIdentifier("composer.gif.remove")
+                }
+            }
+
+            HStack(spacing: SLSpacing.md) {
                 PhotosPicker(
                     selection: $picked,
                     maxSelectionCount: ComposerConstants.maximumImages - viewModel.attachments.count,
@@ -132,6 +158,20 @@ public struct ComposerSheetScreen: View {
                 }
                 .disabled(viewModel.attachments.count >= ComposerConstants.maximumImages)
                 .accessibilityIdentifier("composer.addImage")
+
+                if viewModel.gifs != nil {
+                    Button {
+                        viewModel.openGifPicker()
+                    } label: {
+                        HStack(spacing: SLSpacing.xs) {
+                            SLGifGlyph()
+                            Text(L10n.t("composer.gif.add"))
+                        }
+                        .font(SLFont.caption)
+                    }
+                    .accessibilityIdentifier("composer.addGif")
+                    .accessibilityHint(Text(L10n.t("composer.gif.add.a11yHint")))
+                }
 
                 if viewModel.isUploadingImage {
                     ProgressView()

@@ -134,6 +134,11 @@ public final class ExploreViewModel {
 
     /// Runs a search for a trending tag.
     /// - Parameter tag: The tag the user tapped.
+    /// Records that a trending row opened its page (the screen does the opening).
+    public func recordTrendingOpen(_ tag: TrendingTag) {
+        analytics.track(.trendingTagOpened, properties: ["tag": tag.tag])
+    }
+
     public func select(_ tag: TrendingTag) {
         analytics.track(.trendingTagOpened, properties: ["tag": tag.tag])
         // Searching with the `#` matches the hashtag itself rather than every

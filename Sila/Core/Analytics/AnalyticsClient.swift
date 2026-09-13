@@ -115,6 +115,16 @@ public enum AnalyticsEvent: String, Sendable {
     case postImageUploaded = "post_image_uploaded"
     case postDeleted = "post_deleted"
     case savedPostsOpened = "saved_posts_opened"
+    /// A hashtag's page was opened, and a page of it loaded.
+    case hashtagOpened = "hashtag_opened"
+    case hashtagLoaded = "hashtag_loaded"
+    /// The account changed how hashtag pages are ordered.
+    case hashtagSortChanged = "hashtag_sort_changed"
+    /// The GIF picker was opened, and a GIF attached to a draft.
+    case gifPickerOpened = "gif_picker_opened"
+    case gifAttached = "gif_attached"
+    /// The floating action button was held open to show its menu.
+    case actionMenuOpened = "action_menu_opened"
     case groupCreated = "group_created"
     case groupDeleted = "group_deleted"
     case groupsOpened = "groups_opened"

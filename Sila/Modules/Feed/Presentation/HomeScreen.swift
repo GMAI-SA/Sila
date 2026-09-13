@@ -14,6 +14,8 @@ public struct HomeScreen: View {
     private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
+    /// Opens a hashtag's page. A tapped `#tag` in any card leads here.
+    private let onOpenHashtag: (@MainActor (String) -> Void)?
     private let onOpenPreferences: (@MainActor () -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
@@ -40,6 +42,7 @@ public struct HomeScreen: View {
         onStub: @escaping @MainActor (String) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
+        onOpenHashtag: (@MainActor (String) -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
@@ -51,6 +54,7 @@ public struct HomeScreen: View {
         self.onOpenProfile = onOpenProfile
         self.onStub = onStub
         self.onCompose = onCompose
+        self.onOpenHashtag = onOpenHashtag
         self.onOpenPreferences = onOpenPreferences
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
@@ -92,47 +96,6 @@ public struct HomeScreen: View {
 
     /// Tap-to-write, at the top of the feed.
     ///
-    /// This replaced a raised `+` in the middle of the tab bar. The bar's job
-    /// is moving between places; writing is not a place, and a control that
-    /// looked like a sixth tab but never highlighted was the one item in the
-    /// bar whose behaviour you had to learn. Here the same action sits in the
-    /// timeline it acts on, reads as what it does, and leaves the bar as five
-    /// destinations that all behave alike.
-    ///
-    /// It scrolls away with the feed on purpose. Somebody reading is reading;
-    /// pull down — the gesture that already refreshes — brings it back.
-    @ViewBuilder
-    private var composeRow: some View {
-        if onCompose != nil {
-            Button {
-                compose(.newPost, fallback: MainTabView.StubFeature.composing)
-            } label: {
-                HStack(spacing: SLSpacing.md) {
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(SLColor.primary)
-
-                    Text(L10n.t("feed.composeRow.placeholder"))
-                        .font(SLFont.body)
-                        .foregroundStyle(SLColor.textMuted)
-
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, SLSpacing.lg)
-                .padding(.vertical, SLSpacing.md)
-                .background(SLColor.surface2)
-                .clipShape(RoundedRectangle(cornerRadius: SLRadius.lg, style: .continuous))
-                .padding(.horizontal, SLSpacing.lg)
-                .padding(.vertical, SLSpacing.md)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("feed.composeRow")
-            .accessibilityLabel(Text(L10n.t("feed.composeRow.a11yLabel")))
-            .accessibilityHint(Text(L10n.t("feed.composeRow.hint")))
-        }
-    }
-
     // MARK: - Preferences entry point
 
     /// A link to the topic controls, on the one feed they affect.
@@ -177,12 +140,6 @@ public struct HomeScreen: View {
         let state = viewModel.state(for: tab)
 
         ScrollView {
-            // Above every state, including the empty one and the skeleton:
-            // writing is the one thing that must not wait for a feed to load,
-            // and an account whose feed is empty is exactly the account that
-            // needs somewhere to start.
-            composeRow
-
             if state.isLoading && !state.isPopulated {
                 skeleton
             } else if let empty = state.emptyKind, !state.isPopulated {
@@ -313,7 +270,7 @@ public struct HomeScreen: View {
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { _ in onStub(MainTabView.StubFeature.hashtagSearch) },
+            onHashtag: { tag in onOpenHashtag?(tag) },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

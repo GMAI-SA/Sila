@@ -74,6 +74,8 @@ public struct ProfileScreen: View {
     private let onOpenProfile: @MainActor (String) -> Void
     private let onStub: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
+    /// Opens a hashtag's page from any card on the timeline.
+    private let onOpenHashtag: (@MainActor (String) -> Void)?
     private let ownerActions: ProfileOwnerActions
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
@@ -110,13 +112,15 @@ public struct ProfileScreen: View {
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
         onMessage: (@MainActor (UserSummary) -> Void)? = nil,
-        hiddenPostIds: Set<UUID> = []
+        hiddenPostIds: Set<UUID> = [],
+        onOpenHashtag: (@MainActor (String) -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
         self.onStub = onStub
         self.onCompose = onCompose
+        self.onOpenHashtag = onOpenHashtag
         self.ownerActions = ownerActions
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
@@ -792,7 +796,7 @@ public struct ProfileScreen: View {
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { _ in onStub(MainTabView.StubFeature.hashtagSearch) },
+            onHashtag: { tag in onOpenHashtag?(tag) },
             onOpenQuoted: onOpenPost,
             // Every author on this page is the person whose profile it is,
             // except inside a quote card — so this only ever navigates
@@ -834,6 +838,7 @@ public struct ProfileScreenHost: View {
     private let onMessage: (@MainActor (UserSummary) -> Void)?
     /// Posts deleted this session, hidden without waiting for a refresh.
     private let hiddenPostIds: Set<UUID>
+    private let onOpenHashtag: (@MainActor (String) -> Void)?
 
     /// - Parameters:
     ///   - makeViewModel: Called **once**, when the destination first appears.
@@ -856,13 +861,15 @@ public struct ProfileScreenHost: View {
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
         onMessage: (@MainActor (UserSummary) -> Void)? = nil,
-        hiddenPostIds: Set<UUID> = []
+        hiddenPostIds: Set<UUID> = [],
+        onOpenHashtag: (@MainActor (String) -> Void)? = nil
     ) {
         self._viewModel = State(initialValue: makeViewModel())
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
         self.onStub = onStub
         self.onCompose = onCompose
+        self.onOpenHashtag = onOpenHashtag
         self.ownerActions = ownerActions
         self.safetyMenu = safetyMenu
         self.postSafetyMenu = postSafetyMenu
@@ -883,7 +890,8 @@ public struct ProfileScreenHost: View {
             postSafetyMenu: postSafetyMenu,
             ownPost: ownPost,
             onMessage: onMessage,
-            hiddenPostIds: hiddenPostIds
+            hiddenPostIds: hiddenPostIds,
+            onOpenHashtag: onOpenHashtag
         )
     }
 }

@@ -175,6 +175,11 @@ public struct PostCardView: View {
                 postText
                     .padding(.leading, style == .detail ? 0 : 56)
 
+                if let gif = post.gif {
+                    GifMediaView(gif, maxHeight: style == .detail ? 420 : 300)
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
+
                 if !post.imageURLs.isEmpty {
                     images
                         .padding(.leading, style == .detail ? 0 : 56)

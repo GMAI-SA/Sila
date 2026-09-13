@@ -61,6 +61,10 @@ public struct PostDraft: Equatable, Sendable {
     /// The community this is written in, when it is written in one. The
     /// community's own scope governs it, so no picker is shown there.
     public var communityId: UUID?
+    /// One GIF from the library, as the picker handed it over. Sent back
+    /// exactly as it came; the server checks every URL against the
+    /// provider's hosts before storing it.
+    public var gif: Gif?
 
     public init(
         text: String,
@@ -70,7 +74,8 @@ public struct PostDraft: Equatable, Sendable {
         imageURLs: [String] = [],
         sensitive: SensitiveKind? = nil,
         sensitiveNote: String = "",
-        communityId: UUID? = nil
+        communityId: UUID? = nil,
+        gif: Gif? = nil
     ) {
         self.text = text
         self.scope = scope
@@ -80,6 +85,7 @@ public struct PostDraft: Equatable, Sendable {
         self.sensitive = sensitive
         self.sensitiveNote = sensitiveNote
         self.communityId = communityId
+        self.gif = gif
     }
 
     /// The text as it goes over the wire.
@@ -88,8 +94,12 @@ public struct PostDraft: Equatable, Sendable {
     }
 
     /// `true` when there is something to post that is inside the limit.
+    ///
+    /// A GIF or a picture can stand alone — the server accepts an empty text
+    /// beside either — so an empty draft with a GIF is postable.
     public var isPostable: Bool {
-        ComposerTextMetrics.make(text).canPost
+        if trimmedText.isEmpty { return gif != nil || !imageURLs.isEmpty }
+        return ComposerTextMetrics.make(text).canPost
     }
 }
 
@@ -117,6 +127,8 @@ struct CreatePostBody: Encodable, Equatable {
     let sensitive: String?
     let sensitiveNote: String?
     let communityId: String?
+    /// Omitted when there is none.
+    let gif: GifBody?
 
     init(draft: PostDraft) {
         self.text = draft.trimmedText
@@ -130,6 +142,34 @@ struct CreatePostBody: Encodable, Equatable {
         let note = draft.sensitiveNote.trimmingCharacters(in: .whitespacesAndNewlines)
         self.sensitiveNote = (draft.sensitive != nil && !note.isEmpty) ? String(note.prefix(80)) : nil
         self.communityId = draft.communityId?.uuidString.lowercased()
+        self.gif = draft.gif.map(GifBody.init(gif:))
+    }
+}
+
+/// A GIF on the wire, in the shape `/gifs/*` returned it.
+struct GifBody: Encodable, Equatable {
+    let id: String?
+    let provider: String
+    let providerId: String
+    let url: String
+    let gifUrl: String?
+    let previewUrl: String?
+    let stillUrl: String?
+    let width: Int
+    let height: Int
+    let title: String?
+
+    init(gif: Gif) {
+        id = gif.id?.uuidString.lowercased()
+        provider = gif.provider
+        providerId = gif.providerId
+        url = gif.url.absoluteString
+        gifUrl = gif.gifURL?.absoluteString
+        previewUrl = gif.previewURL?.absoluteString
+        stillUrl = gif.stillURL?.absoluteString
+        width = gif.width
+        height = gif.height
+        title = gif.title
     }
 }
 

@@ -60,11 +60,16 @@ extension ComposerServiceProtocol {
         imageURLs: [String] = [],
         sensitive: SensitiveKind? = nil,
         sensitiveNote: String = "",
-        communityId: UUID? = nil
+        communityId: UUID? = nil,
+        gif: Gif? = nil
     ) async -> ThreadPostReport {
         var queue = segments
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+        // A GIF or a picture with no words is still a post: one segment, no text.
+        if queue.isEmpty && (gif != nil || !imageURLs.isEmpty) {
+            queue = [""]
+        }
 
         var posted: [Post] = []
         var parentId = replyToPostId
@@ -87,7 +92,9 @@ extension ComposerServiceProtocol {
                 // replies, and the server puts a reply in its parent's
                 // community — naming it again is a 400 that stranded every
                 // segment after the first.
-                communityId: posted.isEmpty && parentId == replyToPostId ? communityId : nil
+                communityId: posted.isEmpty && parentId == replyToPostId ? communityId : nil,
+                // The GIF too rides on the opening segment only.
+                gif: posted.isEmpty ? gif : nil
             )
             do {
                 let post = try await createPost(draft)

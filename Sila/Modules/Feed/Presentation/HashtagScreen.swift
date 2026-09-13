@@ -1,35 +1,28 @@
 import SwiftUI
 
-/// The viewer's saved posts. Reached from their own profile.
+/// Every post that carries one hashtag, in the order the viewer keeps.
+///
+/// The order chips sit under the title and remember themselves on the
+/// account — "Top" chosen here is "Top" on the next tag, on every device.
 @MainActor
-public struct SavedPostsScreen: View {
+public struct HashtagScreen: View {
 
-    @State private var viewModel: SavedPostsViewModel
+    @State private var viewModel: HashtagViewModel
     private let onOpenPost: @MainActor (Post) -> Void
     private let onOpenProfile: @MainActor (String) -> Void
+    private let onOpenHashtag: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
-    private let onOpenHashtag: (@MainActor (String) -> Void)?
     private let onStub: @MainActor (String) -> Void
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
-    /// Posts deleted this session, hidden without waiting for a refresh.
     private let hiddenPostIds: Set<UUID>
 
-    /// - Parameters:
-    ///   - viewModel: Owned here; built once by the caller.
-    ///   - onOpenPost: Pushes a post's detail screen.
-    ///   - onOpenProfile: Pushes an account's profile.
-    ///   - onCompose: Opens the composer for a reply or a quote.
-    ///   - onStub: Announces a feature that belongs to a later phase.
-    ///   - postSafetyMenu: Builds each card's `…` menu.
-    ///   - ownPost: Builds the Delete menu on the viewer's own cards.
-    ///   - hiddenPostIds: Posts deleted this session.
     public init(
-        viewModel: SavedPostsViewModel,
+        viewModel: HashtagViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
+        onOpenHashtag: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
-        onOpenHashtag: (@MainActor (String) -> Void)? = nil,
         onStub: @escaping @MainActor (String) -> Void = { _ in },
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
@@ -38,8 +31,8 @@ public struct SavedPostsScreen: View {
         self._viewModel = State(initialValue: viewModel)
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
-        self.onCompose = onCompose
         self.onOpenHashtag = onOpenHashtag
+        self.onCompose = onCompose
         self.onStub = onStub
         self.postSafetyMenu = postSafetyMenu
         self.ownPost = ownPost
@@ -48,16 +41,61 @@ public struct SavedPostsScreen: View {
 
     public var body: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
-                content
+            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                Section {
+                    content
+                } header: {
+                    header
+                }
             }
         }
         .background(SLColor.background)
-        .navigationTitle(L10n.t("saved.title"))
-        .navigationBarTitleDisplayMode(.inline)
+        .tnNavigationBar(title: viewModel.hashtag)
         .task { await viewModel.load() }
         .refreshable { await viewModel.reload() }
         .tnToast($viewModel.toast)
+    }
+
+    /// The count and the order chips. Pinned, so the order is one tap away
+    /// however far somebody has scrolled.
+    private var header: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            HStack(spacing: SLSpacing.sm) {
+                Text(viewModel.hashtag)
+                    .font(SLFont.displayM)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .lineLimit(1)
+                    .slContentDirection(TextDirection.resolve(languageCode: nil, text: viewModel.hashtag))
+                Spacer(minLength: 0)
+                if viewModel.loadState == .loaded {
+                    Text(L10n.plural("feed.hashtag.postCount", viewModel.postCount))
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textSecondary)
+                }
+            }
+            .padding(.horizontal, SLSpacing.lg)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: SLSpacing.sm) {
+                    ForEach(HashtagSort.allCases) { sort in
+                        SLChip(
+                            sort.title,
+                            icon: sort.icon,
+                            isSelected: sort == viewModel.sort,
+                            accessibilityHint: L10n.t("feed.hashtag.sort.a11yHint"),
+                            onTap: { Task { await viewModel.select(sort) } }
+                        )
+                        .accessibilityIdentifier("hashtag.sort.\(sort.rawValue)")
+                    }
+                }
+                .padding(.horizontal, SLSpacing.lg)
+            }
+            .accessibilityLabel(Text(L10n.t("feed.hashtag.sort.a11yLabel")))
+
+            SLDivider()
+        }
+        .padding(.top, SLSpacing.sm)
+        .background(SLColor.background)
     }
 
     @ViewBuilder
@@ -84,10 +122,12 @@ public struct SavedPostsScreen: View {
             let visible = viewModel.posts.filter { !hiddenPostIds.contains($0.id) }
             if visible.isEmpty {
                 SLEmptyState(
-                    icon: "bookmark",
-                    title: L10n.t("saved.empty.title"),
-                    subtitle: L10n.t("saved.empty.subtitle"),
-                    tint: SLColor.textSecondary
+                    icon: "number",
+                    title: L10n.t("feed.hashtag.empty.title", viewModel.hashtag),
+                    subtitle: L10n.t("feed.hashtag.empty.subtitle"),
+                    tint: SLColor.textSecondary,
+                    actionTitle: onCompose == nil ? nil : L10n.t("feed.hashtag.empty.action"),
+                    action: onCompose == nil ? nil : { onCompose?(.newPost) }
                 )
                 .padding(.horizontal, SLSpacing.lg)
                 .padding(.vertical, SLSpacing.xl)
@@ -117,7 +157,12 @@ public struct SavedPostsScreen: View {
             onReplyBlocked: { post in viewModel.replyBlocked(post) },
             onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
-            onHashtag: { tag in onOpenHashtag?(tag) },
+            // Another tag inside a post on this page opens that tag's page —
+            // unless it is this one, which is already open.
+            onHashtag: { tag in
+                guard HashtagViewModel.normalised(tag) != viewModel.tag else { return }
+                onOpenHashtag(tag)
+            },
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

@@ -135,6 +135,46 @@ public actor FeedServiceMock: FeedServiceProtocol {
         return FeedPage(posts: saved, nextCursor: nil, hasMore: false)
     }
 
+    public func fetchHashtag(_ tag: String) async throws -> HashtagHeader {
+        record("fetchHashtag:\(tag)")
+        try await delay()
+        try failIfOffline()
+        return HashtagHeader(tag: tag.lowercased(), postCount: tagged(tag).count, sort: rememberedSort)
+    }
+
+    public func fetchHashtagPosts(_ tag: String, sort: HashtagSort?, cursor: String?) async throws -> HashtagPage {
+        record("fetchHashtagPosts:\(tag):\(sort?.rawValue ?? "remembered"):\(cursor == nil ? "first" : "next")")
+        try await delay()
+        try failIfOffline()
+        let effective = sort ?? rememberedSort
+        var posts = tagged(tag).map(applyOverrides(to:))
+        switch effective {
+        case .newest: posts.sort { $0.createdAt > $1.createdAt }
+        case .top: posts.sort { $0.metrics.likes > $1.metrics.likes }
+        case .mostViewed: posts.sort { $0.metrics.views > $1.metrics.views }
+        case .mostDiscussed: posts.sort { $0.metrics.replies > $1.metrics.replies }
+        case .mostReposted: posts.sort { $0.metrics.reposts > $1.metrics.reposts }
+        }
+        guard cursor == nil else {
+            return HashtagPage(posts: [], nextCursor: nil, hasMore: false, tag: tag.lowercased(), sort: effective, postCount: posts.count)
+        }
+        return HashtagPage(posts: posts, nextCursor: nil, hasMore: false, tag: tag.lowercased(), sort: effective, postCount: posts.count)
+    }
+
+    /// The order the mock account "remembers"; tests set it through the
+    /// preferences mock in the real app, and directly here.
+    public var rememberedSort: HashtagSort = .newest
+
+    public func setRememberedSort(_ sort: HashtagSort) { rememberedSort = sort }
+
+    private func tagged(_ tag: String) -> [Post] {
+        let needle = "#" + tag.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        return Self.allSamplePosts().filter { post in
+            post.text.lowercased().split(whereSeparator: { $0.isWhitespace || $0 == "," || $0 == "." })
+                .contains { String($0) == needle }
+        }
+    }
+
     public func deletePost(_ id: UUID) async throws {
         record("deletePost")
         try await delay()

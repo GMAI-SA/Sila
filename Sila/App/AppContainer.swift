@@ -33,6 +33,8 @@ public final class AppContainer {
     public let feedService: FeedServiceProtocol
     /// Phase 4's post-creation service.
     public let composerService: ComposerServiceProtocol
+    /// The GIF library the composer picks from.
+    public let gifService: GifServiceProtocol
     /// Phase 4's search service — Explore and `@mention` autocomplete.
     public let searchService: SearchServiceProtocol
     /// Contract v4's interests service — topics and feed preferences.
@@ -93,6 +95,7 @@ public final class AppContainer {
         verificationService: VerificationServiceProtocol? = nil,
         feedService: FeedServiceProtocol? = nil,
         composerService: ComposerServiceProtocol? = nil,
+        gifService: GifServiceProtocol? = nil,
         searchService: SearchServiceProtocol? = nil,
         preferencesService: PreferencesServiceProtocol? = nil,
         accountService: AccountServiceProtocol? = nil,
@@ -203,6 +206,14 @@ public final class AppContainer {
             )
         } else {
             self.composerService = ComposerService(network: network, tokens: tokens, analytics: analytics)
+        }
+
+        if let gifService {
+            self.gifService = gifService
+        } else if flags.useMockComposer {
+            self.gifService = GifServiceMock(latency: 0.25)
+        } else {
+            self.gifService = GifService(network: network, tokens: tokens)
         }
 
         if let searchService {

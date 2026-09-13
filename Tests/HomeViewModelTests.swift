@@ -72,6 +72,26 @@ final class ScriptedFeedService: FeedServiceProtocol, @unchecked Sendable {
         FeedPage(posts: [], nextCursor: nil, hasMore: false)
     }
 
+    /// Hashtag pages to serve, consumed front to back; the last one repeats.
+    var hashtagPages: [HashtagPage] = []
+    /// Every hashtag page call as `(tag, sort, cursor)`.
+    private(set) var hashtagCalls: [(tag: String, sort: HashtagSort?, cursor: String?)] = []
+
+    func fetchHashtag(_ tag: String) async throws -> HashtagHeader {
+        HashtagHeader(tag: tag, postCount: hashtagPages.first?.postCount ?? 0)
+    }
+
+    func fetchHashtagPosts(_ tag: String, sort: HashtagSort?, cursor: String?) async throws -> HashtagPage {
+        let (error, page) = lock.withLock { () -> (APIError?, HashtagPage?) in
+            hashtagCalls.append((tag, sort, cursor))
+            if let feedError { return (feedError, nil) }
+            guard !hashtagPages.isEmpty else { return (nil, nil) }
+            return (nil, hashtagPages.count > 1 ? hashtagPages.removeFirst() : hashtagPages[0])
+        }
+        if let error { throw error }
+        return page ?? HashtagPage(posts: [], tag: tag, sort: sort ?? .newest)
+    }
+
     /// Serves the next scripted page, recording the cursor it was asked for.
     private func nextFeedPage(_ tab: FeedTab, cursor: String?) throws -> FeedPage {
         let (error, page) = lock.withLock { () -> (APIError?, FeedPage) in
