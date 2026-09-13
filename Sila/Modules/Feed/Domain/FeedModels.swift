@@ -314,6 +314,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public let communityName: String?
     /// The animated picture, when the post carries one.
     public let gif: Gif?
+    /// The room this post is about, when somebody put one on their timeline.
+    public let room: RoomCard?
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -360,12 +362,14 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         communityId: UUID? = nil,
         communitySlug: String? = nil,
         communityName: String? = nil,
-        gif: Gif? = nil
+        gif: Gif? = nil,
+        room: RoomCard? = nil
     ) {
         self.id = id
         self.author = author
         self.text = text
         self.gif = gif
+        self.room = room
         self.repostedBy = repostedBy
         self.repostedAt = repostedAt
         self.communityId = communityId
@@ -390,7 +394,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case id, author, text, imageUrls, language, createdAt, scope, scopeCountry, scopeRegion
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
-        case communityId, communitySlug, communityName, gif
+        case communityId, communitySlug, communityName, gif, room
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -459,6 +463,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         communityName = (name?.isEmpty == false) ? name : nil
         // A GIF that cannot be decoded costs the picture, never the post.
         gif = (try? container.decodeIfPresent(Gif.self, forKey: .gif)) ?? nil
+        room = (try? container.decodeIfPresent(RoomCard.self, forKey: .room)) ?? nil
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.
@@ -484,7 +489,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             communityId: communityId,
             communitySlug: communitySlug,
             communityName: communityName,
-            gif: gif
+            gif: gif,
+            room: room
         )
     }
 }

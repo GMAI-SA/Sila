@@ -16,6 +16,8 @@ public struct HomeScreen: View {
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     /// Opens a hashtag's page. A tapped `#tag` in any card leads here.
     private let onOpenHashtag: (@MainActor (String) -> Void)?
+    /// Opens a room from a card on a post. `nil` leaves the card inert.
+    private let onOpenRoom: (@MainActor (RoomCard) -> Void)?
     private let onOpenPreferences: (@MainActor () -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
@@ -43,6 +45,7 @@ public struct HomeScreen: View {
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenHashtag: (@MainActor (String) -> Void)? = nil,
+        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
         onOpenPreferences: (@MainActor () -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
@@ -55,6 +58,7 @@ public struct HomeScreen: View {
         self.onStub = onStub
         self.onCompose = onCompose
         self.onOpenHashtag = onOpenHashtag
+        self.onOpenRoom = onOpenRoom
         self.onOpenPreferences = onOpenPreferences
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
@@ -271,6 +275,7 @@ public struct HomeScreen: View {
             onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
             onHashtag: { tag in onOpenHashtag?(tag) },
+            onOpenRoom: onOpenRoom,
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

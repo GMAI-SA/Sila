@@ -258,6 +258,13 @@ public struct PreferencesScreen: View {
                 .foregroundStyle(SLColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            // Said once, plainly: the two taps do different things, and the
+            // second one is the one people come to this screen for.
+            Label(L10n.t("preferences.topics.hideHint"), systemImage: "eye.slash")
+                .font(SLFont.micro)
+                .foregroundStyle(SLColor.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+
             SLSegmentedControl(
                 items: TopicListFilter.allCases,
                 selection: $viewModel.listFilter,
@@ -272,25 +279,18 @@ public struct PreferencesScreen: View {
                     .padding(.vertical, SLSpacing.lg)
                     .frame(maxWidth: .infinity, alignment: .center)
             } else {
-                VStack(spacing: 0) {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: SLSpacing.md), count: 3),
+                    spacing: SLSpacing.md
+                ) {
                     ForEach(viewModel.visibleTopics) { topic in
-                        TopicStanceRow(
+                        TopicTile(
                             topic: topic,
                             stance: viewModel.draft.stance(for: topic.id),
                             onSelect: { viewModel.setStance($0, for: topic.id) }
                         )
-                        if topic.id != viewModel.visibleTopics.last?.id {
-                            SLDivider()
-                        }
                     }
                 }
-                .padding(.vertical, SLSpacing.sm)
-                .background(SLColor.surface1)
-                .clipShape(RoundedRectangle(cornerRadius: SLRadius.lg))
-                .overlay(
-                    RoundedRectangle(cornerRadius: SLRadius.lg)
-                        .strokeBorder(SLColor.stroke, lineWidth: 1)
-                )
             }
         }
     }
@@ -474,59 +474,6 @@ struct PreferenceToggleRow: View {
             RoundedRectangle(cornerRadius: SLRadius.lg)
                 .strokeBorder(SLColor.stroke, lineWidth: 1)
         )
-    }
-}
-
-// MARK: - Topic row
-
-/// One topic, its server-written description, and a three-way stance control.
-@MainActor
-struct TopicStanceRow: View {
-
-    let topic: TopicOption
-    let stance: TopicStance
-    let onSelect: @MainActor (TopicStance) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(topic.label)
-                    .font(SLFont.bodyEmphasis)
-                    .foregroundStyle(SLColor.textPrimary)
-
-                Text(topic.detail)
-                    .font(SLFont.micro)
-                    .foregroundStyle(SLColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .accessibilityElement(children: .combine)
-
-            HStack(spacing: SLSpacing.sm) {
-                // Neutral in the middle, so the row reads as a scale rather
-                // than as two options and an afterthought.
-                ForEach([TopicStance.interested, TopicStance.none, TopicStance.muted]) { option in
-                    SLChip(
-                        option.title,
-                        icon: icon(for: option),
-                        isSelected: stance == option,
-                        accessibilityHint: option.accessibilityHint,
-                        onTap: { onSelect(option) }
-                    )
-                    .accessibilityLabel(Text("\(topic.label): \(option.title)"))
-                }
-                Spacer(minLength: 0)
-            }
-        }
-        .padding(.horizontal, SLSpacing.lg)
-        .padding(.vertical, SLSpacing.md)
-    }
-
-    private func icon(for stance: TopicStance) -> String? {
-        switch stance {
-        case .interested: return "hand.thumbsup"
-        case .muted: return "speaker.slash"
-        case .none: return nil
-        }
     }
 }
 

@@ -19,6 +19,8 @@ public struct PostDetailScreen: View {
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     /// Opens a hashtag's page from any card in the thread.
     private let onOpenHashtag: (@MainActor (String) -> Void)?
+    /// Opens a room from a card on a post. `nil` leaves the card inert.
+    private let onOpenRoom: (@MainActor (RoomCard) -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
@@ -57,7 +59,8 @@ public struct PostDetailScreen: View {
         author: ComposerAuthor = ComposerAuthor(isVerified: false),
         analytics: AnalyticsClient = ConsoleAnalyticsClient(),
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
-        onOpenHashtag: (@MainActor (String) -> Void)? = nil
+        onOpenHashtag: (@MainActor (String) -> Void)? = nil,
+        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -66,6 +69,7 @@ public struct PostDetailScreen: View {
         self.onDismiss = onDismiss
         self.onCompose = onCompose
         self.onOpenHashtag = onOpenHashtag
+        self.onOpenRoom = onOpenRoom
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
 
@@ -296,6 +300,7 @@ public struct PostDetailScreen: View {
             onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
             onHashtag: { tag in onOpenHashtag?(tag) },
+            onOpenRoom: onOpenRoom,
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

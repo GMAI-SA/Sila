@@ -20597,6 +20597,72 @@
         }
       }
     },
+    "post.views.a11yLabel": {
+      "extractionState": "manual",
+      "comment": "VoiceOver label for a post's view count.",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا مشاهدات"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مشاهدة واحدة"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مشاهدتان"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld مشاهدات"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld مشاهدة"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld مشاهدة"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld view"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld views"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "post.views.count": {
       "comment": "View counter under a post. Argument 1 is the raw count and picks the plural; argument 2 is the abbreviated number that is shown.",
       "extractionState": "manual",
@@ -22089,6 +22155,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "Interested counts a topic towards the filter above. Muted hides posts about it from International whether or not that filter is on."
+          }
+        }
+      }
+    },
+    "preferences.topics.hide.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المواضيع المخفية تُزال من كل الخلاصات، لا من هذه وحدها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden subjects are removed from every feed, not only this one."
+          }
+        }
+      }
+    },
+    "preferences.topics.hide.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إخفاء %@ تمامًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide %@ completely"
+          }
+        }
+      }
+    },
+    "preferences.topics.hideHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط على موضوع لترى المزيد منه. اضغط على العين لإزالته من ملفك تمامًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a subject to see more of it. Tap the eye to take it off your timeline completely."
+          }
+        }
+      }
+    },
+    "preferences.topics.unhide.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار %@ مجددًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop hiding %@"
           }
         }
       }
@@ -24090,6 +24224,23 @@
         }
       }
     },
+    "rooms.card.ended": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended"
+          }
+        }
+      }
+    },
     "rooms.card.forYou": {
       "comment": "Chip on a room whose topic the viewer follows.",
       "extractionState": "manual",
@@ -24122,6 +24273,123 @@
           "stringUnit": {
             "state": "translated",
             "value": "A topic you said you are interested in"
+          }
+        }
+      }
+    },
+    "rooms.card.listeners": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا أحد يستمع"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مستمع واحد"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مستمعان"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld مستمعين"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld مستمعًا"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld مستمع"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld listening"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld listening"
+                }
+              }
+            }
+          }
+        }
+      },
+      "comment": "How many people are in the room right now, on its card."
+    },
+    "rooms.card.live": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مباشر الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live now"
+          }
+        }
+      }
+    },
+    "rooms.card.open.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح الغرفة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the room."
+          }
+        }
+      }
+    },
+    "rooms.card.scheduled": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجدولة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled"
           }
         }
       }
@@ -26284,6 +26552,40 @@
         }
       }
     },
+    "rooms.like.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أعجبتني هذه الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like this room"
+          }
+        }
+      }
+    },
+    "rooms.like.undo.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة الإعجاب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove like"
+          }
+        }
+      }
+    },
     "rooms.listening.subtitle": {
       "comment": "What listening means, said without apology. Names the fact that no microphone is involved, which is why Sila never asks a listener for one.",
       "extractionState": "manual",
@@ -27400,6 +27702,125 @@
           "stringUnit": {
             "state": "translated",
             "value": "Scheduled"
+          }
+        }
+      }
+    },
+    "rooms.share.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يضع الغرفة في ملفك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puts the room on your timeline."
+          }
+        }
+      }
+    },
+    "rooms.share.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مشاركة الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share this room"
+          }
+        }
+      }
+    },
+    "rooms.share.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post"
+          }
+        }
+      }
+    },
+    "rooms.share.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الغرف لا تُسجَّل أبدًا، فالمنشور هو الطريقة الوحيدة لتذكُّر هذه الغرفة. سيرى كل من يقرأ لك الغرفة ومن يستضيفها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rooms are never recorded, so a post is the only way this one is remembered. Anyone who can read you will see the room and who is hosting it."
+          }
+        }
+      }
+    },
+    "rooms.share.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتب شيئًا عنها…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Say something about it…"
+          }
+        }
+      }
+    },
+    "rooms.share.posted": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نُشرت في ملفك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posted to your timeline."
+          }
+        }
+      }
+    },
+    "rooms.share.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مشاركة الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share this room"
           }
         }
       }

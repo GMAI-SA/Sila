@@ -149,6 +149,37 @@ public final class RoomsService: RoomsServiceProtocol {
         return room
     }
 
+    // MARK: - Liking and sharing
+
+    public func setRoomLiked(_ liked: Bool, roomId: UUID) async throws -> VoiceRoom {
+        let token = try await tokens.accessToken()
+        let room = try await network.send(
+            APIRequest(path: "/rooms/\(path(roomId))/like", method: liked ? .post : .delete, accessToken: token),
+            as: VoiceRoom.self
+        )
+        analytics.track(liked ? .roomLiked : .roomUnliked, properties: ["status": room.status.rawValue])
+        return room
+    }
+
+    public func shareRoom(id: UUID, text: String) async throws -> Post {
+        let token = try await tokens.accessToken()
+        let post = try await network.send(
+            try APIRequest.json(
+                "/rooms/\(path(id))/share",
+                method: .post,
+                body: ShareRoomBody(text: text.trimmingCharacters(in: .whitespacesAndNewlines)),
+                accessToken: token
+            ),
+            as: Post.self
+        )
+        analytics.track(.roomShared, properties: ["with_words": text.isEmpty ? "no" : "yes"])
+        return post
+    }
+
+    private struct ShareRoomBody: Encodable {
+        let text: String
+    }
+
     // MARK: - Groups
 
     public func fetchGroups() async throws -> [UserGroup] {

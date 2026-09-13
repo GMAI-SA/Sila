@@ -622,6 +622,33 @@ private actor ScriptedRoomService: RoomsServiceProtocol {
         return []
     }
 
+    /// Set to make a like or a share fail, for the rollback tests.
+    private var engagementFailure: APIError?
+
+    func failEngagement(with error: APIError?) { engagementFailure = error }
+
+    func setRoomLiked(_ liked: Bool, roomId: UUID) async throws -> VoiceRoom {
+        calls.append("setRoomLiked:\(liked)")
+        if let engagementFailure { throw engagementFailure }
+        let base = stored
+        stored = base.with(
+            metrics: RoomMetrics(
+                likes: max(0, base.metrics.likes + (liked ? 1 : -1)),
+                shares: base.metrics.shares,
+                views: base.metrics.views,
+                listeners: base.metrics.listeners
+            ),
+            viewerLiked: liked
+        )
+        return stored
+    }
+
+    func shareRoom(id: UUID, text: String) async throws -> Post {
+        calls.append("shareRoom:\(text)")
+        if let engagementFailure { throw engagementFailure }
+        return Post(id: UUID(), author: stored.host, text: text, createdAt: Date())
+    }
+
     private static func copy(
         _ room: VoiceRoom,
         status: RoomStatus? = nil,

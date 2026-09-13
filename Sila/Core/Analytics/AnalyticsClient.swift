@@ -125,6 +125,12 @@ public enum AnalyticsEvent: String, Sendable {
     case gifAttached = "gif_attached"
     /// The floating action button was held open to show its menu.
     case actionMenuOpened = "action_menu_opened"
+    /// A room was liked, un-liked, or put on somebody's timeline.
+    case roomLiked = "room_liked"
+    case roomUnliked = "room_unliked"
+    case roomShared = "room_shared"
+    /// A room card on a timeline was opened.
+    case roomCardOpened = "room_card_opened"
     case groupCreated = "group_created"
     case groupDeleted = "group_deleted"
     case groupsOpened = "groups_opened"

@@ -74,6 +74,37 @@ public struct LiveRoomScreen: View {
                 .accessibilityHint(Text(RoomCopy.leaveHint))
             }
 
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task { await viewModel.toggleLike() }
+                } label: {
+                    Label(
+                        SLFormat.compactCount(viewModel.room.metrics.likes),
+                        systemImage: viewModel.room.viewerLiked ? "heart.fill" : "heart"
+                    )
+                    .foregroundStyle(viewModel.room.viewerLiked ? SLColor.danger : SLColor.primary)
+                }
+                .accessibilityLabel(Text(
+                    viewModel.room.viewerLiked ? L10n.t("rooms.like.undo.a11yLabel") : L10n.t("rooms.like.a11yLabel")
+                ))
+            }
+
+            // A room is never recorded; putting it on a timeline is the only
+            // way it is referred to after it ends. Closed rooms are absent —
+            // advertising one is how an invite-only room would leak.
+            if !viewModel.room.isClosed {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.isSharing = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundStyle(SLColor.primary)
+                    }
+                    .accessibilityLabel(Text(L10n.t("rooms.share.a11yLabel")))
+                    .accessibilityHint(Text(L10n.t("rooms.share.a11yHint")))
+                }
+            }
+
             if viewModel.isHost && viewModel.room.isClosed {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -86,6 +117,14 @@ public struct LiveRoomScreen: View {
                     .accessibilityHint(Text(L10n.t("rooms.invites.open.a11yHint")))
                 }
             }
+        }
+        .sheet(isPresented: $viewModel.isSharing) {
+            ShareRoomSheet(
+                room: viewModel.room,
+                onShare: { text in await viewModel.share(text: text) },
+                onClose: { viewModel.isSharing = false }
+            )
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $isManagingInvites) {
             RoomInvitesSheet(

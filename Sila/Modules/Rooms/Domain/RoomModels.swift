@@ -174,6 +174,9 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     public let handsCount: Int
     /// The room's topic is one this viewer said they are interested in.
     public let matchesInterests: Bool
+    /// What people made of the room, and whether this viewer liked it.
+    public let metrics: RoomMetrics
+    public let viewerLiked: Bool
 
     public init(
         id: UUID,
@@ -206,7 +209,9 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         groupName: String? = nil,
         communityId: UUID? = nil,
         communitySlug: String? = nil,
-        communityName: String? = nil
+        communityName: String? = nil,
+        metrics: RoomMetrics = RoomMetrics(),
+        viewerLiked: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -239,6 +244,48 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         self.communityId = communityId
         self.communitySlug = communitySlug
         self.communityName = communityName
+        self.metrics = metrics
+        self.viewerLiked = viewerLiked
+    }
+
+    /// A copy with new counters — what a like answers with, without asking
+    /// the server for the whole room again.
+    public func with(metrics: RoomMetrics, viewerLiked: Bool) -> VoiceRoom {
+        VoiceRoom(
+            id: id,
+            title: title,
+            topic: topic,
+            scope: scope,
+            scopeCountry: scopeCountry,
+            scopeRegion: scopeRegion,
+            status: status,
+            host: host,
+            speakerCount: speakerCount,
+            listenerCount: listenerCount,
+            scheduledFor: scheduledFor,
+            startedAt: startedAt,
+            createdAt: createdAt,
+            canSpeak: canSpeak,
+            speakRefusal: speakRefusal,
+            isHost: isHost,
+            isRemoved: isRemoved,
+            isInviteOnly: isInviteOnly,
+            isInvited: isInvited,
+            canJoin: canJoin,
+            joinRefusal: joinRefusal,
+            isFollowingOnly: isFollowingOnly,
+            viewerRole: viewerRole,
+            handRaised: handRaised,
+            handsCount: handsCount,
+            matchesInterests: matchesInterests,
+            groupId: groupId,
+            groupName: groupName,
+            communityId: communityId,
+            communitySlug: communitySlug,
+            communityName: communityName,
+            metrics: metrics,
+            viewerLiked: viewerLiked
+        )
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
@@ -250,6 +297,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         case isInviteOnly, isInvited, canJoin, joinRefusal
         case isFollowingOnly, viewerRole, handRaised, handsCount, matchesInterests
         case groupId, groupName, communityId, communitySlug, communityName
+        case metrics, viewerLiked
     }
 
     /// Tolerant decoder: one malformed optional must not blank a whole list.
@@ -312,6 +360,8 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         handRaised = (try? container.decode(Bool.self, forKey: .handRaised)) ?? false
         handsCount = max(0, (try? container.decode(Int.self, forKey: .handsCount)) ?? 0)
         matchesInterests = (try? container.decode(Bool.self, forKey: .matchesInterests)) ?? false
+        metrics = (try? container.decode(RoomMetrics.self, forKey: .metrics)) ?? RoomMetrics()
+        viewerLiked = (try? container.decode(Bool.self, forKey: .viewerLiked)) ?? false
         groupId = (try? container.decodeIfPresent(UUID.self, forKey: .groupId)) ?? nil
         let groupLabel = (try? container.decodeIfPresent(String.self, forKey: .groupName)) ?? nil
         groupName = (groupLabel?.isEmpty == false) ? groupLabel : nil

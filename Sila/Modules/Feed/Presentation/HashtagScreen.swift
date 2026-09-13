@@ -11,6 +11,7 @@ public struct HashtagScreen: View {
     private let onOpenPost: @MainActor (Post) -> Void
     private let onOpenProfile: @MainActor (String) -> Void
     private let onOpenHashtag: @MainActor (String) -> Void
+    private let onOpenRoom: (@MainActor (RoomCard) -> Void)?
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let onStub: @MainActor (String) -> Void
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
@@ -22,6 +23,7 @@ public struct HashtagScreen: View {
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onOpenHashtag: @escaping @MainActor (String) -> Void = { _ in },
+        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onStub: @escaping @MainActor (String) -> Void = { _ in },
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
@@ -32,6 +34,7 @@ public struct HashtagScreen: View {
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
         self.onOpenHashtag = onOpenHashtag
+        self.onOpenRoom = onOpenRoom
         self.onCompose = onCompose
         self.onStub = onStub
         self.postSafetyMenu = postSafetyMenu
@@ -163,6 +166,7 @@ public struct HashtagScreen: View {
                 guard HashtagViewModel.normalised(tag) != viewModel.tag else { return }
                 onOpenHashtag(tag)
             },
+            onOpenRoom: onOpenRoom,
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

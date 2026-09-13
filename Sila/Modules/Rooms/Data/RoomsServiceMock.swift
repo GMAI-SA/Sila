@@ -150,6 +150,60 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         }
     }
 
+    // MARK: - Liking and sharing
+
+    /// Rooms this mock's viewer has liked, and the posts it was asked to make.
+    public private(set) var likedRooms: Set<UUID> = []
+    public private(set) var sharedRooms: [(id: UUID, text: String)] = []
+
+    public func setRoomLiked(_ liked: Bool, roomId: UUID) async throws -> VoiceRoom {
+        recordedCalls.append("setRoomLiked:\(liked)")
+        try await delay()
+        try failIfOffline()
+        if liked { likedRooms.insert(roomId) } else { likedRooms.remove(roomId) }
+        guard let index = stored.firstIndex(where: { $0.id == roomId }) else {
+            throw APIError.api(code: .notFound, message: "No such room", status: 404)
+        }
+        let room = stored[index]
+        let metrics = RoomMetrics(
+            likes: max(0, room.metrics.likes + (liked ? 1 : -1)),
+            shares: room.metrics.shares,
+            views: room.metrics.views,
+            listeners: room.metrics.listeners
+        )
+        stored[index] = room.with(metrics: metrics, viewerLiked: liked)
+        return stored[index]
+    }
+
+    public func shareRoom(id: UUID, text: String) async throws -> Post {
+        recordedCalls.append("shareRoom")
+        try await delay()
+        try failIfOffline()
+        guard let room = stored.first(where: { $0.id == id }) else {
+            throw APIError.api(code: .notFound, message: "No such room", status: 404)
+        }
+        guard !room.isInviteOnly, room.groupId == nil, room.communityId == nil else {
+            throw APIError.api(code: .unknown, message: "This room is closed", status: 403)
+        }
+        sharedRooms.append((id, text))
+        return Post(
+            id: UUID(),
+            author: room.host,
+            text: text,
+            createdAt: Date(),
+            room: RoomCard(
+                id: room.id,
+                title: room.title,
+                topic: room.topic,
+                status: room.status,
+                scope: room.scope,
+                host: room.host,
+                participantCount: room.speakerCount + room.listenerCount,
+                metrics: room.metrics
+            )
+        )
+    }
+
     // MARK: - Creating
 
     public func createRoom(_ request: CreateRoomRequest) async throws -> VoiceRoom {

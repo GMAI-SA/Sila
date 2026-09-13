@@ -641,6 +641,7 @@ public struct MainTabView: View {
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
                     onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard,
                     onOpenPreferences: preferencesHandler,
                     safetyMenu: safetyMenu(for:),
                     ownPost: ownPostMenu(for:),
@@ -666,6 +667,7 @@ public struct MainTabView: View {
                     onOpenProfile: openProfile,
                     onCompose: composeHandler,
                     onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard,
                     safetyMenu: safetyMenu(for:),
                     ownPost: ownPostMenu(for:)
                 )
@@ -792,7 +794,8 @@ public struct MainTabView: View {
                 ownPost: ownPostMenu(for:),
                 onMessage: openConversation,
                 hiddenPostIds: deletion.deleted,
-                onOpenHashtag: openHashtag
+                onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard
             )
             .tnNavigationBar(title: profileTitle)
         } else {
@@ -908,6 +911,7 @@ public struct MainTabView: View {
             onQuote: { post in composeHandler?(.quote(post)) },
             onMention: openProfile,
             onHashtag: openHashtag,
+            onOpenRoom: openRoomCard,
             onOpenQuoted: openPost,
             onOpenAuthor: { author in openProfile(author.handle) },
             onStub: stub,
@@ -978,6 +982,14 @@ public struct MainTabView: View {
     private func openRoom(_ room: VoiceRoom) {
         guard roomsViewModel.open(room) else { return }
         container.router.roomsPath.append(.room(room))
+    }
+
+    /// A room card on a timeline was tapped. The card carries only what a
+    /// reader needs, so the room itself is read again before it is pushed —
+    /// the door may have closed since somebody shared it.
+    private func openRoomCard(_ card: RoomCard) {
+        container.analytics.track(.roomCardOpened, properties: ["status": card.status.rawValue])
+        openRoomFromNotification(card.id)
     }
 
     /// A room invitation was tapped: read the room, switch to the Rooms tab,
@@ -1055,7 +1067,8 @@ public struct MainTabView: View {
                 ownPost: ownPostMenu(for:),
                 onMessage: openConversation,
                 hiddenPostIds: deletion.deleted,
-                onOpenHashtag: openHashtag
+                onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard
             )
             .tnNavigationBar(title: "@\(handle)")
         }
@@ -1133,6 +1146,7 @@ public struct MainTabView: View {
                 onOpenProfile: openProfile,
                 onCompose: composeHandler,
                 onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard,
                 onStub: stub,
                 postSafetyMenu: safetyMenu(for:),
                 ownPost: ownPostMenu(for:),
@@ -1151,6 +1165,7 @@ public struct MainTabView: View {
                 onOpenPost: openPost,
                 onOpenProfile: openProfile,
                 onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard,
                 onCompose: composeHandler,
                 onStub: stub,
                 postSafetyMenu: safetyMenu(for:),
@@ -1182,7 +1197,8 @@ public struct MainTabView: View {
                 ownPost: ownPostMenu(for:),
                 onMessage: openConversation,
                 hiddenPostIds: deletion.deleted,
-                onOpenHashtag: openHashtag
+                onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard
             )
             .tnNavigationBar(title: "@\(handle)")
         }
@@ -1210,7 +1226,8 @@ public struct MainTabView: View {
             author: ComposerAuthor(user: container.session.user),
             analytics: container.analytics,
             onCompose: composeHandler,
-            onOpenHashtag: openHashtag
+            onOpenHashtag: openHashtag,
+                    onOpenRoom: openRoomCard
         )
     }
 

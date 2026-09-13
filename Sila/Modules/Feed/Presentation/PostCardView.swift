@@ -25,6 +25,9 @@ public struct PostCardActions {
     public var onQuote: @MainActor (Post) -> Void
     /// An `@mention` was tapped; the payload has no leading `@`.
     public var onMention: @MainActor (String) -> Void
+    /// The room card on a post was tapped. `nil` leaves the card inert,
+    /// which is what a screen with nowhere to put a room does.
+    public var onOpenRoom: (@MainActor (RoomCard) -> Void)?
     /// A `#hashtag` was tapped; the payload has no leading `#`.
     public var onHashtag: @MainActor (String) -> Void
     /// The embedded quote card was tapped.
@@ -65,6 +68,7 @@ public struct PostCardActions {
         onQuote: @escaping @MainActor (Post) -> Void = { _ in },
         onMention: @escaping @MainActor (String) -> Void = { _ in },
         onHashtag: @escaping @MainActor (String) -> Void = { _ in },
+        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
         onOpenQuoted: @escaping @MainActor (Post) -> Void = { _ in },
         onOpenAuthor: @escaping @MainActor (UserSummary) -> Void = { _ in },
         onStub: @escaping @MainActor (String) -> Void = { _ in },
@@ -82,6 +86,7 @@ public struct PostCardActions {
         self.onHashtag = onHashtag
         self.onOpenQuoted = onOpenQuoted
         self.onOpenAuthor = onOpenAuthor
+        self.onOpenRoom = onOpenRoom
         self.onStub = onStub
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
@@ -174,6 +179,11 @@ public struct PostCardView: View {
             if post.sensitive == nil || isRevealed {
                 postText
                     .padding(.leading, style == .detail ? 0 : 56)
+
+                if let room = post.room {
+                    PostRoomCard(room: room, onOpen: actions.onOpenRoom)
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
 
                 if let gif = post.gif {
                     GifMediaView(gif, maxHeight: style == .detail ? 420 : 300)
@@ -384,46 +394,26 @@ public struct PostCardView: View {
     }
 
     private var postText: some View {
-        Text(attributedText)
-            .font(style == .detail ? SLFont.displayM : SLFont.body)
-            .foregroundStyle(SLColor.textPrimary)
-            .fixedSize(horizontal: false, vertical: true)
-            .slContentDirection(of: post)
-            .environment(\.openURL, OpenURLAction { url in
-                guard let entity = PostEntityLink.parse(url) else { return .systemAction }
+        // TextKit rather than `Text`, so the character under the finger
+        // decides what a tap means. With SwiftUI's `.link` runs, the hit area
+        // belonged to the system: a tap beside a mention — or on the empty
+        // end of its line — opened that person's profile instead of the post.
+        PostBodyText(
+            text: post.text,
+            fontSize: style == .detail ? 22 : 17,
+            weight: style == .detail ? .bold : .regular,
+            textColor: UIColor(SLColor.textPrimary),
+            entityColor: UIColor(SLColor.primary),
+            direction: TextDirection.of(post),
+            onEntity: { entity in
                 switch entity {
                 case let .mention(handle): actions.onMention(handle)
                 case let .hashtag(tag): actions.onHashtag(tag)
                 }
-                return .handled
-            })
-    }
-
-    /// Post text with `@mentions` and `#hashtags` tinted and tappable.
-    private var attributedText: AttributedString {
-        var result = AttributedString()
-        for token in PostTextParser.tokenize(post.text) {
-            switch token {
-            case let .plain(value):
-                result.append(AttributedString(value))
-
-            case let .mention(handle):
-                result.append(entityRun("@\(handle)", link: PostEntityLink.mention(handle).url))
-
-            case let .hashtag(tag):
-                result.append(entityRun("#\(tag)", link: PostEntityLink.hashtag(tag).url))
-            }
-        }
-        return result
-    }
-
-    private func entityRun(_ text: String, link: URL?) -> AttributedString {
-        var run = AttributedString(text)
-        run.foregroundColor = SLColor.primary
-        // A tag that cannot be percent-encoded into a URL still renders — it
-        // just is not tappable. Better than dropping the characters.
-        if let link { run.link = link }
-        return run
+            },
+            onBody: { actions.onOpen(post) }
+        )
+        .frame(maxWidth: .infinity, alignment: TextDirection.of(post).frameAlignment)
     }
 
     // MARK: - Detail extras
@@ -495,6 +485,22 @@ public struct PostCardView: View {
                 hint: L10n.t(post.viewer.bookmarked ? "post.bookmark.remove.hint" : "post.bookmark.hint"),
                 action: { actions.onBookmark(post) }
             )
+
+            // How many people actually read it. Not a button: a view is not
+            // something anybody does *to* a post, and a tappable number here
+            // would promise a list of readers that will never exist.
+            if post.metrics.views > 0 {
+                HStack(spacing: SLSpacing.xs) {
+                    Image(systemName: "chart.bar")
+                        .font(.system(size: 14))
+                    Text(SLFormat.compactCount(post.metrics.views))
+                        .font(SLFont.micro)
+                }
+                .foregroundStyle(SLColor.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(L10n.plural("post.views.a11yLabel", post.metrics.views)))
+            }
 
             ShareLink(item: Permalink.post(post.id), message: Text(shareText)) {
                 Image(systemName: "square.and.arrow.up")

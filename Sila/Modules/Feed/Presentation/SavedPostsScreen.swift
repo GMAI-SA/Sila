@@ -9,6 +9,8 @@ public struct SavedPostsScreen: View {
     private let onOpenProfile: @MainActor (String) -> Void
     private let onCompose: (@MainActor (ComposerContext) -> Void)?
     private let onOpenHashtag: (@MainActor (String) -> Void)?
+    /// Opens a room from a card on a post. `nil` leaves the card inert.
+    private let onOpenRoom: (@MainActor (RoomCard) -> Void)?
     private let onStub: @MainActor (String) -> Void
     private let postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
@@ -30,6 +32,7 @@ public struct SavedPostsScreen: View {
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenHashtag: (@MainActor (String) -> Void)? = nil,
+        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
         onStub: @escaping @MainActor (String) -> Void = { _ in },
         postSafetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
@@ -40,6 +43,7 @@ public struct SavedPostsScreen: View {
         self.onOpenProfile = onOpenProfile
         self.onCompose = onCompose
         self.onOpenHashtag = onOpenHashtag
+        self.onOpenRoom = onOpenRoom
         self.onStub = onStub
         self.postSafetyMenu = postSafetyMenu
         self.ownPost = ownPost
@@ -118,6 +122,7 @@ public struct SavedPostsScreen: View {
             onQuote: { post in compose(.quote(post), fallback: MainTabView.StubFeature.quotePosts) },
             onMention: { handle in onOpenProfile(handle) },
             onHashtag: { tag in onOpenHashtag?(tag) },
+            onOpenRoom: onOpenRoom,
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

@@ -128,6 +128,17 @@ public protocol RoomsServiceProtocol: Sendable {
     ///   than ``RoomConstants/minimumQueryLength``.
     func searchRooms(query: String, limit: Int) async throws -> [VoiceRoom]
 
+    /// Likes a room, or takes the like back. Idempotent, and it outlives the
+    /// room: a room that ended can still be liked from the card somebody put
+    /// on their timeline, which is how most people will ever meet it.
+    func setRoomLiked(_ liked: Bool, roomId: UUID) async throws -> VoiceRoom
+
+    /// Puts a room on the viewer's own timeline, with or without a word of
+    /// their own, and returns the post that now carries it.
+    /// - Throws: `room_not_shareable` (403) for a closed room — advertising
+    ///   one would be the single way an invite-only room leaks.
+    func shareRoom(id: UUID, text: String) async throws -> Post
+
     // MARK: Groups
 
     /// The viewer's own groups, oldest first.

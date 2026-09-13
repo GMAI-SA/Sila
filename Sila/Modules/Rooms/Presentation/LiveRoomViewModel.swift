@@ -684,6 +684,59 @@ public final class LiveRoomViewModel {
         isConfirmingEnd = true
     }
 
+    // MARK: - Liking and sharing
+
+    /// `true` while the share sheet is up.
+    public var isSharing = false
+
+    /// Likes the room, or takes it back. The counter moves at once and rolls
+    /// back if the server disagrees — a like is not worth a spinner.
+    public func toggleLike() async {
+        let snapshot = room
+        let desired = !room.viewerLiked
+        room = room.with(
+            metrics: RoomMetrics(
+                likes: max(0, room.metrics.likes + (desired ? 1 : -1)),
+                shares: room.metrics.shares,
+                views: room.metrics.views,
+                listeners: room.metrics.listeners
+            ),
+            viewerLiked: desired
+        )
+        do {
+            room = try await service.setRoomLiked(desired, roomId: snapshot.id)
+        } catch {
+            guard suspension?.notice(error) != true else { return }
+            room = snapshot
+            toast = .error(for: error)
+        }
+    }
+
+    /// Puts the room on the viewer's own timeline, with or without a word of
+    /// their own. A room leaves no recording, so this is how it is referred
+    /// to afterwards.
+    public func share(text: String) async -> Bool {
+        do {
+            _ = try await service.shareRoom(id: room.id, text: text)
+            room = room.with(
+                metrics: RoomMetrics(
+                    likes: room.metrics.likes,
+                    shares: room.metrics.shares + 1,
+                    views: room.metrics.views,
+                    listeners: room.metrics.listeners
+                ),
+                viewerLiked: room.viewerLiked
+            )
+            isSharing = false
+            toast = .success(L10n.t("rooms.share.posted"))
+            return true
+        } catch {
+            guard suspension?.notice(error) != true else { return false }
+            toast = .error(for: error)
+            return false
+        }
+    }
+
     public func endRoom() async {
         guard isHost, !isEnding else { return }
         isConfirmingEnd = false

@@ -103,6 +103,115 @@ public struct Gif: Equatable, Hashable, Sendable, Decodable {
     public var listKey: String { "\(provider):\(providerId)" }
 }
 
+// MARK: - Rooms on a timeline
+
+/// What people made of a room: likes, shares onto timelines, opens, and who
+/// is in it now. A room is never recorded, so this is the only trace it has.
+public struct RoomMetrics: Equatable, Hashable, Sendable, Decodable {
+    public let likes: Int
+    public let shares: Int
+    public let views: Int
+    public let listeners: Int
+
+    public init(likes: Int = 0, shares: Int = 0, views: Int = 0, listeners: Int = 0) {
+        self.likes = likes
+        self.shares = shares
+        self.views = views
+        self.listeners = listeners
+    }
+
+    private enum CodingKeys: String, CodingKey { case likes, shares, views, listeners }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        likes = (try? container.decode(Int.self, forKey: .likes)) ?? 0
+        shares = (try? container.decode(Int.self, forKey: .shares)) ?? 0
+        views = (try? container.decode(Int.self, forKey: .views)) ?? 0
+        listeners = (try? container.decode(Int.self, forKey: .listeners)) ?? 0
+    }
+}
+
+/// A room as a post carries it.
+///
+/// Deliberately not the whole room: a card says what it is, who is hosting
+/// and whether it is still going. The door is answered when somebody taps
+/// through — a room that ended keeps its card, which is the point of putting
+/// one on a timeline at all.
+public struct RoomCard: Equatable, Hashable, Sendable, Decodable {
+    public let id: UUID
+    public let title: String
+    public let topic: String?
+    public let status: RoomStatus
+    public let scope: PostScope
+    public let scopeCountry: String?
+    public let scopeRegion: String?
+    public let host: UserSummary
+    public let participantCount: Int
+    public let scheduledFor: Date?
+    public let startedAt: Date?
+    public let metrics: RoomMetrics
+    public let viewerLiked: Bool
+
+    public init(
+        id: UUID,
+        title: String,
+        topic: String? = nil,
+        status: RoomStatus = .ended,
+        scope: PostScope = .international,
+        scopeCountry: String? = nil,
+        scopeRegion: String? = nil,
+        host: UserSummary,
+        participantCount: Int = 0,
+        scheduledFor: Date? = nil,
+        startedAt: Date? = nil,
+        metrics: RoomMetrics = RoomMetrics(),
+        viewerLiked: Bool = false
+    ) {
+        self.id = id
+        self.title = title
+        self.topic = topic
+        self.status = status
+        self.scope = scope
+        self.scopeCountry = scopeCountry
+        self.scopeRegion = scopeRegion
+        self.host = host
+        self.participantCount = participantCount
+        self.scheduledFor = scheduledFor
+        self.startedAt = startedAt
+        self.metrics = metrics
+        self.viewerLiked = viewerLiked
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, topic, status, scope, scopeCountry, scopeRegion, host
+        case participantCount, scheduledFor, startedAt, metrics, viewerLiked
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        guard let id = try? container.decode(UUID.self, forKey: .id) else {
+            throw DecodingError.dataCorruptedError(forKey: .id, in: container, debugDescription: "no room id")
+        }
+        self.id = id
+        title = (try? container.decode(String.self, forKey: .title)) ?? ""
+        topic = (try? container.decodeIfPresent(String.self, forKey: .topic)) ?? nil
+        status = (try? container.decode(RoomStatus.self, forKey: .status)) ?? .ended
+        scope = (try? container.decode(PostScope.self, forKey: .scope)) ?? .international
+        let country = (try? container.decodeIfPresent(String.self, forKey: .scopeCountry)) ?? nil
+        scopeCountry = CountryCode.normalised(country) ?? country
+        scopeRegion = (try? container.decodeIfPresent(String.self, forKey: .scopeRegion)) ?? nil
+        host = try container.decode(UserSummary.self, forKey: .host)
+        participantCount = (try? container.decode(Int.self, forKey: .participantCount)) ?? 0
+        scheduledFor = (try? container.decodeIfPresent(Date.self, forKey: .scheduledFor)) ?? nil
+        startedAt = (try? container.decodeIfPresent(Date.self, forKey: .startedAt)) ?? nil
+        metrics = (try? container.decode(RoomMetrics.self, forKey: .metrics)) ?? RoomMetrics()
+        viewerLiked = (try? container.decode(Bool.self, forKey: .viewerLiked)) ?? false
+    }
+
+    /// Whether tapping through leads anywhere: an ended room has no door.
+    public var isJoinable: Bool { status.isJoinable }
+}
+
 // MARK: - Hashtags
 
 /// How a hashtag's page is ordered. Remembered per account on the server.

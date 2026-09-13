@@ -20,6 +20,8 @@ public struct ExploreScreen: View {
     /// Opens a hashtag's page — a trending row, or a `#tag` in a result.
     /// Absent, a tag falls back to being a search.
     private let onOpenHashtag: (@MainActor (String) -> Void)?
+    /// Opens a room from a card on a post. `nil` leaves the card inert.
+    private let onOpenRoom: (@MainActor (RoomCard) -> Void)?
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
@@ -41,6 +43,7 @@ public struct ExploreScreen: View {
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenHashtag: (@MainActor (String) -> Void)? = nil,
+        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
     ) {
@@ -51,6 +54,7 @@ public struct ExploreScreen: View {
         self.onOpenCommunities = onOpenCommunities
         self.onCompose = onCompose
         self.onOpenHashtag = onOpenHashtag
+        self.onOpenRoom = onOpenRoom
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
     }
