@@ -191,3 +191,65 @@ final class GifTests: XCTestCase {
         XCTAssertEqual(request.queryValue("cursor"), "9")
     }
 }
+
+/// A room on a timeline (contract v18): the card a post carries.
+final class RoomCardTests: XCTestCase {
+
+    private static let json = """
+    {"id": "11111111-1111-4111-8111-111111111111",
+     "author": {"id": "22222222-2222-4222-8222-222222222222", "handle": "noura", "display_name": "Noura",
+                "avatar_url": null, "is_verified": true, "country_code": "SA", "verified_since": null},
+     "text": "listen to this", "created_at": "2026-09-13T10:00:00Z", "scope": "international",
+     "scope_country": null, "scope_region": null, "reply_to_post_id": null, "reply_count_direct": 0,
+     "quoted_post": null, "metrics": {"likes": 0, "reposts": 0, "replies": 0, "views": 0, "bookmarks": 0},
+     "viewer": {"liked": false, "reposted": false, "bookmarked": false, "can_reply": true, "reply_block_reason": null},
+     "room": ROOM}
+    """
+
+    private static let room = """
+    {"id": "33333333-3333-4333-8333-333333333333", "title": "What verification changes",
+     "topic": "technology", "status": "live", "scope": "international", "scope_country": null,
+     "scope_region": null,
+     "host": {"id": "44444444-4444-4444-8444-444444444444", "handle": "aziz", "display_name": "Aziz",
+              "avatar_url": null, "is_verified": true, "country_code": "SA", "verified_since": null},
+     "participant_count": 12, "scheduled_for": null, "started_at": "2026-09-13T09:00:00Z",
+     "metrics": {"likes": 4, "shares": 1, "views": 30, "listeners": 12}, "viewer_liked": true}
+    """
+
+    private func post(_ room: String) throws -> Post {
+        try JSONCoding.decoder.decode(Post.self, from: Data(Self.json.replacingOccurrences(of: "ROOM", with: room).utf8))
+    }
+
+    func testAPostCarriesTheRoomItIsAbout() throws {
+        let card = try XCTUnwrap(post(Self.room).room)
+        XCTAssertEqual(card.title, "What verification changes")
+        XCTAssertEqual(card.status, .live)
+        XCTAssertTrue(card.isJoinable)
+        XCTAssertEqual(card.host.handle, "aziz")
+        XCTAssertEqual(card.participantCount, 12)
+        XCTAssertEqual(card.metrics.likes, 4)
+        XCTAssertEqual(card.metrics.views, 30)
+        XCTAssertTrue(card.viewerLiked)
+    }
+
+    func testAnEndedRoomKeepsItsCardAndOffersNoDoor() throws {
+        let ended = Self.room.replacingOccurrences(of: "\"status\": \"live\"", with: "\"status\": \"ended\"")
+        let card = try XCTUnwrap(post(ended).room)
+        XCTAssertEqual(card.status, .ended)
+        XCTAssertFalse(card.isJoinable, "there is nothing to walk into")
+        XCTAssertEqual(card.title, "What verification changes", "but the trace survives")
+    }
+
+    func testAPostWithNoRoomOrABrokenOneStillReads() throws {
+        XCTAssertNil(try post("null").room)
+        XCTAssertNil(try post(#"{"title": "no id"}"#).room)
+        XCTAssertEqual(try post("null").text, "listen to this")
+    }
+
+    func testMetricsDefaultToNothingRatherThanFailing() throws {
+        let bare = Self.room.replacingOccurrences(of: #""metrics": {"likes": 4, "shares": 1, "views": 30, "listeners": 12}, "#, with: "")
+        let card = try XCTUnwrap(post(bare).room)
+        XCTAssertEqual(card.metrics.likes, 0)
+        XCTAssertEqual(card.metrics.listeners, 0)
+    }
+}

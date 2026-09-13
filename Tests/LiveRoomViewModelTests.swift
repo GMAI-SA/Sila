@@ -475,6 +475,66 @@ final class LiveRoomViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.hasLeft)
         XCTAssertEqual(viewModel.toast?.text, RoomCopy.removedFromRoom)
     }
+
+    // MARK: - Liking and passing on
+
+    /// A room leaves nothing behind, so what people made of it is the only
+    /// trace it has. The counter moves before the server answers, because a
+    /// like is not worth a spinner.
+    func testLikingMovesTheCounterAtOnceAndKeepsTheServersAnswer() async {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: false), role: .listener)
+        XCTAssertFalse(viewModel.room.viewerLiked)
+        XCTAssertEqual(viewModel.room.metrics.likes, 0)
+
+        await viewModel.toggleLike()
+
+        XCTAssertTrue(viewModel.room.viewerLiked)
+        XCTAssertEqual(viewModel.room.metrics.likes, 1)
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("setRoomLiked:true"))
+
+        await viewModel.toggleLike()
+        XCTAssertFalse(viewModel.room.viewerLiked)
+        XCTAssertEqual(viewModel.room.metrics.likes, 0, "and it never goes below nothing")
+    }
+
+    /// A like that did not land must not look like one that did.
+    func testALikeThatFailsRollsBackToWhatWasOnScreen() async {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: false), role: .listener)
+        await service.failEngagement(with: .transport("no network"))
+
+        await viewModel.toggleLike()
+
+        XCTAssertFalse(viewModel.room.viewerLiked)
+        XCTAssertEqual(viewModel.room.metrics.likes, 0)
+        XCTAssertNotNil(viewModel.toast, "and the person is told")
+    }
+
+    func testSharingPostsTheRoomAndCountsIt() async {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: false), role: .listener)
+        viewModel.isSharing = true
+
+        let posted = await viewModel.share(text: "worth listening to")
+
+        XCTAssertTrue(posted)
+        XCTAssertFalse(viewModel.isSharing, "the sheet closes itself")
+        XCTAssertEqual(viewModel.room.metrics.shares, 1)
+        let calls = await service.calls
+        XCTAssertTrue(calls.contains("shareRoom:worth listening to"))
+    }
+
+    func testAShareThatFailsLeavesTheSheetOpenAndTheCountAlone() async {
+        let (viewModel, _, service) = makeViewModel(room: room(canSpeak: false), role: .listener)
+        await service.failEngagement(with: .api(code: .unknown, message: "This room is closed", status: 403))
+        viewModel.isSharing = true
+
+        let posted = await viewModel.share(text: "look at this")
+
+        XCTAssertFalse(posted)
+        XCTAssertTrue(viewModel.isSharing, "so the words are not thrown away")
+        XCTAssertEqual(viewModel.room.metrics.shares, 0)
+        XCTAssertNotNil(viewModel.toast)
+    }
 }
 
 // MARK: - Test double
