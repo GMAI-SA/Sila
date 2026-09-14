@@ -134,6 +134,13 @@ public struct RootView: View {
                 )
                 .transition(.opacity)
 
+            case .guest:
+                // The same shell the signed-in app uses, reading the public
+                // half of the API. Every action meets an invitation instead
+                // of a failure — see `GuestTabView`.
+                GuestTabView(container: container)
+                    .transition(.opacity)
+
             case .feed:
                 if container.flags.feed {
                     MainTabView(container: container)
@@ -164,7 +171,8 @@ public struct RootView: View {
         )) {
             WelcomeScreen(
                 onCreateAccount: { container.router.push(.register) },
-                onSignIn: { container.router.push(.signIn) }
+                onSignIn: { container.router.push(.signIn) },
+                onBrowse: { container.session.browseAsGuest() }
             )
             .navigationDestination(for: AuthRoute.self) { route in
                 destination(for: route)

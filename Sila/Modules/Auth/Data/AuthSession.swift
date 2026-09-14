@@ -18,6 +18,13 @@ public enum SessionRoute: Equatable, Sendable {
     case rejected(reason: String?)
     /// Full access. Phase 3 replaces this with the real feed.
     case feed
+    /// Looking around without an account: the square, read-only.
+    ///
+    /// Deliberately a route rather than a flag on ``feed``. A guest is not a
+    /// signed-in person with fewer permissions — there is no account, no
+    /// token, no country and nothing to like *with* — and every screen that
+    /// forgot to check a flag would have been a screen that crashed or lied.
+    case guest
 }
 
 /// The live session: the single owner of "who is signed in and what may they do".
@@ -37,6 +44,22 @@ public final class AuthSession {
     public private(set) var route: SessionRoute = .splash
     /// `true` while a session-level network call is in flight.
     public private(set) var isBusy = false
+    /// What a guest was reaching for when they were invited to join, so the
+    /// invitation can name it: "Join Sila to reply" rather than a generic
+    /// prompt. Cleared when the sheet closes.
+    public var joinPrompt: JoinPrompt?
+
+    /// Looks around without an account.
+    public func browseAsGuest() {
+        analytics.track(.guestBrowsingStarted)
+        route = .guest
+    }
+
+    /// Leaves the read-only surface for the door.
+    public func leaveGuest() {
+        joinPrompt = nil
+        route = .unauthenticated
+    }
 
     private let service: AuthServiceProtocol
     private let store: AuthTokenStore

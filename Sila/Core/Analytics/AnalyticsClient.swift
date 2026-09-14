@@ -155,6 +155,12 @@ public enum AnalyticsEvent: String, Sendable {
     case searchPerformed = "search_performed"
     /// A trending tag was tapped.
     case trendingTagOpened = "trending_tag_opened"
+    /// Somebody chose to look around before making an account, and what they
+    /// reached for when the app asked them to join. The pair answers the only
+    /// question that matters about a read-only surface: does it convert?
+    case guestBrowsingStarted = "guest_browsing_started"
+    case guestJoinPromptShown = "guest_join_prompt_shown"
+    case guestJoinAccepted = "guest_join_accepted"
 
     // MARK: Contract v4 — feed preferences
 

@@ -14,15 +14,22 @@ public struct WelcomeScreen: View {
 
     private let onCreateAccount: () -> Void
     private let onSignIn: () -> Void
+    /// Reads the square without an account. `nil` hides the option.
+    private let onBrowse: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// - Parameters:
     ///   - onCreateAccount: Pushes the register screen.
     ///   - onSignIn: Pushes the sign-in screen.
-    public init(onCreateAccount: @escaping () -> Void, onSignIn: @escaping () -> Void) {
+    public init(
+        onCreateAccount: @escaping () -> Void,
+        onSignIn: @escaping () -> Void,
+        onBrowse: (() -> Void)? = nil
+    ) {
         self.onCreateAccount = onCreateAccount
         self.onSignIn = onSignIn
+        self.onBrowse = onBrowse
     }
 
     public var body: some View {
@@ -79,6 +86,17 @@ public struct WelcomeScreen: View {
                         action: onSignIn
                     )
                     .accessibilityIdentifier("welcome.signIn")
+
+                    // Third, and quietly: the two decisions come first, and
+                    // this is for the person not ready to make either.
+                    if let onBrowse {
+                        Button(L10n.t("guest.welcome.browse"), action: onBrowse)
+                            .font(SLFont.bodyEmphasis)
+                            .foregroundStyle(SLColor.primary)
+                            .padding(.top, SLSpacing.xs)
+                            .accessibilityIdentifier("welcome.browse")
+                            .accessibilityHint(Text(L10n.t("guest.banner.detail")))
+                    }
 
                     Text(L10n.t("auth.welcome.finePrint"))
                         .font(SLFont.caption)

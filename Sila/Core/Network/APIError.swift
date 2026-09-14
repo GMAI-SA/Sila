@@ -78,6 +78,12 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// the person, built from the field that failed, never the server's own
     /// wording.
     case validationError = "validation_error"
+    /// A guest reached for something that acts (HTTP 401).
+    ///
+    /// Distinct from ``unauthorized``, which is a session that went bad: this
+    /// one is an invitation, and every client answers it with one rather than
+    /// with an error.
+    case signInRequired = "sign_in_required"
     /// Delete or edit attempted on someone else's post.
     case notPostAuthor = "not_post_author"
     /// The requested handle is already in use.
@@ -300,6 +306,8 @@ public enum APIError: Error, Equatable, Sendable {
         switch self {
         case let .api(code, message, _):
             switch code {
+            case .signInRequired:
+                return L10n.t("guest.join.post.title")
             case .validationError:
                 return message.isEmpty ? L10n.t("error.validation") : message
             case .emailTaken:
@@ -610,6 +618,14 @@ extension APIError {
     public var presentableMessage: String? {
         isCancellation ? nil : userMessage
     }
+
+    /// The error a guest's client raises for an action it will not even try.
+    public static let signInRequired = APIError.api(
+        code: .signInRequired, message: "Join Sila to do that", status: 401
+    )
+
+    /// Whether this is the app asking somebody to join rather than a failure.
+    public var isSignInRequired: Bool { code == .signInRequired }
 
     public var isCancellation: Bool {
         if case .cancelled = self { return true }

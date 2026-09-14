@@ -16821,6 +16821,500 @@
         }
       }
     },
+    "guest.banner.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join"
+          }
+        }
+      }
+    },
+    "guest.banner.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "القراءة متاحة للجميع. الانضمام هو ما يتيح لك الرد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading is open to everyone. Joining is what lets you answer."
+          }
+        }
+      }
+    },
+    "guest.banner.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت تتصفح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're looking around"
+          }
+        }
+      }
+    },
+    "guest.feed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الساحة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The square"
+          }
+        }
+      }
+    },
+    "guest.join.bookmark.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المحفوظات خاصة بك وحدك، وتنتظرك في حسابك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved posts are private to you, and they wait on your account."
+          }
+        }
+      }
+    },
+    "guest.join.bookmark.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم للحفظ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to save this"
+          }
+        }
+      }
+    },
+    "guest.join.create": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنشئ حسابًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create an account"
+          }
+        }
+      }
+    },
+    "guest.join.follow.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اصنع خلاصة من الأشخاص الذين تريد سماعهم فعلًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build a timeline of the people you actually want to hear from."
+          }
+        }
+      }
+    },
+    "guest.join.follow.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم للمتابعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to follow"
+          }
+        }
+      }
+    },
+    "guest.join.later": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تابع التصفح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep looking around"
+          }
+        }
+      }
+    },
+    "guest.join.like.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإعجابات هنا من أشخاص موثّقين، لذلك لها معنى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Likes here come from verified people, so they mean something."
+          }
+        }
+      }
+    },
+    "guest.join.like.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم للإعجاب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to like this"
+          }
+        }
+      }
+    },
+    "guest.join.message.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرسائل بين شخصين موثّقين، ولا أحد غيرهما."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages are between two verified people, and nobody else."
+          }
+        }
+      }
+    },
+    "guest.join.message.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم لإرسال رسالة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to send a message"
+          }
+        }
+      }
+    },
+    "guest.join.notifications.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اعرف من ردّ، ومن تابعك، ومن ذكر اسمك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See who replied, who followed you, and who mentioned your name."
+          }
+        }
+      }
+    },
+    "guest.join.notifications.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم لتصلك التنبيهات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to get notified"
+          }
+        }
+      }
+    },
+    "guest.join.post.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كل من يتحدث في Sila شخص موثّق. هذه هي الفكرة كلها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everyone who speaks on Sila is a verified person. That is the whole idea."
+          }
+        }
+      }
+    },
+    "guest.join.post.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم للكتابة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to write"
+          }
+        }
+      }
+    },
+    "guest.join.profile.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسمك الموثّق، وبلدك، وكل ما كتبته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your verified name, your country, and everything you have written."
+          }
+        }
+      }
+    },
+    "guest.join.profile.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم ليكون لك ملف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to have a profile"
+          }
+        }
+      }
+    },
+    "guest.join.reply.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خلف كل رد هنا شخص حقيقي موثّق. وردّك كذلك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every reply here has a real, verified person behind it. Yours would too."
+          }
+        }
+      }
+    },
+    "guest.join.reply.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم للرد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to reply"
+          }
+        }
+      }
+    },
+    "guest.join.repost.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شاركه مع من يتابعك، باسمك أنت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share it with the people who follow you, under your own name."
+          }
+        }
+      }
+    },
+    "guest.join.repost.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم لإعادة النشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to pass this on"
+          }
+        }
+      }
+    },
+    "guest.join.room.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الغرف لا تُسجَّل أبدًا. الحضور هو الطريقة الوحيدة لسماعها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rooms are never recorded. Being in one is the only way to hear it."
+          }
+        }
+      }
+    },
+    "guest.join.room.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم لدخول الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to enter the room"
+          }
+        }
+      }
+    },
+    "guest.join.signIn": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لديّ حساب بالفعل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have one"
+          }
+        }
+      }
+    },
+    "guest.tab.locked.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم لاستخدام هذا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join to use this"
+          }
+        }
+      }
+    },
+    "guest.welcome.browse": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصفّح أولًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look around first"
+          }
+        }
+      },
+      "comment": "The third option on the welcome screen, under Create account and Sign in."
+    },
     "messages.avatar.a11yLabel": {
       "extractionState": "manual",
       "localizations": {
@@ -21230,13 +21724,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تنطبق على الصفحة الدولية فقط. أما «المتابَعون» و«بلدي» و«مخصص لك» فهي مُضيَّقة أصلًا بحسب دولة أو بحسب الحسابات التي تتابعها، لذلك لا تُطبَّق عليها المواضيع."
+            "value": "«المتابَعون» لا يُضيَّق أبدًا — هؤلاء اخترتهم بالاسم، فمواضيعك ترفع منشوراتهم فقط. أما المواضيع المخفية فتغادر كل الخلاصات، بما فيها المتابَعون."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Applies to the International feed only. Following, My Country and For You are already narrowed by a country or by the accounts you follow, so topics are not applied to them."
+            "value": "Following is never narrowed — those are people you chose by name, so your subjects only move their posts up. Hidden subjects leave every timeline, including Following."
           }
         }
       }
@@ -21248,13 +21742,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يضيّق الصفحة الدولية على المواضيع التي حددتها كمهتم بها"
+            "value": "يُضيّق «لك» وبلدك و«دولي» إلى المواضيع التي اخترتها"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Narrows the International feed to the topics you marked interested"
+            "value": "Narrows For You, your country and International to the subjects you picked"
           }
         }
       }
@@ -21266,13 +21760,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تصفية الصفحة الدولية حسب اهتماماتي"
+            "value": "أرني ما اخترته غالبًا"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Filter International by my interests"
+            "value": "Show me mostly what I chose"
           }
         }
       }
@@ -21374,13 +21868,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "الصفحة الدولية"
+            "value": "خلاصاتك"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "INTERNATIONAL FEED"
+            "value": "YOUR TIMELINES"
           }
         }
       }

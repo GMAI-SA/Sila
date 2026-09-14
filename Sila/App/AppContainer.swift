@@ -35,6 +35,12 @@ public final class AppContainer {
     public let composerService: ComposerServiceProtocol
     /// The GIF library the composer picks from.
     public let gifService: GifServiceProtocol
+    /// The read-only half of the API, for somebody who has not joined yet.
+    ///
+    /// Always built, never used by a signed-in screen: the app is constructed
+    /// before anybody chooses to look around, so this is a service the guest
+    /// shell reaches for rather than a different container.
+    public let publicFeedService: FeedServiceProtocol
     /// Phase 4's search service — Explore and `@mention` autocomplete.
     public let searchService: SearchServiceProtocol
     /// Contract v4's interests service — topics and feed preferences.
@@ -215,6 +221,8 @@ public final class AppContainer {
         } else {
             self.gifService = GifService(network: network, tokens: tokens)
         }
+
+        self.publicFeedService = PublicFeedService(network: network, analytics: analytics)
 
         if let searchService {
             self.searchService = searchService
