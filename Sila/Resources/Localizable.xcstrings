@@ -22273,6 +22273,24 @@
         }
       }
     },
+    "preferences.topics.chooseHint": {
+      "extractionState": "manual",
+      "comment": "Above the topic tiles: what tapping one does to the feed.",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر موضوعًا ليظهر المزيد منه في خلاصتك فورًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a subject and your feed starts showing more of it."
+          }
+        }
+      }
+    },
     "preferences.topics.emptySlice": {
       "comment": "Shown when the chosen topic filter matches no rows.",
       "extractionState": "manual",

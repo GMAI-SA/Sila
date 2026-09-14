@@ -92,7 +92,10 @@ final class AccountJourneyUITests: XCTestCase {
         signIn(app)
         openAccount(app)
 
+        // The route sits at the very bottom of a lazy list, so it does not
+        // exist until the screen has been scrolled to it.
         let open = app.buttons["Delete account…"]
+        for _ in 0..<4 where !open.exists { app.swipeUp() }
         XCTAssertTrue(open.waitForExistence(timeout: 10), "no route into deletion")
         open.tap()
 

@@ -54,6 +54,36 @@ public enum CountryCode {
         return (locale ?? L10n.locale).localizedString(forRegionCode: code)
     }
 
+    /// The name as a tab or a chip can hold it.
+    ///
+    /// The formal name is right on a profile and wrong in a segmented
+    /// control: "المملكة العربية السعودية" pushed the International tab off
+    /// the screen in Arabic. Countries whose everyday name is shorter than
+    /// their formal one get the everyday one; anything still too long for a
+    /// tab answers `nil`, and the caller falls back to its generic label.
+    public static func shortName(_ code: String?, locale: Locale? = nil, limit: Int = 16) -> String? {
+        guard let code = normalised(code) else { return nil }
+        let language = (locale ?? L10n.locale).language.languageCode?.identifier ?? "en"
+        if let short = everydayNames[language]?[code] { return short }
+        guard let full = name(code, locale: locale) else { return nil }
+        return full.count <= limit ? full : nil
+    }
+
+    /// Everyday names where the formal one is a mouthful. Only the pairs a
+    /// tab has actually tripped over; the localized name serves the rest.
+    private static let everydayNames: [String: [String: String]] = [
+        "ar": [
+            "SA": "السعودية", "AE": "الإمارات", "US": "أمريكا", "GB": "بريطانيا",
+            "KR": "كوريا", "CZ": "التشيك", "CF": "أفريقيا الوسطى", "DO": "الدومينيكان",
+            "TT": "ترينيداد", "BA": "البوسنة", "PG": "بابوا", "VC": "سانت فنسنت",
+        ],
+        "en": [
+            "AE": "UAE", "US": "USA", "GB": "UK", "KR": "South Korea", "CD": "DR Congo",
+            "CF": "Central Africa", "DO": "Dominican Rep.", "BA": "Bosnia", "TT": "Trinidad",
+            "VC": "St Vincent", "KN": "St Kitts", "PG": "Papua New Guinea", "SX": "Sint Maarten",
+        ],
+    ]
+
     /// What VoiceOver should say for a verified country flag.
     /// - Returns: e.g. `"Identity verified in Saudi Arabia"`, or `nil`.
     public static func accessibilityLabel(_ code: String?, locale: Locale? = nil) -> String? {

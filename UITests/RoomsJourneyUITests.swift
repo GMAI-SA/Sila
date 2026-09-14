@@ -161,7 +161,8 @@ final class RoomsJourneyUITests: XCTestCase {
         signIn(app)
         openRooms(app)
 
-        let create = app.buttons["Start a room"]
+        // The round button in the corner opens a room on this tab.
+        let create = app.descendants(matching: .any)["feed.fab"].firstMatch
         XCTAssertTrue(create.waitForExistence(timeout: 15), "no way to start a room")
         create.tap()
 

@@ -78,18 +78,18 @@ final class PreferencesJourneyUITests: XCTestCase {
         )
         add(screenshot(app, named: "Feed preferences — disclosure and summary"))
 
-        // The twenty-row topic list and the muted-country editor are further
-        // down the same scroll view.
-        let interested = app.buttons.matching(
-            NSPredicate(format: "label BEGINSWITH 'Technology: Interested'")
-        ).firstMatch
+        // The topic tiles and the muted-country editor are further down the
+        // same scroll view. Each tile is a subject to follow, with its own
+        // control in the corner for taking that subject off the timeline.
+        let tile = app.descendants(matching: .any)["preferences.topic.technology"].firstMatch
         app.swipeUp()
         app.swipeUp()
+        XCTAssertTrue(tile.waitForExistence(timeout: 10), "the topic tiles are missing")
         XCTAssertTrue(
-            interested.waitForExistence(timeout: 10),
-            "the three-way stance control is missing from the topic rows"
+            app.descendants(matching: .any)["preferences.topic.hide.technology"].firstMatch.exists,
+            "a tile has no way to hide its subject completely"
         )
-        add(screenshot(app, named: "Feed preferences — topic list"))
+        add(screenshot(app, named: "Feed preferences — topic tiles"))
 
         app.swipeUp()
         app.swipeUp()

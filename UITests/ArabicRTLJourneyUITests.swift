@@ -70,7 +70,9 @@ final class ArabicRTLJourneyUITests: XCTestCase {
         // legitimately produces; anything wider is a layout that did not mirror.
         let slack: CGFloat = 1
 
-        for element in app.buttons.allElementsBoundByIndex + app.staticTexts.allElementsBoundByIndex {
+        // Post bodies are text views now, laid out by TextKit; they have to
+        // answer to the same edge as everything else.
+        for element in app.buttons.allElementsBoundByIndex + app.staticTexts.allElementsBoundByIndex + app.textViews.allElementsBoundByIndex {
             guard element.exists, element.isHittable else { continue }
             let frame = element.frame
             guard frame.width > 0, frame.height > 0 else { continue }
@@ -174,9 +176,9 @@ final class ArabicRTLJourneyUITests: XCTestCase {
         assertNothingOverflows(app, "feed after tabs")
 
         // The composer — the surface where a wrong text direction is most
-        // obvious and most damaging. Reached from the feed's own compose row
-        // now that the tab bar is five destinations and nothing else.
-        if tap(app, identifier: "feed.composeRow", timeout: 10) {
+        // obvious and most damaging. Reached from the round button in the
+        // feed's bottom corner.
+        if tap(app, identifier: "feed.fab", timeout: 10) {
             add(screenshot(app, named: "AR — Composer"))
             assertNothingOverflows(app, "composer")
 
@@ -265,10 +267,13 @@ final class ArabicRTLJourneyUITests: XCTestCase {
         // Poll rather than snapshot once: the mock feed answers after a
         // deliberate latency, and a single pass over `staticTexts` taken the
         // instant the tab bar appears reliably runs before any post exists.
+        // A post's body is a text view (TextKit decides what a tap means), so
+        // it is looked for among text views as well as static text.
         var arabicPost: XCUIElement?
         let deadline = Date().addingTimeInterval(15)
         while Date() < deadline, arabicPost == nil {
-            arabicPost = app.staticTexts.allElementsBoundByIndex.first { element in
+            let candidates = app.textViews.allElementsBoundByIndex + app.staticTexts.allElementsBoundByIndex
+            arabicPost = candidates.first { element in
                 element.exists && isArabic(element.label) && element.label.count > 12
             }
             if arabicPost == nil { _ = app.staticTexts.firstMatch.waitForExistence(timeout: 1) }

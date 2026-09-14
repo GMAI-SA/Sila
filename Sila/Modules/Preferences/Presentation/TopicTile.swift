@@ -58,18 +58,30 @@ struct TopicTile: View {
     var body: some View {
         VStack(spacing: SLSpacing.sm) {
             ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: SLRadius.lg, style: .continuous)
+                // The logo: a rounded square the size of an app icon, which is
+                // what a row of choices reads as at a glance.
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(background)
+                    .aspectRatio(1, contentMode: .fit)
                     .overlay(
-                        RoundedRectangle(cornerRadius: SLRadius.lg, style: .continuous)
-                            .strokeBorder(border, lineWidth: isInterested ? 2 : 1)
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(border, lineWidth: isInterested ? 2.5 : 1)
                     )
-                    .frame(height: 84)
                     .overlay {
                         Image(systemName: TopicIcon.symbol(for: topic.id))
-                            .font(.system(size: 28, weight: .regular))
+                            .font(.system(size: 30, weight: .regular))
                             .foregroundStyle(tint)
                             .symbolRenderingMode(.hierarchical)
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        // A chosen subject says so on its own face.
+                        if isInterested {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18))
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, SLColor.primary)
+                                .padding(6)
+                        }
                     }
 
                 Button {

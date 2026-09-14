@@ -788,3 +788,64 @@ final class TaggingDisclosureTests: XCTestCase {
         )
     }
 }
+
+/// Choosing a subject changes the timeline, without anybody hunting for a switch.
+@MainActor
+final class ChoosingASubjectTests: XCTestCase {
+
+    /// An account that has never chosen anything — which is the only account
+    /// for which "the first subject" means anything. The default mock is
+    /// somebody who already picked science and technology.
+    private func loaded() async -> PreferencesViewModel {
+        let viewModel = PreferencesViewModel(
+            service: PreferencesServiceMock(scenario: .empty),
+            analytics: RecordingAnalyticsClient()
+        )
+        await viewModel.load()
+        return viewModel
+    }
+
+    func testTheFirstSubjectTurnsTheNarrowingOn() async {
+        let viewModel = await loaded()
+        XCTAssertFalse(viewModel.draft.filterInternationalByInterests)
+
+        viewModel.setStance(.interested, for: "technology")
+
+        XCTAssertTrue(viewModel.draft.filterInternationalByInterests, "the feed starts showing it")
+        XCTAssertTrue(viewModel.draft.narrowsToInterests)
+    }
+
+    func testATurnedOffSwitchIsNotOverruledByTheNextChoice() async {
+        let viewModel = await loaded()
+        viewModel.setStance(.interested, for: "technology")
+        viewModel.setFilterEnabled(false)
+
+        viewModel.setStance(.interested, for: "sports")
+
+        XCTAssertFalse(
+            viewModel.draft.filterInternationalByInterests,
+            "somebody who reached for the switch meant it"
+        )
+    }
+
+    func testTakingTheLastSubjectBackTakesTheNarrowingWithIt() async {
+        let viewModel = await loaded()
+        viewModel.setStance(.interested, for: "technology")
+        XCTAssertTrue(viewModel.draft.filterInternationalByInterests)
+
+        viewModel.setStance(TopicStance.none, for: "technology")
+
+        XCTAssertFalse(
+            viewModel.draft.filterInternationalByInterests,
+            "a filter with nothing to filter to is a trap"
+        )
+        XCTAssertTrue(viewModel.draft.interests.isEmpty)
+    }
+
+    func testHidingASubjectIsNotChoosingIt() async {
+        let viewModel = await loaded()
+        viewModel.setStance(.muted, for: "politics")
+        XCTAssertFalse(viewModel.draft.filterInternationalByInterests, "hiding is not an interest")
+        XCTAssertEqual(viewModel.draft.stance(for: "politics"), .muted)
+    }
+}

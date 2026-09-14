@@ -572,7 +572,9 @@ public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
         case .forYou: return L10n.t("feed.tab.forYou")
         case .following: return L10n.t("feed.tab.following")
         case .myCountry:
-            if let code = countryCode, let name = CountryCode.name(code, locale: L10n.locale) {
+            // The everyday name, and only when it fits a tab: the formal
+            // Arabic name of Saudi Arabia is six words.
+            if let code = countryCode, let name = CountryCode.shortName(code, locale: L10n.locale) {
                 return name
             }
             return L10n.t("feed.tab.myCountry")

@@ -260,6 +260,11 @@ public struct PreferencesScreen: View {
 
             // Said once, plainly: the two taps do different things, and the
             // second one is the one people come to this screen for.
+            Label(L10n.t("preferences.topics.chooseHint"), systemImage: "hand.tap")
+                .font(SLFont.micro)
+                .foregroundStyle(SLColor.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+
             Label(L10n.t("preferences.topics.hideHint"), systemImage: "eye.slash")
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
@@ -280,8 +285,9 @@ public struct PreferencesScreen: View {
                     .frame(maxWidth: .infinity, alignment: .center)
             } else {
                 LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: SLSpacing.md), count: 3),
-                    spacing: SLSpacing.md
+                    columns: Array(repeating: GridItem(.flexible(), spacing: SLSpacing.md), count: 4),
+                    alignment: .leading,
+                    spacing: SLSpacing.lg
                 ) {
                     ForEach(viewModel.visibleTopics) { topic in
                         TopicTile(

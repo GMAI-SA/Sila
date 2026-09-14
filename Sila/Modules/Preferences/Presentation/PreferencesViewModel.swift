@@ -94,6 +94,9 @@ public final class PreferencesViewModel {
     private let service: PreferencesServiceProtocol
     private let analytics: AnalyticsClient
     private let onFilteringChanged: (@MainActor () -> Void)?
+    /// Whether the narrowing switch was turned on by choosing a subject rather
+    /// than by somebody reaching for the switch itself.
+    private var narrowingTurnedOnByChoosing = false
 
     /// - Parameters:
     ///   - service: Preferences backend.
@@ -208,7 +211,24 @@ public final class PreferencesViewModel {
     public func setStance(_ stance: TopicStance, for topicId: String) {
         guard knownTopicIds.contains(topicId) else { return }
         guard draft.stance(for: topicId) != stance else { return }
+        let hadNoInterests = draft.interests.isEmpty
         draft = draft.setting(stance, for: topicId)
+        // Picking a subject is somebody saying what they want to see, so the
+        // feed starts showing it. Without this the first tile did nothing
+        // visible: the narrowing switch further down the screen was off, and
+        // nobody who just chose "Sports" expects to have to find a switch.
+        // Only the *first* choice turns it on, so switching it back off is
+        // not overruled by the next tap.
+        if stance == .interested, hadNoInterests, !draft.filterInternationalByInterests {
+            draft.filterInternationalByInterests = true
+            narrowingTurnedOnByChoosing = true
+        }
+        // The last subject going away takes the narrowing with it, rather
+        // than leaving a filter with nothing to filter to.
+        if draft.interests.isEmpty, narrowingTurnedOnByChoosing {
+            draft.filterInternationalByInterests = false
+            narrowingTurnedOnByChoosing = false
+        }
         analytics.track(.topicStanceChanged, properties: [
             "topic": topicId,
             "stance": stance.rawValue
@@ -218,6 +238,8 @@ public final class PreferencesViewModel {
     /// Turns the International narrowing switch on or off in the draft.
     public func setFilterEnabled(_ enabled: Bool) {
         draft.filterInternationalByInterests = enabled
+        // Set by hand, so it is no longer ours to withdraw.
+        narrowingTurnedOnByChoosing = false
     }
 
     /// Turns "show posts that haven't been labelled" on or off in the draft.

@@ -51,13 +51,14 @@ final class ComposerJourneyUITests: XCTestCase {
         )
     }
 
-    /// Opens the composer the way a person does: the row at the top of the
-    /// feed. Fails loudly rather than silently doing nothing, because a missing
-    /// entry point is precisely the regression worth catching here.
+    /// Opens the composer the way a person does: the round button in the
+    /// bottom corner of the feed. Fails loudly rather than silently doing
+    /// nothing, because a missing entry point is precisely the regression
+    /// worth catching here.
     private func openComposer(_ app: XCUIApplication) {
-        let row = app.descendants(matching: .any)["feed.composeRow"].firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 15), "the feed has no compose row")
-        row.tap()
+        let button = app.descendants(matching: .any)["feed.fab"].firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 15), "the feed has no post button")
+        button.tap()
     }
 
     /// The feed's compose row opens a real composer, offers the scope picker,
@@ -123,7 +124,7 @@ final class ComposerJourneyUITests: XCTestCase {
     }
 
     /// Explore shows real trending tags instead of the Phase-3 placeholder.
-    func testExploreShowsTrendingAndSearchesForATappedTag() throws {
+    func testExploreShowsTrendingAndOpensATappedTagsPage() throws {
         let app = launchApp()
         signIn(app)
 
@@ -135,12 +136,14 @@ final class ComposerJourneyUITests: XCTestCase {
 
         tag.tap()
 
-        // Tapping a tag runs the search, so the People tab appears alongside Posts.
+        // A tag is a place: tapping one opens its page, with the order chips
+        // under the title, rather than running a search.
         XCTAssertTrue(
-            app.buttons["People"].waitForExistence(timeout: 10),
-            "tapping a trending tag did not run a search"
+            app.descendants(matching: .any)["hashtag.sort.newest"].waitForExistence(timeout: 10),
+            "tapping a trending tag did not open the tag's page"
         )
-        add(screenshot(app, named: "Explore — results for a tag"))
+        XCTAssertTrue(app.descendants(matching: .any)["hashtag.sort.top"].exists, "the page offers no other order")
+        add(screenshot(app, named: "Explore — a tag's page"))
     }
 
     private func screenshot(_ app: XCUIApplication, named name: String) -> XCTAttachment {

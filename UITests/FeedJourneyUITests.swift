@@ -59,8 +59,11 @@ final class FeedJourneyUITests: XCTestCase {
 
         add(screenshot(app, named: "Feed — For You"))
 
-        for tab in ["Following", "My Country", "International", "For You"] {
-            let control = app.buttons[tab]
+        // By identifier, not by label: the country tab is named after the
+        // viewer's verified country ("Saudi Arabia"), and the identifiers do
+        // not change with the language either.
+        for tab in ["segment.following", "segment.myCountry", "segment.international", "segment.forYou"] {
+            let control = app.descendants(matching: .any)[tab].firstMatch
             XCTAssertTrue(control.waitForExistence(timeout: 10), "tab '\(tab)' is missing")
             control.tap()
             // Switching must not tear the screen down; the bar stays put.
