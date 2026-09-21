@@ -83,6 +83,8 @@ public enum AnalyticsEvent: String, Sendable {
     // MARK: Phase 3 — Feed
 
     case feedTabSelected = "feed_tab_selected"
+    /// A subject was pinned or cleared in the strip above the timeline.
+    case feedSubjectPinned = "feed_subject_pinned"
     case feedLoaded = "feed_loaded"
     case postOpened = "post_opened"
     case postLiked = "post_liked"

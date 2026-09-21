@@ -61,24 +61,160 @@ public final class HomeViewModel {
     /// Banner message.
     public var toast: SLToastMessage?
 
+    /// The subject pinned in the strip above the timeline, or `nil` for
+    /// everything. It is deliberately one value rather than one per tab: it
+    /// is a statement about what somebody wants to read, not about which tab
+    /// they happen to be standing on, so it applies to all four.
+    public private(set) var pinnedSubject: String?
+    /// The strip's vocabulary — the taxonomy minus hidden subjects, chosen
+    /// interests first. Empty until it loads, which simply hides the strip.
+    public private(set) var subjects: [TopicOption] = []
+
     private let service: FeedServiceProtocol
     private let analytics: AnalyticsClient
+    private let subjectSource: SubjectCatalogProviding?
+    private let storage: StorageClient?
+    private let subjectDebounce: UInt64
+    /// Bumped whenever the pinned subject changes. A page that comes back
+    /// carrying an older epoch belongs to a subject nobody is looking at any
+    /// more, and is dropped rather than shown under the new one.
+    private var subjectEpoch: Int = 0
+    private var hasLoadedSubjects = false
+
+    /// How long a tap down the strip waits before asking the server, in
+    /// nanoseconds. A run of taps is one decision, not four.
+    public static let defaultSubjectDebounce: UInt64 = 250_000_000
 
     /// - Parameters:
     ///   - service: Feed backend.
     ///   - analytics: Event sink.
     ///   - initialTab: Tab to open on. Defaults to ``FeedTab/forYou``.
+    ///   - subjects: Where the strip's vocabulary comes from. `nil` — the
+    ///     default — leaves the strip out entirely, which is what every screen
+    ///     that shows a feed without one already had.
+    ///   - storage: Remembers the pinned subject between launches. `nil`
+    ///     forgets it when the app closes.
+    ///   - subjectDebounce: Overridable so tests do not wait.
     public init(
         service: FeedServiceProtocol,
         analytics: AnalyticsClient,
-        initialTab: FeedTab = .forYou
+        initialTab: FeedTab = .forYou,
+        subjects: SubjectCatalogProviding? = nil,
+        storage: StorageClient? = nil,
+        subjectDebounce: UInt64 = HomeViewModel.defaultSubjectDebounce
     ) {
         self.service = service
         self.analytics = analytics
+        self.subjectSource = subjects
+        self.storage = storage
+        self.subjectDebounce = subjectDebounce
         self.selectedTab = initialTab
         for tab in FeedTab.allCases {
             states[tab] = FeedTabState()
         }
+        // Read before the first fetch, so a feed that opens on a pinned
+        // subject is narrowed from its very first page rather than flashing
+        // the unfiltered timeline first.
+        let remembered = storage?.value(for: .pinnedSubject, as: String.self)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        self.pinnedSubject = (remembered?.isEmpty ?? true) ? nil : remembered
+    }
+
+    // MARK: - Subjects
+
+    /// Loads the strip's vocabulary once.
+    ///
+    /// Failure is silent on purpose: the strip is an addition to the timeline,
+    /// not the timeline, and a banner about a vocabulary nobody asked for
+    /// would interrupt reading to report something that changed nothing.
+    public func loadSubjectsIfNeeded() async {
+        guard let subjectSource, !hasLoadedSubjects else { return }
+        hasLoadedSubjects = true
+        do {
+            subjects = try await subjectSource.loadSubjects().strip
+        } catch {
+            hasLoadedSubjects = false
+            return
+        }
+        // A subject that has since been hidden — or that the server has
+        // retired — cannot stay pinned: the timeline would be narrowed by
+        // something the strip does not even show.
+        if let pinned = pinnedSubject, !subjects.contains(where: { $0.id == pinned }) {
+            pinnedSubject = nil
+            rememberPinnedSubject()
+            await reloadForSubjectChange()
+        }
+    }
+
+    /// Pins a subject, or clears it when `subject` is `nil`.
+    ///
+    /// Every tab is thrown away and the visible one is re-read, because the
+    /// server applies the subject; what is already in memory was chosen under
+    /// the previous one, and keeping it would show a filter that visibly did
+    /// nothing.
+    public func pin(_ subject: String?) async {
+        let next = (subject?.isEmpty ?? true) ? nil : subject
+        guard next != pinnedSubject else { return }
+        pinnedSubject = next
+        rememberPinnedSubject()
+        analytics.track(.feedSubjectPinned, properties: [
+            "subject": next ?? "none",
+            "tab": selectedTab.rawValue
+        ])
+        await reloadForSubjectChange()
+    }
+
+    /// The pinned subject's name in the reader's language, for the empty
+    /// state. Falls back to the id, which is at least recognisable.
+    public var pinnedSubjectLabel: String? {
+        guard let pinnedSubject else { return nil }
+        return subjects.first { $0.id == pinnedSubject }?.label
+            ?? TopicOption.makeLabel(from: pinnedSubject)
+    }
+
+    /// Re-reads the vocabulary and the feeds it affects.
+    ///
+    /// Called after the preferences screen saves: hiding a subject there has
+    /// to take it out of the strip here, and un-pin it if it was pinned.
+    public func subjectsChanged() async {
+        hasLoadedSubjects = false
+        await loadSubjectsIfNeeded()
+        await invalidateInternationalFeed()
+    }
+
+    private func reloadForSubjectChange() async {
+        subjectEpoch &+= 1
+        let epoch = subjectEpoch
+        for tab in FeedTab.allCases { clear(tab) }
+
+        if subjectDebounce > 0 {
+            try? await Task.sleep(nanoseconds: subjectDebounce)
+            guard epoch == subjectEpoch else { return }
+        }
+        await loadFirstPage(selectedTab, isRefresh: false)
+    }
+
+    private func rememberPinnedSubject() {
+        guard let storage else { return }
+        if let pinnedSubject {
+            storage.set(pinnedSubject, for: .pinnedSubject)
+        } else {
+            storage.remove(.pinnedSubject)
+        }
+    }
+
+    /// Empties one tab so its next appearance re-reads it.
+    private func clear(_ tab: FeedTab) {
+        var state = self.state(for: tab)
+        state.posts = []
+        state.cursor = nil
+        state.hasMore = true
+        state.hasLoaded = false
+        state.emptyKind = nil
+        state.isLoading = false
+        state.isLoadingMore = false
+        state.isRefreshing = false
+        states[tab] = state
     }
 
     /// The state of one tab. Never `nil` — an unknown tab reads as empty.
@@ -126,8 +262,17 @@ public final class HomeViewModel {
         current.isLoadingMore = true
         states[tab] = current
 
+        let epoch = subjectEpoch
         do {
-            let page = try await service.fetchFeed(tab, cursor: cursor, limit: FeedConstants.defaultPageSize)
+            let page = try await service.fetchFeed(
+                tab,
+                topic: pinnedSubject,
+                cursor: cursor,
+                limit: FeedConstants.defaultPageSize
+            )
+            // The subject changed while this page was in flight; it is a page
+            // of a timeline that no longer exists.
+            guard epoch == subjectEpoch else { return }
             var updated = state(for: tab)
             updated.isLoadingMore = false
             // De-duplicate: a post inserted between two requests can otherwise
@@ -138,6 +283,7 @@ public final class HomeViewModel {
             updated.hasMore = page.hasMore && page.nextCursor != nil
             states[tab] = updated
         } catch {
+            guard epoch == subjectEpoch else { return }
             var updated = state(for: tab)
             updated.isLoadingMore = false
             if APIError.wrapping(error).isCancellation {
@@ -177,8 +323,16 @@ public final class HomeViewModel {
         current.emptyKind = nil
         states[tab] = current
 
+        let epoch = subjectEpoch
+        let topic = pinnedSubject
         do {
-            let page = try await service.fetchFeed(tab, cursor: nil, limit: FeedConstants.defaultPageSize)
+            let page = try await service.fetchFeed(
+                tab,
+                topic: topic,
+                cursor: nil,
+                limit: FeedConstants.defaultPageSize
+            )
+            guard epoch == subjectEpoch else { return }
             var updated = state(for: tab)
             updated.posts = page.posts
             updated.cursor = page.nextCursor
@@ -189,9 +343,22 @@ public final class HomeViewModel {
             updated.hasLoaded = true
             states[tab] = updated
         } catch {
+            guard epoch == subjectEpoch else { return }
             var updated = state(for: tab)
             updated.isLoading = false
             updated.isRefreshing = false
+            if let topic, isSubjectRefusal(error) {
+                // The subject was hidden or retired somewhere else — another
+                // device, or the preferences screen. Drop the pin, say so
+                // once, and give the whole timeline back.
+                states[tab] = updated
+                pinnedSubject = nil
+                rememberPinnedSubject()
+                subjects.removeAll { $0.id == topic }
+                toast = .warning(userMessage(for: error))
+                await reloadForSubjectChange()
+                return
+            }
             if APIError.wrapping(error).isCancellation {
                 // Abandoned, not failed. `hasLoaded` stays as it was, so a
                 // first load that never finished is asked for again on the
@@ -375,16 +542,7 @@ public final class HomeViewModel {
     /// keeping it would show a filter that visibly did nothing. The other three
     /// feeds are untouched because the backend does not filter them by topic.
     public func invalidateInternationalFeed() async {
-        var state = self.state(for: .international)
-        state.posts = []
-        state.cursor = nil
-        state.hasMore = true
-        state.hasLoaded = false
-        state.emptyKind = nil
-        state.isLoading = false
-        state.isLoadingMore = false
-        state.isRefreshing = false
-        states[.international] = state
+        clear(.international)
 
         // If the user is looking at it, refetch now; otherwise the cleared
         // `hasLoaded` makes the next visit load it.
@@ -445,6 +603,12 @@ public final class HomeViewModel {
     }
 
     // MARK: - Helpers
+
+    /// Whether the server refused the pinned subject itself.
+    private func isSubjectRefusal(_ error: Error) -> Bool {
+        guard let code = (error as? APIError)?.code else { return false }
+        return code == .topicMuted || code == .unknownTopic
+    }
 
     private func isNoCountry(_ error: Error) -> Bool {
         (error as? APIError)?.code == .noCountry

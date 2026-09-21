@@ -32,6 +32,10 @@ public struct StorageKey: RawRepresentable, Hashable, Sendable {
     public static let lastSignedInEmail = StorageKey("com.socialsa.sila.lastSignedInEmail")
     /// Whether the welcome screen has ever been shown.
     public static let hasSeenWelcome = StorageKey("com.socialsa.sila.hasSeenWelcome")
+    /// The subject pinned in the timeline's strip, if any. Device-local and
+    /// cleared on sign-out: it is a lens somebody is holding, not a setting
+    /// their account carries to another phone.
+    public static let pinnedSubject = StorageKey("com.socialsa.sila.pinnedSubject")
     /// The in-app language choice: `system`, `en` or `ar`.
     public static let appLanguage = StorageKey("com.socialsa.sila.appLanguage")
 }

@@ -43,6 +43,12 @@ public actor FeedServiceMock: FeedServiceProtocol {
     /// Local engagement state so a like survives a re-read within a session.
     private var metricsOverrides: [UUID: PostMetrics] = [:]
 
+    /// The subject the last feed request carried, for test assertions.
+    public private(set) var lastTopic: String?
+    /// A subject the mock refuses, the way the server refuses one the account
+    /// has since hidden.
+    private var refusedTopic: String?
+
     /// Creates a mock.
     /// - Parameters:
     ///   - scenario: Which world to serve. Defaults to ``MockScenario/populated``.
@@ -57,7 +63,32 @@ public actor FeedServiceMock: FeedServiceProtocol {
         self.scenario = scenario
     }
 
+    /// Makes the mock answer 409 `topic_muted` for one subject.
+    public func setRefusedTopic(_ topic: String?) {
+        refusedTopic = topic
+    }
+
     // MARK: - FeedServiceProtocol
+
+    /// The same feed, narrowed to one subject.
+    ///
+    /// A narrowed page keeps only the sample posts that carry the subject as a
+    /// hashtag, so a pinned subject really does change what comes back rather
+    /// than being recorded and ignored.
+    public func fetchFeed(_ tab: FeedTab, topic: String?, cursor: String?, limit: Int) async throws -> FeedPage {
+        lastTopic = topic
+        record("topic:\(topic ?? "none")")
+        if let topic, topic == refusedTopic {
+            throw APIError.api(code: .topicMuted, message: "You hid this subject.", status: 409)
+        }
+        let page = try await fetchFeed(tab, cursor: cursor, limit: limit)
+        guard let topic, !topic.isEmpty else { return page }
+        return FeedPage(
+            posts: page.posts.filter { $0.text.localizedCaseInsensitiveContains("#\(topic)") },
+            nextCursor: page.nextCursor,
+            hasMore: page.hasMore
+        )
+    }
 
     public func fetchFeed(_ tab: FeedTab, cursor: String?, limit: Int) async throws -> FeedPage {
         record("fetchFeed:\(tab.rawValue):\(cursor == nil ? "first" : cursor ?? "")")

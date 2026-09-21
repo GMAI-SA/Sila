@@ -69,7 +69,9 @@ public struct MainTabView: View {
         self._viewModel = State(
             initialValue: HomeViewModel(
                 service: container.feedService,
-                analytics: container.analytics
+                analytics: container.analytics,
+                subjects: AccountSubjects(container.preferencesService),
+                storage: container.storage
             )
         )
         self._exploreViewModel = State(
@@ -498,8 +500,10 @@ public struct MainTabView: View {
             analytics: container.analytics,
             onFilteringChanged: {
                 // `GET /feed/international` applies these server-side, so the
-                // page already on screen was chosen under the old settings.
-                Task { await viewModel.invalidateInternationalFeed() }
+                // page already on screen was chosen under the old settings —
+                // and hiding a subject here has to take it out of the strip
+                // above the timeline too.
+                Task { await viewModel.subjectsChanged() }
             }
         )
     }

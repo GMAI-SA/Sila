@@ -30,7 +30,11 @@ public struct GuestTabView: View {
             initialValue: HomeViewModel(
                 service: container.publicFeedService,
                 analytics: container.analytics,
-                initialTab: .international
+                initialTab: .international,
+                // A guest gets the vocabulary but none of the opinions: there
+                // is no account yet to have hidden anything. Nothing is
+                // remembered between launches for the same reason.
+                subjects: GuestSubjects(container.publicTopics)
             )
         )
     }
@@ -118,6 +122,23 @@ public struct GuestTabView: View {
     }
 
     private var feed: some View {
+        VStack(spacing: 0) {
+            if !viewModel.subjects.isEmpty {
+                SubjectStrip(
+                    subjects: viewModel.subjects,
+                    pinned: viewModel.pinnedSubject,
+                    // The preferences screen belongs to an account; a guest
+                    // narrows the timeline with the strip alone.
+                    onOpenPreferences: nil,
+                    onSelect: { subject in Task { await viewModel.pin(subject) } }
+                )
+            }
+            posts
+        }
+        .task { await viewModel.loadSubjectsIfNeeded() }
+    }
+
+    private var posts: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(viewModel.state(for: .international).posts) { post in
@@ -127,6 +148,18 @@ public struct GuestTabView: View {
                 }
                 if viewModel.state(for: .international).isLoading {
                     ProgressView().tint(SLColor.primary).padding(SLSpacing.xl)
+                } else if viewModel.state(for: .international).posts.isEmpty,
+                          let subject = viewModel.pinnedSubjectLabel {
+                    SLEmptyState(
+                        icon: "line.3.horizontal.decrease.circle",
+                        title: L10n.t("feed.subject.empty.title", subject),
+                        subtitle: L10n.t("feed.subject.empty.subtitle"),
+                        tint: SLColor.textSecondary,
+                        actionTitle: L10n.t("feed.subject.empty.action"),
+                        action: { Task { await viewModel.pin(nil) } }
+                    )
+                    .padding(.horizontal, SLSpacing.lg)
+                    .padding(.top, SLSpacing.xxl)
                 }
             }
         }

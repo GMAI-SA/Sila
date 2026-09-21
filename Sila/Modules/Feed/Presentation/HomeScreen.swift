@@ -76,7 +76,7 @@ public struct HomeScreen: View {
                 title: { $0.title(countryCode: countryCode) }
             )
 
-            preferencesBar
+            subjectStrip
 
             TabView(
                 selection: Binding(
@@ -93,47 +93,27 @@ public struct HomeScreen: View {
         }
         .tnScreenBackground()
         .task { await viewModel.loadIfNeeded(viewModel.selectedTab) }
+        .task { await viewModel.loadSubjectsIfNeeded() }
         .tnToast($viewModel.toast)
     }
 
-    // MARK: - Writing
+    // MARK: - Subjects
 
-    /// Tap-to-write, at the top of the feed.
+    /// The subject strip, directly under the tabs.
     ///
-    // MARK: - Preferences entry point
-
-    /// A link to the topic controls, on the one feed they affect.
-    ///
-    /// International is the only feed the server filters by topic, so the
-    /// shortcut appears only there — putting it above Following or My Country
-    /// would imply those are filtered too, which is the exact
-    /// misunderstanding this feature has to avoid.
+    /// It sits here rather than behind a settings screen because choosing what
+    /// you are reading is part of reading, not a thing you configure once. It
+    /// is the same choice on all four tabs: a subject is a statement about
+    /// what you want to see, not about which tab you are standing on.
     @ViewBuilder
-    private var preferencesBar: some View {
-        if let onOpenPreferences, viewModel.selectedTab == .international {
-            Button(action: onOpenPreferences) {
-                HStack(spacing: SLSpacing.sm) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(SLColor.primary)
-
-                    Text(L10n.t("feed.preferencesBar.label"))
-                        .font(SLFont.caption)
-                        .foregroundStyle(SLColor.textSecondary)
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "chevron.forward")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(SLColor.textMuted)
-                }
-                .padding(.horizontal, SLSpacing.lg)
-                .padding(.vertical, SLSpacing.sm)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text(L10n.t("feed.preferencesBar.a11yLabel")))
-            .accessibilityHint(Text(L10n.t("feed.preferencesBar.hint")))
+    private var subjectStrip: some View {
+        if !viewModel.subjects.isEmpty {
+            SubjectStrip(
+                subjects: viewModel.subjects,
+                pinned: viewModel.pinnedSubject,
+                onOpenPreferences: onOpenPreferences,
+                onSelect: { subject in Task { await viewModel.pin(subject) } }
+            )
         }
     }
 
@@ -205,13 +185,28 @@ public struct HomeScreen: View {
             .padding(.horizontal, SLSpacing.lg)
 
         case .noPosts:
-            SLEmptyState(
-                icon: emptyIcon(for: tab),
-                title: emptyTitle(for: tab),
-                subtitle: emptySubtitle(for: tab),
-                tint: SLColor.textSecondary
-            )
-            .padding(.horizontal, SLSpacing.lg)
+            if let subject = viewModel.pinnedSubjectLabel {
+                // Not "this timeline is empty" — the timeline is fine, it is
+                // the subject that has nothing in it, and the way out is one
+                // tap away in the strip they can still see.
+                SLEmptyState(
+                    icon: "line.3.horizontal.decrease.circle",
+                    title: L10n.t("feed.subject.empty.title", subject),
+                    subtitle: L10n.t("feed.subject.empty.subtitle"),
+                    tint: SLColor.textSecondary,
+                    actionTitle: L10n.t("feed.subject.empty.action"),
+                    action: { Task { await viewModel.pin(nil) } }
+                )
+                .padding(.horizontal, SLSpacing.lg)
+            } else {
+                SLEmptyState(
+                    icon: emptyIcon(for: tab),
+                    title: emptyTitle(for: tab),
+                    subtitle: emptySubtitle(for: tab),
+                    tint: SLColor.textSecondary
+                )
+                .padding(.horizontal, SLSpacing.lg)
+            }
 
         case let .failed(message):
             SLEmptyState(

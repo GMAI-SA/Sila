@@ -84,6 +84,10 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// one is an invitation, and every client answers it with one rather than
     /// with an error.
     case signInRequired = "sign_in_required"
+    /// A subject was pinned in the strip that this account has hidden (HTTP
+    /// 409). The strip does not offer one, so this only reaches a client
+    /// holding a stale choice — which it answers by clearing it.
+    case topicMuted = "topic_muted"
     /// Delete or edit attempted on someone else's post.
     case notPostAuthor = "not_post_author"
     /// The requested handle is already in use.
@@ -308,6 +312,8 @@ public enum APIError: Error, Equatable, Sendable {
             switch code {
             case .signInRequired:
                 return L10n.t("guest.join.post.title")
+            case .topicMuted:
+                return L10n.t("feed.subject.muted")
             case .validationError:
                 return message.isEmpty ? L10n.t("error.validation") : message
             case .emailTaken:

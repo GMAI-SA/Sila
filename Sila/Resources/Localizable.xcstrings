@@ -15438,24 +15438,6 @@
         }
       }
     },
-    "feed.preferencesBar.label": {
-      "comment": "Bar above the International feed linking to its filters.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "المواضيع والدول المكتومة"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Topics and muted countries"
-          }
-        }
-      }
-    },
     "feed.profile.invalidHandle": {
       "comment": "Toast when a tapped mention is not a valid handle.",
       "extractionState": "manual",
@@ -15905,6 +15887,127 @@
           }
         }
       }
+    },
+    "feed.subject.clear.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعيد عرض كل شيء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows everything again."
+          }
+        }
+      }
+    },
+    "feed.subject.empty.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أظهر كل شيء"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show everything"
+          }
+        }
+      }
+    },
+    "feed.subject.empty.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط الموضوع مرة أخرى لترى كل شيء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the subject again to see everything."
+          }
+        }
+      }
+    },
+    "feed.subject.empty.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا شيء في %@ بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in %@ yet"
+          }
+        }
+      },
+      "comment": "%@ is the pinned subject's name; shown when that subject has no posts on this timeline."
+    },
+    "feed.subject.muted": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد أخفيت هذا الموضوع. أظهره من التفضيلات لتراه مجددًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You hid this subject. Unhide it in Preferences to see it again."
+          }
+        }
+      }
+    },
+    "feed.subject.pin.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعرض هذا الموضوع وحده في كل الخلاصات."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows only this subject, on every timeline."
+          }
+        }
+      }
+    },
+    "feed.subject.pinned": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يُعرض هذا فقط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing only this"
+          }
+        }
+      },
+      "comment": "VoiceOver value on the pinned chip in the timeline's subject strip."
     },
     "feed.tab.explore.hint": {
       "comment": "VoiceOver hint for the Explore tab.",

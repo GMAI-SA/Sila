@@ -41,6 +41,9 @@ public final class AppContainer {
     /// before anybody chooses to look around, so this is a service the guest
     /// shell reaches for rather than a different container.
     public let publicFeedService: FeedServiceProtocol
+    /// The subject taxonomy a guest can read — the same vocabulary the strip
+    /// above a signed-in timeline uses, without the account's opinions of it.
+    public let publicTopics: TopicCatalogProviding
     /// Phase 4's search service — Explore and `@mention` autocomplete.
     public let searchService: SearchServiceProtocol
     /// Contract v4's interests service — topics and feed preferences.
@@ -222,7 +225,9 @@ public final class AppContainer {
             self.gifService = GifService(network: network, tokens: tokens)
         }
 
-        self.publicFeedService = PublicFeedService(network: network, analytics: analytics)
+        let publicFeed = PublicFeedService(network: network, analytics: analytics)
+        self.publicFeedService = publicFeed
+        self.publicTopics = publicFeed
 
         if let searchService {
             self.searchService = searchService
