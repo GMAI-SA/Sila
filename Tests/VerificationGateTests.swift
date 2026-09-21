@@ -333,6 +333,9 @@ private actor StubAuthService: AuthServiceProtocol {
     func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair {
         throw APIError.unauthenticated
     }
+    func resetPassword(email: String, code: String, newPassword: String) async throws {
+        throw APIError.unauthenticated
+    }
     func signIn(email: String, password: String) async throws -> TokenPair {
         throw APIError.unauthenticated
     }

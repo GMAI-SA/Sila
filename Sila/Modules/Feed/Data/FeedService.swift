@@ -25,16 +25,19 @@ public final class FeedService: FeedServiceProtocol {
     // MARK: - Feeds
 
     public func fetchFeed(_ tab: FeedTab, cursor: String?, limit: Int) async throws -> FeedPage {
-        try await fetchFeed(tab, topic: nil, cursor: cursor, limit: limit)
+        try await fetchFeed(tab, topics: [], cursor: cursor, limit: limit)
     }
 
-    public func fetchFeed(_ tab: FeedTab, topic: String?, cursor: String?, limit: Int) async throws -> FeedPage {
+    public func fetchFeed(_ tab: FeedTab, topics: [String], cursor: String?, limit: Int) async throws -> FeedPage {
         let token = try await tokens.accessToken()
         var query = [URLQueryItem(name: "limit", value: String(clamped(limit)))]
         // Sent only when one is pinned: an empty value would mean the same
         // thing to the server, but a request that states its empties is a
         // request whose logs cannot be read at a glance.
-        if let topic, !topic.isEmpty { query.append(URLQueryItem(name: "topic", value: topic)) }
+        // One `topic` per subject: the server reads them as "any of these".
+        for subject in topics where !subject.isEmpty {
+            query.append(URLQueryItem(name: "topic", value: subject))
+        }
         // An empty cursor is not the same as no cursor — send the parameter
         // only when the server actually gave us one.
         if let cursor, !cursor.isEmpty {
@@ -46,7 +49,7 @@ public final class FeedService: FeedServiceProtocol {
             "tab": tab.rawValue,
             "count": String(page.posts.count),
             "page": cursor == nil ? "first" : "next",
-            "subject": topic ?? "all"
+            "subject": topics.isEmpty ? "all" : topics.joined(separator: ",")
         ])
         return page
     }

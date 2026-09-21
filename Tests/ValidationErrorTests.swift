@@ -45,8 +45,10 @@ final class ValidationErrorTests: XCTestCase {
         XCTAssertEqual(error.code, .emailTaken)
     }
 
+    /// One character is not a name anybody could find the room by. Two is —
+    /// "مع" is a room name somebody would type — so the rule stops there.
     @MainActor
-    func testTheRoomFormRefusesATwoLetterNameBeforeAsking() async {
+    func testTheRoomFormRefusesAOneLetterNameBeforeAsking() async {
         let service = RoomsServiceMock()
         let viewModel = CreateRoomViewModel(
             author: ComposerAuthor(countryCode: "SA", isVerified: true),
@@ -54,7 +56,7 @@ final class ValidationErrorTests: XCTestCase {
             preferences: PreferencesServiceMock(),
             analytics: RecordingAnalyticsClient()
         )
-        viewModel.title = "Gg"
+        viewModel.title = "G"
         XCTAssertEqual(viewModel.blockingReason, RoomCopy.titleTooShort)
         XCTAssertFalse(viewModel.canCreate)
         let created = await viewModel.create()
@@ -63,7 +65,7 @@ final class ValidationErrorTests: XCTestCase {
         let calls = await service.recordedCalls
         XCTAssertFalse(calls.contains { $0.hasPrefix("create") }, "nothing was sent")
 
-        viewModel.title = "Ggg"
-        XCTAssertNil(viewModel.blockingReason)
+        viewModel.title = "مع"
+        XCTAssertNil(viewModel.blockingReason, "two characters is a real room name")
     }
 }

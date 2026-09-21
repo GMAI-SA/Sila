@@ -126,7 +126,7 @@ public struct GuestTabView: View {
             if !viewModel.subjects.isEmpty {
                 SubjectStrip(
                     subjects: viewModel.subjects,
-                    pinned: viewModel.pinnedSubject,
+                    pinned: viewModel.pinnedSubjects,
                     // The preferences screen belongs to an account; a guest
                     // narrows the timeline with the strip alone.
                     onOpenPreferences: nil,

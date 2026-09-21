@@ -269,6 +269,36 @@ public final class RoomsViewModel {
     }
 
     /// Drops a room from both lists.
+    /// The room the host is being asked to confirm closing, if any.
+    public var endingRoom: VoiceRoom?
+    /// `true` while the close request is in flight.
+    public private(set) var isEndingRoom = false
+
+    /// Asks whether to close a room this account hosts.
+    ///
+    /// Reachable from the list, not only from inside the room: a host who
+    /// walked out — or whose app was killed — otherwise had no way to close a
+    /// room that still carries their name and still has people in it.
+    public func requestEnd(_ room: VoiceRoom) {
+        guard room.isHost, room.status.isJoinable else { return }
+        endingRoom = room
+    }
+
+    /// Closes the room the confirmation asked about.
+    public func confirmEnd() async {
+        guard let room = endingRoom, !isEndingRoom else { return }
+        isEndingRoom = true
+        defer { isEndingRoom = false }
+        endingRoom = nil
+        do {
+            _ = try await service.endRoom(id: room.id)
+            remove(room.id)
+            analytics.track(.roomEnded)
+        } catch {
+            toast = .error(for: error)
+        }
+    }
+
     public func remove(_ id: UUID) {
         live.removeAll { $0.id == id }
         scheduled.removeAll { $0.id == id }

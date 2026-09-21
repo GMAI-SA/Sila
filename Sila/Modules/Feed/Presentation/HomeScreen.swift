@@ -110,7 +110,7 @@ public struct HomeScreen: View {
         if !viewModel.subjects.isEmpty {
             SubjectStrip(
                 subjects: viewModel.subjects,
-                pinned: viewModel.pinnedSubject,
+                pinned: viewModel.pinnedSubjects,
                 onOpenPreferences: onOpenPreferences,
                 onSelect: { subject in Task { await viewModel.pin(subject) } }
             )

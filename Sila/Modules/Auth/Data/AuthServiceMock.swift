@@ -120,6 +120,19 @@ public actor AuthServiceMock: AuthServiceProtocol {
         return OTPSendResult(sent: true, resendAfterSeconds: AppConfig.defaultOTPResendSeconds)
     }
 
+    /// The code and the new password, recorded so tests can assert both.
+    public private(set) var resetCalls: [(email: String, code: String, newPassword: String)] = []
+
+    public func resetPassword(email: String, code: String, newPassword: String) async throws {
+        record("resetPassword")
+        try await delay()
+        try failIfOffline()
+        resetCalls.append((email.lowercased(), code, newPassword))
+        if scenario == .otpAlwaysInvalid || code != acceptedCode {
+            throw APIError.api(code: .otpInvalid, message: "Incorrect code", status: 400)
+        }
+    }
+
     public func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair {
         record("verifyOTP")
         try await delay()

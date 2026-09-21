@@ -44,7 +44,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تعيد سِلة ترميز صورتك على الخادم: تُقصّ مربعة، ويُغيَّر حجمها إلى %1$@×%2$@، وتُحفظ كملف JPEG جديد. وتُحذف في هذه العملية بيانات الموقع وكل بيانات EXIF الأخرى التي أضافتها الكاميرا — ولا يُخزَّن الملف الأصلي ولا يُعرض أبدًا."
+            "value": "تعيد صلة ترميز صورتك على الخادم: تُقصّ مربعة، ويُغيَّر حجمها إلى %1$@×%2$@، وتُحفظ كملف JPEG جديد. وتُحذف في هذه العملية بيانات الموقع وكل بيانات EXIF الأخرى التي أضافتها الكاميرا — ولا يُخزَّن الملف الأصلي ولا يُعرض أبدًا."
           }
         },
         "en": {
@@ -290,7 +290,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يُعطَّل حسابك لحظة تأكيدك. وبالنسبة لبقية من في سِلة يكون قد اختفى بالفعل."
+            "value": "يُعطَّل حسابك لحظة تأكيدك. وبالنسبة لبقية من في صلة يكون قد اختفى بالفعل."
           }
         },
         "en": {
@@ -884,7 +884,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسجّل الدخول باستخدام %@. ستُرسل سِلة رمزًا من ستة أرقام إلى العنوان **الجديد** — لا إلى هذا العنوان — لأن الشيء الوحيد الذي يستحق الإثبات هنا هو أنك تستطيع قراءة البريد الذي تنتقل إليه."
+            "value": "تسجّل الدخول باستخدام %@. ستُرسل صلة رمزًا من ستة أرقام إلى العنوان **الجديد** — لا إلى هذا العنوان — لأن الشيء الوحيد الذي يستحق الإثبات هنا هو أنك تستطيع قراءة البريد الذي تنتقل إليه."
           }
         },
         "en": {
@@ -1136,7 +1136,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "حسابك، وكل منشور كتبته، وإعدادات مواضيعك، ومن تتابعهم، في ملف JSON. أما تصنيفات المواضيع التلقائية فمستثناة، والملف يوضّح ذلك: فهي تخمينات من سِلة عن منشوراتك، وليست شيئًا كتبته أنت."
+            "value": "حسابك، وكل منشور كتبته، وإعدادات مواضيعك، ومن تتابعهم، في ملف JSON. أما تصنيفات المواضيع التلقائية فمستثناة، والملف يوضّح ذلك: فهي تخمينات من صلة عن منشوراتك، وليست شيئًا كتبته أنت."
           }
         },
         "en": {
@@ -1172,7 +1172,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يجلب نسخة من كل ما تحتفظ به سِلة عنك"
+            "value": "يجلب نسخة من كل ما تحتفظ به صلة عنك"
           }
         },
         "en": {
@@ -2378,7 +2378,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "بيانات تواصل فقط. لم تتحقق سِلة من أن هذا الرقم لك — لا يوجد تأكيد برسالة نصية، لذلك فهو ليس جزءًا من هويتك الموثّقة."
+            "value": "بيانات تواصل فقط. لم تتحقق صلة من أن هذا الرقم لك — لا يوجد تأكيد برسالة نصية، لذلك فهو ليس جزءًا من هويتك الموثّقة."
           }
         },
         "en": {
@@ -2516,7 +2516,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يحذف صورة ملفك من سِلة"
+            "value": "يحذف صورة ملفك من صلة"
           }
         },
         "en": {
@@ -2822,7 +2822,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يستعيد الملف المخزّن لدى سِلة"
+            "value": "يستعيد الملف المخزّن لدى صلة"
           }
         },
         "en": {
@@ -3168,7 +3168,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يرسل اسمك ومعرّفك ونبذتك إلى سِلة"
+            "value": "يرسل اسمك ومعرّفك ونبذتك إلى صلة"
           }
         },
         "en": {
@@ -3502,7 +3502,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا شيء آخر في سِلة يعمل ما دام هذا معلقًا — ولهذا فهذه هي الشاشة الوحيدة التي يمكنك الوصول إليها."
+            "value": "لا شيء آخر في صلة يعمل ما دام هذا معلقًا — ولهذا فهذه هي الشاشة الوحيدة التي يمكنك الوصول إليها."
           }
         },
         "en": {
@@ -3916,7 +3916,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا يوجد تسجيل دخول محفوظ لسِلة على هذا الجهاز."
+            "value": "لا يوجد تسجيل دخول محفوظ لصلة على هذا الجهاز."
           }
         },
         "en": {
@@ -3952,7 +3952,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسجيل الدخول إلى سِلة باسم %@"
+            "value": "تسجيل الدخول إلى صلة باسم %@"
           }
         },
         "en": {
@@ -3970,7 +3970,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سِلة"
+            "value": "صلة"
           }
         },
         "en": {
@@ -4006,7 +4006,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "البريد الإلكتروني المسجّل في حساب سِلة"
+            "value": "البريد الإلكتروني المسجّل في حساب صلة"
           }
         },
         "en": {
@@ -4972,7 +4972,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هذا البريد له حساب في سِلة بالفعل."
+            "value": "هذا البريد له حساب في صلة بالفعل."
           }
         },
         "en": {
@@ -5614,7 +5614,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "الهوية التي قدّمتها دون الحد الأدنى للعمر في سِلة."
+            "value": "الهوية التي قدّمتها دون الحد الأدنى للعمر في صلة."
           }
         },
         "en": {
@@ -5751,6 +5751,211 @@
         }
       }
     },
+    "auth.resetPassword.code.error": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل الرمز الموجود في الرسالة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the code from the email."
+          }
+        }
+      }
+    },
+    "auth.resetPassword.code.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأرقام الستة من الرسالة التي أرسلناها للتو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The six digits from the email we just sent"
+          }
+        }
+      }
+    },
+    "auth.resetPassword.code.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رمز الاستعادة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset code"
+          }
+        }
+      }
+    },
+    "auth.resetPassword.code.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "123456"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "123456"
+          }
+        }
+      }
+    },
+    "auth.resetPassword.done": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم تعيين كلمة المرور. سجّل الدخول بها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your password is set. Sign in with it."
+          }
+        }
+      }
+    },
+    "auth.resetPassword.navTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كلمة مرور جديدة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Password"
+          }
+        }
+      }
+    },
+    "auth.resetPassword.newPassword.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كلمة المرور الجديدة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New password"
+          }
+        }
+      }
+    },
+    "auth.resetPassword.signsOutEverywhere": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيير كلمة المرور يسجّل خروجك من كل مكان آخر — وهذا هو المقصود، إن كان أحد غيرك داخل حسابك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changing your password signs you out everywhere else — which is the point, if somebody else was in your account."
+          }
+        }
+      }
+    },
+    "auth.resetPassword.submit": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعيين كلمة المرور"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set Password"
+          }
+        }
+      }
+    },
+    "auth.resetPassword.submit.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعيّن كلمة المرور الجديدة ويسجّل خروجك من الأجهزة الأخرى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets your new password and signs you out of other devices"
+          }
+        }
+      }
+    },
+    "auth.resetPassword.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل الرمز الذي أرسلناه إلى %@، ثم كلمة المرور التي تريدها من الآن."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the code we sent to %@, then the password you want from now on."
+          }
+        }
+      },
+      "comment": "%@ is the email address the reset code was sent to."
+    },
+    "auth.resetPassword.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر كلمة مرور جديدة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a new password"
+          }
+        }
+      }
+    },
     "auth.signIn.biometric.button": {
       "comment": "Biometric sign-in button. %@ is Face ID, Touch ID or Optic ID.",
       "extractionState": "manual",
@@ -5794,7 +5999,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يفتح جلستك المحفوظة في سِلة باستخدام %@"
+            "value": "يفتح جلستك المحفوظة في صلة باستخدام %@"
           }
         },
         "en": {
@@ -5902,7 +6107,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "كلمة مرور حسابك في سِلة"
+            "value": "كلمة مرور حسابك في صلة"
           }
         },
         "en": {
@@ -5974,7 +6179,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سجّل الدخول إلى حسابك الموثّق في سِلة."
+            "value": "سجّل الدخول إلى حسابك الموثّق في صلة."
           }
         },
         "en": {
@@ -6046,7 +6251,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سِلة تبدأ الآن"
+            "value": "صلة تبدأ الآن"
           }
         },
         "en": {
@@ -6424,7 +6629,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سِلة لا تقبل إلا أشخاصًا موثّقين. امسح هويتك الرسمية وأكمل فحصًا قصيرًا للتأكد من أنك أمام الكاميرا — يستغرق نحو ثلاث دقائق."
+            "value": "صلة لا تقبل إلا أشخاصًا موثّقين. امسح هويتك الرسمية وأكمل فحصًا قصيرًا للتأكد من أنك أمام الكاميرا — يستغرق نحو ثلاث دقائق."
           }
         },
         "en": {
@@ -6478,7 +6683,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "ادخل إلى سِلة"
+            "value": "ادخل إلى صلة"
           }
         },
         "en": {
@@ -6496,7 +6701,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أهلًا بك في سِلة. كل حساب تراه هنا يعود إلى إنسان حقيقي موثّق."
+            "value": "أهلًا بك في صلة. كل حساب تراه هنا يعود إلى إنسان حقيقي موثّق."
           }
         },
         "en": {
@@ -6532,7 +6737,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سِلة. الشبكة الاجتماعية الوحيدة التي كل إنسان فيها حقيقي."
+            "value": "صلة. الشبكة الاجتماعية الوحيدة التي كل إنسان فيها حقيقي."
           }
         },
         "en": {
@@ -6640,7 +6845,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يسجّل دخولك إلى حساب سِلة موجود"
+            "value": "يسجّل دخولك إلى حساب صلة موجود"
           }
         },
         "en": {
@@ -9043,7 +9248,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "النشر متاح للموثّقين فقط. القراءة متاحة للجميع في سِلة — أكمل توثيق هويتك لتتمكن من النشر."
+            "value": "النشر متاح للموثّقين فقط. القراءة متاحة للجميع في صلة — أكمل توثيق هويتك لتتمكن من النشر."
           }
         },
         "en": {
@@ -11074,7 +11279,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يفتح إعدادات سِلة في تطبيق الإعدادات"
+            "value": "يفتح إعدادات صلة في تطبيق الإعدادات"
           }
         },
         "en": {
@@ -11092,7 +11297,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تحتاج سِلة إلى الكاميرا لتصوير وثيقتك. اسمح بها من الإعدادات."
+            "value": "تحتاج صلة إلى الكاميرا لتصوير وثيقتك. اسمح بها من الإعدادات."
           }
         },
         "en": {
@@ -11560,7 +11765,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "انتهت صلاحية هذه الوثيقة. تحتاج سِلة إلى وثيقة سارية."
+            "value": "انتهت صلاحية هذه الوثيقة. تحتاج صلة إلى وثيقة سارية."
           }
         },
         "en": {
@@ -12970,7 +13175,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سبق أن قدّمت تظلّمًا على هذا الإيقاف. سِلة تقبل تظلّمًا واحدًا فقط."
+            "value": "سبق أن قدّمت تظلّمًا على هذا الإيقاف. صلة تقبل تظلّمًا واحدًا فقط."
           }
         },
         "en": {
@@ -13201,7 +13406,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هذا البريد لديه حساب في سِلة بالفعل. جرّب تسجيل الدخول بدلًا من ذلك."
+            "value": "هذا البريد لديه حساب في صلة بالفعل. جرّب تسجيل الدخول بدلًا من ذلك."
           }
         },
         "en": {
@@ -13342,7 +13547,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هذه الهوية مرتبطة بحساب آخر في سِلة بالفعل."
+            "value": "هذه الهوية مرتبطة بحساب آخر في صلة بالفعل."
           }
         },
         "en": {
@@ -13575,7 +13780,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تغيّرت قائمة الأسباب في سِلة، فلم يُرسَل شيء. أعد فتح هذا النموذج وأعد المحاولة."
+            "value": "تغيّرت قائمة الأسباب في صلة، فلم يُرسَل شيء. أعد فتح هذا النموذج وأعد المحاولة."
           }
         },
         "en": {
@@ -14364,7 +14569,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هذا الحساب لا يستوفي الحد الأدنى للعمر في سِلة."
+            "value": "هذا الحساب لا يستوفي الحد الأدنى للعمر في صلة."
           }
         },
         "en": {
@@ -14382,7 +14587,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تغيّرت قائمة المواضيع في سِلة، فلم يُحفظ شيء. أعد تحميل هذه الشاشة وأعد المحاولة."
+            "value": "تغيّرت قائمة المواضيع في صلة، فلم يُحفظ شيء. أعد تحميل هذه الشاشة وأعد المحاولة."
           }
         },
         "en": {
@@ -14400,7 +14605,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "النشر متاح للموثّقين فقط. القراءة متاحة للجميع في سِلة — أكمل التحقق من الهوية لتتحدث."
+            "value": "النشر متاح للموثّقين فقط. القراءة متاحة للجميع في صلة — أكمل التحقق من الهوية لتتحدث."
           }
         },
         "en": {
@@ -14730,7 +14935,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "كلما عرفت سِلة ما تقرأه، امتلأت هذه الصفحة."
+            "value": "كلما عرفت صلة ما تقرأه، امتلأت هذه الصفحة."
           }
         },
         "en": {
@@ -15301,7 +15506,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سِلة"
+            "value": "صلة"
           }
         },
         "en": {
@@ -15445,7 +15650,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هذا لا يبدو معرّفًا في سِلة."
+            "value": "هذا لا يبدو معرّفًا في صلة."
           }
         },
         "en": {
@@ -16008,6 +16213,24 @@
         }
       },
       "comment": "VoiceOver value on the pinned chip in the timeline's subject strip."
+    },
+    "feed.subject.tooMany": {
+      "comment": "Shown when somebody taps an eleventh subject. %lld is the limit.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك تثبيت %lld مواضيع في وقت واحد. أزل واحدًا لإضافة آخر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can pin %lld subjects at once. Remove one to add another."
+          }
+        }
+      }
     },
     "feed.tab.explore.hint": {
       "comment": "VoiceOver hint for the Explore tab.",
@@ -19207,7 +19430,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "قام %@ بشيء لا يستطيع هذا الإصدار من سِلة وصفه"
+            "value": "قام %@ بشيء لا يستطيع هذا الإصدار من صلة وصفه"
           }
         },
         "en": {
@@ -20391,6 +20614,24 @@
         }
       }
     },
+    "post.menu.own.a11yLabel": {
+      "comment": "The ellipsis button on your own post, which carries Delete.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خيارات منشورك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options for your post"
+          }
+        }
+      }
+    },
     "post.menu.quote": {
       "comment": "Long-press menu: quote this post in one of your own.",
       "extractionState": "manual",
@@ -20578,7 +20819,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "وثّق هويتك لتتمكن من الرد. القراءة متاحة للجميع في سِلة، والنشر للموثّقين فقط."
+            "value": "وثّق هويتك لتتمكن من الرد. القراءة متاحة للجميع في صلة، والنشر للموثّقين فقط."
           }
         },
         "en": {
@@ -21190,7 +21431,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ (%2$@) في سِلة:\n\n%3$@"
+            "value": "%1$@ (%2$@) في صلة:\n\n%3$@"
           }
         },
         "en": {
@@ -21737,7 +21978,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يُصنَّف كل منشور تلقائيًا حسب الموضوع بواسطة برنامج يعمل على خوادم سِلة، وهذا البرنامج يخطئ أحيانًا. ولا تظهر هذه التصنيفات على المنشور نفسه أبدًا — وهذه الإعدادات هي الاستخدام الوحيد لها."
+            "value": "يُصنَّف كل منشور تلقائيًا حسب الموضوع بواسطة برنامج يعمل على خوادم صلة، وهذا البرنامج يخطئ أحيانًا. ولا تظهر هذه التصنيفات على المنشور نفسه أبدًا — وهذه الإعدادات هي الاستخدام الوحيد لها."
           }
         },
         "en": {
@@ -21953,7 +22194,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يرسل هذه الإعدادات إلى سِلة ويطبّقها على صفحتك الدولية"
+            "value": "يرسل هذه الإعدادات إلى صلة ويطبّقها على صفحتك الدولية"
           }
         },
         "en": {
@@ -22616,31 +22857,31 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "هناك %lld خيارات مواضيع مخزّنة لم تعد موجودة في قائمة مواضيع سِلة، لذلك لا تظهر هنا وستُحذف عند الحفظ القادم."
+                  "value": "هناك %lld خيارات مواضيع مخزّنة لم تعد موجودة في قائمة مواضيع صلة، لذلك لا تظهر هنا وستُحذف عند الحفظ القادم."
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "هناك %lld خيارًا مخزّنًا لم يعد موجودًا في قائمة مواضيع سِلة، لذلك لا يظهر هنا وسيُحذف عند الحفظ القادم."
+                  "value": "هناك %lld خيارًا مخزّنًا لم يعد موجودًا في قائمة مواضيع صلة، لذلك لا يظهر هنا وسيُحذف عند الحفظ القادم."
                 }
               },
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "هناك خيار موضوع مخزّن واحد لم يعد موجودًا في قائمة مواضيع سِلة، لذلك لا يظهر هنا وسيُحذف عند الحفظ القادم."
+                  "value": "هناك خيار موضوع مخزّن واحد لم يعد موجودًا في قائمة مواضيع صلة، لذلك لا يظهر هنا وسيُحذف عند الحفظ القادم."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "هناك %lld خيار مخزّن لم يعد موجودًا في قائمة مواضيع سِلة، لذلك لا يظهر هنا وسيُحذف عند الحفظ القادم."
+                  "value": "هناك %lld خيار مخزّن لم يعد موجودًا في قائمة مواضيع صلة، لذلك لا يظهر هنا وسيُحذف عند الحفظ القادم."
                 }
               },
               "two": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "هناك خيارا موضوعين مخزّنان لم يعودا موجودين في قائمة مواضيع سِلة، لذلك لا يظهران هنا وسيُحذفان عند الحفظ القادم."
+                  "value": "هناك خيارا موضوعين مخزّنان لم يعودا موجودين في قائمة مواضيع صلة، لذلك لا يظهران هنا وسيُحذفان عند الحفظ القادم."
                 }
               },
               "zero": {
@@ -24579,7 +24820,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ لا يعود إلى حساب نشط في سِلة. ربما حُذف الحساب أو تغيّر المعرّف."
+            "value": "%@ لا يعود إلى حساب نشط في صلة. ربما حُذف الحساب أو تغيّر المعرّف."
           }
         },
         "en": {
@@ -25523,6 +25764,24 @@
         }
       }
     },
+    "rooms.create.cannotHost.title": {
+      "comment": "Heading on the create-room sheet when the account may not host yet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكنك فتح غرفة بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You cannot open a room yet"
+          }
+        }
+      }
+    },
     "rooms.create.charactersLeft": {
       "comment": "Counter under the room title field. %lld is how many characters remain.",
       "extractionState": "manual",
@@ -25632,7 +25891,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يمكن لكل من في سِلة الاستماع إلى غرفتك. والجمهور الذي تختاره يحدد من يمكنه أخذ المايك."
+            "value": "يمكن لكل من في صلة الاستماع إلى غرفتك. والجمهور الذي تختاره يحدد من يمكنه أخذ المايك."
           }
         },
         "en": {
@@ -26342,7 +26601,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لم تُحمَّل قائمة مواضيع سِلة. يمكنك فتح الغرفة بدون موضوع."
+            "value": "لم تُحمَّل قائمة مواضيع صلة. يمكنك فتح الغرفة بدون موضوع."
           }
         },
         "en": {
@@ -27424,7 +27683,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسمع كل شيء. الميكروفون غير مستخدم، وسِلة لم تطلبه أصلًا."
+            "value": "تسمع كل شيء. الميكروفون غير مستخدم، وصلة لم تطلبه أصلًا."
           }
         },
         "en": {
@@ -27794,6 +28053,58 @@
         }
       }
     },
+    "rooms.live.leaveAsHost.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبقى الغرفة مفتوحة ما لم تُنهها. وإنهاؤها يغلقها على كل من فيها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The room stays open unless you end it. Ending it closes it for everybody in it."
+          }
+        }
+      }
+    },
+    "rooms.live.leaveAsHost.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت تغادر غرفتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leaving your own room"
+          }
+        }
+      },
+      "comment": "Asked when the host taps Leave: walking out does not close the room."
+    },
+    "rooms.live.leaveRunning": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتركها مفتوحة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave it running"
+          }
+        }
+      }
+    },
     "rooms.live.listening.a11yLabel": {
       "comment": "VoiceOver reading of the listener panel. %1$@ is the heading, %2$@ the explanation.",
       "extractionState": "manual",
@@ -27976,7 +28287,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا تستطيع سِلة الوصول إلى الميكروفون. فعّله من الإعدادات › سِلة › الميكروفون لتتحدث — ويمكنك الاستمرار في الاستماع في الحالتين."
+            "value": "لا تستطيع صلة الوصول إلى الميكروفون. فعّله من الإعدادات › صلة › الميكروفون لتتحدث — ويمكنك الاستمرار في الاستماع في الحالتين."
           }
         },
         "en": {
@@ -28735,7 +29046,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تعذّر على سِلة الوصول إلى صوت الغرفة."
+            "value": "تعذّر على صلة الوصول إلى صوت الغرفة."
           }
         },
         "en": {
@@ -29347,7 +29658,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تظلّمك لدى أحد المراجعين. ولا شيء آخر لترسله — تقبل سِلة تظلّمًا واحدًا لكل إيقاف، والثاني لن يُقرأ."
+            "value": "تظلّمك لدى أحد المراجعين. ولا شيء آخر لترسله — تقبل صلة تظلّمًا واحدًا لكل إيقاف، والثاني لن يُقرأ."
           }
         },
         "en": {
@@ -29473,7 +29784,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا يُبلَّغ %@ بذلك. لا ترسل سِلة أي إشعار ولا تعرض عليه أي رسالة بهذا الشأن."
+            "value": "لا يُبلَّغ %@ بذلك. لا ترسل صلة أي إشعار ولا تعرض عليه أي رسالة بهذا الشأن."
           }
         },
         "en": {
@@ -30211,7 +30522,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا شيء مما سبق. أخبر سِلة بالمشكلة بكلماتك."
+            "value": "لا شيء مما سبق. أخبر صلة بالمشكلة بكلماتك."
           }
         },
         "en": {
@@ -30913,7 +31224,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تراجع سِلة كل بلاغ. ولا يؤدي كل بلاغ إلى إزالة شيء، ولن تُبلَّغ دائمًا بما حدث."
+            "value": "تراجع صلة كل بلاغ. ولا يؤدي كل بلاغ إلى إزالة شيء، ولن تُبلَّغ دائمًا بما حدث."
           }
         },
         "en": {
@@ -31201,7 +31512,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يرسل هذا إلى مراجع في سِلة. ولا يُبلَّغ %@ بذلك."
+            "value": "يرسل هذا إلى مراجع في صلة. ولا يُبلَّغ %@ بذلك."
           }
         },
         "en": {
@@ -31237,7 +31548,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يطّلع مراجعو سِلة على بلاغات إيذاء النفس أولًا.\n\nإن كنت ترى أن شخصًا في خطر مباشر، فاتصل بخدمات الطوارئ في بلدك الآن — لا تستطيع سِلة الاتصال بأحد نيابةً عنك.\n\nوإن كنت أنت من يمر بضيق، فأخبر شخصًا تثق به اليوم."
+            "value": "يطّلع مراجعو صلة على بلاغات إيذاء النفس أولًا.\n\nإن كنت ترى أن شخصًا في خطر مباشر، فاتصل بخدمات الطوارئ في بلدك الآن — لا تستطيع صلة الاتصال بأحد نيابةً عنك.\n\nوإن كنت أنت من يمر بضيق، فأخبر شخصًا تثق به اليوم."
           }
         },
         "en": {
@@ -31381,7 +31692,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يعيد قراءة حالة إيقافك من سِلة"
+            "value": "يعيد قراءة حالة إيقافك من صلة"
           }
         },
         "en": {
@@ -31435,7 +31746,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لم تُرفق سِلة سببًا بهذا الإيقاف. والتظلّم أدناه يصل إلى إنسان يمكنه الاطلاع على السجل كاملًا."
+            "value": "لم تُرفق صلة سببًا بهذا الإيقاف. والتظلّم أدناه يصل إلى إنسان يمكنه الاطلاع على السجل كاملًا."
           }
         },
         "en": {
@@ -31489,7 +31800,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا شيء آخر في سِلة يعمل ما دام هذا قائمًا. منشوراتك مخفية، وهذه الشاشة والتظلّم هما الشيئان الوحيدان اللذان يمكنك الوصول إليهما."
+            "value": "لا شيء آخر في صلة يعمل ما دام هذا قائمًا. منشوراتك مخفية، وهذه الشاشة والتظلّم هما الشيئان الوحيدان اللذان يمكنك الوصول إليهما."
           }
         },
         "en": {
@@ -31969,7 +32280,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "ابحث في سِلة"
+            "value": "ابحث في صلة"
           }
         },
         "en": {
@@ -32023,7 +32334,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "ابحث في سِلة"
+            "value": "ابحث في صلة"
           }
         },
         "en": {
@@ -32515,7 +32826,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يحدّث حسابك وينقلك إلى سِلة"
+            "value": "يحدّث حسابك وينقلك إلى صلة"
           }
         },
         "en": {
@@ -32533,7 +32844,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أكّد نفاذ هويتك. مرحبًا بك في سِلة."
+            "value": "أكّد نفاذ هويتك. مرحبًا بك في صلة."
           }
         },
         "en": {
@@ -32749,7 +33060,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لكل هوية حساب واحد في سِلة. سجّل الدخول إلى الحساب المرتبط بهذه الهوية بدلًا من إنشاء حساب آخر."
+            "value": "لكل هوية حساب واحد في صلة. سجّل الدخول إلى الحساب المرتبط بهذه الهوية بدلًا من إنشاء حساب آخر."
           }
         },
         "en": {
@@ -32803,7 +33114,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هذه الهوية لديها حساب في سِلة بالفعل"
+            "value": "هذه الهوية لديها حساب في صلة بالفعل"
           }
         },
         "en": {

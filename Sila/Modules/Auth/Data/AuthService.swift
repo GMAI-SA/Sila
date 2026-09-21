@@ -49,6 +49,21 @@ public final class AuthService: AuthServiceProtocol {
         return result
     }
 
+    public func resetPassword(email: String, code: String, newPassword: String) async throws {
+        struct Body: Encodable {
+            let email: String
+            let code: String
+            let newPassword: String
+        }
+        struct Accepted: Decodable { let reset: Bool? }
+        let request = try APIRequest.json(
+            "/auth/password/reset",
+            body: Body(email: normalise(email), code: code, newPassword: newPassword)
+        )
+        _ = try await network.send(request, as: Accepted.self)
+        analytics.track(.passwordReset)
+    }
+
     public func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair {
         let request = try APIRequest.json(
             "/auth/otp/verify",

@@ -179,6 +179,22 @@ final class BodyTextView: UITextView {
         onTap?(recogniser.location(in: self))
     }
 
+    /// Takes the touch only where there is something to take it for.
+    ///
+    /// The card around this view owns the tap that opens the post and the
+    /// long press that opens its menu — including Delete. A text view that
+    /// accepts every touch inside its own bounds swallows both, which is most
+    /// of the card: pressing the words did nothing at all, and the only place
+    /// the menu still worked was the margins.
+    ///
+    /// So the view claims a touch only when it lands on a mention, a hashtag
+    /// or a link. Everything else falls through to the card, which is what
+    /// the reader expects from the part of the post that is just words.
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard entity(at: point) != nil else { return nil }
+        return super.hitTest(point, with: event)
+    }
+
     /// The entity under `point`, or `nil` — including for a tap past the end
     /// of a line, which is the case that used to open somebody's profile.
     func entity(at point: CGPoint) -> PostEntityLink? {

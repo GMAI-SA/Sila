@@ -228,7 +228,24 @@ public struct RootView: View {
                 service: container.authService,
                 prefilledEmail: lastSignedInEmail,
                 onCodeSent: { email in
-                    container.router.push(.otp(email: email, purpose: .reset))
+                    // Not the OTP screen: that one exchanges a code for a
+                    // session, and the server refuses a reset code there on
+                    // purpose. A reset code buys one thing, which is the
+                    // screen below.
+                    container.router.push(.resetPassword(email: email))
+                }
+            )
+
+        case let .resetPassword(email):
+            ResetPasswordScreen(
+                email: email,
+                service: container.authService,
+                onDone: { email in
+                    // Back to sign-in with the address already there, and a
+                    // word confirming the password actually changed.
+                    container.storage.set(email, for: .lastSignedInEmail)
+                    container.router.popToRoot()
+                    container.router.toast = .success(L10n.t("auth.resetPassword.done"))
                 }
             )
         }

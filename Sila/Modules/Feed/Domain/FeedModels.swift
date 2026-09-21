@@ -192,23 +192,33 @@ public struct PostViewerState: Equatable, Sendable, Decodable, Hashable {
     public let canReply: Bool
     /// Populated only when ``canReply`` is `false`.
     public let replyBlockReason: ReplyBlockReason?
+    /// Whether this post belongs to the person reading it.
+    ///
+    /// The server's answer, not the app's. The app used to work this out by
+    /// comparing the author's handle with one captured when the shell was
+    /// built — which is empty on a shell built before the account finished
+    /// loading, and an empty handle matches nobody, so Delete quietly stopped
+    /// being offered on anybody's own posts.
+    public let isAuthor: Bool
 
     public init(
         liked: Bool = false,
         reposted: Bool = false,
         bookmarked: Bool = false,
         canReply: Bool = true,
-        replyBlockReason: ReplyBlockReason? = nil
+        replyBlockReason: ReplyBlockReason? = nil,
+        isAuthor: Bool = false
     ) {
         self.liked = liked
         self.reposted = reposted
         self.bookmarked = bookmarked
         self.canReply = canReply
         self.replyBlockReason = replyBlockReason
+        self.isAuthor = isAuthor
     }
 
     private enum CodingKeys: String, CodingKey {
-        case liked, reposted, bookmarked, canReply, replyBlockReason
+        case liked, reposted, bookmarked, canReply, replyBlockReason, isAuthor
     }
 
     public init(from decoder: Decoder) throws {
@@ -222,6 +232,9 @@ public struct PostViewerState: Equatable, Sendable, Decodable, Hashable {
         // server always sends the pair together, and defaulting to `false`
         // would silently kill replies on an older build.
         canReply = (try? container.decode(Bool.self, forKey: .canReply)) ?? (reason == nil)
+        // A server too old to say defaults to `false`, which leaves the app
+        // exactly where it was: falling back to the handle comparison.
+        isAuthor = (try? container.decode(Bool.self, forKey: .isAuthor)) ?? false
     }
 
     /// A copy with one flag flipped.
@@ -231,7 +244,8 @@ public struct PostViewerState: Equatable, Sendable, Decodable, Hashable {
             reposted: reposted ?? self.reposted,
             bookmarked: bookmarked ?? self.bookmarked,
             canReply: canReply,
-            replyBlockReason: replyBlockReason
+            replyBlockReason: replyBlockReason,
+            isAuthor: isAuthor
         )
     }
 }

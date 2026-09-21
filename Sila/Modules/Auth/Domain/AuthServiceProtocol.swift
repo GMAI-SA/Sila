@@ -22,6 +22,17 @@ public protocol AuthServiceProtocol: Sendable {
     /// Exchanges a code for a session.
     func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair
 
+    /// Sets a new password using a `reset` code — `POST /auth/password/reset`.
+    ///
+    /// A reset code is deliberately **not** accepted by `/auth/otp/verify`:
+    /// that route mints a session, and a code mailed to an address that may
+    /// have been forgotten precisely because somebody else has it must not be
+    /// a way in on its own. It only buys the right to choose a new password,
+    /// and every existing session is revoked when one is chosen.
+    /// - Throws: ``APIError`` with ``APIErrorCode/otpInvalid`` for a wrong or
+    ///   expired code.
+    func resetPassword(email: String, code: String, newPassword: String) async throws
+
     /// Exchanges credentials for a session.
     /// - Throws: ``APIError`` with ``APIErrorCode/emailUnverified`` when the
     ///   caller must be routed to the OTP screen instead.

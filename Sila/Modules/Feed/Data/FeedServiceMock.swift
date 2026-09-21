@@ -43,8 +43,8 @@ public actor FeedServiceMock: FeedServiceProtocol {
     /// Local engagement state so a like survives a re-read within a session.
     private var metricsOverrides: [UUID: PostMetrics] = [:]
 
-    /// The subject the last feed request carried, for test assertions.
-    public private(set) var lastTopic: String?
+    /// The subjects the last feed request carried, for test assertions.
+    public private(set) var lastTopics: [String] = []
     /// A subject the mock refuses, the way the server refuses one the account
     /// has since hidden.
     private var refusedTopic: String?
@@ -75,16 +75,19 @@ public actor FeedServiceMock: FeedServiceProtocol {
     /// A narrowed page keeps only the sample posts that carry the subject as a
     /// hashtag, so a pinned subject really does change what comes back rather
     /// than being recorded and ignored.
-    public func fetchFeed(_ tab: FeedTab, topic: String?, cursor: String?, limit: Int) async throws -> FeedPage {
-        lastTopic = topic
-        record("topic:\(topic ?? "none")")
-        if let topic, topic == refusedTopic {
+    public func fetchFeed(_ tab: FeedTab, topics: [String], cursor: String?, limit: Int) async throws -> FeedPage {
+        lastTopics = topics
+        record("topic:\(topics.isEmpty ? "none" : topics.joined(separator: ","))")
+        if let refusedTopic, topics.contains(refusedTopic) {
             throw APIError.api(code: .topicMuted, message: "You hid this subject.", status: 409)
         }
         let page = try await fetchFeed(tab, cursor: cursor, limit: limit)
-        guard let topic, !topic.isEmpty else { return page }
+        guard !topics.isEmpty else { return page }
+        // Any of them, never all of them.
         return FeedPage(
-            posts: page.posts.filter { $0.text.localizedCaseInsensitiveContains("#\(topic)") },
+            posts: page.posts.filter { post in
+                topics.contains { post.text.localizedCaseInsensitiveContains("#\($0)") }
+            },
             nextCursor: page.nextCursor,
             hasMore: page.hasMore
         )

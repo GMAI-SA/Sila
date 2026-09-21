@@ -61,11 +61,15 @@ public final class HomeViewModel {
     /// Banner message.
     public var toast: SLToastMessage?
 
-    /// The subject pinned in the strip above the timeline, or `nil` for
-    /// everything. It is deliberately one value rather than one per tab: it
-    /// is a statement about what somebody wants to read, not about which tab
-    /// they happen to be standing on, so it applies to all four.
-    public private(set) var pinnedSubject: String?
+    /// The subjects pinned in the strip above the timeline. Empty means
+    /// everything.
+    ///
+    /// Several are allowed, and they mean *any* of them: somebody who taps
+    /// Sports and Finance is asking for two conversations, not for the rare
+    /// post about both. It is deliberately one list rather than one per tab —
+    /// it is a statement about what somebody wants to read, not about which
+    /// tab they happen to be standing on, so it applies to all four.
+    public private(set) var pinnedSubjects: [String] = []
     /// The strip's vocabulary — the taxonomy minus hidden subjects, chosen
     /// interests first. Empty until it loads, which simply hides the strip.
     public private(set) var subjects: [TopicOption] = []
@@ -112,12 +116,16 @@ public final class HomeViewModel {
         for tab in FeedTab.allCases {
             states[tab] = FeedTabState()
         }
-        // Read before the first fetch, so a feed that opens on a pinned
-        // subject is narrowed from its very first page rather than flashing
-        // the unfiltered timeline first.
-        let remembered = storage?.value(for: .pinnedSubject, as: String.self)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        self.pinnedSubject = (remembered?.isEmpty ?? true) ? nil : remembered
+        // Read before the first fetch, so a feed that opens on pinned
+        // subjects is narrowed from its very first page rather than flashing
+        // the unfiltered timeline first. The stored value was a single id
+        // before it was a list, and an old one still reads correctly.
+        if let many = storage?.value(for: .pinnedSubject, as: [String].self) {
+            self.pinnedSubjects = many.filter { !$0.isEmpty }
+        } else if let one = storage?.value(for: .pinnedSubject, as: String.self),
+                  !one.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            self.pinnedSubjects = [one]
+        }
     }
 
     // MARK: - Subjects
@@ -139,37 +147,62 @@ public final class HomeViewModel {
         // A subject that has since been hidden — or that the server has
         // retired — cannot stay pinned: the timeline would be narrowed by
         // something the strip does not even show.
-        if let pinned = pinnedSubject, !subjects.contains(where: { $0.id == pinned }) {
-            pinnedSubject = nil
+        let offered = Set(subjects.map(\.id))
+        let kept = pinnedSubjects.filter { offered.contains($0) }
+        if kept != pinnedSubjects {
+            pinnedSubjects = kept
             rememberPinnedSubject()
             await reloadForSubjectChange()
         }
     }
 
-    /// Pins a subject, or clears it when `subject` is `nil`.
+    /// Adds a subject to the pinned set, or takes it out again.
     ///
     /// Every tab is thrown away and the visible one is re-read, because the
-    /// server applies the subject; what is already in memory was chosen under
-    /// the previous one, and keeping it would show a filter that visibly did
-    /// nothing.
+    /// server applies the subjects; what is already in memory was chosen
+    /// under the previous set, and keeping it would show a filter that
+    /// visibly did nothing.
+    /// - Parameter subject: The chip that was tapped. `nil` clears them all.
     public func pin(_ subject: String?) async {
-        let next = (subject?.isEmpty ?? true) ? nil : subject
-        guard next != pinnedSubject else { return }
-        pinnedSubject = next
+        guard let subject, !subject.isEmpty else {
+            guard !pinnedSubjects.isEmpty else { return }
+            pinnedSubjects = []
+            rememberPinnedSubject()
+            analytics.track(.feedSubjectPinned, properties: ["subject": "none", "tab": selectedTab.rawValue])
+            await reloadForSubjectChange()
+            return
+        }
+
+        if let index = pinnedSubjects.firstIndex(of: subject) {
+            pinnedSubjects.remove(at: index)
+        } else {
+            guard pinnedSubjects.count < HomeViewModel.maximumPinnedSubjects else {
+                // Past a point the strip has stopped being a choice. Said
+                // rather than silently ignored, which reads as a dead chip.
+                toast = .warning(L10n.t("feed.subject.tooMany", HomeViewModel.maximumPinnedSubjects))
+                return
+            }
+            pinnedSubjects.append(subject)
+        }
         rememberPinnedSubject()
         analytics.track(.feedSubjectPinned, properties: [
-            "subject": next ?? "none",
+            "subject": pinnedSubjects.isEmpty ? "none" : pinnedSubjects.joined(separator: ","),
             "tab": selectedTab.rawValue
         ])
         await reloadForSubjectChange()
     }
 
-    /// The pinned subject's name in the reader's language, for the empty
-    /// state. Falls back to the id, which is at least recognisable.
+    /// How many subjects may be pinned at once. The server's own limit.
+    public static let maximumPinnedSubjects = 10
+
+    /// The pinned subjects' names in the reader's language, for the empty
+    /// state. Falls back to the ids, which are at least recognisable.
     public var pinnedSubjectLabel: String? {
-        guard let pinnedSubject else { return nil }
-        return subjects.first { $0.id == pinnedSubject }?.label
-            ?? TopicOption.makeLabel(from: pinnedSubject)
+        guard !pinnedSubjects.isEmpty else { return nil }
+        let names = pinnedSubjects.map { id in
+            subjects.first { $0.id == id }?.label ?? TopicOption.makeLabel(from: id)
+        }
+        return ListFormatter.localizedString(byJoining: names)
     }
 
     /// Re-reads the vocabulary and the feeds it affects.
@@ -196,10 +229,10 @@ public final class HomeViewModel {
 
     private func rememberPinnedSubject() {
         guard let storage else { return }
-        if let pinnedSubject {
-            storage.set(pinnedSubject, for: .pinnedSubject)
-        } else {
+        if pinnedSubjects.isEmpty {
             storage.remove(.pinnedSubject)
+        } else {
+            storage.set(pinnedSubjects, for: .pinnedSubject)
         }
     }
 
@@ -266,7 +299,7 @@ public final class HomeViewModel {
         do {
             let page = try await service.fetchFeed(
                 tab,
-                topic: pinnedSubject,
+                topics: pinnedSubjects,
                 cursor: cursor,
                 limit: FeedConstants.defaultPageSize
             )
@@ -324,11 +357,11 @@ public final class HomeViewModel {
         states[tab] = current
 
         let epoch = subjectEpoch
-        let topic = pinnedSubject
+        let topics = pinnedSubjects
         do {
             let page = try await service.fetchFeed(
                 tab,
-                topic: topic,
+                topics: topics,
                 cursor: nil,
                 limit: FeedConstants.defaultPageSize
             )
@@ -347,14 +380,14 @@ public final class HomeViewModel {
             var updated = state(for: tab)
             updated.isLoading = false
             updated.isRefreshing = false
-            if let topic, isSubjectRefusal(error) {
-                // The subject was hidden or retired somewhere else — another
-                // device, or the preferences screen. Drop the pin, say so
-                // once, and give the whole timeline back.
+            if !topics.isEmpty, isSubjectRefusal(error) {
+                // One of the subjects was hidden or retired somewhere else —
+                // another device, or the preferences screen. The server does
+                // not say which, so all of them are dropped, said once, and
+                // the whole timeline comes back.
                 states[tab] = updated
-                pinnedSubject = nil
+                pinnedSubjects = []
                 rememberPinnedSubject()
-                subjects.removeAll { $0.id == topic }
                 toast = .warning(userMessage(for: error))
                 await reloadForSubjectChange()
                 return

@@ -20,15 +20,17 @@ public final class PublicFeedService: FeedServiceProtocol {
     // MARK: - Reading
 
     public func fetchFeed(_ tab: FeedTab, cursor: String?, limit: Int) async throws -> FeedPage {
-        try await fetchFeed(tab, topic: nil, cursor: cursor, limit: limit)
+        try await fetchFeed(tab, topics: [], cursor: cursor, limit: limit)
     }
 
-    public func fetchFeed(_ tab: FeedTab, topic: String?, cursor: String?, limit: Int) async throws -> FeedPage {
+    public func fetchFeed(_ tab: FeedTab, topics: [String], cursor: String?, limit: Int) async throws -> FeedPage {
         // There is one timeline before you join: the square. "For You" needs
         // a you, and the country feed belongs to people an identity check has
         // placed somewhere.
         var query = [URLQueryItem(name: "limit", value: String(min(max(limit, 1), 30)))]
-        if let topic, !topic.isEmpty { query.append(URLQueryItem(name: "topic", value: topic)) }
+        for subject in topics where !subject.isEmpty {
+            query.append(URLQueryItem(name: "topic", value: subject))
+        }
         if let cursor, !cursor.isEmpty { query.append(URLQueryItem(name: "cursor", value: cursor)) }
         let page = try await network.send(APIRequest(path: "/public/feed", query: query), as: FeedPage.self)
         analytics.track(.feedLoaded, properties: [

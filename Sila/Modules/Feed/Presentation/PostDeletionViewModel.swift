@@ -30,13 +30,24 @@ public final class PostDeletionViewModel {
 
     private let service: FeedServiceProtocol
     private let analytics: AnalyticsClient
-    /// The signed-in account's handle. Without it nothing is offered, which is
-    /// the safe direction: showing Delete on somebody else's post would produce
-    /// a 403 and look like a bug.
-    private let viewerHandle: String?
+    /// The signed-in account's handle, as a fallback for a server too old to
+    /// say whose post it is. It is a `var` because the shell is built before
+    /// the account has finished loading: captured once, it was empty for the
+    /// whole session, and an empty handle matches nobody — which is how Delete
+    /// came to be missing from a person's own posts.
+    private var viewerHandle: String?
 
-    /// The post awaiting confirmation, or `nil`.
+    /// The post awaiting confirmation, or `nil`. Drives the dialog.
     public private(set) var pending: Post?
+    /// The post ``confirm()`` will delete.
+    ///
+    /// Separate from ``pending`` on purpose. Tapping Delete in the dialog
+    /// makes SwiftUI dismiss it, which sets the presentation binding to false,
+    /// which called ``cancel()`` — and only *then* did the button's async
+    /// action run ``confirm()``, by which time ``pending`` was already `nil`
+    /// and nothing was deleted. What is armed stays armed until it is either
+    /// deleted or explicitly kept.
+    private var armed: Post?
     /// True while the delete request is in flight.
     public private(set) var isDeleting = false
     /// Why the last attempt failed, for an alert.
@@ -60,8 +71,21 @@ public final class PostDeletionViewModel {
         return OwnPostActions { [weak self] in self?.request(post) }
     }
 
+    /// Tells the model who is reading, once the account is known.
+    ///
+    /// Called when the session's user arrives or changes, so a shell built
+    /// before sign-in finished still offers the author their own menu.
+    public func setViewer(handle: String?) {
+        viewerHandle = handle.map(Handle.normalised)
+    }
+
     /// Whether this post belongs to the signed-in account.
+    ///
+    /// The server's word first: it knows, and it is right even when the post
+    /// arrived on a screen built before the account did. The handle match is
+    /// kept underneath it for a server that does not say.
     public func isMine(_ post: Post) -> Bool {
+        if post.viewer.isAuthor { return true }
         guard let viewerHandle, !viewerHandle.isEmpty else { return false }
         return Handle.normalised(post.author.handle) == viewerHandle
     }
@@ -76,32 +100,44 @@ public final class PostDeletionViewModel {
     /// of intent for that.
     public func request(_ post: Post) {
         pending = post
+        armed = post
         error = nil
     }
 
+    /// Takes the dialog down. Called by the presentation binding whenever
+    /// the dialog closes — including on the way to a confirmed delete — so
+    /// it must not disarm.
     public func cancel() {
         pending = nil
+    }
+
+    /// The person chose to keep the post. Nothing is armed any more.
+    public func keep() {
+        pending = nil
+        armed = nil
     }
 
     /// Performs the deletion the confirmation asked about.
     @discardableResult
     public func confirm() async -> Bool {
-        guard let post = pending else { return false }
+        guard let post = armed else { return false }
         isDeleting = true
         defer { isDeleting = false }
 
         do {
             try await service.deletePost(post.id)
-            // Recorded before clearing `pending`, so the list updates in the
+            // Recorded before clearing the rest, so the list updates in the
             // same frame the sheet dismisses rather than a beat later.
             deleted.insert(post.id)
             pending = nil
+            armed = nil
             analytics.track(.postDeleted)
             return true
         } catch {
             let wrapped = APIError.wrapping(error)
             self.error = wrapped.userMessage
             pending = nil
+            armed = nil
             return false
         }
     }

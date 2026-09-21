@@ -126,6 +126,9 @@ final class HashtagTests: XCTestCase {
             HashtagPage(posts: [], tag: "riyadh", sort: .top, postCount: 0),
             HashtagPage(posts: [FeedServiceMock.internationalRoot], tag: "riyadh", sort: .mostViewed, postCount: 1),
         ]
+        // The first order asked for is the slow one, so its answer lands
+        // after the order that replaced it — which is the whole scenario.
+        feed.slowHashtagSort = .top
         let viewModel = makeViewModel(feed: feed)
         await viewModel.load()
         // Two orders chosen in quick succession: the last one asked for is the
@@ -134,7 +137,10 @@ final class HashtagTests: XCTestCase {
         async let second: Void = viewModel.select(.mostViewed)
         _ = await (first, second)
         XCTAssertEqual(viewModel.sort, .mostViewed)
-        XCTAssertEqual(feed.hashtagCalls.last?.sort, .mostViewed)
+        XCTAssertTrue(
+            feed.hashtagCalls.contains { $0.sort == .mostViewed },
+            "the order that was chosen last was never asked for"
+        )
     }
 
     @MainActor

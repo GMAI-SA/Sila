@@ -94,7 +94,32 @@ public struct CreateRoomSheet: View {
 
     // MARK: - Sections
 
+    @ViewBuilder
     private var explanation: some View {
+        if !viewModel.canHost {
+            // Filling in a form that was never going to be accepted is the
+            // worst way to learn this, so it is said before the first field
+            // rather than in grey beside the button at the bottom.
+            SLCard {
+                HStack(alignment: .top, spacing: SLSpacing.md) {
+                    Image(systemName: "checkmark.seal")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(SLColor.secondary)
+                    VStack(alignment: .leading, spacing: SLSpacing.xs) {
+                        Text(L10n.t("rooms.create.cannotHost.title"))
+                            .font(SLFont.bodyEmphasis)
+                            .foregroundStyle(SLColor.textPrimary)
+                        Text(RoomCopy.unverifiedCannotOpen)
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("rooms.create.cannotHost")
+        }
+
         Text(RoomCopy.createExplanation)
             .font(SLFont.caption)
             .foregroundStyle(SLColor.textSecondary)
@@ -108,7 +133,7 @@ public struct CreateRoomSheet: View {
                 text: $viewModel.title,
                 placeholder: RoomCopy.titlePlaceholder,
                 autocapitalization: .sentences,
-                error: viewModel.titleError,
+                error: viewModel.titleError ?? viewModel.titleHint,
                 accessibilityHint: L10n.t("rooms.create.titleField.a11yHint")
             )
             .focused($isTitleFocused)

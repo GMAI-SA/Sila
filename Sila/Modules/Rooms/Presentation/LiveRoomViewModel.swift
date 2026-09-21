@@ -737,9 +737,33 @@ public final class LiveRoomViewModel {
         }
     }
 
+    /// Whether the host is being asked what "leave" should mean.
+    public var isConfirmingLeave = false
+
+    /// What the Leave button means here.
+    ///
+    /// For a listener or a speaker, leaving is leaving. For the host it is
+    /// ambiguous in a way that matters: walking out does **not** close the
+    /// room, and a host who assumed it did has left a room open with their
+    /// name on it and people still in it. So the host is asked.
+    /// - Returns: `true` when the caller should leave immediately; `false`
+    ///   when a question is now on screen instead.
+    public func requestLeave() -> Bool {
+        guard isHost, room.status.isJoinable else { return true }
+        isConfirmingLeave = true
+        return false
+    }
+
+    /// Leaves without closing the room — the host's other answer.
+    public func leaveRunning() async {
+        isConfirmingLeave = false
+        await leave()
+    }
+
     public func endRoom() async {
         guard isHost, !isEnding else { return }
         isConfirmingEnd = false
+        isConfirmingLeave = false
         isEnding = true
         defer { isEnding = false }
 

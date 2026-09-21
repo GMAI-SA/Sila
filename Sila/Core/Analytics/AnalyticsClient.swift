@@ -22,6 +22,8 @@ public enum AnalyticsEvent: String, Sendable {
     case appLaunched = "app_launched"
     case registerSubmitted = "register_submitted"
     case otpRequested = "otp_requested"
+    /// A forgotten password was set again from a mailed code.
+    case passwordReset = "password_reset"
     case otpVerified = "otp_verified"
     case signInSucceeded = "sign_in_succeeded"
     case signInFailed = "sign_in_failed"

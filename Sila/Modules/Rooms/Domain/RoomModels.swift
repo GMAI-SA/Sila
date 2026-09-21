@@ -827,9 +827,9 @@ public enum RoomConstants {
     public static let searchDebounce: TimeInterval = 0.35
     /// Longest room title the field accepts.
     public static let maximumTitleLength = 120
-    /// The server's minimum. Two letters is not a name anybody could find
-    /// the room by.
-    public static let minimumTitleLength = 3
+    /// The server's minimum. One letter is not a name anybody could find the
+    /// room by; two is — "مع" is a room name somebody would actually type.
+    public static let minimumTitleLength = 2
     /// How often a live room re-reads its participant list.
     public static let participantPollInterval: TimeInterval = 8
     /// Stage sizes the create sheet offers.

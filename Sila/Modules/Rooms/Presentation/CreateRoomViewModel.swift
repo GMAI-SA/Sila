@@ -152,6 +152,23 @@ public final class CreateRoomViewModel {
         RoomConstants.maximumTitleLength - trimmedTitle.count
     }
 
+    /// What the title field says about itself while it is being typed.
+    ///
+    /// The reason the start button is off used to be stated only next to the
+    /// button — several sections below the field it is about, and in grey. A
+    /// rule about the name belongs under the name.
+    ///
+    /// It stays quiet until there is something to be wrong about: an empty
+    /// field is somebody who has not started, not somebody who made a mistake.
+    public var titleHint: String? {
+        guard titleError == nil else { return nil }
+        if !trimmedTitle.isEmpty, trimmedTitle.count < RoomConstants.minimumTitleLength {
+            return RoomCopy.titleTooShort
+        }
+        if remainingTitleCharacters < 0 { return RoomCopy.titleTooLong(trimmedTitle.count) }
+        return nil
+    }
+
     /// `true` when the create button should be live.
     public var canCreate: Bool {
         canHost

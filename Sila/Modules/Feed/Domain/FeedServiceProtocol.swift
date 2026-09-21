@@ -22,14 +22,18 @@ public protocol FeedServiceProtocol: Sendable {
     ///   ``FeedTab/myCountry`` when the viewer has no verified country.
     func fetchFeed(_ tab: FeedTab, cursor: String?, limit: Int) async throws -> FeedPage
 
-    /// The same feed, narrowed to one subject — what the strip above the
-    /// timeline asks for. `nil` means no subject is pinned.
+    /// The same feed, narrowed to the subjects pinned in the strip above the
+    /// timeline. An empty array means nothing is pinned.
+    ///
+    /// Several subjects mean posts about **any** of them: somebody who taps
+    /// Sports and Finance is asking for two conversations, not for the rare
+    /// post about both.
     ///
     /// Given a default below rather than made a requirement, so a service
     /// that knows nothing about subjects serves the whole feed instead of
     /// failing to compile. The two that do know — ``FeedService`` and
     /// ``PublicFeedService`` — implement it.
-    func fetchFeed(_ tab: FeedTab, topic: String?, cursor: String?, limit: Int) async throws -> FeedPage
+    func fetchFeed(_ tab: FeedTab, topics: [String], cursor: String?, limit: Int) async throws -> FeedPage
 
     /// Fetches a single post.
     /// - Throws: ``APIError`` with ``APIErrorCode/postNotFound``.
@@ -67,7 +71,7 @@ public protocol FeedServiceProtocol: Sendable {
 
 extension FeedServiceProtocol {
     /// A service with no notion of subjects serves the whole feed.
-    public func fetchFeed(_ tab: FeedTab, topic: String?, cursor: String?, limit: Int) async throws -> FeedPage {
+    public func fetchFeed(_ tab: FeedTab, topics: [String], cursor: String?, limit: Int) async throws -> FeedPage {
         try await fetchFeed(tab, cursor: cursor, limit: limit)
     }
 

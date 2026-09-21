@@ -143,6 +143,27 @@ public struct PostCardView: View {
     }
 
     public var body: some View {
+        ZStack {
+            // Behind the card, not over it: tapping anywhere that is not
+            // itself a control opens the post. This used to be an
+            // `onTapGesture` on the card, which won every race against the
+            // controls *inside* it — tapping the menu in the corner opened
+            // the post instead of opening the menu, so Delete was
+            // unreachable by the only route that led to it.
+            Button { actions.onOpen(post) } label: {
+                Color.clear.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
+
+            cardBody
+        }
+        .contextMenu { longPressMenu }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text(accessibilitySummary))
+    }
+
+    private var cardBody: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             if let reposter = post.repostedBy {
                 // Why this post is here: somebody passed it on. Above the
@@ -211,11 +232,6 @@ public struct PostCardView: View {
         .padding(.horizontal, SLSpacing.lg)
         .padding(.vertical, SLSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .onTapGesture { actions.onOpen(post) }
-        .contextMenu { longPressMenu }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text(accessibilitySummary))
     }
 
     // MARK: - Header
@@ -258,7 +274,38 @@ public struct PostCardView: View {
             // one tap from any post — Guideline 1.2 is not optional for a
             // user-generated-content app — but they must not sit next to Reply
             // as though they were peers of it.
-            if let safety = actions.safetyMenu?(post) {
+            //
+            // Your own post gets the same button in the same place. It had
+            // none at all: the safety verbs are absent on your own words, so
+            // the corner was empty and Delete lived behind a long press
+            // nobody was told about.
+            if let own = actions.ownPost?(post) {
+                Menu {
+                    Button(role: .destructive, action: own.onDelete) {
+                        Label(L10n.t("post.menu.delete"), systemImage: "trash")
+                    }
+                    Button {
+                        UIPasteboard.general.string = post.text
+                    } label: {
+                        Label(L10n.t("post.menu.copyText"), systemImage: "doc.on.doc")
+                    }
+                    Button {
+                        UIPasteboard.general.url = Permalink.post(post.id)
+                    } label: {
+                        Label(L10n.t("post.menu.copyLink"), systemImage: "link")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(SLColor.textSecondary)
+                        .frame(width: 44, height: 32)
+                        .contentShape(Rectangle())
+                }
+                .menuOrder(.fixed)
+                .offset(y: -4)
+                .accessibilityLabel(Text(L10n.t("post.menu.own.a11yLabel")))
+                .accessibilityIdentifier("post.menu.own")
+            } else if let safety = actions.safetyMenu?(post) {
                 SafetyMenuButton(actions: safety)
                     .offset(y: -4)
             }

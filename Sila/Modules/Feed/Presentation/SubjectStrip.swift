@@ -8,7 +8,9 @@ import SwiftUI
 /// posts, always there, scrolling sideways. Tap a subject and the timeline
 /// narrows to it; tap it again and everything comes back. The choice follows
 /// you across all four tabs, because it is about what you want to read, not
-/// about which tab you happen to be on.
+/// about which tab you happen to be on. Several can be on at once, and they
+/// mean *any* of them — two taps are two conversations, not the intersection
+/// of both.
 ///
 /// Subjects somebody has hidden are absent: the strip is for choosing what
 /// to see, and offering a subject they already said "never" to would be
@@ -18,8 +20,8 @@ struct SubjectStrip: View {
 
     /// The taxonomy, already ordered: chosen interests first.
     let subjects: [TopicOption]
-    /// The subject pinned right now, if any.
-    let pinned: String?
+    /// The subjects pinned right now. Several are allowed.
+    let pinned: [String]
     /// Opens the full preferences screen. `nil` hides the affordance.
     let onOpenPreferences: (@MainActor () -> Void)?
     let onSelect: @MainActor (String?) -> Void
@@ -57,8 +59,8 @@ struct SubjectStrip: View {
                     .padding(.vertical, SLSpacing.sm)
                 }
                 .onAppear {
-                    // A pinned subject can be anywhere in the row; show it.
-                    if let pinned { proxy.scrollTo(pinned, anchor: .center) }
+                    // A pinned subject can be anywhere in the row; show one.
+                    if let first = pinned.first { proxy.scrollTo(first, anchor: .center) }
                 }
             }
         }
@@ -67,9 +69,10 @@ struct SubjectStrip: View {
     }
 
     private func chip(_ subject: TopicOption) -> some View {
-        let isPinned = subject.id == pinned
+        let isPinned = pinned.contains(subject.id)
         return Button {
-            onSelect(isPinned ? nil : subject.id)
+            // Tapping a pinned chip takes it out; tapping another adds it.
+            onSelect(subject.id)
         } label: {
             HStack(spacing: SLSpacing.xs) {
                 Image(systemName: TopicIcon.symbol(for: subject.id))

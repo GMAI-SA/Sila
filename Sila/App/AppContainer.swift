@@ -130,7 +130,13 @@ public final class AppContainer {
             suspension: suspension.signal,
             verification: verificationGate.signal
         )
-        let storage = storage ?? UserDefaultsStorageClient()
+        // `-freshStorage` starts from nothing kept on this device. A UI
+        // journey otherwise inherits whatever the journey before it left —
+        // a pinned subject, say, which quietly filters the feed the next
+        // test is asserting against.
+        let storage = storage ?? (ProcessInfo.processInfo.arguments.contains("-freshStorage")
+            ? InMemoryStorageClient()
+            : UserDefaultsStorageClient())
         let keychain = keychain ?? SystemKeychainClient()
         let analytics = analytics ?? ConsoleAnalyticsClient()
         let biometrics = biometrics ?? LocalAuthenticationBiometricAuthenticator()

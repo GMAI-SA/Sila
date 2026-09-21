@@ -292,7 +292,7 @@ public struct MainTabView: View {
             titleVisibility: .visible
         ) {
             Button(L10n.t("common.delete"), role: .destructive) { Task { await deletion.confirm() } }
-            Button(L10n.t("feed.delete.confirm.keep"), role: .cancel) { deletion.cancel() }
+            Button(L10n.t("feed.delete.confirm.keep"), role: .cancel) { deletion.keep() }
         } message: {
             // States what is actually lost. There is no undo on the server.
             Text(L10n.t("feed.delete.confirm.message"))
@@ -337,6 +337,12 @@ public struct MainTabView: View {
                 exploreViewModel.removeAuthor(handle)
                 pruneStacks(blocking: handle)
             }
+        }
+        // The shell is built before the account has finished loading, so the
+        // person it belongs to is told here rather than captured at init —
+        // and told again if the account is swapped.
+        .task(id: container.session.user?.handle) {
+            deletion.setViewer(handle: container.session.user?.handle)
         }
         // Same idea for a deletion: the post leaves both shared lists and any
         // detail screen open on it, rather than lingering until a refresh.

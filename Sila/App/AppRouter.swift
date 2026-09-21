@@ -11,6 +11,8 @@ public enum AuthRoute: Hashable, Sendable {
     case signIn
     /// Address entry for the forgotten-password OTP.
     case forgotPassword
+    /// Choosing the new password with the code that was just mailed.
+    case resetPassword(email: String)
 }
 
 /// Screens reachable inside the verified app's home and Explore stacks.

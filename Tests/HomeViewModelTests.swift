@@ -82,15 +82,32 @@ final class ScriptedFeedService: FeedServiceProtocol, @unchecked Sendable {
         HashtagHeader(tag: tag, postCount: hashtagPages.first?.postCount ?? 0)
     }
 
+    /// One order the service is deliberately slow to answer, so a superseded
+    /// request can be made to land *after* the one that replaced it. Without
+    /// it, which of two concurrent requests answers first is a coin toss and
+    /// the test asserting the newer one wins is only true half the time.
+    var slowHashtagSort: HashtagSort?
+
     func fetchHashtagPosts(_ tag: String, sort: HashtagSort?, cursor: String?) async throws -> HashtagPage {
-        let (error, page) = lock.withLock { () -> (APIError?, HashtagPage?) in
+        let (error, page, slow) = lock.withLock { () -> (APIError?, HashtagPage?, Bool) in
             hashtagCalls.append((tag, sort, cursor))
-            if let feedError { return (feedError, nil) }
-            guard !hashtagPages.isEmpty else { return (nil, nil) }
-            return (nil, hashtagPages.count > 1 ? hashtagPages.removeFirst() : hashtagPages[0])
+            let slow = sort != nil && sort == slowHashtagSort
+            if let feedError { return (feedError, nil, slow) }
+            guard !hashtagPages.isEmpty else { return (nil, nil, slow) }
+            return (nil, hashtagPages.count > 1 ? hashtagPages.removeFirst() : hashtagPages[0], slow)
         }
+        if slow { try? await Task.sleep(nanoseconds: 60_000_000) }
         if let error { throw error }
-        return page ?? HashtagPage(posts: [], tag: tag, sort: sort ?? .newest)
+        // The page echoes the order it was asked for, the way the server does.
+        guard let page else { return HashtagPage(posts: [], tag: tag, sort: sort ?? .newest) }
+        return HashtagPage(
+            posts: page.posts,
+            nextCursor: page.nextCursor,
+            hasMore: page.hasMore,
+            tag: page.tag,
+            sort: sort ?? page.sort,
+            postCount: page.postCount
+        )
     }
 
     /// Serves the next scripted page, recording the cursor it was asked for.

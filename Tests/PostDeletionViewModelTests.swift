@@ -106,6 +106,36 @@ final class PostDeletionViewModelTests: XCTestCase {
         XCTAssertTrue(analytics.events.contains(.postDeleted))
     }
 
+    /// The order SwiftUI actually produces when Delete is tapped in the
+    /// dialog: the presentation binding goes false first — `cancel()` — and
+    /// the button's async action runs after. The delete must survive that.
+    func testDismissalOnTheWayToConfirmingStillDeletes() async {
+        let (model, service, _) = makeModel()
+        let mine = post(by: FeedServiceMock.aziz)
+        model.actions(for: mine)?.onDelete()
+
+        model.cancel()
+        let ok = await model.confirm()
+
+        let calls = await service.recordedCalls
+        XCTAssertTrue(ok, "the dialog closing before the action ran used to swallow the delete")
+        XCTAssertTrue(calls.contains("deletePost"))
+        XCTAssertTrue(model.isDeleted(mine))
+    }
+
+    /// Keep, on the other hand, really does mean keep.
+    func testKeepingDisarmsSoALaterConfirmDoesNothing() async {
+        let (model, service, _) = makeModel()
+        model.actions(for: post(by: FeedServiceMock.aziz))?.onDelete()
+
+        model.keep()
+        let ok = await model.confirm()
+
+        let calls = await service.recordedCalls
+        XCTAssertFalse(ok)
+        XCTAssertFalse(calls.contains("deletePost"), "a post somebody chose to keep was deleted")
+    }
+
     func testConfirmingWithNothingPendingDoesNothing() async {
         let (model, service, _) = makeModel()
         let ok = await model.confirm()

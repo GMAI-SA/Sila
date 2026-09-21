@@ -100,8 +100,8 @@ final class SubjectStripTests: XCTestCase {
 
         await viewModel.pin("sila")
 
-        let lastTopic = await service.lastTopic
-        XCTAssertEqual(lastTopic, "sila")
+        let lastTopics = await service.lastTopics
+        XCTAssertEqual(lastTopics, ["sila"])
         // Everything loaded under the old subject is gone, on every tab.
         for tab in FeedTab.allCases where tab != viewModel.selectedTab {
             XCTAssertFalse(viewModel.state(for: tab).hasLoaded,
@@ -112,8 +112,8 @@ final class SubjectStripTests: XCTestCase {
     func testTappingThePinnedSubjectAgainShowsEverything() async {
         let viewModel = makeViewModel()
         await viewModel.pin("sila")
-        await viewModel.pin(nil)
-        XCTAssertNil(viewModel.pinnedSubject)
+        await viewModel.pin("sila")
+        XCTAssertTrue(viewModel.pinnedSubjects.isEmpty)
         XCTAssertTrue(viewModel.state(for: .forYou).isPopulated,
                       "Clearing the subject has to bring the whole timeline back.")
     }
@@ -124,7 +124,7 @@ final class SubjectStripTests: XCTestCase {
         await first.pin("riyadh")
 
         let second = makeViewModel(service: FeedServiceMock(scenario: .populated), storage: storage)
-        XCTAssertEqual(second.pinnedSubject, "riyadh",
+        XCTAssertEqual(second.pinnedSubjects, ["riyadh"],
                        "A subject somebody pinned must still be pinned when they come back.")
     }
 
@@ -133,7 +133,67 @@ final class SubjectStripTests: XCTestCase {
         let viewModel = makeViewModel(storage: storage)
         await viewModel.pin("riyadh")
         await viewModel.pin(nil)
-        XCTAssertNil(storage.value(for: .pinnedSubject, as: String.self))
+        XCTAssertNil(storage.value(for: .pinnedSubject, as: [String].self))
+    }
+
+    // MARK: - Two at once
+
+    func testTwoSubjectsMeanBothConversations() async {
+        let service = FeedServiceMock(scenario: .populated)
+        let viewModel = makeViewModel(service: service)
+
+        await viewModel.pin("sila")
+        await viewModel.pin("riyadh")
+
+        let lastTopics = await service.lastTopics
+        XCTAssertEqual(lastTopics, ["sila", "riyadh"],
+                       "Tapping a second subject must add it, not replace the first.")
+        XCTAssertEqual(viewModel.pinnedSubjects, ["sila", "riyadh"])
+    }
+
+    func testTappingAPinnedSubjectTakesOnlyThatOneOut() async {
+        let viewModel = makeViewModel()
+        await viewModel.pin("sila")
+        await viewModel.pin("riyadh")
+
+        await viewModel.pin("sila")
+
+        XCTAssertEqual(viewModel.pinnedSubjects, ["riyadh"],
+                       "Unpinning one subject must leave the other alone.")
+    }
+
+    func testThereIsALimitAndItIsSaidOutLoud() async {
+        let viewModel = makeViewModel()
+        for index in 0..<HomeViewModel.maximumPinnedSubjects {
+            await viewModel.pin("subject\(index)")
+        }
+        XCTAssertNil(viewModel.toast)
+
+        await viewModel.pin("one-too-many")
+
+        XCTAssertEqual(viewModel.pinnedSubjects.count, HomeViewModel.maximumPinnedSubjects)
+        XCTAssertNotNil(viewModel.toast, "A chip that silently does nothing reads as broken.")
+    }
+
+    func testAllOfThemSurviveRelaunch() async {
+        let storage = InMemoryStorageClient()
+        let first = makeViewModel(storage: storage)
+        await first.pin("sila")
+        await first.pin("riyadh")
+
+        let second = makeViewModel(service: FeedServiceMock(scenario: .populated), storage: storage)
+        XCTAssertEqual(second.pinnedSubjects, ["sila", "riyadh"])
+    }
+
+    func testASingleRememberedSubjectFromAnOlderBuildStillReads() async {
+        let storage = InMemoryStorageClient()
+        // What the previous build wrote: one id, not a list.
+        storage.set("riyadh", for: .pinnedSubject)
+
+        let viewModel = makeViewModel(storage: storage)
+
+        XCTAssertEqual(viewModel.pinnedSubjects, ["riyadh"],
+                       "An update must not silently drop the subject somebody was reading.")
     }
 
     func testTheFirstPageIsAlreadyNarrowed() async {
@@ -144,8 +204,8 @@ final class SubjectStripTests: XCTestCase {
 
         await viewModel.loadIfNeeded(.forYou)
 
-        let lastTopic = await service.lastTopic
-        XCTAssertEqual(lastTopic, "sila",
+        let lastTopics = await service.lastTopics
+        XCTAssertEqual(lastTopics, ["sila"],
                        "A remembered subject must apply to the very first request, not after a flash of everything.")
     }
 
@@ -158,7 +218,7 @@ final class SubjectStripTests: XCTestCase {
 
         await viewModel.pin("politics")
 
-        XCTAssertNil(viewModel.pinnedSubject)
+        XCTAssertTrue(viewModel.pinnedSubjects.isEmpty)
         XCTAssertNotNil(viewModel.toast, "Being given the whole timeline back needs a word of explanation.")
         XCTAssertTrue(viewModel.state(for: .forYou).isPopulated)
     }
@@ -171,12 +231,12 @@ final class SubjectStripTests: XCTestCase {
             subjects: catalog(["art", "science"], muted: ["politics"]),
             storage: storage
         )
-        XCTAssertEqual(viewModel.pinnedSubject, "politics")
+        XCTAssertEqual(viewModel.pinnedSubjects, ["politics"])
 
         await viewModel.loadSubjectsIfNeeded()
 
-        XCTAssertNil(viewModel.pinnedSubject,
-                     "The timeline must not stay narrowed by a subject the strip does not show.")
+        XCTAssertTrue(viewModel.pinnedSubjects.isEmpty,
+                      "The timeline must not stay narrowed by a subject the strip does not show.")
         XCTAssertNil(storage.value(for: .pinnedSubject, as: String.self))
     }
 

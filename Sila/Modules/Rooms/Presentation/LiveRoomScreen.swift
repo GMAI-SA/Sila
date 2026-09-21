@@ -154,6 +154,28 @@ public struct LiveRoomScreen: View {
         .onChange(of: viewModel.hasLeft) { _, hasLeft in
             if hasLeft { onLeave() }
         }
+        // The host's Leave means one of two different things, and only they
+        // know which. Asked here rather than guessed.
+        .confirmationDialog(
+            Text(L10n.t("rooms.live.leaveAsHost.title")),
+            isPresented: $viewModel.isConfirmingLeave,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.t("rooms.live.end.confirmButton"), role: .destructive) {
+                Task { await viewModel.endRoom() }
+            }
+            Button(L10n.t("rooms.live.leaveRunning")) {
+                Task {
+                    await viewModel.leaveRunning()
+                    onLeave()
+                }
+            }
+            Button(L10n.t("rooms.live.end.cancelButton"), role: .cancel) {
+                viewModel.isConfirmingLeave = false
+            }
+        } message: {
+            Text(L10n.t("rooms.live.leaveAsHost.message"))
+        }
         .confirmationDialog(
             Text(L10n.t("rooms.live.end.confirmTitle")),
             isPresented: $viewModel.isConfirmingEnd,

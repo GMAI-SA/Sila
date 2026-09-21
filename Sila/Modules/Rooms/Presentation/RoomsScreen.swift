@@ -51,6 +51,21 @@ public struct RoomsScreen: View {
         // No `+` in the bar: opening a room is the floating button's job on
         // this tab, in the same corner writing a post is on Home.
         .task { await viewModel.load() }
+        .confirmationDialog(
+            Text(L10n.t("rooms.live.end.confirmTitle")),
+            isPresented: Binding(
+                get: { viewModel.endingRoom != nil },
+                set: { if !$0 { viewModel.endingRoom = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L10n.t("rooms.live.end.confirmButton"), role: .destructive) {
+                Task { await viewModel.confirmEnd() }
+            }
+            Button(L10n.t("rooms.live.end.cancelButton"), role: .cancel) { viewModel.endingRoom = nil }
+        } message: {
+            Text(RoomCopy.endRoomWarning)
+        }
         .tnToast($viewModel.toast)
     }
 
@@ -199,7 +214,8 @@ public struct RoomsScreen: View {
                 RoomCardView(
                     room: room,
                     onTap: { open(room) },
-                    onOpenHost: onOpenProfile.map { handler in { handler(room.host.handle) } }
+                    onOpenHost: onOpenProfile.map { handler in { handler(room.host.handle) } },
+                    onEnd: { viewModel.requestEnd(room) }
                 )
             }
         }
@@ -211,7 +227,8 @@ public struct RoomsScreen: View {
                 RoomCardView(
                     room: room,
                     onTap: { open(room) },
-                    onOpenHost: onOpenProfile.map { handler in { handler(room.host.handle) } }
+                    onOpenHost: onOpenProfile.map { handler in { handler(room.host.handle) } },
+                    onEnd: { viewModel.requestEnd(room) }
                 )
             }
         }
@@ -261,6 +278,8 @@ struct RoomCardView: View {
     let room: VoiceRoom
     let onTap: () -> Void
     var onOpenHost: (() -> Void)?
+    /// Closes a room this account hosts. `nil` on everybody else's.
+    var onEnd: (() -> Void)?
 
     var body: some View {
         SLCard(padding: SLSpacing.md) {
@@ -278,6 +297,20 @@ struct RoomCardView: View {
                 host
 
                 chips
+
+                if room.isHost, room.status.isJoinable, let onEnd {
+                    // A host who walked out still owns an open room with
+                    // their name on it. Closing it should not require going
+                    // back inside first.
+                    Button(role: .destructive, action: onEnd) {
+                        Label(L10n.t("rooms.live.end"), systemImage: "stop.circle")
+                            .font(SLFont.micro)
+                            .foregroundStyle(SLColor.danger)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("rooms.card.end")
+                    .accessibilityHint(Text(L10n.t("rooms.live.end.a11yHint")))
+                }
 
                 if let shut = room.joinRefusalMessage, room.status == .live {
                     // The door, before the microphone: a room the viewer
