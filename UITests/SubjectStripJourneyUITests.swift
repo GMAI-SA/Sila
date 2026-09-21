@@ -42,7 +42,20 @@ final class SubjectStripJourneyUITests: XCTestCase {
     }
 
     private func chip(_ app: XCUIApplication, _ id: String) -> XCUIElement {
-        app.descendants(matching: .any)["feed.subject.\(id)"].firstMatch
+        // `.buttons` rather than any descendant: a chip's label is also a text
+        // element, and only the button carries the selected state.
+        app.buttons["feed.subject.\(id)"]
+    }
+
+    /// Waits for `element` to report itself selected.
+    ///
+    /// Polled rather than read once: the tab that was just switched to is
+    /// still settling, and reading the trait in that instant is a race the
+    /// test loses at random.
+    private func waitUntilSelected(_ element: XCUIElement, _ message: String) {
+        let selected = expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: element)
+        let outcome = XCTWaiter.wait(for: [selected], timeout: 10)
+        XCTAssertEqual(outcome, .completed, message)
     }
 
     /// One tap in the timeline narrows it, and the choice is still there after
@@ -66,11 +79,13 @@ final class SubjectStripJourneyUITests: XCTestCase {
         )
 
         // The same choice, on a different tab, without being made again.
+        waitUntilSelected(technology, "the tapped subject never came back as pinned")
+
         app.buttons["International"].tap()
         let onInternational = chip(app, "technology")
         XCTAssertTrue(onInternational.waitForExistence(timeout: 10), "the strip is missing from International")
-        XCTAssertTrue(
-            onInternational.isSelected,
+        waitUntilSelected(
+            onInternational,
             "a subject pinned on For You did not hold on International — the choice is per tab, which is exactly what it must not be"
         )
 
