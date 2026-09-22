@@ -262,8 +262,12 @@ public struct PendingVerificationWallScreen: View {
             }
             isPickingNationality = false
         } catch let error as APIError {
+            // The toast lives on the wall, and the wall is behind this
+            // sheet: close the sheet so the reason is actually seen.
+            isPickingNationality = false
             viewModel.toast = .error(error.userMessage)
         } catch {
+            isPickingNationality = false
             viewModel.toast = .error(L10n.t("common.somethingWentWrong"))
         }
     }

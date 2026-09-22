@@ -17,6 +17,7 @@ final class ProfileJourneyUITests: XCTestCase {
     private func launchApp(profileScenario: String = "populated") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
+            "-freshStorage",
             "-mockAuth", "-mockScenario", "verified",
             "-mockFeed", "-mockFeedScenario", "populated",
             "-mockProfile", "-mockProfileScenario", profileScenario,

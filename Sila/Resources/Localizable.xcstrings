@@ -28406,6 +28406,24 @@
         }
       }
     },
+    "rooms.participant.open.a11yAction": {
+      "comment": "VoiceOver custom action on a speaker tile: opens that person's sheet (a sighted user taps the tile).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح بطاقة المشارك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open participant"
+          }
+        }
+      }
+    },
     "rooms.reactions.label": {
       "extractionState": "manual",
       "localizations": {

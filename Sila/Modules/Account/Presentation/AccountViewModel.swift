@@ -238,6 +238,10 @@ public final class AccountViewModel {
         !passwordCurrent.isEmpty
             && passwordNew.count >= AccountLimits.minimumPasswordLength
             && passwordNew == passwordRepeat
+            // The button and the sentence under the field must agree: a
+            // password the sentence calls too long is not one the button
+            // may send.
+            && passwordValidationError == nil
             && !isChangingPassword
     }
 

@@ -83,7 +83,7 @@ public struct GroupsSheet: View {
                 Button(L10n.t("groups.delete.confirm.button"), role: .destructive) {
                     Task { await viewModel.confirmDeletion() }
                 }
-                Button(L10n.t("common.cancel"), role: .cancel) { viewModel.cancelDeletion() }
+                Button(L10n.t("common.cancel"), role: .cancel) { viewModel.keepGroup() }
             } message: {
                 Text(L10n.t("groups.delete.confirm.message"))
             }

@@ -151,16 +151,31 @@ public final class GroupsViewModel {
         }
     }
 
+    /// What ``confirmDeletion()`` deletes; see ``PostDeletionViewModel`` for
+    /// why this is not the same value as the one driving the dialog.
+    private var armedDeletion: UserGroup?
+
     public func requestDeletion(_ group: UserGroup) {
         pendingDeletion = group
+        armedDeletion = group
     }
 
+    /// Takes the dialog down. Called by the presentation binding on every
+    /// dismissal — including on the way to a confirmed delete — so it must
+    /// not disarm.
     public func cancelDeletion() {
         pendingDeletion = nil
     }
 
+    /// The person chose to keep the group.
+    public func keepGroup() {
+        pendingDeletion = nil
+        armedDeletion = nil
+    }
+
     public func confirmDeletion() async {
-        guard let group = pendingDeletion, !isSaving else { return }
+        guard let group = armedDeletion, !isSaving else { return }
+        armedDeletion = nil
         isSaving = true
         defer { isSaving = false }
         do {

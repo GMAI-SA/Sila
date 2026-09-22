@@ -22,6 +22,8 @@ final class ComposerJourneyUITests: XCTestCase {
             "-mockComposer", "-mockComposerScenario", composerScenario,
             "-mockSearch", "-mockSearchScenario", "populated",
             "-noBiometrics",
+            // Nothing kept from the journey before this one.
+            "-freshStorage",
         ]
         app.launch()
         return app

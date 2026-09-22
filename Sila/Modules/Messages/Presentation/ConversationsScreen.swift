@@ -74,10 +74,15 @@ public struct ConversationsScreen: View {
         .sheet(isPresented: $isPicking) {
             if let directory = people {
                 PeoplePickerSheet(
-                    viewModel: PeoplePickerViewModel(directory: directory, viewerHandle: viewerHandle),
-                    onPick: { chosen in
+                    viewModel: PeoplePickerViewModel(
+                        directory: directory,
+                        viewerHandle: viewerHandle,
                         // One thread at a time: a message goes to a person,
-                        // not to a list. The first tick is the one that counts.
+                        // not to a list — and the picker says so, instead of
+                        // letting three be ticked and opening one.
+                        maximumSelection: 1
+                    ),
+                    onPick: { chosen in
                         guard let person = chosen.first else { return }
                         onOpen(Conversation.draft(with: person))
                     },

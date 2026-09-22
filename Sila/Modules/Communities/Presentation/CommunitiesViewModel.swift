@@ -42,21 +42,37 @@ public final class CommunitiesViewModel {
 
     public var isEmpty: Bool { hasLoaded && communities.isEmpty && loadError == nil }
 
+    /// Loads in flight. More than one is legitimate — the folder control and
+    /// a pull-to-refresh can both ask — and the list is loading while any
+    /// of them is.
+    private var inFlight = 0
+
     public func load(isRefresh: Bool = false) async {
-        guard !isLoading else { return }
         if hasLoaded && !isRefresh { return }
+        // The answer is applied only if it is for the folder still on screen.
+        // A folder change *during* a load used to be thrown away — the
+        // underline moved, the list did not — and a generation counter would
+        // instead throw away the older of two loads for the *same* folder.
+        let requested = folder
+        inFlight += 1
         isLoading = true
         loadError = nil
-        defer { isLoading = false }
+        defer {
+            inFlight -= 1
+            if inFlight == 0 { isLoading = false }
+        }
         do {
-            communities = try await service.fetchCommunities(
-                mine: folder == .mine,
-                forYou: folder == .forYou,
+            let page = try await service.fetchCommunities(
+                mine: requested == .mine,
+                forYou: requested == .forYou,
                 topic: nil,
                 limit: 30
             )
+            guard requested == folder else { return }
+            communities = page
             hasLoaded = true
         } catch {
+            guard requested == folder else { return }
             guard suspension?.notice(error) != true else { return }
             // Abandoned: not loaded, not failed. The next appearance asks again.
             guard !APIError.wrapping(error).isCancellation else { return }

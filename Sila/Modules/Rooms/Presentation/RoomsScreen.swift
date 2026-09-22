@@ -62,7 +62,7 @@ public struct RoomsScreen: View {
             Button(L10n.t("rooms.live.end.confirmButton"), role: .destructive) {
                 Task { await viewModel.confirmEnd() }
             }
-            Button(L10n.t("rooms.live.end.cancelButton"), role: .cancel) { viewModel.endingRoom = nil }
+            Button(L10n.t("rooms.live.end.cancelButton"), role: .cancel) { viewModel.keepRoom() }
         } message: {
             Text(RoomCopy.endRoomWarning)
         }

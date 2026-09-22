@@ -33,6 +33,8 @@ final class ArabicRTLJourneyUITests: XCTestCase {
             "-mockAuth", "-mockScenario", "verified",
             "-mockFeed", "-mockFeedScenario", "populated",
             "-noBiometrics",
+            // Nothing kept from the journey before this one.
+            "-freshStorage",
         ] + extra
         app.launch()
         return app
@@ -63,30 +65,78 @@ final class ArabicRTLJourneyUITests: XCTestCase {
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        let window = app.windows.firstMatch.frame
+        // One snapshot of the whole hierarchy, walked in memory. Asking XCUI
+        // for each element's frame one at a time re-snapshots the tree per
+        // question, and a feed full of cards made that take twenty minutes.
+        guard let root = try? app.snapshot() else { return XCTFail("could not snapshot the app", file: file, line: line) }
+        let window = root.frame
         guard window.width > 0 else { return }
 
         // A slack of one point absorbs the sub-pixel rounding a mirrored layout
         // legitimately produces; anything wider is a layout that did not mirror.
         let slack: CGFloat = 1
+        let kinds: Set<XCUIElement.ElementType> = [.button, .staticText, .textView]
 
-        // Post bodies are text views now, laid out by TextKit; they have to
-        // answer to the same edge as everything else.
-        for element in app.buttons.allElementsBoundByIndex + app.staticTexts.allElementsBoundByIndex + app.textViews.allElementsBoundByIndex {
-            guard element.exists, element.isHittable else { continue }
-            let frame = element.frame
+        var nodes: [XCUIElementSnapshot] = []
+        func walk(_ node: XCUIElementSnapshot) {
+            if kinds.contains(node.elementType) { nodes.append(node) }
+            for child in node.children { walk(child) }
+        }
+        walk(root)
+
+        // The subject strip scrolls sideways; a chip past its far end — and
+        // the text inside it, which carries no identifier of its own — is
+        // legitimately off screen in either direction. Everything sharing the
+        // chips' row is left to the mirroring check instead.
+        let chipRow = nodes
+            .filter { $0.identifier.hasPrefix("feed.subject.") }
+            .map(\.frame)
+            .reduce(CGRect.null) { $0.union($1) }
+
+        for node in nodes {
+            let frame = node.frame
             guard frame.width > 0, frame.height > 0 else { continue }
+            if node.identifier.hasPrefix("feed.subject.") { continue }
+            if !chipRow.isNull, frame.minY < chipRow.maxY, frame.maxY > chipRow.minY { continue }
+            // Wholly off screen vertically is scrolled away, not mis-laid.
+            guard frame.maxY > window.minY, frame.minY < window.maxY else { continue }
             XCTAssertGreaterThanOrEqual(
                 frame.minX, window.minX - slack,
-                "\(label): '\(element.label)' starts \(window.minX - frame.minX)pt off the leading edge",
+                "\(label): '\(node.label)' starts \(window.minX - frame.minX)pt off the leading edge",
                 file: file, line: line
             )
             XCTAssertLessThanOrEqual(
                 frame.maxX, window.maxX + slack,
-                "\(label): '\(element.label)' runs \(frame.maxX - window.maxX)pt past the trailing edge",
+                "\(label): '\(node.label)' runs \(frame.maxX - window.maxX)pt past the trailing edge",
                 file: file, line: line
             )
         }
+    }
+
+    /// The strip's first chip and its preferences control belong at the
+    /// leading edge — the right, in Arabic — and fully on screen. A strip that
+    /// laid out left-to-right would put its first chip off the left edge.
+    private func assertSubjectStripMirrored(
+        _ app: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let window = app.windows.firstMatch.frame
+        let preferences = app.buttons["Feed preferences"].firstMatch
+        guard preferences.waitForExistence(timeout: 10) else { return } // no strip on this build's mocks
+        let chips = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'feed.subject.'"))
+        guard chips.count > 0 else { return }
+        // In a mirrored layout the first chip is the right-most one.
+        let first = chips.allElementsBoundByIndex.max { $0.frame.maxX < $1.frame.maxX }!
+        XCTAssertLessThanOrEqual(first.frame.maxX, window.maxX + 1,
+                                 "the strip's first chip runs past the leading (right) edge — the strip did not mirror",
+                                 file: file, line: line)
+        XCTAssertGreaterThan(first.frame.minX, window.midX,
+                             "the strip's first chip is on the left half of the screen — the strip did not mirror",
+                             file: file, line: line)
+        XCTAssertGreaterThan(preferences.frame.minX, first.frame.minX,
+                             "the preferences control is not at the leading edge of the strip",
+                             file: file, line: line)
     }
 
     private func tap(_ app: XCUIApplication, identifier: String, timeout: TimeInterval = 20) -> Bool {
@@ -156,6 +206,7 @@ final class ArabicRTLJourneyUITests: XCTestCase {
         )
         add(screenshot(app, named: "AR — Feed"))
         assertNothingOverflows(app, "feed")
+        assertSubjectStripMirrored(app)
 
         // Every feed tab, in Arabic. A tab bar that mirrored its layout but not
         // its selection indicator still switches tabs — the failure is visual,
@@ -240,6 +291,8 @@ final class ArabicRTLJourneyUITests: XCTestCase {
             "-mockAuth", "-mockScenario", "verified",
             "-mockFeed", "-mockFeedScenario", "populated",
             "-noBiometrics",
+            // Nothing kept from the journey before this one.
+            "-freshStorage",
         ]
         app.launch()
 

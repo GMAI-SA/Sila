@@ -257,17 +257,31 @@ public final class SafetyViewModel {
     /// The whole gate is that this and ``confirmBlock()`` are different methods:
     /// every entry point in the app calls this one, and the endpoint is only
     /// reachable from a dialog that has already stated what a block destroys.
+    /// What ``confirmBlock()`` acts on. Separate from ``pendingBlock``, which
+    /// drives the alert: tapping Block makes SwiftUI dismiss the alert, which
+    /// sets the presentation binding to false and cleared `pendingBlock` —
+    /// before the button's async action ran, so nobody was ever blocked.
+    private var armedBlock: BlockConfirmation?
+
     public func requestBlock(_ target: SafetyTarget, origin: BlockConfirmation.Origin = .post) {
         guard canAct(on: target.handle), target.isAddressable else { return }
         pendingBlock = BlockConfirmation(target: target, origin: origin)
+        armedBlock = pendingBlock
         analytics.track(.blockConfirmationShown, properties: ["origin": origin.rawValue])
     }
 
     /// Dismisses the confirmation without blocking.
     public func cancelBlock() {
-        guard pendingBlock != nil else { return }
+        guard pendingBlock != nil || armedBlock != nil else { return }
         pendingBlock = nil
+        armedBlock = nil
         analytics.track(.blockCancelled)
+    }
+
+    /// Takes the alert down without disarming. The presentation binding
+    /// calls this on every dismissal, including on the way to a confirm.
+    public func dismissBlockAlert() {
+        pendingBlock = nil
     }
 
     /// Performs the block the open confirmation describes.
@@ -275,8 +289,9 @@ public final class SafetyViewModel {
     /// Does nothing when no confirmation is open, which is what makes the gate a
     /// property of the model rather than of whichever view happened to call it.
     public func confirmBlock() async {
-        guard let confirmation = pendingBlock else { return }
+        guard let confirmation = armedBlock else { return }
         pendingBlock = nil
+        armedBlock = nil
         await setBlocked(true, target: confirmation.target)
     }
 

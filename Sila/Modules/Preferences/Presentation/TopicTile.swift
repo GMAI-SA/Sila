@@ -110,11 +110,16 @@ struct TopicTile: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            // The corner button owns hiding; the tile itself only ever means
-            // "more of this" or "no opinion".
-            onSelect(isInterested ? .none : .interested)
+        // The tile's own meaning — "more of this" / "no opinion" — is a
+        // button *behind* the content rather than a gesture over it, so the
+        // corner eye keeps its tap. A gesture on the tile won that race and
+        // hiding a subject sometimes chose it instead.
+        .background {
+            Button { onSelect(isInterested ? .none : .interested) } label: {
+                Color.clear.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
         }
         .opacity(isMuted ? 0.55 : 1)
         .accessibilityElement(children: .contain)

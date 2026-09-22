@@ -18,6 +18,7 @@ final class FeedJourneyUITests: XCTestCase {
     private func launchApp(feedScenario: String = "populated") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
+            "-freshStorage",
             "-mockAuth", "-mockScenario", "verified",
             "-mockFeed", "-mockFeedScenario", feedScenario,
             "-noBiometrics",  // keeps the Face ID prompt out of the run
@@ -82,6 +83,7 @@ final class FeedJourneyUITests: XCTestCase {
     func testUnverifiedUserIsHeldAtTheWall() throws {
         let app = XCUIApplication()
         app.launchArguments = [
+            "-freshStorage",
             "-mockAuth", "-mockScenario", "pendingReview", "-noBiometrics",
         ]
         app.launch()

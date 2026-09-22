@@ -279,17 +279,30 @@ public final class RoomsViewModel {
     /// Reachable from the list, not only from inside the room: a host who
     /// walked out — or whose app was killed — otherwise had no way to close a
     /// room that still carries their name and still has people in it.
+    /// The room ``confirmEnd()`` closes. Not ``endingRoom``: that drives the
+    /// dialog, and the dialog's dismissal clears it before the confirm
+    /// button's async action gets to run.
+    private var armedEnd: VoiceRoom?
+
     public func requestEnd(_ room: VoiceRoom) {
         guard room.isHost, room.status.isJoinable else { return }
         endingRoom = room
+        armedEnd = room
+    }
+
+    /// The host chose not to end it after all.
+    public func keepRoom() {
+        endingRoom = nil
+        armedEnd = nil
     }
 
     /// Closes the room the confirmation asked about.
     public func confirmEnd() async {
-        guard let room = endingRoom, !isEndingRoom else { return }
+        guard let room = armedEnd, !isEndingRoom else { return }
         isEndingRoom = true
         defer { isEndingRoom = false }
         endingRoom = nil
+        armedEnd = nil
         do {
             _ = try await service.endRoom(id: room.id)
             remove(room.id)

@@ -95,7 +95,10 @@ public struct RegisterScreen: View {
                     L10n.t("auth.register.submit"),
                     variant: .primary,
                     isLoading: viewModel.isSubmitting,
-                    isEnabled: viewModel.canSubmit,
+                    // Live even while the form is incomplete: a tap then runs the
+                    // validation and puts the reason under the field it is
+                    // about. A dimmed button with no words explained nothing.
+                    isEnabled: !viewModel.isSubmitting,
                     accessibilityHint: L10n.t("auth.register.submit.hint")
                 ) {
                     Task { await submit() }

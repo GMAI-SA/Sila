@@ -18,6 +18,7 @@ final class RoomsJourneyUITests: XCTestCase {
     private func launchApp(scenario: String = "populated") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
+            "-freshStorage",
             "-mockAuth", "-mockScenario", "verified",
             "-mockFeed", "-mockFeedScenario", "populated",
             "-mockRooms", "-mockRoomsScenario", scenario,

@@ -98,14 +98,29 @@ public final class ChatViewModel {
     }
 
     /// Asks before deleting, because there is no undo.
+    /// What ``confirmDeletion()`` deletes. Separate from ``pendingDeletion``:
+    /// tapping Delete makes SwiftUI dismiss the dialog, which sets the
+    /// presentation binding to false and cleared `pendingDeletion` — before
+    /// the button's async action ran. What is armed stays armed until it is
+    /// deleted or explicitly kept.
+    private var armedDeletion: DirectMessage?
+
     public func requestDeletion(of message: DirectMessage) {
         guard isMine(message), !message.deleted else { return }
         pendingDeletion = message
+        armedDeletion = message
+    }
+
+    /// The person chose to keep the message.
+    public func keepMessage() {
+        pendingDeletion = nil
+        armedDeletion = nil
     }
 
     public func confirmDeletion() async {
-        guard let message = pendingDeletion else { return }
+        guard let message = armedDeletion else { return }
         pendingDeletion = nil
+        armedDeletion = nil
         do {
             try await service.deleteMessage(id: message.id)
             await load()

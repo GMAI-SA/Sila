@@ -18,6 +18,7 @@ final class AccountJourneyUITests: XCTestCase {
     private func launchApp(accountScenario: String = "populated") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
+            "-freshStorage",
             "-mockAuth", "-mockScenario", "verified",
             "-mockFeed", "-mockFeedScenario", "populated",
             "-mockAccount", "-mockAccountScenario", accountScenario,

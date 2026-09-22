@@ -147,13 +147,16 @@ struct BlockConfirmationModifier: ViewModifier {
     @Binding var confirmation: BlockConfirmation?
     let onConfirm: @MainActor () -> Void
     let onCancel: @MainActor () -> Void
+    /// Takes the alert down without cancelling. Dismissal happens on the
+    /// way to a confirm too, and the view model keeps what was armed.
+    let onDismiss: @MainActor () -> Void
 
     func body(content: Content) -> some View {
         content.alert(
             confirmation?.title ?? L10n.t("safety.block.confirm.fallbackTitle"),
             isPresented: Binding(
                 get: { confirmation != nil },
-                set: { if !$0 { confirmation = nil } }
+                set: { if !$0 { onDismiss() } }
             ),
             presenting: confirmation
         ) { pending in
@@ -199,7 +202,8 @@ struct SafetyPresentation: ViewModifier {
                 BlockConfirmationModifier(
                     confirmation: $viewModel.pendingBlock,
                     onConfirm: { Task { await viewModel.confirmBlock() } },
-                    onCancel: { viewModel.cancelBlock() }
+                    onCancel: { viewModel.cancelBlock() },
+                    onDismiss: { viewModel.dismissBlockAlert() }
                 )
             )
             .sheet(item: $viewModel.presentedReport) { subject in

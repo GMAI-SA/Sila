@@ -36,7 +36,9 @@ public struct ChatScreen: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if let safetyMenu,
                    let actions = safetyMenu(SafetyTarget(user: viewModel.conversation.other)) {
-                    SafetyMenu(actions: actions)
+                    // The button, not the bare menu items: a `Section` in a
+                    // toolbar renders as nothing anybody can tap.
+                    SafetyMenuButton(actions: actions)
                 }
             }
         }
@@ -56,7 +58,7 @@ public struct ChatScreen: View {
                 Task { await viewModel.confirmDeletion() }
             }
             Button(L10n.t("common.cancel"), role: .cancel) {
-                viewModel.pendingDeletion = nil
+                viewModel.keepMessage()
             }
         } message: {
             // Says what deletion actually does. The row survives with its text

@@ -149,7 +149,10 @@ public final class CommunityViewModel {
         do {
             if community.isMember {
                 try await service.leave(slug: slug)
-                self.community = try? await service.fetchCommunity(slug: slug)
+                // The leave succeeded; a failed re-read must not turn the
+                // screen into "not found". Keep what is there until a
+                // refresh gets a fresh copy.
+                self.community = (try? await service.fetchCommunity(slug: slug)) ?? community
                 toast = .info(L10n.t("communities.left", community.name))
             } else {
                 let joined = try await service.join(slug: slug)

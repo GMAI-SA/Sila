@@ -62,6 +62,8 @@ public struct LiveRoomScreen: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
+                    // A host is asked what they mean; everybody else just goes.
+                    guard viewModel.requestLeave() else { return }
                     Task {
                         await viewModel.leave()
                         onLeave()
@@ -687,15 +689,27 @@ public struct LiveRoomScreen: View {
                 }
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture { selected = ParticipantSelection(participant) }
+        // Behind the tile, not over it: a gesture on the tile beat the two
+        // menus drawn under the avatar, so the host's Mute / Move / Remove
+        // and everybody's Block / Report opened the participant sheet
+        // instead. A button behind the content leaves the menus their taps.
+        .background {
+            Button { selected = ParticipantSelection(participant) } label: {
+                Color.clear.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
+        }
         .contextMenu {
             if let actions = viewModel.hostActions(for: participant) {
                 hostMenuItems(actions)
             }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(tileLabel(participant)))
+        .accessibilityAction(named: Text(L10n.t("rooms.participant.open.a11yAction"))) {
+            selected = ParticipantSelection(participant)
+        }
     }
 
     private func tileLabel(_ participant: RoomParticipant) -> String {
@@ -885,6 +899,9 @@ public struct LiveRoomScreen: View {
                     isLoading: viewModel.isLeaving,
                     accessibilityHint: RoomCopy.leaveHint,
                     asyncAction: {
+                        // A host is asked what they mean; everybody else just
+                        // goes.
+                        guard viewModel.requestLeave() else { return }
                         await viewModel.leave()
                         onLeave()
                     }

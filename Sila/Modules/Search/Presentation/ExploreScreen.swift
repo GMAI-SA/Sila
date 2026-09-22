@@ -63,8 +63,10 @@ public struct ExploreScreen: View {
         VStack(spacing: 0) {
             searchField
 
-            if !viewModel.isShowingTrending {
-                if let onOpenCommunities {
+            // Above the fold on the idle screen too. It was nested under the
+            // search results, so Communities only existed for somebody who
+            // had already typed something — and nothing else led there.
+            if let onOpenCommunities {
                     Button(action: onOpenCommunities) {
                         HStack(spacing: SLSpacing.sm) {
                             Image(systemName: "person.3.fill")
@@ -91,8 +93,9 @@ public struct ExploreScreen: View {
                     .accessibilityIdentifier("explore.communities")
 
                     SLDivider()
-                }
+            }
 
+            if !viewModel.isShowingTrending {
                 SLSegmentedControl(
                     items: ExploreViewModel.ResultTab.allCases,
                     selection: Binding(
@@ -442,6 +445,9 @@ public struct ExploreScreen: View {
                     viewModel.updateQuery("#\(tag)", immediately: true)
                 }
             },
+            // Every other screen forwards this; here it was dropped, so a
+            // Live card on a search result opened the post instead of the room.
+            onOpenRoom: onOpenRoom,
             onOpenQuoted: onOpenPost,
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,

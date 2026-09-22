@@ -1262,6 +1262,7 @@ public struct MainTabView: View {
                 onOpenProfile: openProfile,
                 onDismiss: onDismiss,
                 safetyMenu: safetyMenu(for:),
+                ownPost: ownPostMenu(for:),
                 // `nil` when the phase is off, which restores the Phase-3 stub bar.
                 composerService: container.flags.composer ? container.composerService : nil,
                 searchService: container.flags.composer ? container.searchService : nil,

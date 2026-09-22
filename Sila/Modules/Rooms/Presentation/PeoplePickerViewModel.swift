@@ -25,10 +25,21 @@ public final class PeoplePickerViewModel {
     private let excluded: Set<String>
     private var picked: [String: UserSummary] = [:]
 
-    public init(directory: PeopleDirectory, viewerHandle: String, excluding: [String] = []) {
+    /// How many people may be ticked at once. `nil` is no limit. A new
+    /// message goes to one person, so that picker passes 1 — the button then
+    /// reads "Add 1 person" instead of promising a group it will not open.
+    public let maximumSelection: Int?
+
+    public init(
+        directory: PeopleDirectory,
+        viewerHandle: String,
+        excluding: [String] = [],
+        maximumSelection: Int? = nil
+    ) {
         self.directory = directory
         self.viewerHandle = viewerHandle
         self.excluded = Set(excluding.map(Handle.normalised).filter { !$0.isEmpty })
+        self.maximumSelection = maximumSelection
     }
 
     public func load() async {
@@ -90,6 +101,11 @@ public final class PeoplePickerViewModel {
             selected.remove(key)
             picked[key] = nil
         } else {
+            // Past the limit, a tick replaces the earlier one rather than
+            // being ignored: one person is what this picker is for.
+            if let maximumSelection, selected.count >= maximumSelection {
+                if maximumSelection == 1 { selected.removeAll(); picked.removeAll() } else { return }
+            }
             selected.insert(key)
             picked[key] = person
         }
