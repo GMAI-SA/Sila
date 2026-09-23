@@ -130,6 +130,14 @@ public final class VerificationWallViewModel {
 
     /// The nationality the person declared, when the server has one.
     public var declaredNationality: String? { report?.nationality }
+    /// Nafath is open to this account; otherwise it shows as "coming soon".
+    public var nafathAvailable: Bool { report?.nafathAvailable ?? false }
+
+    /// Whether a nationality claim goes straight to Nafath, skipping the
+    /// chooser: only a Nafath-only nationality, and only while Nafath is live.
+    nonisolated public static func routesStraightToNafath(claim: String, nafathAvailable: Bool) -> Bool {
+        nafathAvailable && DocumentVerificationViewModel.nafathOnly.contains(claim.uppercased())
+    }
     /// The birthdate the person declared, as `YYYY-MM-DD`, or `nil`.
     public var declaredDateOfBirth: String? { report?.dateOfBirth }
 

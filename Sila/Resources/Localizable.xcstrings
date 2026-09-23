@@ -14267,6 +14267,23 @@
         }
       }
     },
+    "error.nafathUnavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نفاذ قادم قريبًا. تحقّق الآن بجواز سفر أو بطاقة هوية — يستغرق ذلك دقائق."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nafath is coming soon. For now, verify with a passport or ID card — it takes a few minutes."
+          }
+        }
+      }
+    },
     "error.nationalityMismatch": {
       "comment": "Server refused: proven nationality differs from the claim.",
       "extractionState": "manual",
@@ -31645,6 +31662,23 @@
         }
       }
     },
+    "rooms.reactions.sendBig.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أرسل تفاعلًا كبيرًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send big reaction"
+          }
+        }
+      }
+    },
     "rooms.remind.action": {
       "extractionState": "manual",
       "localizations": {
@@ -36785,6 +36819,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opens this verification method"
+          }
+        }
+      }
+    },
+    "verification.method.nafath.comingSoon": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coming soon"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قريبًا"
+          }
+        }
+      }
+    },
+    "verification.method.nafath.comingSoonDetail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nafath is on its way. For now, verify with your passport or ID card — it takes a few minutes and a person reviews it."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نفاذ قادم قريبًا. حاليًا، وثّق هويتك بجواز سفرك أو بطاقة هويتك — يستغرق ذلك بضع دقائق ويراجعه أحد أفراد الفريق."
           }
         }
       }

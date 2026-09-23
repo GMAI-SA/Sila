@@ -95,7 +95,9 @@ public final class RegisterViewModel {
     /// Validates, then registers the account and requests the first OTP.
     ///
     /// On success ``registeredEmail`` is set and the screen pushes the OTP
-    /// route; the password is cleared immediately and never persisted.
+    /// route. The password is never persisted by the app; it stays in the
+    /// field (and this screen's model) until the flow leaves, so Password
+    /// AutoFill can save it.
     public func submit() async {
         didAttemptSubmit = true
         serverEmailError = nil
@@ -114,8 +116,12 @@ public final class RegisterViewModel {
                 // rather than stranding the user on an empty OTP screen.
                 _ = try await service.sendOTP(email: normalised, purpose: .register)
             }
-            password = ""
-            confirmPassword = ""
+            // The fields keep their text until the screen has gone. iOS saves
+            // a password to Keychain — and keeps the Strong Password it just
+            // generated — at the moment the form disappears, reading what the
+            // fields hold then. Emptying them first threw the generated
+            // password away, so the account could never be signed into again.
+            // This model is released with the screen when the flow pops to root.
             registeredEmail = normalised
         } catch let error as APIError {
             handle(error)

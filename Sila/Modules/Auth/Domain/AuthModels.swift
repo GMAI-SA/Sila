@@ -343,6 +343,12 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     /// The birthdate the person declared, as `YYYY-MM-DD`. Asked on the
     /// document route and tested against the document; `nil` until given.
     public let dateOfBirth: String?
+    /// Whether Nafath is open to this account right now. `false` means
+    /// "coming soon": the real integration is not live, so the chooser shows
+    /// Nafath greyed out and every nationality — Saudis included — verifies
+    /// with a passport or ID card. Missing from an older server → `false`,
+    /// the safe reading.
+    public let nafathAvailable: Bool
 
     public init(
         status: VerificationStatus,
@@ -351,7 +357,8 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         reviewedAt: Date? = nil,
         nationality: String? = nil,
         appeal: VerificationAppealReceipt? = nil,
-        dateOfBirth: String? = nil
+        dateOfBirth: String? = nil,
+        nafathAvailable: Bool = false
     ) {
         self.status = status
         self.rejectionReason = rejectionReason
@@ -360,10 +367,15 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         self.nationality = nationality
         self.appeal = appeal
         self.dateOfBirth = dateOfBirth
+        self.nafathAvailable = nafathAvailable
     }
 
     private enum CodingKeys: String, CodingKey {
-        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth
+        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth, methods
+    }
+
+    private struct Methods: Decodable {
+        let nafath: String?
     }
 
     public init(from decoder: Decoder) throws {
@@ -375,6 +387,8 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         nationality = CountryCode.normalised(try? container.decodeIfPresent(String.self, forKey: .nationality))
         appeal = try? container.decodeIfPresent(VerificationAppealReceipt.self, forKey: .appeal)
         dateOfBirth = ISODay.normalised((try? container.decodeIfPresent(String.self, forKey: .dateOfBirth)) ?? nil)
+        let methods = (try? container.decodeIfPresent(Methods.self, forKey: .methods)) ?? nil
+        nafathAvailable = methods?.nafath == "available"
     }
 }
 

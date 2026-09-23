@@ -826,17 +826,9 @@ public struct LiveRoomScreen: View {
     private var expression: some View {
         HStack(spacing: SLSpacing.xs) {
             ForEach(RoomReaction.palette, id: \.self) { emoji in
-                Button {
-                    Task { await viewModel.react(emoji) }
-                } label: {
-                    Text(emoji)
-                        .font(.system(size: 20))
-                        .frame(width: 34, height: 34)
-                        .background(Circle().fill(SLColor.surface2))
-                        .contentShape(Circle())
+                ReactionChip(emoji: emoji) { big in
+                    Task { await viewModel.react(emoji, big: big) }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(L10n.t("rooms.reactions.send.a11yLabel", emoji)))
             }
 
             Spacer(minLength: 0)
@@ -873,8 +865,11 @@ public struct LiveRoomScreen: View {
         HStack(alignment: .bottom, spacing: SLSpacing.sm) {
             ForEach(viewModel.reactions.suffix(6)) { reaction in
                 Text(reaction.emoji)
-                    .font(.system(size: 26))
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .font(.system(size: reaction.big ? 65 : 26))
+                    .transition(reaction.big
+                        ? .asymmetric(insertion: .scale(scale: 0.3).combined(with: .move(edge: .bottom)),
+                                      removal: .opacity.combined(with: .move(edge: .top)))
+                        : .move(edge: .bottom).combined(with: .opacity))
             }
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
@@ -1040,3 +1035,46 @@ private struct ParticipantSelection: Identifiable {
     }
 }
 
+
+/// One emoji in the room's strip. A tap sends it; holding it (a third of a
+/// second — a light tap on the wrist says it is armed, and the chip grows)
+/// sends it big when released.
+private struct ReactionChip: View {
+    let emoji: String
+    let onSend: (_ big: Bool) -> Void
+
+    @State private var isPressed = false
+    @State private var isArmed = false
+
+    static let holdDuration: Double = 0.35
+
+    var body: some View {
+        Text(emoji)
+            .font(.system(size: 20))
+            .frame(width: 34, height: 34)
+            .background(Circle().fill(isArmed ? SLColor.primary.opacity(0.25) : SLColor.surface2))
+            .scaleEffect(isArmed ? 1.6 : (isPressed ? 1.12 : 1))
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isArmed)
+            .animation(.easeOut(duration: 0.12), value: isPressed)
+            .contentShape(Circle())
+            .onLongPressGesture(minimumDuration: Self.holdDuration, maximumDistance: 40) {
+                isArmed = true
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } onPressingChanged: { pressing in
+                if pressing {
+                    isPressed = true
+                } else {
+                    isPressed = false
+                    let big = isArmed
+                    isArmed = false
+                    onSend(big)
+                }
+            }
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(Text(L10n.t("rooms.reactions.send.a11yLabel", emoji)))
+            .accessibilityAction { onSend(false) }
+            .accessibilityAction(named: Text(L10n.t("rooms.reactions.sendBig.a11yLabel"))) { onSend(true) }
+            .accessibilityIdentifier("rooms.reaction.\(emoji)")
+    }
+}

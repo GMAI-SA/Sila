@@ -19,9 +19,11 @@ final class DocumentVerificationTests: XCTestCase {
         service: VerificationServiceProtocol,
         analytics: AnalyticsClient = RecordingAnalyticsClient(),
         declared: String? = "1990-01-01",
+        nafathAvailable: Bool = false,
         now: @escaping @Sendable () -> Date = Date.init
     ) -> DocumentVerificationViewModel {
-        DocumentVerificationViewModel(service: service, analytics: analytics, declaredDateOfBirth: declared, now: now)
+        DocumentVerificationViewModel(service: service, analytics: analytics, declaredDateOfBirth: declared,
+                                      nafathAvailable: nafathAvailable, now: now)
     }
 
     private func sweep() -> LivenessSweep {
@@ -190,7 +192,7 @@ final class DocumentVerificationTests: XCTestCase {
 
     func testASaudiDocumentIsSentToNafathBeforeAnythingIsUploaded() async {
         let service = VerificationServiceMock(scenario: .approved)
-        let viewModel = makeViewModel(service: service)
+        let viewModel = makeViewModel(service: service, nafathAvailable: true)
         viewModel.choose(.passport)
         viewModel.acceptFront(jpeg: front, recognisedText: MRZParserTests.passport(number: "X12345678", nationality: "SAU"))
         XCTAssertEqual(viewModel.phase, .useNafath, "one person, one account")
@@ -199,8 +201,18 @@ final class DocumentVerificationTests: XCTestCase {
         XCTAssertTrue(calls.isEmpty, "nothing goes over the wire")
     }
 
+    /// While Nafath is "coming soon" a Saudi document is the way in, so it
+    /// must not be turned away to a door that is closed.
+    func testASaudiDocumentIsAcceptedWhileNafathIsComingSoon() {
+        let viewModel = makeViewModel(service: VerificationServiceMock(), nafathAvailable: false)
+        viewModel.choose(.passport)
+        viewModel.acceptFront(jpeg: front, recognisedText: MRZParserTests.passport(number: "X12345678", nationality: "SAU"))
+        XCTAssertFalse(viewModel.zoneIsNafathOnly)
+        XCTAssertNotEqual(viewModel.phase, .useNafath)
+    }
+
     func testASaudiIssuedPermitIsSentToNafathToo() {
-        let viewModel = makeViewModel(service: VerificationServiceMock())
+        let viewModel = makeViewModel(service: VerificationServiceMock(), nafathAvailable: true)
         viewModel.choose(.residencePermit)
         viewModel.acceptFront(jpeg: front, recognisedText: MRZParserTests.passport(number: "X12345678", nationality: "EGY", issuing: "SAU"))
         XCTAssertEqual(viewModel.phase, .useNafath)

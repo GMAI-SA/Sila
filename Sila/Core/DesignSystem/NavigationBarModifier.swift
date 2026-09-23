@@ -37,7 +37,7 @@ public struct SLNavigationBarModifier: ViewModifier {
             .toolbarBackground(SLColor.surface1, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .navigationBarBackButtonHidden(onBack != nil || !showsBackButton)
+            .modifier(HidesSystemBack(hidden: onBack != nil || !showsBackButton))
             .toolbar {
                 if let onBack, showsBackButton {
                     ToolbarItem(placement: .topBarLeading) {
@@ -52,6 +52,26 @@ public struct SLNavigationBarModifier: ViewModifier {
                 }
             }
             .tint(SLColor.primary)
+    }
+}
+
+/// Hides the system back button when asked — and otherwise says nothing.
+///
+/// Writing `.navigationBarBackButtonHidden(false)` is not neutral: it is a
+/// value, and it overrode a screen that had hidden the button itself to put
+/// its own there. The live room hides it for its "Leave" arrow, then applied
+/// this modifier, and the system arrow came back beside "Leave" — two back
+/// arrows next to each other (reported 2026-09-23). So the modifier only ever
+/// hides; it never un-hides.
+private struct HidesSystemBack: ViewModifier {
+    let hidden: Bool
+
+    func body(content: Content) -> some View {
+        if hidden {
+            content.navigationBarBackButtonHidden(true)
+        } else {
+            content
+        }
     }
 }
 

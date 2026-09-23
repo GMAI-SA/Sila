@@ -79,13 +79,20 @@ public actor AuthServiceMock: AuthServiceProtocol {
     ///   - latency: Seconds of simulated network delay. Tests pass `0`.
     ///   - biometry: What ``availableBiometry`` reports.
     ///   - hasBiometricCredential: Seeds a saved biometric account.
+    /// Whether the status says Nafath is open. Off by default, as it is on
+    /// the server until the real integration is live; `-nafathAvailable`
+    /// turns it on for a journey through the Nafath screen.
+    public let nafathAvailable: Bool
+
     public init(
         scenario: MockScenario = .pendingReview,
         acceptedCode: String = "123456",
         latency: Double = 0,
         biometry: BiometryKind = .faceID,
-        hasBiometricCredential: Bool = false
+        hasBiometricCredential: Bool = false,
+        nafathAvailable: Bool = ProcessInfo.processInfo.arguments.contains("-nafathAvailable")
     ) {
+        self.nafathAvailable = nafathAvailable
         self.scenario = scenario
         self.acceptedCode = acceptedCode
         self.latency = latency
@@ -214,7 +221,8 @@ public actor AuthServiceMock: AuthServiceProtocol {
             status: scenario.verificationStatus,
             rejectionReason: scenario.rejectionReason,
             submittedAt: scenario.verificationStatus == .unstarted ? nil : Date().addingTimeInterval(-7200),
-            reviewedAt: scenario == .rejected || scenario == .verified ? Date().addingTimeInterval(-600) : nil
+            reviewedAt: scenario == .rejected || scenario == .verified ? Date().addingTimeInterval(-600) : nil,
+            nafathAvailable: nafathAvailable
         )
     }
 

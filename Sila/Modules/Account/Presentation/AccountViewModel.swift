@@ -404,11 +404,11 @@ public final class AccountViewModel {
                 currentPassword: passwordCurrent,
                 newPassword: passwordNew
             )
-            // Nothing typed here is needed again, and it is the most sensitive
-            // thing this process holds.
-            passwordCurrent = ""
-            passwordNew = ""
-            passwordRepeat = ""
+            // Left in place until the sheet closes (``sheetDismissed(_:)``
+            // wipes them): iOS updates the saved password when the form leaves
+            // the screen, reading the fields then, and emptying them first
+            // meant the new password — often one iOS generated — was never
+            // saved and the old one stayed in Keychain.
         } catch {
             guard !handledDeactivation(error) else { return }
             passwordError = APIError.wrapping(error).presentableMessage

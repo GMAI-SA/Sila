@@ -145,6 +145,10 @@ final class ComposerJourneyUITests: XCTestCase {
             "tapping a trending tag did not open the tag's page"
         )
         XCTAssertTrue(app.descendants(matching: .any)["hashtag.sort.top"].exists, "the page offers no other order")
+        // An ordinary pushed screen keeps its system back arrow — the fix for
+        // the live room's doubled arrow only ever hides, never un-hides.
+        let leading = app.navigationBars.firstMatch.buttons.allElementsBoundByIndex.filter { $0.frame.minX < 120 }
+        XCTAssertEqual(leading.count, 1, "a pushed page lost its back arrow")
         add(screenshot(app, named: "Explore — a tag's page"))
     }
 

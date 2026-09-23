@@ -100,8 +100,10 @@ public final class DocumentVerificationViewModel {
         service: VerificationServiceProtocol,
         analytics: AnalyticsClient,
         declaredDateOfBirth: String? = nil,
+        nafathAvailable: Bool = false,
         now: @escaping @Sendable () -> Date = Date.init
     ) {
+        self.nafathAvailable = nafathAvailable
         let declared = ISODay.normalised(declaredDateOfBirth)
         let calendar = Calendar(identifier: .gregorian)
         self.service = service
@@ -126,10 +128,15 @@ public final class DocumentVerificationViewModel {
     /// here. Mirrors the server's `NAFATH_ONLY`.
     public static let nafathOnly: Set<String> = ["SA"]
 
+    /// Whether Nafath is live for this account. While it is "coming soon",
+    /// Saudi documents are welcome here like any other.
+    public let nafathAvailable: Bool
+
     /// `true` when the zone belongs to somebody Nafath already knows — a
-    /// Saudi nationality, or a Saudi-issued document such as an Iqama.
+    /// Saudi nationality, or a Saudi-issued document such as an Iqama — and
+    /// Nafath is actually open to send them to.
     public var zoneIsNafathOnly: Bool {
-        guard zoneIsReadable, let mrz else { return false }
+        guard nafathAvailable, zoneIsReadable, let mrz else { return false }
         return Self.nafathOnly.contains(mrz.nationality ?? "") || Self.nafathOnly.contains(mrz.issuingCountry ?? "")
     }
 

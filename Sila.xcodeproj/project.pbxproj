@@ -36,6 +36,7 @@
 		0F0048A88A5887B77256E626 /* CommunitiesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA56DC558BE3DE3C42C6697 /* CommunitiesViewModel.swift */; };
 		0FD761FA569DEE3AC00ABE74 /* VerificationAppealTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72088CA22D27140AAAAEDEBF /* VerificationAppealTests.swift */; };
 		1050EA325B63E04C6E4AE3DB /* URLSessionNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7451D318ADBB1936A25F41E4 /* URLSessionNetworkClient.swift */; };
+		1071A82A4AF8C780A51A99BE /* NafathComingSoonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6612EBEC3D0EA66508C3D2D5 /* NafathComingSoonTests.swift */; };
 		125748E9A648EA13D67613A9 /* ProfileServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B94325C2FB64855C65A80A /* ProfileServiceTests.swift */; };
 		1299FA66C79F95152527C6D6 /* NewPostVisibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E10DAAEB758D6946418FAC /* NewPostVisibilityTests.swift */; };
 		13570D4AF26E6816CED8ED0E /* AccountServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA26CF2F1F889B45068E67E /* AccountServiceMock.swift */; };
@@ -185,6 +186,7 @@
 		79ADC68E845793CE609CB2A7 /* VerificationGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DA1C065F65D47FA241DE0DB /* VerificationGateTests.swift */; };
 		79FBE6FDBD0E90E013839163 /* DocumentVerificationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79266637E7BAC5BECF568F3D /* DocumentVerificationViewModel.swift */; };
 		7A3310014D6CF4054C6A56A3 /* SubjectCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27EF3243559F67B21738B290 /* SubjectCatalog.swift */; };
+		7AB5A40071EBB1D50D23A889 /* SLCredentialUsername.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5385C03704F8BE6679AD697 /* SLCredentialUsername.swift */; };
 		7D37655605B1EE465512E592 /* ComposerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ABE27D887D1712FFFF2362F /* ComposerModels.swift */; };
 		83057E69459F2E272C48C3EE /* GifModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE17CCDF3937531701DC21D /* GifModels.swift */; };
 		8344E7FE7D0F0A1B85CDCBA1 /* MRZParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCA15E47760844AE1A2A1DC /* MRZParser.swift */; };
@@ -499,6 +501,7 @@
 		6161BA5A4B857584A73D098A /* SLButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLButton.swift; sourceTree = "<group>"; };
 		619639D33B6517E9B9553E3E /* AccessTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTokenProvider.swift; sourceTree = "<group>"; };
 		6308BD3F753412EE9CC165D8 /* FeedServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedServiceMock.swift; sourceTree = "<group>"; };
+		6612EBEC3D0EA66508C3D2D5 /* NafathComingSoonTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NafathComingSoonTests.swift; sourceTree = "<group>"; };
 		6986603795327E901D0ADF4E /* LocalizedFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedFormattingTests.swift; sourceTree = "<group>"; };
 		6A05A01805B38EFEF92B98C1 /* StorageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageClient.swift; sourceTree = "<group>"; };
 		6BE47CBD190C7C6E054D91F3 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
@@ -695,6 +698,7 @@
 		F459D4C421D013A97C137708 /* AudioSessionArbiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionArbiter.swift; sourceTree = "<group>"; };
 		F4DBCAFDE318BF6EC0F3C5E7 /* LanguagePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePickerSheet.swift; sourceTree = "<group>"; };
 		F4E96582D5AA1F151006C42F /* GifPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GifPickerSheet.swift; sourceTree = "<group>"; };
+		F5385C03704F8BE6679AD697 /* SLCredentialUsername.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLCredentialUsername.swift; sourceTree = "<group>"; };
 		F5A275C6BADDF4853D5DB32D /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		F5D018C54973D43D1E942690 /* ConversationsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsScreen.swift; sourceTree = "<group>"; };
 		F5F791EA50DE349D3A878F38 /* AuthTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTokenStore.swift; sourceTree = "<group>"; };
@@ -1011,6 +1015,7 @@
 				277E1BEFE86DFFAD93FDB8A3 /* MessagesServiceTests.swift */,
 				481A032A22931DD12C3DF579 /* MessagesViewModelTests.swift */,
 				954E002E5D03A43CC67BC27A /* MRZParserTests.swift */,
+				6612EBEC3D0EA66508C3D2D5 /* NafathComingSoonTests.swift */,
 				3DDF38C01BD3D511E4BF1A12 /* NafathPrivacyTests.swift */,
 				9AE009C02035D39DC55147CF /* NafathVerificationTests.swift */,
 				C8847EB000CB4AD3ACA0C6A5 /* NationalityTests.swift */,
@@ -1668,6 +1673,7 @@
 				5CB2BE6D0FADEB11B54372C8 /* SLChip.swift */,
 				C618D4849364BE8E400E73FB /* SLColor.swift */,
 				06DF006482CA744D92DA72B8 /* SLCountryBadge.swift */,
+				F5385C03704F8BE6679AD697 /* SLCredentialUsername.swift */,
 				A8B204472383AA0961250F71 /* SLDivider.swift */,
 				27D6F0070E11613377994370 /* SLEmptyState.swift */,
 				064318A1887D238D73A531E8 /* SLFloatingActionButton.swift */,
@@ -2006,6 +2012,7 @@
 				5C3D88B0CE5FA68F69A978F7 /* SLChip.swift in Sources */,
 				6F0194A1C48D3824A38C5406 /* SLColor.swift in Sources */,
 				D8DC678CA5CC3FB797C7882B /* SLCountryBadge.swift in Sources */,
+				7AB5A40071EBB1D50D23A889 /* SLCredentialUsername.swift in Sources */,
 				9F005C2727BABA6BFB98A58B /* SLDivider.swift in Sources */,
 				8C99E4949D6B8BA933ED7720 /* SLEmptyState.swift in Sources */,
 				EF090B5AD2BD0595289841E5 /* SLFloatingActionButton.swift in Sources */,
@@ -2140,6 +2147,7 @@
 				30F1EB52A5701DC30C0B43F1 /* MRZParserTests.swift in Sources */,
 				ADF73409C16AAED34675247A /* MessagesServiceTests.swift in Sources */,
 				3340851C6C5DB37CB8CE79E1 /* MessagesViewModelTests.swift in Sources */,
+				1071A82A4AF8C780A51A99BE /* NafathComingSoonTests.swift in Sources */,
 				A2D925F064D2AAE09B3E73B0 /* NafathPrivacyTests.swift in Sources */,
 				6DCE7E115892648B78940E35 /* NafathVerificationTests.swift in Sources */,
 				5054966062C32B0EAD245182 /* NationalityTests.swift in Sources */,
@@ -2305,7 +2313,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sila/Resources/Sila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;
@@ -2354,7 +2362,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sila/Resources/Sila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 7258Y6294P;
 				INFOPLIST_FILE = Sila/Resources/Info.plist;

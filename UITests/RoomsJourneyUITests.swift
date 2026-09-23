@@ -125,6 +125,11 @@ final class RoomsJourneyUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Unmute"].exists, "a listener was offered a microphone")
         XCTAssertFalse(app.buttons["Mute"].exists, "a listener was offered a microphone")
         XCTAssertTrue(app.buttons["Leave room"].exists, "no way out of the room")
+        // Exactly one way back: the room's own Leave. The system chevron used
+        // to reappear beside it (owner report 2026-09-23).
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "label == %@", "Leave room")).count, 1)
+        let leading = app.navigationBars.firstMatch.buttons.allElementsBoundByIndex.filter { $0.frame.minX < 120 }
+        XCTAssertEqual(leading.count, 1, "the bar's leading edge holds \(leading.map(\.label)) — a second back arrow")
         add(screenshot(app, named: "room-listening"))
 
         app.buttons["Leave room"].tap()

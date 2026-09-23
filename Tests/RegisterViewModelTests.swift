@@ -75,8 +75,10 @@ final class RegisterViewModelTests: XCTestCase {
         await viewModel.submit()
 
         XCTAssertEqual(viewModel.registeredEmail, "aziz@example.com")
-        XCTAssertEqual(viewModel.password, "", "The password must not be retained after submit")
-        XCTAssertEqual(viewModel.confirmPassword, "")
+        // Kept until the screen leaves, so Password AutoFill can save it —
+        // clearing it here lost Apple's generated password (reported 2026-09-23).
+        XCTAssertEqual(viewModel.password, "Str0ng!Passw0rd")
+        XCTAssertEqual(viewModel.confirmPassword, "Str0ng!Passw0rd")
         XCTAssertFalse(viewModel.isSubmitting)
 
         let calls = await service.recordedCalls

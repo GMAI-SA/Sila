@@ -356,12 +356,24 @@ public final class LiveRoomViewModel {
     static let chatCharacterLimit = 240
 
     /// Sends an emoji to the room. Anybody may — listening is not silence.
-    public func react(_ emoji: String) async {
+    /// How long a big reaction stays up — a little longer, so it is seen.
+    static let bigReactionLifetime: TimeInterval = 5.5
+    /// One big reaction per two seconds from this phone; a room is not a
+    /// place to shout on repeat. Extra ones go as ordinary reactions.
+    static let bigReactionInterval: TimeInterval = 2
+    private var lastBigReactionAt: Date?
+
+    public func react(_ emoji: String, big requested: Bool = false) async {
         guard let viewerId, !hasLeft else { return }
-        show(RoomReaction(emoji: emoji, name: L10n.t("rooms.chat.you")))
-        analytics.track(.roomReactionSent, properties: ["emoji": emoji])
+        var big = requested
+        if big, let last = lastBigReactionAt, Date().timeIntervalSince(last) < Self.bigReactionInterval {
+            big = false
+        }
+        if big { lastBigReactionAt = Date() }
+        show(RoomReaction(emoji: emoji, name: L10n.t("rooms.chat.you"), big: big))
+        analytics.track(.roomReactionSent, properties: ["emoji": emoji, "variant": big ? "big" : "normal"])
         await engine.publish(
-            .reaction(emoji, userId: viewerId, handle: viewerHandle, name: viewerDisplayName)
+            .reaction(emoji, userId: viewerId, handle: viewerHandle, name: viewerDisplayName, big: big)
         )
     }
 
@@ -411,7 +423,7 @@ public final class LiveRoomViewModel {
     private func receive(reaction message: RoomDataMessage) {
         guard let emoji = message.emoji, !emoji.isEmpty else { return }
         guard message.userId != viewerId?.uuidString.lowercased() else { return }  // ours is already up
-        show(RoomReaction(emoji: emoji, name: message.name ?? message.handle))
+        show(RoomReaction(emoji: emoji, name: message.name ?? message.handle, big: message.big))
     }
 
     private func receive(chat message: RoomDataMessage) {
@@ -432,7 +444,8 @@ public final class LiveRoomViewModel {
     private func show(_ reaction: RoomReaction) {
         reactions.append(reaction)
         Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Self.reactionLifetime * 1_000_000_000))
+            let lifetime = reaction.big ? Self.bigReactionLifetime : Self.reactionLifetime
+            try? await Task.sleep(nanoseconds: UInt64(lifetime * 1_000_000_000))
             await MainActor.run { self?.expireReactions() }
         }
     }
@@ -440,8 +453,10 @@ public final class LiveRoomViewModel {
     /// Takes down everything past its moment. Called on a timer rather than
     /// per reaction so a burst does not queue a hundred separate removals.
     public func expireReactions() {
-        let cutoff = Date().addingTimeInterval(-Self.reactionLifetime)
-        reactions.removeAll { $0.sentAt <= cutoff }
+        let now = Date()
+        reactions.removeAll {
+            $0.sentAt <= now.addingTimeInterval(-($0.big ? Self.bigReactionLifetime : Self.reactionLifetime))
+        }
     }
 
     private func append(_ message: RoomChatMessage) {

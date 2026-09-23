@@ -52,6 +52,28 @@ final class RoomExpressionTests: XCTestCase {
         XCTAssertEqual(engine.publishedDestinations.last, [])
     }
 
+    /// Holding an emoji sends it big; a second hold within two seconds goes
+    /// as an ordinary reaction so a room is not flooded.
+    func testAHeldReactionGoesBigAndIsRateLimited() async throws {
+        let (viewModel, engine, _) = try await joined()
+        await viewModel.react("🔥", big: true)
+        XCTAssertEqual(engine.publishedMessages.last?.big, true)
+        XCTAssertEqual(viewModel.reactions.last?.big, true)
+        await viewModel.react("🔥", big: true)
+        XCTAssertEqual(engine.publishedMessages.last?.big, false, "one big reaction per two seconds")
+        await viewModel.react("👏")
+        XCTAssertEqual(engine.publishedMessages.last?.big, false)
+    }
+
+    func testBigRoundTripsAndOldPayloadsAreNotBig() throws {
+        let message = RoomDataMessage.reaction("❤️", userId: UUID(), handle: "aziz", name: "Aziz", big: true)
+        let decoded = try JSONDecoder().decode(RoomDataMessage.self, from: JSONEncoder().encode(message))
+        XCTAssertTrue(decoded.big)
+        XCTAssertTrue(decoded.isReaction)
+        let old = try JSONDecoder().decode(RoomDataMessage.self, from: Data(#"{"type":"reaction","userId":"x","emoji":"👏"}"#.utf8))
+        XCTAssertFalse(old.big)
+    }
+
     func testReactionsAgeOut() async throws {
         let (viewModel, _, _) = try await joined()
         await viewModel.react("🔥")

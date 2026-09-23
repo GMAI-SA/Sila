@@ -572,6 +572,10 @@ final class AccountViewModelTests: XCTestCase {
         await viewModel.changePassword()
 
         XCTAssertNotNil(viewModel.passwordChanged)
+        // Kept until the sheet closes, so iOS can update the saved password…
+        XCTAssertEqual(viewModel.passwordNew, "a-brand-new-one")
+        // …and wiped the moment it does.
+        viewModel.sheetDismissed(.password)
         XCTAssertEqual(viewModel.passwordCurrent, "")
         XCTAssertEqual(viewModel.passwordNew, "")
         XCTAssertEqual(viewModel.passwordRepeat, "")

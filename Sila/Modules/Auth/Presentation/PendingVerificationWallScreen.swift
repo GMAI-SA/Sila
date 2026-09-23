@@ -162,6 +162,7 @@ public struct PendingVerificationWallScreen: View {
         }) {
             VerificationMethodSheet(
                 declaredNationality: viewModel.declaredNationality,
+                nafathAvailable: viewModel.nafathAvailable,
                 onChangeNationality: {
                     // Back to the picker, through the same latch the picker
                     // uses to reach here — one sheet at a time.
@@ -216,7 +217,8 @@ public struct PendingVerificationWallScreen: View {
                         viewModel: DocumentVerificationViewModel(
                             service: verification,
                             analytics: analytics,
-                            declaredDateOfBirth: viewModel.declaredDateOfBirth
+                            declaredDateOfBirth: viewModel.declaredDateOfBirth,
+                            nafathAvailable: viewModel.nafathAvailable
                         ),
                         onSubmitted: {
                             route = nil
@@ -254,7 +256,9 @@ public struct PendingVerificationWallScreen: View {
             let report = try await verification.setNationality(code)
             viewModel.adopt(report)
             analytics.track(.nationalityDeclared)
-            if DocumentVerificationViewModel.nafathOnly.contains(code.uppercased()) {
+            // Straight to Nafath only while Nafath is live; until then a Saudi
+            // chooses like everyone else, and only the document door is open.
+            if VerificationWallViewModel.routesStraightToNafath(claim: code, nafathAvailable: viewModel.nafathAvailable) {
                 analytics.track(.verificationMethodChosen, properties: ["method": "nafath_only"])
                 routeAfterPicking = .nafath
             } else {

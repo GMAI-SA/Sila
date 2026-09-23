@@ -110,7 +110,9 @@ public final class SignInViewModel {
 
         do {
             let pair = try await service.signIn(email: normalised, password: password)
-            password = ""
+            // Not cleared on success: iOS offers "Save password?" when the
+            // sign-in form disappears, reading the field at that moment. The
+            // screen is popped straight away and this model goes with it.
             signedInPair = pair
         } catch let error as APIError {
             password = ""

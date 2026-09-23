@@ -124,6 +124,8 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
     /// For `chat`: sent to the host alone rather than to the room. Addressed
     /// on the wire too, so "only the host" means only the host receives it.
     public let toHost: Bool
+    /// A held reaction: drawn much larger for everyone (owner request 2026-09-23).
+    public var big: Bool = false
 
     public init(
         type: String = "hand",
@@ -150,14 +152,16 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
     }
 
     /// An emoji, from anybody in the room including the audience.
-    public static func reaction(_ emoji: String, userId: UUID, handle: String?, name: String?) -> RoomDataMessage {
-        RoomDataMessage(
+    public static func reaction(_ emoji: String, userId: UUID, handle: String?, name: String?, big: Bool = false) -> RoomDataMessage {
+        var message = RoomDataMessage(
             type: "reaction",
             userId: userId.uuidString.lowercased(),
             emoji: emoji,
             handle: handle,
             name: name
         )
+        message.big = big
+        return message
     }
 
     /// A line of text, to the room or to the host alone.
@@ -183,7 +187,7 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
     public var isChat: Bool { type == "chat" && !(text ?? "").isEmpty }
 
     private enum CodingKeys: String, CodingKey {
-        case type, userId, raised, emoji, text, handle, name, toHost
+        case type, userId, raised, emoji, text, handle, name, toHost, big
     }
 
     /// Tolerant: a build that has never heard of a type still decodes the
@@ -198,6 +202,7 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
         handle = (try? container.decodeIfPresent(String.self, forKey: .handle)) ?? nil
         name = (try? container.decodeIfPresent(String.self, forKey: .name)) ?? nil
         toHost = ((try? container.decodeIfPresent(Bool.self, forKey: .toHost)) ?? nil) ?? false
+        big = ((try? container.decodeIfPresent(Bool.self, forKey: .big)) ?? nil) ?? false
     }
 
     public func encoded() -> Data {

@@ -10,13 +10,16 @@ public enum VerificationRoute: String, Identifiable, Sendable, CaseIterable {
     public var id: String { rawValue }
 }
 
-/// Lets the person pick a route. Nafath for a Saudi claim — one person, one
-/// account — and either route for everyone else. Nothing about the choice is
-/// recorded beyond which door was opened.
+/// Lets the person pick a route. While Nafath is live, a Saudi claim goes
+/// through Nafath — one person, one account — and everyone else may use
+/// either. While it is not ("coming soon"), Nafath is shown but closed and
+/// the document route is open to every nationality. Nothing about the choice
+/// is recorded beyond which door was opened.
 @MainActor
 public struct VerificationMethodSheet: View {
 
     private let declaredNationality: String?
+    private let nafathAvailable: Bool
     private let onChoose: (VerificationRoute) -> Void
     private let onChangeNationality: (() -> Void)?
 
@@ -30,17 +33,19 @@ public struct VerificationMethodSheet: View {
     ///   - onChoose: Called with the chosen route.
     public init(
         declaredNationality: String? = nil,
+        nafathAvailable: Bool = false,
         onChangeNationality: (() -> Void)? = nil,
         onChoose: @escaping (VerificationRoute) -> Void
     ) {
         self.declaredNationality = declaredNationality
+        self.nafathAvailable = nafathAvailable
         self.onChangeNationality = onChangeNationality
         self.onChoose = onChoose
     }
 
     /// Whether the document route is on offer for this claim.
     public var offersDocumentRoute: Bool {
-        !DocumentVerificationViewModel.nafathOnly.contains(declaredNationality ?? "")
+        !nafathAvailable || !DocumentVerificationViewModel.nafathOnly.contains(declaredNationality ?? "")
     }
 
     public var body: some View {
@@ -70,12 +75,16 @@ public struct VerificationMethodSheet: View {
             }
 
             VStack(spacing: SLSpacing.md) {
-                option(
-                    .nafath,
-                    icon: "person.badge.shield.checkmark",
-                    title: L10n.t("verification.method.nafath.title"),
-                    detail: L10n.t("verification.method.nafath.detail")
-                )
+                if nafathAvailable {
+                    option(
+                        .nafath,
+                        icon: "person.badge.shield.checkmark",
+                        title: L10n.t("verification.method.nafath.title"),
+                        detail: L10n.t("verification.method.nafath.detail")
+                    )
+                } else {
+                    comingSoon
+                }
                 if offersDocumentRoute {
                     option(
                         .document,
@@ -120,6 +129,41 @@ public struct VerificationMethodSheet: View {
         .padding(.vertical, SLSpacing.sm)
         .background(SLColor.surface1)
         .clipShape(RoundedRectangle(cornerRadius: SLRadius.md))
+    }
+
+    /// Nafath, shown but closed: people in Saudi Arabia look for it, and
+    /// hiding it would read as "Sila does not use Nafath".
+    private var comingSoon: some View {
+        HStack(spacing: SLSpacing.md) {
+            Image(systemName: "person.badge.shield.checkmark")
+                .font(.system(size: 26, weight: .light))
+                .foregroundStyle(SLColor.textMuted)
+                .frame(width: 40)
+            VStack(alignment: .leading, spacing: SLSpacing.xs) {
+                HStack(spacing: SLSpacing.sm) {
+                    Text(L10n.t("verification.method.nafath.title"))
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.textSecondary)
+                    Text(L10n.t("verification.method.nafath.comingSoon"))
+                        .font(SLFont.micro)
+                        .foregroundStyle(SLColor.primary)
+                        .padding(.horizontal, SLSpacing.sm)
+                        .padding(.vertical, 2)
+                        .background(SLColor.primary.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+                Text(L10n.t("verification.method.nafath.comingSoonDetail"))
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(SLSpacing.md)
+        .background(SLColor.surface1.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: SLRadius.md))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("verification.method.nafath.comingSoon")
     }
 
     private func option(_ route: VerificationRoute, icon: String, title: String, detail: String) -> some View {

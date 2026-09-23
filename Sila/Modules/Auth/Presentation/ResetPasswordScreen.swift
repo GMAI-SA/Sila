@@ -48,6 +48,9 @@ public struct ResetPasswordScreen: View {
                 }
                 .accessibilityElement(children: .combine)
 
+                // The account the new password is saved against.
+                SLCredentialUsername(value: viewModel.email)
+
                 SLTextField(
                     L10n.t("auth.resetPassword.code.label"),
                     text: $viewModel.code,

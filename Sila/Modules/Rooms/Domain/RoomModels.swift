@@ -1315,8 +1315,11 @@ public struct RoomReaction: Identifiable, Equatable, Sendable {
     public let emoji: String
     public let name: String?
     public let sentAt: Date
+    /// Held rather than tapped: drawn at about two and a half times the size.
+    public let big: Bool
 
-    public init(emoji: String, name: String? = nil, sentAt: Date = Date()) {
+    public init(emoji: String, name: String? = nil, sentAt: Date = Date(), big: Bool = false) {
+        self.big = big
         self.emoji = emoji
         self.name = name
         self.sentAt = sentAt

@@ -29,6 +29,9 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         case invalidNationalId
         /// Either start answers 409 `identity_already_used`.
         case identityAlreadyUsed
+        /// Nafath start answers 503 `nafath_unavailable` ("coming soon");
+        /// the document route works as `approved` does.
+        case nafathComingSoon
         /// Nafath start answers 503 `verification_unavailable`;
         /// document submit answers 409 `review_pending`.
         case unavailable
@@ -159,6 +162,12 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
             throw APIError.api(
                 code: .verificationUnavailable,
                 message: "Verification is temporarily unavailable.",
+                status: 503
+            )
+        case .nafathComingSoon:
+            throw APIError.api(
+                code: .nafathUnavailable,
+                message: "Nafath is coming soon. Verify with a passport or ID card for now.",
                 status: 503
             )
         default:

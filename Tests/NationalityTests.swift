@@ -41,8 +41,10 @@ final class NationalityTests: XCTestCase {
         XCTAssertEqual(viewModel.status, .unstarted)
     }
 
+    /// Only while Nafath is live: until then the document route is the way
+    /// in for a Saudi too (see NafathComingSoonTests).
     func testASaudiClaimHidesTheDocumentRoute() {
-        XCTAssertFalse(VerificationMethodSheet(declaredNationality: "SA") { _ in }.offersDocumentRoute)
+        XCTAssertFalse(VerificationMethodSheet(declaredNationality: "SA", nafathAvailable: true) { _ in }.offersDocumentRoute)
         XCTAssertTrue(VerificationMethodSheet(declaredNationality: "US") { _ in }.offersDocumentRoute)
         XCTAssertTrue(VerificationMethodSheet(declaredNationality: nil) { _ in }.offersDocumentRoute)
     }

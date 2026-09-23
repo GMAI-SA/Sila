@@ -31,6 +31,10 @@ struct PasswordChangeSheet: View {
 
     private var form: some View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
+            // Which saved login this new password replaces.
+            if let email = viewModel.account?.email {
+                SLCredentialUsername(value: email)
+            }
             Text(L10n.t("account.password.intro"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)

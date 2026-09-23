@@ -308,6 +308,9 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case invalidTimezone = "invalid_timezone"
     case invalidQuietHours = "invalid_quiet_hours"
 
+    /// Nafath is not open yet ("coming soon"): verify with a document (HTTP 503).
+    case nafathUnavailable = "nafath_unavailable"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -575,6 +578,8 @@ public enum APIError: Error, Equatable, Sendable {
             case .tooManySeries: return L10n.t("rooms.series.error.tooMany")
             case .invalidTimezone: return L10n.t("rooms.series.error.timezone")
             case .invalidQuietHours: return L10n.t("notifications.quiet.error")
+            case .nafathUnavailable:
+                return L10n.t("error.nafathUnavailable")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

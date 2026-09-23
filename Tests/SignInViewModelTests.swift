@@ -54,7 +54,9 @@ final class SignInViewModelTests: XCTestCase {
         await viewModel.submit()
 
         XCTAssertNotNil(viewModel.signedInPair)
-        XCTAssertEqual(viewModel.password, "", "The password must never outlive the call")
+        // Kept on success so "Save password?" has something to save; the
+        // screen (and this model) is gone a moment later.
+        XCTAssertEqual(viewModel.password, "Str0ng!Passw0rd")
         XCTAssertEqual(viewModel.signedInPair?.user.verificationStatus, .verified)
 
         let calls = await service.recordedCalls
