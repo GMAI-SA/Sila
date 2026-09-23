@@ -73,6 +73,11 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
         // Configured before the socket opens, so the first audio frame has
         // somewhere to go. `.voiceChat` rather than `.videoChat`: this app has
         // no camera path, and the receiver/speaker routing differs.
+        // A voice post playing, or one being recorded, gives the session up
+        // first — released with notifyOthersOnDeactivation — so the room
+        // configures a clean session. Rooms are never recorded; this only
+        // stops the other two.
+        await MainActor.run { AudioSessionArbiter.shared.prepareForRoom() }
         configureAudioSession()
 
         self.canPublish = canPublish

@@ -401,6 +401,15 @@ public enum AnalyticsEvent: String, Sendable {
     case exploreSectionOpened = "explore_section_opened"
     /// For You's order was switched. Carries `variant`: `ranked` or `new`.
     case feedOrderChanged = "feed_order_changed"
+
+    // MARK: Voice posts (contract v20)
+
+    /// Recording began. Carries `kind`.
+    case voiceRecordStarted = "voice_record_started"
+    /// A recording reached the server. Carries `kind` and `duration_ms`.
+    case voiceUploaded = "voice_uploaded"
+    /// A post carrying a recording was published. Carries `kind`.
+    case voicePosted = "voice_posted"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

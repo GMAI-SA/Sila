@@ -48,6 +48,8 @@ public final class AppContainer {
     public let searchService: SearchServiceProtocol
     /// Needs a reply, people, trending, starters, polls, first-run subjects.
     public let discoverService: DiscoverServiceProtocol
+    /// Recording, uploading and captioning voice posts (contract v20).
+    public let voiceService: VoiceServiceProtocol
     /// Contract v4's interests service — topics and feed preferences.
     public let preferencesService: PreferencesServiceProtocol
     /// Contract v5's account service — profile, credentials, export, deletion.
@@ -117,7 +119,8 @@ public final class AppContainer {
         communitiesService: CommunitiesServiceProtocol? = nil,
         messagesService: MessagesServiceProtocol? = nil,
         languageService: LanguageServiceProtocol? = nil,
-        discoverService: DiscoverServiceProtocol? = nil
+        discoverService: DiscoverServiceProtocol? = nil,
+        voiceService: VoiceServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -261,6 +264,14 @@ public final class AppContainer {
             self.discoverService = DiscoverServiceMock(latency: 0.25)
         } else {
             self.discoverService = DiscoverService(network: network, tokens: tokens, analytics: analytics)
+        }
+
+        if let voiceService {
+            self.voiceService = voiceService
+        } else if flags.useMockComposer {
+            self.voiceService = VoiceServiceMock()
+        } else {
+            self.voiceService = VoiceService(network: network, tokens: tokens, analytics: analytics)
         }
 
         if let preferencesService {

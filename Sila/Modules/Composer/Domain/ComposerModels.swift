@@ -68,6 +68,8 @@ public struct PostDraft: Equatable, Sendable {
     /// A poll; the text is its question (contract v19). Only ever on the
     /// opening post, never beside media.
     public var poll: PollDraft?
+    /// An uploaded recording (contract v20). Travels alone, like a poll.
+    public var voiceClipId: UUID?
 
     public init(
         text: String,
@@ -79,8 +81,10 @@ public struct PostDraft: Equatable, Sendable {
         sensitiveNote: String = "",
         communityId: UUID? = nil,
         gif: Gif? = nil,
-        poll: PollDraft? = nil
+        poll: PollDraft? = nil,
+        voiceClipId: UUID? = nil
     ) {
+        self.voiceClipId = voiceClipId
         self.poll = poll
         self.text = text
         self.scope = scope
@@ -107,7 +111,7 @@ public struct PostDraft: Equatable, Sendable {
             // A poll needs its question and valid options.
             return !trimmedText.isEmpty && poll.isValid && ComposerTextMetrics.make(text).canPost
         }
-        if trimmedText.isEmpty { return gif != nil || !imageURLs.isEmpty }
+        if trimmedText.isEmpty { return gif != nil || !imageURLs.isEmpty || voiceClipId != nil }
         return ComposerTextMetrics.make(text).canPost
     }
 }
@@ -140,6 +144,8 @@ struct CreatePostBody: Encodable, Equatable {
     let gif: GifBody?
     /// Omitted when there is none.
     let poll: PollPayload?
+    /// Omitted when there is none.
+    let voiceClipId: String?
 
     init(draft: PostDraft) {
         self.text = draft.trimmedText
@@ -155,6 +161,7 @@ struct CreatePostBody: Encodable, Equatable {
         self.communityId = draft.communityId?.uuidString.lowercased()
         self.gif = draft.gif.map(GifBody.init(gif:))
         self.poll = draft.poll?.payload
+        self.voiceClipId = draft.voiceClipId?.uuidString.lowercased()
     }
 }
 

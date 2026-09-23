@@ -264,6 +264,12 @@ public struct PostCardView: View {
                         .padding(.leading, style == .detail ? 0 : 56)
                 }
 
+                if let clip = post.voice {
+                    VoicePostView(postId: post.id, clip: clip, isDetail: style == .detail,
+                                  canTakeStance: !post.viewer.isAuthor)
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
+
                 if post.poll != nil {
                     PollView(post: post, isDetail: style == .detail)
                         .padding(.leading, style == .detail ? 0 : 56)

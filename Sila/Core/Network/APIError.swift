@@ -289,6 +289,20 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// The post carries no poll (HTTP 404).
     case pollNotFound = "poll_not_found"
 
+    // MARK: Contract v20 — voice
+    case invalidAudio = "invalid_audio"
+    case audioTooShort = "audio_too_short"
+    case audioTooLong = "audio_too_long"
+    case invalidKind = "invalid_kind"
+    case audioTooLarge = "audio_too_large"
+    case audioProcessingUnavailable = "audio_processing_unavailable"
+    case voiceWithMedia = "voice_with_media"
+    case invalidVoiceClip = "invalid_voice_clip"
+    case voiceClipUsed = "voice_clip_used"
+    case captionRedoLimit = "caption_redo_limit"
+    case ownHotTake = "own_hot_take"
+    case notAHotTake = "not_a_hot_take"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -541,6 +555,17 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("poll.error.alreadyVoted")
             case .invalidOption, .pollNotFound:
                 return L10n.t("poll.error.gone")
+            case .invalidAudio: return L10n.t("voice.error.invalid")
+            case .audioTooShort: return L10n.t("voice.error.tooShort")
+            case .audioTooLong: return message.isEmpty ? L10n.t("voice.error.tooLong") : message
+            case .invalidKind: return L10n.t("voice.error.invalid")
+            case .audioTooLarge: return L10n.t("voice.error.tooLarge")
+            case .audioProcessingUnavailable: return L10n.t("voice.error.unavailable")
+            case .voiceWithMedia: return L10n.t("voice.error.withMedia")
+            case .invalidVoiceClip, .voiceClipUsed: return L10n.t("voice.error.clipGone")
+            case .captionRedoLimit: return L10n.t("voice.error.redoLimit")
+            case .ownHotTake: return L10n.t("voice.error.ownHotTake")
+            case .notAHotTake: return L10n.t("voice.error.notHotTake")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

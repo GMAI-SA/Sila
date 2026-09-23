@@ -38,19 +38,19 @@
       }
     },
     "NSMicrophoneUsageDescription" : {
-      "comment" : "System microphone prompt, shown the first time the user takes the microphone in a voice room.",
+      "comment" : "System microphone prompt, shown the first time somebody speaks in a room or records a voice post.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تستخدم صلة المايك فقط عندما تأخذ المايك في غرفة صوتية. الاستماع لا يحتاج إليه أبدًا، ولا تُسجَّل الغرف إطلاقًا، ولا يُخزَّن أي شيء تقوله."
+            "value" : "يستخدم صلة الميكروفون عندما تتحدث في غرفة أو تسجّل منشورًا صوتيًا. الغرف لا تُسجَّل أبدًا؛ المنشور الصوتي يُسجَّل فقط عندما تضغط زر التسجيل، وأنت وحدك من يقرر نشره."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sila uses your microphone only when you take the microphone in a voice room. Listening never needs it, rooms are never recorded, and nothing you say is stored."
+            "value" : "Sila uses the microphone when you speak in a room or record a voice post. Rooms are never recorded; a voice post is recorded only when you press record, and only you decide to post it."
           }
         }
       }

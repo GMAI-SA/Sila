@@ -104,6 +104,18 @@ public struct ReplyComposerBar: View {
                     ComposerCharacterRing(metrics: viewModel.metrics(at: 0))
                 }
 
+                if viewModel.canRecordVoice {
+                    Button { viewModel.openRecorder() } label: {
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(SLColor.primary)
+                            .frame(width: 36, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(L10n.t("voice.reply.a11yLabel")))
+                    .accessibilityIdentifier("reply.voice")
+                }
+
                 SLButton(
                     L10n.t("composer.action.reply"),
                     variant: .primary,
@@ -120,6 +132,28 @@ public struct ReplyComposerBar: View {
             }
             .padding(.horizontal, SLSpacing.lg)
             .padding(.vertical, SLSpacing.md)
+        }
+        .overlay(alignment: .topLeading) {
+            if let clip = viewModel.voiceClip {
+                AttachedVoiceChip(clip: clip, onRemove: { viewModel.removeVoice() })
+                    .padding(.horizontal, SLSpacing.lg)
+                    .offset(y: -44)
+            }
+        }
+        .sheet(isPresented: $viewModel.isShowingRecorder) {
+            if let voice = viewModel.voice {
+                Owned({
+                    VoiceRecorderViewModel(
+                        kind: .question,
+                        recorder: SystemVoiceRecorder(),
+                        service: voice,
+                        analytics: ConsoleAnalyticsClient(),
+                        onUse: { clip in viewModel.attach(voice: clip) }
+                    )
+                }) { recorder in
+                    VoiceRecorderSheet(viewModel: recorder, showsKinds: false, onClose: { viewModel.isShowingRecorder = false })
+                }
+            }
         }
         .animation(.easeInOut(duration: 0.18), value: isExpanded)
         .onChange(of: isFocused) { _, focused in

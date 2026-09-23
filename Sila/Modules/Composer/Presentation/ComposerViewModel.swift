@@ -67,6 +67,12 @@ public final class ComposerViewModel {
     public var poll: PollDraft?
     /// Phrases offered above an empty composer (contract v19).
     public private(set) var starters: [ComposerStarter] = []
+    /// A recording attached to the post (contract v20). Travels alone.
+    public private(set) var voiceClip: VoiceClip?
+    /// `true` while the recorder is up.
+    public var isShowingRecorder = false
+    /// The voice backend. `nil` hides the microphone.
+    public let voice: VoiceServiceProtocol?
     /// `true` while the GIF picker sheet is up.
     public var isShowingGifPicker = false
     /// Mention candidates for the segment being typed.
@@ -120,10 +126,12 @@ public final class ComposerViewModel {
         mentionDebounce: TimeInterval = ComposerConstants.mentionDebounce,
         openGifPicker: Bool = false,
         starters: DiscoverServiceProtocol? = nil,
+        voice: VoiceServiceProtocol? = nil,
         onPosted: @escaping @MainActor ([Post]) -> Void = { _ in },
         onClose: @escaping @MainActor () -> Void = {}
     ) {
         self.starterSource = starters
+        self.voice = voice
         self.context = context
         self.author = author
         self.composer = composer
@@ -150,7 +158,8 @@ public final class ComposerViewModel {
 
     /// Whether the thread affordance is offered. Replies stay single.
     public var allowsThread: Bool {
-        context.replyTarget == nil && poll == nil && segments.count < ComposerConstants.maximumThreadSegments
+        context.replyTarget == nil && poll == nil && voiceClip == nil
+            && segments.count < ComposerConstants.maximumThreadSegments
     }
 
     /// Character counting for the focused segment.
@@ -166,7 +175,7 @@ public final class ComposerViewModel {
     /// `true` when there is anything the user would be upset to lose.
     public var hasContent: Bool {
         segments.contains { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            || gif != nil || !attachments.isEmpty || poll != nil
+            || gif != nil || !attachments.isEmpty || poll != nil || voiceClip != nil
     }
 
     /// `true` when the Post button should be live.
@@ -184,6 +193,10 @@ public final class ComposerViewModel {
                 && poll.isValid
         }
         let filled = segments.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        if voiceClip != nil {
+            // The recording is the post; words beside it are a title.
+            return filled.allSatisfy { ComposerTextMetrics.make($0.text).canPost }
+        }
         guard !filled.isEmpty else { return gif != nil || !attachments.isEmpty }
         return filled.allSatisfy { ComposerTextMetrics.make($0.text).canPost }
     }
@@ -203,12 +216,39 @@ public final class ComposerViewModel {
     /// Whether "Add a poll" is offered: a new post (in a community or not),
     /// never a reply or a quote, and not beside pictures or a GIF.
     public var canAddPoll: Bool {
-        context.replyTarget == nil && context.quotedPost == nil && poll == nil
+        context.replyTarget == nil && context.quotedPost == nil && poll == nil && voiceClip == nil
             && gif == nil && attachments.isEmpty && segments.count == 1
     }
 
     /// Whether pictures and GIFs are offered. Not while a poll is on.
-    public var allowsMedia: Bool { poll == nil }
+    public var allowsMedia: Bool { poll == nil && voiceClip == nil }
+
+    // MARK: - Voice
+
+    /// Whether the microphone is offered: a voice backend, a root post or a
+    /// reply (a voice reply is a question), and nothing else attached.
+    public var canRecordVoice: Bool {
+        voice != nil && voiceClip == nil && poll == nil && gif == nil && attachments.isEmpty
+            && context.quotedPost == nil && segments.count == 1
+    }
+
+    /// The kind the recorder opens in: a reply is a question.
+    public var recorderKind: VoiceKind { context.replyTarget != nil ? .question : .thought }
+
+    public func openRecorder() {
+        guard canRecordVoice else { return }
+        isShowingRecorder = true
+    }
+
+    /// The recorder handed back an uploaded clip.
+    public func attach(voice clip: VoiceClip) {
+        voiceClip = clip
+        isShowingRecorder = false
+    }
+
+    public func removeVoice() {
+        voiceClip = nil
+    }
 
     /// Starts a poll with two empty options.
     public func addPoll() {
@@ -465,11 +505,13 @@ public final class ComposerViewModel {
             communityId: context.community?.id,
             // Same again for the GIF.
             gif: continuationId == nil ? gif : nil,
-            poll: continuationId == nil ? poll : nil
+            poll: continuationId == nil ? poll : nil,
+            voiceClipId: continuationId == nil ? voiceClip?.id : nil
         )
 
         if !report.posted.isEmpty {
             onPosted(report.posted)
+            if voiceClip != nil { analytics.track(.voicePosted, properties: ["kind": voiceClip?.kind.rawValue ?? "thought"]) }
             if poll != nil { analytics.track(.pollCreated, properties: ["count": String(poll?.options.count ?? 0)]) }
             analytics.track(.postPublished, properties: [
                 "scope": scope.wireValue,

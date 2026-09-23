@@ -29,7 +29,7 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Sign in with Face ID</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Sila uses your microphone only when you take the microphone in a voice room. Listening never needs it, rooms are never recorded, and nothing you say is stored.</string>
+	<string>Sila uses the microphone when you speak in a room or record a voice post. Rooms are never recorded; a voice post is recorded only when you press record, and only you decide to post it.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

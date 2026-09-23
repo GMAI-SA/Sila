@@ -338,6 +338,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     /// server did not say (an older response) — then every @word is linked as
     /// before; an empty array means none resolved and none are linked.
     public let mentions: [PostMention]?
+    /// A recording, when the post is a voice post (contract v20).
+    public var voice: VoiceClip?
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -388,8 +390,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         room: RoomCard? = nil,
         poll: Poll? = nil,
         hiddenByAuthor: Bool = false,
-        mentions: [PostMention]? = nil
+        mentions: [PostMention]? = nil,
+        voice: VoiceClip? = nil
     ) {
+        self.voice = voice
         self.poll = poll
         self.hiddenByAuthor = hiddenByAuthor
         self.mentions = mentions
@@ -423,7 +427,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
         case communityId, communitySlug, communityName, gif, room
-        case poll, hiddenByAuthor, mentions
+        case poll, hiddenByAuthor, mentions, voice
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -497,6 +501,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         poll = (try? container.decodeIfPresent(Poll.self, forKey: .poll)) ?? nil
         hiddenByAuthor = (try? container.decode(Bool.self, forKey: .hiddenByAuthor)) ?? false
         mentions = (try? container.decodeIfPresent([PostMention].self, forKey: .mentions)) ?? nil
+        // A recording that cannot be decoded costs the recording, never the post.
+        voice = (try? container.decodeIfPresent(VoiceClip.self, forKey: .voice)) ?? nil
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.
@@ -526,7 +532,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             room: room,
             poll: poll,
             hiddenByAuthor: hiddenByAuthor,
-            mentions: mentions
+            mentions: mentions,
+            voice: voice
         )
     }
 }

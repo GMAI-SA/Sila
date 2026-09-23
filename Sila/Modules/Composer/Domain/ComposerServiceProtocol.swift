@@ -62,13 +62,14 @@ extension ComposerServiceProtocol {
         sensitiveNote: String = "",
         communityId: UUID? = nil,
         gif: Gif? = nil,
-        poll: PollDraft? = nil
+        poll: PollDraft? = nil,
+        voiceClipId: UUID? = nil
     ) async -> ThreadPostReport {
         var queue = segments
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         // A GIF or a picture with no words is still a post: one segment, no text.
-        if queue.isEmpty && (gif != nil || !imageURLs.isEmpty) {
+        if queue.isEmpty && (gif != nil || !imageURLs.isEmpty || voiceClipId != nil) {
             queue = [""]
         }
 
@@ -97,7 +98,8 @@ extension ComposerServiceProtocol {
                 // The GIF too rides on the opening segment only.
                 gif: posted.isEmpty ? gif : nil,
                 // And the poll: its question is the opening segment.
-                poll: posted.isEmpty ? poll : nil
+                poll: posted.isEmpty ? poll : nil,
+                voiceClipId: posted.isEmpty ? voiceClipId : nil
             )
             do {
                 let post = try await createPost(draft)

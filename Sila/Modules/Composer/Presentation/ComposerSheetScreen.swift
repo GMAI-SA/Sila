@@ -46,6 +46,10 @@ public struct ComposerSheetScreen: View {
 
                     PollEditorSection(viewModel: viewModel)
 
+                    if let clip = viewModel.voiceClip {
+                        AttachedVoiceChip(clip: clip, onRemove: { viewModel.removeVoice() })
+                    }
+
                     if let quoted = viewModel.context.quotedPost {
                         quotedSection(quoted)
                     }
@@ -81,6 +85,21 @@ public struct ComposerSheetScreen: View {
             }
             .onAppear { focusedSegment = viewModel.segments.first?.id }
             .task { await viewModel.loadStarters() }
+            .sheet(isPresented: $viewModel.isShowingRecorder) {
+                if let voice = viewModel.voice {
+                    Owned({
+                        VoiceRecorderViewModel(
+                            kind: viewModel.recorderKind,
+                            recorder: SystemVoiceRecorder(),
+                            service: voice,
+                            analytics: ConsoleAnalyticsClient(),
+                            onUse: { clip in viewModel.attach(voice: clip) }
+                        )
+                    }) { recorder in
+                        VoiceRecorderSheet(viewModel: recorder, onClose: { viewModel.isShowingRecorder = false })
+                    }
+                }
+            }
             .confirmationDialog(
                 L10n.t("composer.discard.title"),
                 isPresented: Binding(
@@ -182,6 +201,16 @@ public struct ComposerSheetScreen: View {
                     .accessibilityIdentifier("composer.addGif")
                     .accessibilityHint(Text(L10n.t("composer.gif.add.a11yHint")))
                 }
+                }
+
+                if viewModel.canRecordVoice {
+                    Button {
+                        viewModel.openRecorder()
+                    } label: {
+                        Label(L10n.t("voice.add"), systemImage: "mic")
+                            .font(SLFont.caption)
+                    }
+                    .accessibilityIdentifier("composer.addVoice")
                 }
 
                 if viewModel.canAddPoll {

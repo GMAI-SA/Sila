@@ -60,7 +60,8 @@ public struct PostDetailScreen: View {
         analytics: AnalyticsClient = ConsoleAnalyticsClient(),
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenHashtag: (@MainActor (String) -> Void)? = nil,
-        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil
+        onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
+        voiceService: VoiceServiceProtocol? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -84,6 +85,7 @@ public struct PostDetailScreen: View {
                 composer: composerService,
                 search: searchService,
                 analytics: analytics,
+                voice: voiceService,
                 onPosted: { [weak viewModel] posted in viewModel?.insert(replies: posted) }
             )
         )

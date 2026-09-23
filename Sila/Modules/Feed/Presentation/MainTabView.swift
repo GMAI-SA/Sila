@@ -148,6 +148,9 @@ public struct MainTabView: View {
                     .environment(\.pollVoter, PollVoter(vote: { postId, optionId in
                         try await container.discoverService.vote(postId: postId, optionId: optionId)
                     }))
+                    .environment(\.voiceActions, VoiceActions(setStance: { stance, postId in
+                        try await container.voiceService.setStance(stance, postId: postId)
+                    }))
 
                 // The one thing this tab starts, in the bottom corner where a
                 // thumb already is; held, everything the app can start.
@@ -576,6 +579,7 @@ public struct MainTabView: View {
             analytics: container.analytics,
             openGifPicker: container.router.composerOpensGifPicker,
             starters: container.discoverService,
+            voice: container.flags.voicePosts ? container.voiceService : nil,
             onPosted: { posted in
                 viewModel.insert(newPosts: posted)
                 exploreViewModel.insert(posted)
@@ -1328,7 +1332,8 @@ public struct MainTabView: View {
                 analytics: container.analytics,
                 onCompose: composeHandler,
                 onOpenHashtag: openHashtag,
-                onOpenRoom: openRoomCard
+                onOpenRoom: openRoomCard,
+                voiceService: container.flags.voicePosts && container.flags.composer ? container.voiceService : nil
             )
         }
         .id(post.id)

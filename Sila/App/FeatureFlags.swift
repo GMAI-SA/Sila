@@ -81,6 +81,10 @@ public struct FeatureFlags: Sendable {
     /// v19 — the first-run subjects and people step. Off, a new account lands
     /// straight on the feed as before; the server's flag is left unanswered.
     public var onboarding = true
+    /// v20 — recording, playing and captioning voice posts. Off, the
+    /// microphone leaves the composer and the reply bar; voice posts already
+    /// on the server still play.
+    public var voicePosts = true
     /// Shows the first-run step even when the account has been asked —
     /// `-forceOnboarding`, for UI journeys and demos.
     public var forceOnboarding = false
@@ -374,6 +378,9 @@ public struct FeatureFlags: Sendable {
         }
         if arguments.contains("-mockVoiceEngine") {
             flags.useMockVoiceEngine = true
+        }
+        if arguments.contains("-noVoicePosts") {
+            flags.voicePosts = false
         }
         if arguments.contains("-noOnboarding") {
             flags.onboarding = false
