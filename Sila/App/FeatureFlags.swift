@@ -78,6 +78,12 @@ public struct FeatureFlags: Sendable {
     /// route into a room; the rooms already open on the server keep running,
     /// because the client does not own them.
     public var rooms = true
+    /// v19 — the first-run subjects and people step. Off, a new account lands
+    /// straight on the feed as before; the server's flag is left unanswered.
+    public var onboarding = true
+    /// Shows the first-run step even when the account has been asked —
+    /// `-forceOnboarding`, for UI journeys and demos.
+    public var forceOnboarding = false
     /// P6 — Spaces.
     public var spaces = false
     /// P7 — Profiles: another person's page, their top-level posts, and the
@@ -368,6 +374,12 @@ public struct FeatureFlags: Sendable {
         }
         if arguments.contains("-mockVoiceEngine") {
             flags.useMockVoiceEngine = true
+        }
+        if arguments.contains("-noOnboarding") {
+            flags.onboarding = false
+        }
+        if arguments.contains("-forceOnboarding") {
+            flags.forceOnboarding = true
         }
         return flags
     }

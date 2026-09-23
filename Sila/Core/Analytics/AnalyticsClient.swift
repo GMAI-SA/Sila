@@ -380,6 +380,27 @@ public enum AnalyticsEvent: String, Sendable {
     case roomJoinRefusedRemoved = "room_join_refused_removed"
     /// The media connection dropped or failed. Carries `state`.
     case roomMediaFailed = "room_media_failed"
+
+    // MARK: Engagement (contract v19)
+
+    /// A post carrying a poll was published.
+    case pollCreated = "poll_created"
+    /// A vote was cast. Carries `post_id` — never the option chosen.
+    case pollVoted = "poll_voted"
+    /// A composer starter was tapped. Carries `kind` and the starter's id as `source`.
+    case composerStarterUsed = "composer_starter_used"
+    /// The first-run subjects step was answered. Carries `count`.
+    case onboardingInterestsChosen = "onboarding_interests_chosen"
+    /// The first-run subjects step was skipped.
+    case onboardingInterestsSkipped = "onboarding_interests_skipped"
+    /// Somebody was followed from the onboarding people step.
+    case onboardingPersonFollowed = "onboarding_person_followed"
+    /// Onboarding finished. Carries `result`: `room`, `feed`.
+    case onboardingCompleted = "onboarding_completed"
+    /// A section of the Explore hub was opened. Carries `source`.
+    case exploreSectionOpened = "explore_section_opened"
+    /// For You's order was switched. Carries `variant`: `ranked` or `new`.
+    case feedOrderChanged = "feed_order_changed"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

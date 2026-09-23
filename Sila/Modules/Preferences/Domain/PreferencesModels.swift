@@ -152,6 +152,9 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
     /// the feed-preferences screen — the person who wants likes silenced is
     /// standing in the notifications list when they decide that.
     public var notifications: NotificationPreferences
+    /// How the server groups the notification switches (contract v19). Empty
+    /// from an older server; the settings sheet then falls back to its own list.
+    public var notificationGroups: [NotificationGroup] = []
     /// How a hashtag's page is ordered for this account.
     public var hashtagSort: HashtagSort
 
@@ -183,6 +186,7 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         case showUntaggedPosts
         case mutedCountries
         case notifications
+        case notificationGroups
         case hashtagSort
     }
 
@@ -210,6 +214,9 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
             ((try? container.decodeIfPresent(NotificationPreferences.self, forKey: .notifications)) ?? nil)
             ?? NotificationPreferences()
         hashtagSort = HashtagSort(wire: (try? container.decode(String.self, forKey: .hashtagSort)) ?? nil)
+        notificationGroups = NotificationGroup.ordered(
+            (try? container.decode([String: [String]].self, forKey: .notificationGroups)) ?? [:]
+        )
     }
 
     // MARK: Stances

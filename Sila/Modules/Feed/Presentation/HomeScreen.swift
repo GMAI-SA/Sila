@@ -22,6 +22,12 @@ public struct HomeScreen: View {
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// Rooms live right now, drawn as a rail at the top of For You. Empty
+    /// draws nothing.
+    private let liveRooms: [VoiceRoom]
+    private let onOpenLiveRoom: (@MainActor (VoiceRoom) -> Void)?
+
+    @State private var isShowingOrder = false
 
     /// - Parameters:
     ///   - viewModel: Owned by ``MainTabView`` so tab state survives navigation.
@@ -49,8 +55,12 @@ public struct HomeScreen: View {
         onOpenPreferences: (@MainActor () -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
-        countryCode: String? = nil
+        countryCode: String? = nil,
+        liveRooms: [VoiceRoom] = [],
+        onOpenLiveRoom: (@MainActor (VoiceRoom) -> Void)? = nil
     ) {
+        self.liveRooms = liveRooms
+        self.onOpenLiveRoom = onOpenLiveRoom
         self.countryCode = countryCode
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -95,6 +105,49 @@ public struct HomeScreen: View {
         .task { await viewModel.loadIfNeeded(viewModel.selectedTab) }
         .task { await viewModel.loadSubjectsIfNeeded() }
         .tnToast($viewModel.toast)
+        .sheet(isPresented: $isShowingOrder) {
+            NavigationStack {
+                FeedOrderSheet(
+                    order: viewModel.forYouOrder,
+                    onChoose: { order in
+                        isShowingOrder = false
+                        Task { await viewModel.setForYouOrder(order) }
+                    },
+                    onClose: { isShowingOrder = false }
+                )
+            }
+            .presentationDetents([.medium, .large])
+            .tint(SLColor.primary)
+        }
+    }
+
+    /// The top of For You: what is live, and how the list below is ordered —
+    /// said plainly, with the other order one tap away.
+    @ViewBuilder
+    private var forYouHeader: some View {
+        if let onOpenLiveRoom {
+            LiveNowRail(rooms: liveRooms, onOpen: onOpenLiveRoom)
+        }
+        Button {
+            isShowingOrder = true
+        } label: {
+            HStack(spacing: SLSpacing.xs) {
+                Image(systemName: viewModel.forYouOrder == .ranked ? "sparkles" : "clock")
+                    .accessibilityHidden(true)
+                Text(viewModel.forYouOrder.title)
+                Image(systemName: "info.circle").accessibilityHidden(true)
+                Spacer(minLength: 0)
+            }
+            .font(SLFont.caption)
+            .foregroundStyle(SLColor.textSecondary)
+            .padding(.horizontal, SLSpacing.lg)
+            .padding(.vertical, SLSpacing.sm)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(L10n.t("feed.order.a11yLabel", viewModel.forYouOrder.title)))
+        .accessibilityHint(Text(L10n.t("feed.order.a11yHint")))
+        .accessibilityIdentifier("feed.order")
     }
 
     // MARK: - Subjects
@@ -124,6 +177,9 @@ public struct HomeScreen: View {
         let state = viewModel.state(for: tab)
 
         ScrollView {
+            if tab == .forYou {
+                forYouHeader
+            }
             if state.isLoading && !state.isPopulated {
                 skeleton
             } else if let empty = state.emptyKind, !state.isPopulated {
@@ -303,4 +359,64 @@ public struct HomeScreen: View {
         onStub: { _ in }
     )
     .preferredColorScheme(.dark)
+}
+
+/// "How this feed is ordered" — the truth, in both languages, and the choice.
+///
+/// For You used to say it was ranked by engagement and that it learned what
+/// you read. Neither was true. What is true: newest first, lifted for the
+/// subjects you chose and for posts people are replying to — and nothing else.
+@MainActor
+struct FeedOrderSheet: View {
+    let order: FeedOrder
+    let onChoose: @MainActor (FeedOrder) -> Void
+    let onClose: @MainActor () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: SLSpacing.lg) {
+                Text(L10n.t("feed.order.explainer"))
+                    .font(SLFont.bodyLight)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(FeedOrder.allCases) { option in
+                    Button {
+                        onChoose(option)
+                    } label: {
+                        HStack(alignment: .top, spacing: SLSpacing.md) {
+                            Image(systemName: option == order ? "largecircle.fill.circle" : "circle")
+                                .foregroundStyle(SLColor.primary)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(option.title)
+                                    .font(SLFont.bodyEmphasis)
+                                    .foregroundStyle(SLColor.textPrimary)
+                                Text(L10n.t(option == .ranked ? "feed.order.ranked.detail" : "feed.order.newest.detail"))
+                                    .font(SLFont.caption)
+                                    .foregroundStyle(SLColor.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(option == order ? .isSelected : [])
+                    .accessibilityIdentifier("feed.order.\(option.rawValue)")
+                }
+                Text(L10n.t("feed.order.never"))
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(SLSpacing.lg)
+        }
+        .tnScreenBackground()
+        .tnNavigationBar(title: L10n.t("feed.order.title"))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(L10n.t("common.done")) { onClose() }
+            }
+        }
+    }
 }

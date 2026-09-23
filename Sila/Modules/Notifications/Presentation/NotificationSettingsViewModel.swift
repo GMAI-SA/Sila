@@ -20,14 +20,17 @@ public final class NotificationSettingsViewModel {
     /// The map the server last confirmed. Never written optimistically except
     /// for the moment a switch is in flight — see ``setEnabled(_:for:)``.
     public private(set) var preferences = NotificationPreferences()
+    /// The sections as the server grouped them (contract v19). Falls back to
+    /// this build's own list when an older server sends no groups.
+    public private(set) var groups: [NotificationGroup] = []
     /// `true` during the first load.
     public private(set) var isLoading = false
     /// `true` once a load has finished, successfully or not.
     public private(set) var hasLoaded = false
     /// Why the switches could not load.
     public private(set) var loadError: String?
-    /// Kinds with a write in flight.
-    public private(set) var savingKinds: Set<NotificationKind> = []
+    /// Kinds, by wire name, with a write in flight.
+    public private(set) var savingKeys: Set<String> = []
     /// Banner message.
     public var toast: SLToastMessage?
 
@@ -49,7 +52,18 @@ public final class NotificationSettingsViewModel {
     public var summary: String { NotificationCopy.settingsSummary(preferences) }
 
     /// Whether a specific switch is mid-write.
-    public func isSaving(_ kind: NotificationKind) -> Bool { savingKinds.contains(kind) }
+    public func isSaving(_ kind: NotificationKind) -> Bool { savingKeys.contains(kind.rawValue) }
+
+    /// Whether a switch, by wire name, is mid-write.
+    public func isSaving(key: String) -> Bool { savingKeys.contains(key) }
+
+    /// What the sheet draws: the server's groups, or one section of this
+    /// build's own switches when the server did not group them.
+    public var sections: [NotificationGroup] {
+        groups.isEmpty
+            ? [NotificationGroup(id: "posts", kinds: NotificationKind.settable.map(\.rawValue))]
+            : groups
+    }
 
     // MARK: - Loading
 
@@ -69,7 +83,9 @@ public final class NotificationSettingsViewModel {
             if !abandoned { hasLoaded = true }
         }
         do {
-            preferences = try await service.fetchPreferences().notifications
+            let stored = try await service.fetchPreferences()
+            preferences = stored.notifications
+            groups = stored.notificationGroups
         } catch {
             // Cut short: nothing loaded, nothing failed, ask again next time.
             abandoned = APIError.wrapping(error).isCancellation
@@ -89,24 +105,30 @@ public final class NotificationSettingsViewModel {
     ///   - isEnabled: The state the user asked for.
     ///   - kind: Which notifications it governs.
     public func setEnabled(_ isEnabled: Bool, for kind: NotificationKind) async {
-        guard !savingKinds.contains(kind) else { return }
-        guard preferences.isEnabled(kind) != isEnabled else { return }
+        await setEnabled(isEnabled, key: kind.rawValue)
+    }
+
+    /// Flips one kind, by its wire name, and writes it — for kinds the server
+    /// lists that this build has no case for.
+    public func setEnabled(_ isEnabled: Bool, key: String) async {
+        guard !savingKeys.contains(key) else { return }
+        guard preferences.isEnabled(key: key) != isEnabled else { return }
 
         let snapshot = preferences
-        preferences = preferences.setting(isEnabled, for: kind)
-        savingKinds.insert(kind)
-        defer { savingKinds.remove(kind) }
+        preferences = preferences.setting(isEnabled, key: key)
+        savingKeys.insert(key)
+        defer { savingKeys.remove(key) }
 
         do {
-            // The whole map goes every time. `PUT /me/preferences` replaces the
-            // `notifications` object it is given, so sending one key would drop
-            // the other four.
+            // The whole map goes every time, so a write can never be read as
+            // switching the others back to a default.
             let stored = try await service.updatePreferences(
                 PreferencesUpdate(notifications: preferences.payload)
             )
             preferences = stored.notifications
+            if !stored.notificationGroups.isEmpty { groups = stored.notificationGroups }
             analytics.track(.notificationPreferenceChanged, properties: [
-                "kind": kind.rawValue,
+                "kind": key,
                 "enabled": String(isEnabled)
             ])
         } catch {

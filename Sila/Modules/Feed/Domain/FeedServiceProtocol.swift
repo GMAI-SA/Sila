@@ -67,9 +67,41 @@ public protocol FeedServiceProtocol: Sendable {
     /// One page of a hashtag — `GET /hashtags/{tag}/posts`. A `nil` sort asks
     /// for the order the account keeps in its preferences.
     func fetchHashtagPosts(_ tag: String, sort: HashtagSort?, cursor: String?) async throws -> HashtagPage
+
+    /// A feed page in a chosen order (contract v19). Defaulted below.
+    func fetchFeed(_ tab: FeedTab, topics: [String], order: FeedOrder, cursor: String?, limit: Int) async throws -> FeedPage
+
+    /// Collapse or restore a reply in your own thread. Defaulted below.
+    func setHidden(_ hidden: Bool, replyId: UUID) async throws -> Post
+}
+
+/// How For You is ordered (contract v19): ranked — newest first, lifted for
+/// saved subjects and for replies — or strictly newest.
+public enum FeedOrder: String, Sendable, CaseIterable, Identifiable {
+    case ranked
+    case newest
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        L10n.t(self == .ranked ? "feed.order.ranked" : "feed.order.newest")
+    }
 }
 
 extension FeedServiceProtocol {
+    /// A feed page in a chosen order. Only For You has more than one order;
+    /// stubs that do not implement it serve their one order.
+    public func fetchFeed(_ tab: FeedTab, topics: [String], order: FeedOrder, cursor: String?, limit: Int) async throws -> FeedPage {
+        try await fetchFeed(tab, topics: topics, cursor: cursor, limit: limit)
+    }
+
+    /// `POST`/`DELETE /posts/{id}/hide` — collapse a reply in your own thread.
+    /// Returns the reply as the server now holds it; its `hiddenByAuthor` is
+    /// the confirmation. Stubs that never hide inherit this refusal.
+    public func setHidden(_ hidden: Bool, replyId: UUID) async throws -> Post {
+        throw APIError.transport("Hiding replies is not available here")
+    }
+
     /// A service with no notion of subjects serves the whole feed.
     public func fetchFeed(_ tab: FeedTab, topics: [String], cursor: String?, limit: Int) async throws -> FeedPage {
         try await fetchFeed(tab, cursor: cursor, limit: limit)

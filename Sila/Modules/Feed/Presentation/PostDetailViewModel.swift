@@ -221,6 +221,35 @@ public final class PostDetailViewModel {
         }
     }
 
+    // MARK: - Hiding replies
+
+    /// Whether the viewer may collapse this reply: it answers the viewer's own
+    /// post, and it is somebody else's (your own words you delete instead).
+    public func canHide(_ reply: Post) -> Bool {
+        post.viewer.isAuthor && reply.replyToPostId == post.id && !reply.viewer.isAuthor
+    }
+
+    /// Collapses or restores a reply. The row changes only when the server
+    /// says it did — `hidden_by_author` on the answer is the confirmation.
+    public func toggleHidden(_ reply: Post) async {
+        guard canHide(reply), let current = currentCopy(of: reply.id) else { return }
+        let desired = !current.hiddenByAuthor
+        do {
+            let stored = try await service.setHidden(desired, replyId: reply.id)
+            apply(id: reply.id) { copy in
+                var updated = copy
+                updated.hiddenByAuthor = stored.hiddenByAuthor
+                return updated
+            }
+            if stored.hiddenByAuthor == desired {
+                toast = .success(L10n.t(desired ? "post.hide.done" : "post.unhide.done"))
+            }
+        } catch {
+            let wrapped = APIError.wrapping(error)
+            if !wrapped.isCancellation { toast = .error(userMessage(for: error)) }
+        }
+    }
+
     private func currentCopy(of id: UUID) -> Post? {
         if post.id == id { return post }
         if let parent, parent.id == id { return parent }

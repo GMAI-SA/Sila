@@ -330,6 +330,14 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public let gif: Gif?
     /// The room this post is about, when somebody put one on their timeline.
     public let room: RoomCard?
+    /// A poll, when the post asks one (contract v19). `var`: a vote replaces it.
+    public var poll: Poll?
+    /// Collapsed by the author of the thread this replies to.
+    public var hiddenByAuthor: Bool
+    /// The `@names` the server resolved to real accounts. `nil` when the
+    /// server did not say (an older response) — then every @word is linked as
+    /// before; an empty array means none resolved and none are linked.
+    public let mentions: [PostMention]?
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -377,8 +385,14 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         communitySlug: String? = nil,
         communityName: String? = nil,
         gif: Gif? = nil,
-        room: RoomCard? = nil
+        room: RoomCard? = nil,
+        poll: Poll? = nil,
+        hiddenByAuthor: Bool = false,
+        mentions: [PostMention]? = nil
     ) {
+        self.poll = poll
+        self.hiddenByAuthor = hiddenByAuthor
+        self.mentions = mentions
         self.id = id
         self.author = author
         self.text = text
@@ -409,6 +423,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
         case communityId, communitySlug, communityName, gif, room
+        case poll, hiddenByAuthor, mentions
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -478,6 +493,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         // A GIF that cannot be decoded costs the picture, never the post.
         gif = (try? container.decodeIfPresent(Gif.self, forKey: .gif)) ?? nil
         room = (try? container.decodeIfPresent(RoomCard.self, forKey: .room)) ?? nil
+        // A poll that cannot be decoded costs the poll, never the post.
+        poll = (try? container.decodeIfPresent(Poll.self, forKey: .poll)) ?? nil
+        hiddenByAuthor = (try? container.decode(Bool.self, forKey: .hiddenByAuthor)) ?? false
+        mentions = (try? container.decodeIfPresent([PostMention].self, forKey: .mentions)) ?? nil
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.
@@ -504,7 +523,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             communitySlug: communitySlug,
             communityName: communityName,
             gif: gif,
-            room: room
+            room: room,
+            poll: poll,
+            hiddenByAuthor: hiddenByAuthor,
+            mentions: mentions
         )
     }
 }

@@ -62,6 +62,11 @@ public final class ComposerViewModel {
     public private(set) var isUploadingImage = false
     /// The GIF attached to the opening segment, if any. One per post.
     public private(set) var gif: Gif?
+    /// A poll on the opening post (contract v19). While it is on, pictures,
+    /// GIFs and a thread are off: a poll travels alone.
+    public var poll: PollDraft?
+    /// Phrases offered above an empty composer (contract v19).
+    public private(set) var starters: [ComposerStarter] = []
     /// `true` while the GIF picker sheet is up.
     public var isShowingGifPicker = false
     /// Mention candidates for the segment being typed.
@@ -91,6 +96,7 @@ public final class ComposerViewModel {
     private var continuationId: UUID?
     /// The in-flight mention search, cancelled by the next keystroke.
     private var mentionTask: Task<Void, Never>?
+    private let starterSource: DiscoverServiceProtocol?
 
     /// - Parameters:
     ///   - context: Root post, reply or quote.
@@ -113,9 +119,11 @@ public final class ComposerViewModel {
         analytics: AnalyticsClient,
         mentionDebounce: TimeInterval = ComposerConstants.mentionDebounce,
         openGifPicker: Bool = false,
+        starters: DiscoverServiceProtocol? = nil,
         onPosted: @escaping @MainActor ([Post]) -> Void = { _ in },
         onClose: @escaping @MainActor () -> Void = {}
     ) {
+        self.starterSource = starters
         self.context = context
         self.author = author
         self.composer = composer
@@ -142,7 +150,7 @@ public final class ComposerViewModel {
 
     /// Whether the thread affordance is offered. Replies stay single.
     public var allowsThread: Bool {
-        context.replyTarget == nil && segments.count < ComposerConstants.maximumThreadSegments
+        context.replyTarget == nil && poll == nil && segments.count < ComposerConstants.maximumThreadSegments
     }
 
     /// Character counting for the focused segment.
@@ -158,7 +166,7 @@ public final class ComposerViewModel {
     /// `true` when there is anything the user would be upset to lose.
     public var hasContent: Bool {
         segments.contains { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            || gif != nil || !attachments.isEmpty
+            || gif != nil || !attachments.isEmpty || poll != nil
     }
 
     /// `true` when the Post button should be live.
@@ -168,6 +176,13 @@ public final class ComposerViewModel {
     /// and, for a reply, the server must have said the viewer may reply.
     public var canPost: Bool {
         guard !isPosting, canReplyHere else { return false }
+        if let poll {
+            // The question is the post; the options must all be good.
+            let question = text(at: 0)
+            return !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && ComposerTextMetrics.make(question).canPost
+                && poll.isValid
+        }
         let filled = segments.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         guard !filled.isEmpty else { return gif != nil || !attachments.isEmpty }
         return filled.allSatisfy { ComposerTextMetrics.make($0.text).canPost }
@@ -183,8 +198,55 @@ public final class ComposerViewModel {
         isShowingGifPicker = true
     }
 
+    // MARK: - Poll
+
+    /// Whether "Add a poll" is offered: a new post (in a community or not),
+    /// never a reply or a quote, and not beside pictures or a GIF.
+    public var canAddPoll: Bool {
+        context.replyTarget == nil && context.quotedPost == nil && poll == nil
+            && gif == nil && attachments.isEmpty && segments.count == 1
+    }
+
+    /// Whether pictures and GIFs are offered. Not while a poll is on.
+    public var allowsMedia: Bool { poll == nil }
+
+    /// Starts a poll with two empty options.
+    public func addPoll() {
+        guard canAddPoll else { return }
+        poll = PollDraft()
+    }
+
+    /// Takes the poll off; the question stays as the post's text.
+    public func removePoll() {
+        poll = nil
+    }
+
+    // MARK: - Starters
+
+    /// Whether the starter chips show: a fresh post, nothing typed yet.
+    public var showsStarters: Bool {
+        !starters.isEmpty && context.replyTarget == nil && context.quotedPost == nil
+            && segments.count == 1 && text(at: 0).isEmpty && poll == nil
+    }
+
+    /// Reads the starters once. Silent on failure: they are an offer, not a
+    /// feature anybody is waiting for.
+    public func loadStarters() async {
+        guard starters.isEmpty, let starterSource, context.replyTarget == nil else { return }
+        starters = (try? await starterSource.fetchStarters()) ?? []
+    }
+
+    /// Puts a starter's phrase in the composer, in the interface language. A
+    /// poll starter opens the poll editor with the phrase as its question.
+    public func use(_ starter: ComposerStarter) {
+        setText(starter.phrase(), at: 0)
+        if starter.kind == .poll { addPoll() }
+        analytics.track(.composerStarterUsed, properties: ["kind": starter.kind.rawValue, "source": starter.id])
+    }
+
     /// Attaches the picked GIF to the opening segment, replacing any other.
     public func attach(gif: Gif) {
+        guard poll == nil else { return }
         self.gif = gif
         isShowingGifPicker = false
         analytics.track(.gifAttached, properties: ["provider": gif.provider, "shared_before": gif.id == nil ? "no" : "yes"])
@@ -402,11 +464,13 @@ public final class ComposerViewModel {
             sensitiveNote: sensitiveNote,
             communityId: context.community?.id,
             // Same again for the GIF.
-            gif: continuationId == nil ? gif : nil
+            gif: continuationId == nil ? gif : nil,
+            poll: continuationId == nil ? poll : nil
         )
 
         if !report.posted.isEmpty {
             onPosted(report.posted)
+            if poll != nil { analytics.track(.pollCreated, properties: ["count": String(poll?.options.count ?? 0)]) }
             analytics.track(.postPublished, properties: [
                 "scope": scope.wireValue,
                 "segments": String(report.posted.count),
@@ -475,6 +539,10 @@ public final class ComposerViewModel {
             return L10n.t("composer.error.unverified")
         case .invalidScope:
             return L10n.t("composer.error.invalidScope")
+        case .invalidPoll:
+            // The server names the broken rule; the editor has already said
+            // the same thing in the reader's language, so this is the backstop.
+            return poll?.problem ?? error.userMessage
         default:
             return error.userMessage
         }

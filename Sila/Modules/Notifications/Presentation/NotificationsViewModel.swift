@@ -293,7 +293,7 @@ public final class NotificationsViewModel {
             "deleted_post": String(notification.postWasDeleted)
         ])
 
-        if notification.kind == .roomInvite, let roomId = notification.roomId {
+        if [.roomInvite, .roomLike].contains(notification.kind), let roomId = notification.roomId {
             await markRead(notification)
             return .room(id: roomId)
         }

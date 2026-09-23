@@ -29,8 +29,14 @@ public final class FeedService: FeedServiceProtocol {
     }
 
     public func fetchFeed(_ tab: FeedTab, topics: [String], cursor: String?, limit: Int) async throws -> FeedPage {
+        try await fetchFeed(tab, topics: topics, cursor: cursor, limit: limit, extra: [])
+    }
+
+    private func fetchFeed(
+        _ tab: FeedTab, topics: [String], cursor: String?, limit: Int, extra: [URLQueryItem]
+    ) async throws -> FeedPage {
         let token = try await tokens.accessToken()
-        var query = [URLQueryItem(name: "limit", value: String(clamped(limit)))]
+        var query = [URLQueryItem(name: "limit", value: String(clamped(limit)))] + extra
         // Sent only when one is pinned: an empty value would mean the same
         // thing to the server, but a request that states its empties is a
         // request whose logs cannot be read at a glance.
@@ -124,6 +130,23 @@ public final class FeedService: FeedServiceProtocol {
             ),
             as: FeedPage.self
         )
+    }
+
+    public func setHidden(_ hidden: Bool, replyId: UUID) async throws -> Post {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(
+                path: "/posts/\(replyId.uuidString.lowercased())/hide",
+                method: hidden ? .post : .delete,
+                accessToken: token
+            ),
+            as: Post.self
+        )
+    }
+
+    public func fetchFeed(_ tab: FeedTab, topics: [String], order: FeedOrder, cursor: String?, limit: Int) async throws -> FeedPage {
+        try await fetchFeed(tab, topics: topics, cursor: cursor, limit: limit, extra: order == .newest && tab == .forYou
+            ? [URLQueryItem(name: "sort", value: "new")] : [])
     }
 
     public func deletePost(_ id: UUID) async throws {

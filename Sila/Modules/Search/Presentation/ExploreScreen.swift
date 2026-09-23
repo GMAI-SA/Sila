@@ -25,6 +25,12 @@ public struct ExploreScreen: View {
     private let safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)?
     /// Builds the author's own menu for a card — Delete, on your posts only.
     private let ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// The discovery sections above the trending tags (contract v19). `nil`
+    /// keeps the idle screen as it was.
+    private let hub: DiscoverHubViewModel?
+    private let onOpenLiveRoom: (@MainActor (VoiceRoom) -> Void)?
+    private let onPinSubject: (@MainActor (String) -> Void)?
+    private let onOpenNeedsReply: (@MainActor () -> Void)?
 
     @FocusState private var isFieldFocused: Bool
 
@@ -45,8 +51,16 @@ public struct ExploreScreen: View {
         onOpenHashtag: (@MainActor (String) -> Void)? = nil,
         onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
-        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
+        hub: DiscoverHubViewModel? = nil,
+        onOpenLiveRoom: (@MainActor (VoiceRoom) -> Void)? = nil,
+        onPinSubject: (@MainActor (String) -> Void)? = nil,
+        onOpenNeedsReply: (@MainActor () -> Void)? = nil
     ) {
+        self.hub = hub
+        self.onOpenLiveRoom = onOpenLiveRoom
+        self.onPinSubject = onPinSubject
+        self.onOpenNeedsReply = onOpenNeedsReply
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
@@ -200,6 +214,18 @@ public struct ExploreScreen: View {
     private var trendingList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                if let hub {
+                    DiscoverHubSections(
+                        viewModel: hub,
+                        onOpenRoom: { room in onOpenLiveRoom?(room) },
+                        onPinSubject: onPinSubject,
+                        onOpenNeedsReply: { onOpenNeedsReply?() },
+                        onOpenProfile: onOpenProfile,
+                        postActions: { post in actions(for: post) }
+                    )
+                    .padding(.bottom, SLSpacing.lg)
+                }
+
                 HStack(spacing: SLSpacing.sm) {
                     Text(L10n.t("search.trending.sectionHeader"))
                         .font(SLFont.micro)
@@ -255,6 +281,7 @@ public struct ExploreScreen: View {
             }
             .padding(.top, SLSpacing.sm)
         }
+        .refreshable { await hub?.refresh() }
     }
 
     private func trendingRow(_ tag: TrendingTag, rank: Int) -> some View {

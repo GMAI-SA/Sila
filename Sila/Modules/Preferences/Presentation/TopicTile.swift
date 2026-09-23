@@ -51,6 +51,9 @@ struct TopicTile: View {
     let topic: TopicOption
     let stance: TopicStance
     let onSelect: @MainActor (TopicStance) -> Void
+    /// The corner eye that hides a subject. Off in onboarding, where the
+    /// question is only "what do you want to read about?".
+    var showsMuteControl: Bool = true
 
     private var isInterested: Bool { stance == .interested }
     private var isMuted: Bool { stance == .muted }
@@ -84,6 +87,7 @@ struct TopicTile: View {
                         }
                     }
 
+                if showsMuteControl {
                 Button {
                     onSelect(isMuted ? .none : .muted)
                 } label: {
@@ -100,6 +104,7 @@ struct TopicTile: View {
                     : L10n.t("preferences.topics.hide.a11yLabel", topic.label)))
                 .accessibilityHint(Text(L10n.t("preferences.topics.hide.a11yHint")))
                 .accessibilityIdentifier("preferences.topic.hide.\(topic.id)")
+                }
             }
 
             Text(topic.label)

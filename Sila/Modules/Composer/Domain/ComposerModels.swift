@@ -65,6 +65,9 @@ public struct PostDraft: Equatable, Sendable {
     /// exactly as it came; the server checks every URL against the
     /// provider's hosts before storing it.
     public var gif: Gif?
+    /// A poll; the text is its question (contract v19). Only ever on the
+    /// opening post, never beside media.
+    public var poll: PollDraft?
 
     public init(
         text: String,
@@ -75,8 +78,10 @@ public struct PostDraft: Equatable, Sendable {
         sensitive: SensitiveKind? = nil,
         sensitiveNote: String = "",
         communityId: UUID? = nil,
-        gif: Gif? = nil
+        gif: Gif? = nil,
+        poll: PollDraft? = nil
     ) {
+        self.poll = poll
         self.text = text
         self.scope = scope
         self.replyToPostId = replyToPostId
@@ -98,6 +103,10 @@ public struct PostDraft: Equatable, Sendable {
     /// A GIF or a picture can stand alone — the server accepts an empty text
     /// beside either — so an empty draft with a GIF is postable.
     public var isPostable: Bool {
+        if let poll {
+            // A poll needs its question and valid options.
+            return !trimmedText.isEmpty && poll.isValid && ComposerTextMetrics.make(text).canPost
+        }
         if trimmedText.isEmpty { return gif != nil || !imageURLs.isEmpty }
         return ComposerTextMetrics.make(text).canPost
     }
@@ -129,6 +138,8 @@ struct CreatePostBody: Encodable, Equatable {
     let communityId: String?
     /// Omitted when there is none.
     let gif: GifBody?
+    /// Omitted when there is none.
+    let poll: PollPayload?
 
     init(draft: PostDraft) {
         self.text = draft.trimmedText
@@ -143,6 +154,7 @@ struct CreatePostBody: Encodable, Equatable {
         self.sensitiveNote = (draft.sensitive != nil && !note.isEmpty) ? String(note.prefix(80)) : nil
         self.communityId = draft.communityId?.uuidString.lowercased()
         self.gif = draft.gif.map(GifBody.init(gif:))
+        self.poll = draft.poll?.payload
     }
 }
 

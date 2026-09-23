@@ -38,6 +38,8 @@ public struct StorageKey: RawRepresentable, Hashable, Sendable {
     public static let pinnedSubject = StorageKey("com.socialsa.sila.pinnedSubject")
     /// The in-app language choice: `system`, `en` or `ar`.
     public static let appLanguage = StorageKey("com.socialsa.sila.appLanguage")
+    /// For You's order: `ranked` or `newest`.
+    public static let forYouOrder = StorageKey("com.socialsa.sila.forYouOrder")
 }
 
 /// `UserDefaults`-backed ``StorageClient``.

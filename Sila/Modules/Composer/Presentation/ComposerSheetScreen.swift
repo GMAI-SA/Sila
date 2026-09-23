@@ -36,7 +36,15 @@ public struct ComposerSheetScreen: View {
                         ScopePickerSection(viewModel: viewModel)
                     }
 
+                    if viewModel.showsStarters {
+                        ComposerStartersRow(starters: viewModel.starters) { starter in
+                            viewModel.use(starter)
+                        }
+                    }
+
                     segmentsSection
+
+                    PollEditorSection(viewModel: viewModel)
 
                     if let quoted = viewModel.context.quotedPost {
                         quotedSection(quoted)
@@ -72,6 +80,7 @@ public struct ComposerSheetScreen: View {
                 }
             }
             .onAppear { focusedSegment = viewModel.segments.first?.id }
+            .task { await viewModel.loadStarters() }
             .confirmationDialog(
                 L10n.t("composer.discard.title"),
                 isPresented: Binding(
@@ -148,6 +157,7 @@ public struct ComposerSheetScreen: View {
             }
 
             HStack(spacing: SLSpacing.md) {
+                if viewModel.allowsMedia {
                 PhotosPicker(
                     selection: $picked,
                     maxSelectionCount: ComposerConstants.maximumImages - viewModel.attachments.count,
@@ -171,6 +181,17 @@ public struct ComposerSheetScreen: View {
                     }
                     .accessibilityIdentifier("composer.addGif")
                     .accessibilityHint(Text(L10n.t("composer.gif.add.a11yHint")))
+                }
+                }
+
+                if viewModel.canAddPoll {
+                    Button {
+                        viewModel.addPoll()
+                    } label: {
+                        Label(L10n.t("poll.editor.add"), systemImage: "chart.bar")
+                            .font(SLFont.caption)
+                    }
+                    .accessibilityIdentifier("composer.addPoll")
                 }
 
                 if viewModel.isUploadingImage {

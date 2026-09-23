@@ -93,11 +93,19 @@ final class ArabicRTLJourneyUITests: XCTestCase {
             .map(\.frame)
             .reduce(CGRect.null) { $0.union($1) }
 
+        // The Live now rail and the composer's starter chips scroll sideways
+        // too, for the same reason.
+        let liveRow = nodes
+            .filter { $0.identifier == "discover.live.room" || $0.identifier.hasPrefix("composer.starter.") }
+            .map(\.frame)
+            .reduce(CGRect.null) { $0.union($1) }
+
         for node in nodes {
             let frame = node.frame
             guard frame.width > 0, frame.height > 0 else { continue }
             if node.identifier.hasPrefix("feed.subject.") { continue }
             if !chipRow.isNull, frame.minY < chipRow.maxY, frame.maxY > chipRow.minY { continue }
+            if !liveRow.isNull, frame.minY < liveRow.maxY, frame.maxY > liveRow.minY { continue }
             // Wholly off screen vertically is scrolled away, not mis-laid.
             guard frame.maxY > window.minY, frame.minY < window.maxY else { continue }
             XCTAssertGreaterThanOrEqual(

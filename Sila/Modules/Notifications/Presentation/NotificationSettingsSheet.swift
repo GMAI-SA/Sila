@@ -73,22 +73,30 @@ public struct NotificationSettingsSheet: View {
                 VStack(alignment: .leading, spacing: SLSpacing.md) {
                     explanation
 
-                    ForEach(NotificationKind.settable) { kind in
-                        PreferenceToggleRow(
-                            title: kind.settingTitle,
-                            detail: kind.settingDetail,
-                            accessibilityHint: L10n.t(
-                                "notifications.settings.toggle.hint",
-                                kind.settingTitle.lowercased()
-                            ),
-                            isOn: Binding(
-                                get: { viewModel.preferences.isEnabled(kind) },
-                                set: { value in
-                                    Task { await viewModel.setEnabled(value, for: kind) }
-                                }
+                    ForEach(viewModel.sections) { group in
+                        Text(group.title)
+                            .font(SLFont.micro)
+                            .tracking(0.8)
+                            .foregroundStyle(SLColor.textSecondary)
+                            .padding(.top, SLSpacing.sm)
+                            .accessibilityAddTraits(.isHeader)
+                        ForEach(group.kinds.map(NotificationSettingRow.init(key:))) { row in
+                            PreferenceToggleRow(
+                                title: row.title,
+                                detail: row.detail,
+                                accessibilityHint: L10n.t(
+                                    "notifications.settings.toggle.hint",
+                                    row.title.lowercased()
+                                ),
+                                isOn: Binding(
+                                    get: { viewModel.preferences.isEnabled(key: row.key) },
+                                    set: { value in
+                                        Task { await viewModel.setEnabled(value, key: row.key) }
+                                    }
+                                )
                             )
-                        )
-                        .opacity(viewModel.isSaving(kind) ? 0.6 : 1)
+                            .opacity(viewModel.isSaving(key: row.key) ? 0.6 : 1)
+                        }
                     }
 
                     Text(viewModel.summary)

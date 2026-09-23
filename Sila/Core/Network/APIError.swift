@@ -271,6 +271,24 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// Invitations were sent for a room anybody may enter (HTTP 400).
     case notInviteOnly = "not_invite_only"
 
+    // MARK: Contract v19 — polls
+    /// A poll broke a rule (HTTP 400); the client validates first.
+    case invalidPoll = "invalid_poll"
+    /// A poll on a reply (HTTP 400).
+    case pollOnReply = "poll_on_reply"
+    /// A poll beside images, a GIF or a quote (HTTP 400).
+    case pollWithMedia = "poll_with_media"
+    /// Voting and replying are one right, and this viewer has neither (HTTP 403).
+    case voteNotAllowed = "vote_not_allowed"
+    /// The poll has closed (HTTP 409).
+    case pollClosed = "poll_closed"
+    /// A vote is final (HTTP 409).
+    case alreadyVoted = "already_voted"
+    /// Not an option in this poll (HTTP 400).
+    case invalidOption = "invalid_option"
+    /// The post carries no poll (HTTP 404).
+    case pollNotFound = "poll_not_found"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -509,6 +527,20 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.livenessMismatch")
             case .notInviteOnly:
                 return L10n.t("error.notInviteOnly")
+            case .invalidPoll:
+                return L10n.t("poll.error.invalid")
+            case .pollOnReply:
+                return L10n.t("poll.error.onReply")
+            case .pollWithMedia:
+                return L10n.t("poll.error.withMedia")
+            case .voteNotAllowed:
+                return L10n.t("poll.error.notAllowed")
+            case .pollClosed:
+                return L10n.t("poll.error.closed")
+            case .alreadyVoted:
+                return L10n.t("poll.error.alreadyVoted")
+            case .invalidOption, .pollNotFound:
+                return L10n.t("poll.error.gone")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

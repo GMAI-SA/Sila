@@ -131,7 +131,12 @@ public final class AuthSession {
                     // `verified` carries no country, exactly as the server's
                     // `effective_country()` reports it.
                     countryCode: report.status.grantsAccess ? current.countryCode : nil,
-                    avatarURL: current.avatarURL
+                    avatarURL: current.avatarURL,
+                    phone: current.phone,
+                    verifiedName: current.verifiedName,
+                    hideVerifiedName: current.hideVerifiedName,
+                    needsInterestPrompt: current.needsInterestPrompt,
+                    experimentBucket: current.experimentBucket
                 )
                 user = updated
                 await store.updateUser(updated)
@@ -160,6 +165,16 @@ public final class AuthSession {
             isBusy = false
             await refreshVerification()
         }
+    }
+
+    /// The first-run subjects step was answered or skipped; the server has
+    /// stamped it (contract v19), and so does the cached account, so the step
+    /// never shows again on this device even before the next `/auth/me`.
+    public func markInterestsPrompted() async {
+        guard let current = user, current.needsInterestPrompt else { return }
+        let updated = current.settingNeedsInterestPrompt(false)
+        user = updated
+        await store.updateUser(updated)
     }
 
     /// Reconciles after a call was refused `403 unverified`.

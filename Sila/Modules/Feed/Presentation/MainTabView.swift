@@ -62,6 +62,8 @@ public struct MainTabView: View {
     /// a post deleted from the feed must also be gone from a profile
     /// timeline and from search, without each screen re-fetching.
     @State private var deletion: PostDeletionViewModel
+    /// The Explore hub's sections and Home's Live now rail (contract v19).
+    @State private var hub: DiscoverHubViewModel
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -118,6 +120,15 @@ public struct MainTabView: View {
                 viewerHandle: container.session.user?.handle
             )
         )
+        self._hub = State(
+            initialValue: DiscoverHubViewModel(
+                discover: container.discoverService,
+                rooms: container.roomsService,
+                preferences: container.preferencesService,
+                profile: container.flags.profile ? container.profileService : nil,
+                analytics: container.analytics
+            )
+        )
         self._safety = State(
             initialValue: SafetyViewModel(
                 service: container.safetyService,
@@ -133,6 +144,10 @@ public struct MainTabView: View {
             ZStack {
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // One way to vote, for every poll on every screen below.
+                    .environment(\.pollVoter, PollVoter(vote: { postId, optionId in
+                        try await container.discoverService.vote(postId: postId, optionId: optionId)
+                    }))
 
                 // The one thing this tab starts, in the bottom corner where a
                 // thumb already is; held, everything the app can start.
@@ -350,6 +365,7 @@ public struct MainTabView: View {
             for id in current.subtracting(previous) {
                 viewModel.remove(postId: id)
                 exploreViewModel.remove(postId: id)
+                hub.remove(postId: id)
                 pruneStacks(deletedPost: id)
             }
         }
@@ -420,7 +436,7 @@ public struct MainTabView: View {
             case let .postDetail(post): return Handle.normalised(post.author.handle) == target
             case let .conversation(conversation):
                 return Handle.normalised(conversation.other.handle) == target
-            case .savedPosts, .community, .communities, .hashtag:
+            case .savedPosts, .community, .communities, .hashtag, .needsReply:
                 return false
             }
         }
@@ -559,6 +575,7 @@ public struct MainTabView: View {
             gifs: container.gifService,
             analytics: container.analytics,
             openGifPicker: container.router.composerOpensGifPicker,
+            starters: container.discoverService,
             onPosted: { posted in
                 viewModel.insert(newPosts: posted)
                 exploreViewModel.insert(posted)
@@ -671,8 +688,11 @@ public struct MainTabView: View {
                     onOpenPreferences: preferencesHandler,
                     safetyMenu: safetyMenu(for:),
                     ownPost: ownPostMenu(for:),
-                    countryCode: container.session.user?.countryCode
+                    countryCode: container.session.user?.countryCode,
+                    liveRooms: container.flags.rooms ? hub.liveRooms : [],
+                    onOpenLiveRoom: container.flags.rooms ? openLiveRoom : nil
                 )
+                .task { if container.flags.rooms { await hub.loadLive() } }
                 .tnNavigationBar(title: L10n.t("feed.home.navTitle"))
                 .navigationDestination(for: FeedRoute.self) { route in
                     destination(for: route)
@@ -695,7 +715,11 @@ public struct MainTabView: View {
                     onOpenHashtag: openHashtag,
                     onOpenRoom: openRoomCard,
                     safetyMenu: safetyMenu(for:),
-                    ownPost: ownPostMenu(for:)
+                    ownPost: ownPostMenu(for:),
+                    hub: hub,
+                    onOpenLiveRoom: container.flags.rooms ? openLiveRoom : nil,
+                    onPinSubject: pinSubjectFromExplore,
+                    onOpenNeedsReply: { push(.needsReply) }
                 )
                 .tnNavigationBar(title: L10n.t("search.navTitle"))
                 .navigationDestination(for: FeedRoute.self) { route in
@@ -885,6 +909,8 @@ public struct MainTabView: View {
         case let .profile(handle):
             selection = .home
             openProfile(handle)
+        case let .room(id):
+            openRoomFromNotification(id)
         }
     }
 
@@ -1002,6 +1028,20 @@ public struct MainTabView: View {
             people: container.peopleDirectory,
             onCreated: { room in roomsViewModel.insert(room) }
         )
+    }
+
+    /// A room on the Live now rail was tapped.
+    private func openLiveRoom(_ room: VoiceRoom) {
+        selection = .rooms
+        openRoom(room)
+    }
+
+    /// A subject tapped on the Explore hub pins it and goes Home, where the
+    /// timeline narrows to it — the strip there shows what is pinned.
+    private func pinSubjectFromExplore(_ subject: String) {
+        selection = .home
+        guard !viewModel.pinnedSubjects.contains(subject) else { return }
+        Task { await viewModel.pin(subject) }
     }
 
     /// Pushes a room; the room screen joins. Used after creating one.
@@ -1191,6 +1231,24 @@ public struct MainTabView: View {
                 ownPost: ownPostMenu(for:),
                 hiddenPostIds: deletion.deleted
             )
+
+        case .needsReply:
+            Owned({ NeedsReplyViewModel(service: container.discoverService) }) { needs in
+                NeedsReplyScreen(viewModel: needs, actions: { post in
+                    PostCardActions(
+                        onOpen: openPost,
+                        onReply: { post in composeHandler?(.reply(to: post)) },
+                        onMention: openProfile,
+                        onHashtag: openHashtag,
+                        onOpenRoom: openRoomCard,
+                        onOpenQuoted: openPost,
+                        onOpenAuthor: { author in openProfile(author.handle) },
+                        onStub: stub,
+                        safetyMenu: safetyMenu(for:),
+                        ownPost: ownPostMenu(for:)
+                    )
+                })
+            }
 
         case let .hashtag(tag):
             HashtagScreen(

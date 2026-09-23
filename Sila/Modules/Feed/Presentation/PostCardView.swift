@@ -55,6 +55,9 @@ public struct PostCardActions {
     /// else's — and mutually exclusive with ``safetyMenu``, which is `nil`
     /// on your own, since you cannot block or report yourself.
     public var ownPost: (@MainActor (Post) -> OwnPostActions?)?
+    /// Hide / show a reply in the viewer's own thread. `nil` — or a `nil`
+    /// result — offers nothing: only a thread's author may collapse replies.
+    public var hideReply: (@MainActor (Post) -> (@MainActor () -> Void)?)?
 
     /// Creates an action set. Every hook defaults to doing nothing, so a
     /// preview or a read-only surface only supplies what it needs.
@@ -73,8 +76,10 @@ public struct PostCardActions {
         onOpenAuthor: @escaping @MainActor (UserSummary) -> Void = { _ in },
         onStub: @escaping @MainActor (String) -> Void = { _ in },
         safetyMenu: (@MainActor (Post) -> SafetyMenuActions?)? = nil,
-        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil
+        ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
+        hideReply: (@MainActor (Post) -> (@MainActor () -> Void)?)? = nil
     ) {
+        self.hideReply = hideReply
         self.onOpen = onOpen
         self.onLike = onLike
         self.onRepost = onRepost
@@ -130,6 +135,10 @@ public struct PostCardView: View {
     /// The cover, per card, starting closed. Never remembered across posts:
     /// opening one spoiler is not consent to every spoiler after it.
     @State private var isRevealed = false
+    /// A reply the thread's author collapsed starts collapsed here too; the
+    /// people who can still see it (the thread's author, the reply's author)
+    /// open it with one tap.
+    @State private var showsHidden = false
 
     /// Creates a card.
     /// - Parameters:
@@ -188,6 +197,45 @@ public struct PostCardView: View {
 
             authorBlock
 
+            if post.hiddenByAuthor && !showsHidden {
+                hiddenRow
+                    .padding(.leading, style == .detail ? 0 : 56)
+            } else {
+                content
+            }
+
+            if style == .detail {
+                detailFooter
+            }
+
+            engagementRow
+                .padding(.leading, style == .detail ? 0 : 52)
+        }
+        .padding(.horizontal, SLSpacing.lg)
+        .padding(.vertical, SLSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// "Hidden by the author" — drawn instead of the words, never instead of
+    /// the row: the reply still exists, and saying so is the honest version.
+    private var hiddenRow: some View {
+        Button {
+            showsHidden = true
+        } label: {
+            HStack(spacing: SLSpacing.xs) {
+                Image(systemName: "eye.slash").accessibilityHidden(true)
+                Text(L10n.t("post.hiddenByAuthor"))
+                Text(L10n.t("post.hiddenByAuthor.show")).foregroundStyle(SLColor.primary)
+            }
+            .font(SLFont.caption)
+            .foregroundStyle(SLColor.textSecondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("post.hiddenByAuthor")
+    }
+
+    @ViewBuilder
+    private var content: some View {
             if let kind = post.sensitive {
                 SensitiveCoverView(
                     kind: kind,
@@ -216,22 +264,16 @@ public struct PostCardView: View {
                         .padding(.leading, style == .detail ? 0 : 56)
                 }
 
+                if post.poll != nil {
+                    PollView(post: post, isDetail: style == .detail)
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
+
                 if let quoted = post.quotedPost {
                     QuotedPostCard(post: quoted, onTap: { actions.onOpenQuoted(quoted) })
                         .padding(.leading, style == .detail ? 0 : 56)
                 }
             }
-
-            if style == .detail {
-                detailFooter
-            }
-
-            engagementRow
-                .padding(.leading, style == .detail ? 0 : 52)
-        }
-        .padding(.horizontal, SLSpacing.lg)
-        .padding(.vertical, SLSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Header
@@ -452,6 +494,7 @@ public struct PostCardView: View {
             textColor: UIColor(SLColor.textPrimary),
             entityColor: UIColor(SLColor.primary),
             direction: TextDirection.of(post),
+            resolvedMentions: post.mentions.map { Set($0.map(\.handle)) },
             onEntity: { entity in
                 switch entity {
                 case let .mention(handle): actions.onMention(handle)
@@ -669,6 +712,15 @@ public struct PostCardView: View {
             UIPasteboard.general.url = Permalink.post(post.id)
         } label: {
             Label(L10n.t("post.menu.copyLink"), systemImage: "link")
+        }
+
+        if let toggleHidden = actions.hideReply?(post) {
+            Button(action: toggleHidden) {
+                Label(
+                    L10n.t(post.hiddenByAuthor ? "post.menu.showReply" : "post.menu.hideReply"),
+                    systemImage: post.hiddenByAuthor ? "eye" : "eye.slash"
+                )
+            }
         }
 
         Button {

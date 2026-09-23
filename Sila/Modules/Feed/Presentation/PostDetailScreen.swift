@@ -305,7 +305,11 @@ public struct PostDetailScreen: View {
             onOpenAuthor: { author in onOpenProfile(author.handle) },
             onStub: onStub,
             safetyMenu: safetyMenu,
-            ownPost: ownPost
+            ownPost: ownPost,
+            hideReply: { reply in
+                guard viewModel.canHide(reply) else { return nil }
+                return { Task { await viewModel.toggleHidden(reply) } }
+            }
         )
     }
 }

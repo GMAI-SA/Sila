@@ -28,6 +28,9 @@ struct PostBodyText: UIViewRepresentable {
     /// the interface's — an Arabic post on an English phone still starts at
     /// the right margin.
     let direction: TextDirection
+    /// Handles the server resolved to real accounts (lower-cased). `nil` means
+    /// the server did not say, and every @word links as it always did.
+    var resolvedMentions: Set<String>? = nil
     /// A `#hashtag` or `@mention` was tapped.
     let onEntity: @MainActor (PostEntityLink) -> Void
     /// Anything else in the text was tapped: the card's own action.
@@ -67,7 +70,8 @@ struct PostBodyText: UIViewRepresentable {
             weight: weight,
             textColor: textColor,
             entityColor: entityColor,
-            direction: direction
+            direction: direction,
+            resolvedMentions: resolvedMentions
         )
         view.accessibilityLabel = text
     }
@@ -102,7 +106,8 @@ struct PostBodyText: UIViewRepresentable {
         weight: UIFont.Weight,
         textColor: UIColor,
         entityColor: UIColor,
-        direction: TextDirection
+        direction: TextDirection,
+        resolvedMentions: Set<String>? = nil
     ) -> NSAttributedString {
         let font = UIFontMetrics(forTextStyle: .body)
             .scaledFont(for: .systemFont(ofSize: fontSize, weight: weight))
@@ -124,6 +129,10 @@ struct PostBodyText: UIViewRepresentable {
             switch token {
             case let .plain(value):
                 result.append(NSAttributedString(string: value, attributes: base))
+            case let .mention(handle) where resolvedMentions.map({ !$0.contains(handle.lowercased()) }) ?? false:
+                // Not an account: plain words, not a link to a profile that
+                // does not exist.
+                result.append(NSAttributedString(string: "@\(handle)", attributes: base))
             case let .mention(handle):
                 result.append(entityRun("@\(handle)", link: .mention(handle), base: base, color: entityColor))
             case let .hashtag(tag):

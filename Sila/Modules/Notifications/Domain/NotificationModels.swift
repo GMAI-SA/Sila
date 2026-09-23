@@ -34,6 +34,16 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case communityJoinRequest = "community_join_request"
     /// A community you asked to join let you in.
     case communityAccepted = "community_accepted"
+    /// Somebody liked a room you hosted.
+    case roomLike = "room_like"
+    /// Somebody put a room you hosted on their timeline.
+    case roomShared = "room_shared"
+    /// A poll you asked or answered has closed (contract v19).
+    case pollClosed = "poll_closed"
+    /// Sila's weekly question.
+    case prompt
+    /// Somebody may be claiming to be you. Never switch-offable.
+    case identityImpostor = "identity_impostor"
     /// A kind this build does not recognise.
     case unknown
 
@@ -57,9 +67,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     public var isAboutAPost: Bool {
         switch self {
         case .follow, .followRequest, .followAccepted, .roomInvite, .unknown,
-             .communityInvite, .communityJoinRequest, .communityAccepted:
+             .communityInvite, .communityJoinRequest, .communityAccepted,
+             .roomLike, .prompt, .identityImpostor:
             return false
-        case .like, .repost, .reply, .mention: return true
+        case .like, .repost, .reply, .mention, .roomShared, .pollClosed: return true
         }
     }
 
@@ -77,6 +88,11 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .communityInvite: return "person.3.fill"
         case .communityJoinRequest: return "person.crop.circle.badge.questionmark"
         case .communityAccepted: return "person.crop.circle.badge.checkmark"
+        case .roomLike: return "heart.circle"
+        case .roomShared: return "square.and.arrow.up.circle"
+        case .pollClosed: return "chart.bar.fill"
+        case .prompt: return "questionmark.bubble.fill"
+        case .identityImpostor: return "exclamationmark.shield.fill"
         case .unknown: return "bell"
         }
     }
@@ -95,6 +111,11 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .communityInvite: return SLColor.primary
         case .communityJoinRequest: return SLColor.warning
         case .communityAccepted: return SLColor.secondary
+        case .roomLike: return SLColor.danger
+        case .roomShared: return SLColor.secondary
+        case .pollClosed: return SLColor.primary
+        case .prompt: return SLColor.warning
+        case .identityImpostor: return SLColor.danger
         case .unknown: return SLColor.textSecondary
         }
     }
@@ -113,6 +134,11 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .communityInvite: return L10n.t("notifications.kind.communityInvite.title")
         case .communityJoinRequest: return L10n.t("notifications.kind.communityJoinRequest.title")
         case .communityAccepted: return L10n.t("notifications.kind.communityAccepted.title")
+        case .roomLike: return L10n.t("notifications.kind.roomLike.title")
+        case .roomShared: return L10n.t("notifications.kind.roomShared.title")
+        case .pollClosed: return L10n.t("notifications.kind.pollClosed.title")
+        case .prompt: return L10n.t("notifications.kind.prompt.title")
+        case .identityImpostor: return L10n.t("notifications.kind.identityImpostor.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -146,6 +172,16 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.communityJoinRequest.detail")
         case .communityAccepted:
             return L10n.t("notifications.kind.communityAccepted.detail")
+        case .roomLike:
+            return L10n.t("notifications.kind.roomLike.detail")
+        case .roomShared:
+            return L10n.t("notifications.kind.roomShared.detail")
+        case .pollClosed:
+            return L10n.t("notifications.kind.pollClosed.detail")
+        case .prompt:
+            return L10n.t("notifications.kind.prompt.detail")
+        case .identityImpostor:
+            return L10n.t("notifications.kind.identityImpostor.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -443,6 +479,23 @@ public struct NotificationPreferences: Equatable, Sendable, Codable {
         enabled[kind.rawValue] ?? true
     }
 
+    /// Whether a kind, by its wire name, is switched on — for kinds this
+    /// build may not have a case for.
+    public func isEnabled(key: String) -> Bool {
+        enabled[key] ?? true
+    }
+
+    /// A copy with one kind, by its wire name, flipped.
+    public func setting(_ isEnabled: Bool, key: String) -> NotificationPreferences {
+        var copy = self
+        copy.enabled[key] = isEnabled
+        return copy
+    }
+
+    /// Every wire name the server sent, sorted — the fallback list when the
+    /// server did not say how to group them.
+    public var keys: [String] { enabled.keys.sorted() }
+
     /// A copy with one kind flipped.
     public func setting(_ isEnabled: Bool, for kind: NotificationKind) -> NotificationPreferences {
         var copy = self
@@ -465,6 +518,67 @@ public struct NotificationPreferences: Equatable, Sendable, Codable {
     public var silenced: [NotificationKind] {
         NotificationKind.settable.filter { !isEnabled($0) }
     }
+}
+
+// MARK: - Groups
+
+/// One section of the notification settings, as the server groups it
+/// (contract v19 `notification_groups`). The client draws what the server
+/// lists, in order, rather than a list compiled into an old build.
+public struct NotificationGroup: Identifiable, Equatable, Sendable {
+    public let id: String
+    public let kinds: [String]
+
+    public init(id: String, kinds: [String]) {
+        self.id = id
+        self.kinds = kinds
+    }
+
+    /// The order sections are drawn in; a group the server adds later goes
+    /// after these, alphabetically.
+    static let knownOrder = ["people", "posts", "rooms", "communities", "sila"]
+
+    /// JSON objects carry no order, so the known groups are put back in
+    /// theirs and anything new follows.
+    static func ordered(_ map: [String: [String]]) -> [NotificationGroup] {
+        let known = knownOrder.compactMap { id in map[id].map { NotificationGroup(id: id, kinds: $0) } }
+        let rest = map.keys.filter { !knownOrder.contains($0) }.sorted().map { NotificationGroup(id: $0, kinds: map[$0] ?? []) }
+        return (known + rest).filter { !$0.kinds.isEmpty }
+    }
+
+    /// The section's heading.
+    public var title: String {
+        switch id {
+        case "people": return L10n.t("notifications.settings.group.people")
+        case "posts": return L10n.t("notifications.settings.group.posts")
+        case "rooms": return L10n.t("notifications.settings.group.rooms")
+        case "communities": return L10n.t("notifications.settings.group.communities")
+        case "sila": return L10n.t("notifications.settings.group.sila")
+        default: return NotificationGroup.humanised(id)
+        }
+    }
+
+    /// `"quote_boost"` → `"Quote boost"`: a readable label for a wire name
+    /// this build has no copy for. Better than hiding the switch.
+    public static func humanised(_ key: String) -> String {
+        let words = key.split(separator: "_").joined(separator: " ")
+        return words.prefix(1).uppercased() + words.dropFirst()
+    }
+}
+
+/// A settings row for a kind by its wire name.
+public struct NotificationSettingRow: Identifiable, Equatable, Sendable {
+    public let key: String
+
+    public var id: String { key }
+
+    private var kind: NotificationKind? {
+        let kind = NotificationKind(rawValue: key)
+        return kind == .unknown ? nil : kind
+    }
+
+    public var title: String { kind?.settingTitle ?? NotificationGroup.humanised(key) }
+    public var detail: String { kind?.settingDetail ?? L10n.t("notifications.kind.unknown.detail") }
 }
 
 // MARK: - Copy
@@ -498,6 +612,11 @@ public enum NotificationCopy {
         case .communityInvite: return L10n.t("notifications.sentence.communityInvite", name, place)
         case .communityJoinRequest: return L10n.t("notifications.sentence.communityJoinRequest", name, place)
         case .communityAccepted: return L10n.t("notifications.sentence.communityAccepted", name, place)
+        case .roomLike: return L10n.t("notifications.sentence.roomLike", name)
+        case .roomShared: return L10n.t("notifications.sentence.roomShared", name)
+        case .pollClosed: return L10n.t("notifications.sentence.pollClosed")
+        case .prompt: return L10n.t("notifications.sentence.prompt")
+        case .identityImpostor: return L10n.t("notifications.sentence.identityImpostor")
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.

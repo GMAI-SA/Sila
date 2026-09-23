@@ -43,6 +43,8 @@ public enum FeedRoute: Hashable, Sendable {
     case communities
     /// Every post carrying one hashtag. The tag without its `#`.
     case hashtag(tag: String)
+    /// Recent posts nobody has answered, that the viewer may answer.
+    case needsReply
 }
 
 /// Screens reachable inside the Rooms tab's stack.

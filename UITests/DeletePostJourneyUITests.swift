@@ -90,21 +90,23 @@ final class DeletePostJourneyUITests: XCTestCase {
         )
         confirm.tap()
 
-        // One fewer card of your own on screen. Neither the author's name
-        // nor the post's words can be the measure: the sample feed has more
-        // than one post by this person, and another post quotes this one, so
-        // its words legitimately stay on screen inside that quote.
+        // The deleted post's own body leaves the screen. Counting the
+        // author's menus is not enough on its own: with the Live now rail at
+        // the top of For You, the list is laid out lazily and another post of
+        // theirs can scroll into view as this one leaves. The body is a text
+        // view; the quote that embeds these words is plain text, so it does
+        // not count against this.
+        let body = app.textViews.matching(NSPredicate(format: "label CONTAINS %@", "biggest change"))
         let ownPosts = app.buttons.matching(identifier: "post.menu.own")
         let deadline = Date().addingTimeInterval(10)
-        while ownPosts.count >= ownPostsBefore, Date() < deadline {
+        while body.count > 0, ownPosts.count >= ownPostsBefore, Date() < deadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         }
-        XCTAssertLessThan(
-            ownPosts.count,
-            ownPostsBefore,
+        XCTAssertTrue(
+            body.count == 0 || ownPosts.count < ownPostsBefore,
             """
             the post is still on screen after being deleted \
-            (own cards before: \(ownPostsBefore), after: \(ownPosts.count); \
+            (bodies: \(body.count); own cards before: \(ownPostsBefore), after: \(ownPosts.count); \
             alerts on screen: \(app.alerts.count) \(app.alerts.debugDescription))
             """
         )

@@ -73,6 +73,8 @@ public final class HomeViewModel {
     /// The strip's vocabulary — the taxonomy minus hidden subjects, chosen
     /// interests first. Empty until it loads, which simply hides the strip.
     public private(set) var subjects: [TopicOption] = []
+    /// How For You is ordered (contract v19). Remembered on this device.
+    public private(set) var forYouOrder: FeedOrder = .ranked
 
     private let service: FeedServiceProtocol
     private let analytics: AnalyticsClient
@@ -120,6 +122,9 @@ public final class HomeViewModel {
         // subjects is narrowed from its very first page rather than flashing
         // the unfiltered timeline first. The stored value was a single id
         // before it was a list, and an old one still reads correctly.
+        if let raw = storage?.value(for: .forYouOrder, as: String.self), let order = FeedOrder(rawValue: raw) {
+            self.forYouOrder = order
+        }
         if let many = storage?.value(for: .pinnedSubject, as: [String].self) {
             self.pinnedSubjects = many.filter { !$0.isEmpty }
         } else if let one = storage?.value(for: .pinnedSubject, as: String.self),
@@ -215,6 +220,19 @@ public final class HomeViewModel {
         await invalidateInternationalFeed()
     }
 
+    /// Switches For You between ranked and newest, and reloads it.
+    public func setForYouOrder(_ order: FeedOrder) async {
+        guard order != forYouOrder else { return }
+        forYouOrder = order
+        storage?.set(order.rawValue, for: .forYouOrder)
+        analytics.track(.feedOrderChanged, properties: ["variant": order.rawValue])
+        subjectEpoch &+= 1
+        clear(.forYou)
+        if selectedTab == .forYou {
+            await loadFirstPage(.forYou, isRefresh: false)
+        }
+    }
+
     private func reloadForSubjectChange() async {
         subjectEpoch &+= 1
         let epoch = subjectEpoch
@@ -300,6 +318,7 @@ public final class HomeViewModel {
             let page = try await service.fetchFeed(
                 tab,
                 topics: pinnedSubjects,
+                order: forYouOrder,
                 cursor: cursor,
                 limit: FeedConstants.defaultPageSize
             )
@@ -362,6 +381,7 @@ public final class HomeViewModel {
             let page = try await service.fetchFeed(
                 tab,
                 topics: topics,
+                order: forYouOrder,
                 cursor: nil,
                 limit: FeedConstants.defaultPageSize
             )

@@ -46,6 +46,8 @@ public final class AppContainer {
     public let publicTopics: TopicCatalogProviding
     /// Phase 4's search service — Explore and `@mention` autocomplete.
     public let searchService: SearchServiceProtocol
+    /// Needs a reply, people, trending, starters, polls, first-run subjects.
+    public let discoverService: DiscoverServiceProtocol
     /// Contract v4's interests service — topics and feed preferences.
     public let preferencesService: PreferencesServiceProtocol
     /// Contract v5's account service — profile, credentials, export, deletion.
@@ -114,7 +116,8 @@ public final class AppContainer {
         roomsService: RoomsServiceProtocol? = nil,
         communitiesService: CommunitiesServiceProtocol? = nil,
         messagesService: MessagesServiceProtocol? = nil,
-        languageService: LanguageServiceProtocol? = nil
+        languageService: LanguageServiceProtocol? = nil,
+        discoverService: DiscoverServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -138,7 +141,12 @@ public final class AppContainer {
             ? InMemoryStorageClient()
             : UserDefaultsStorageClient())
         let keychain = keychain ?? SystemKeychainClient()
-        let analytics = analytics ?? ConsoleAnalyticsClient()
+        // The real stack sends events to Sila's own server (contract v19);
+        // mock runs and anything that injects its own client never do.
+        let batching: BatchingAnalyticsClient? = (analytics == nil && !flags.useMockAuth)
+            ? BatchingAnalyticsClient(network: network, storage: storage)
+            : nil
+        let analytics = analytics ?? batching ?? ConsoleAnalyticsClient()
         let biometrics = biometrics ?? LocalAuthenticationBiometricAuthenticator()
 
         self.network = network
@@ -188,6 +196,10 @@ public final class AppContainer {
         // One provider for every authenticated service, so a token refreshed by
         // any of them is picked up by all of them.
         let tokens = SessionAccessTokenProvider(store: store, service: resolvedService)
+        if let batching {
+            batching.tokenProvider = { try? await tokens.accessToken() }
+            batching.start()
+        }
 
         if let verificationService {
             self.verificationService = verificationService
@@ -241,6 +253,14 @@ public final class AppContainer {
             self.searchService = SearchServiceMock(scenario: flags.mockSearchScenario, latency: 0.25)
         } else {
             self.searchService = SearchService(network: network, tokens: tokens, analytics: analytics)
+        }
+
+        if let discoverService {
+            self.discoverService = discoverService
+        } else if flags.useMockFeed {
+            self.discoverService = DiscoverServiceMock(latency: 0.25)
+        } else {
+            self.discoverService = DiscoverService(network: network, tokens: tokens, analytics: analytics)
         }
 
         if let preferencesService {

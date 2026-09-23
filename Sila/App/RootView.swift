@@ -10,6 +10,9 @@ import SwiftUI
 public struct RootView: View {
 
     private let container: AppContainer
+    /// Set once the first-run flow has finished on this launch, so a forced
+    /// flow (`-forceOnboarding`) does not come back.
+    @State private var onboardingFinished = false
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -142,7 +145,14 @@ public struct RootView: View {
                     .transition(.opacity)
 
             case .feed:
-                if container.flags.feed {
+                if container.flags.feed, showsOnboarding {
+                    Owned({ onboardingViewModel() }) { viewModel in
+                        OnboardingFlow(viewModel: viewModel, onOpenRoom: { room in
+                            container.router.pendingLink = .room(id: room.id)
+                        })
+                    }
+                    .transition(.opacity)
+                } else if container.flags.feed {
                     MainTabView(container: container)
                         .transition(.opacity)
                         // Once, on reaching the feed. `/languages` is
@@ -160,6 +170,29 @@ public struct RootView: View {
                 }
             }
         }
+    }
+
+    // MARK: - First run
+
+    /// The subjects-and-people step shows once, for a verified account the
+    /// server has never asked (contract v19 `needs_interest_prompt`).
+    private var showsOnboarding: Bool {
+        guard container.flags.onboarding, !onboardingFinished else { return false }
+        return container.flags.forceOnboarding || container.session.user?.needsInterestPrompt == true
+    }
+
+    private func onboardingViewModel() -> OnboardingViewModel {
+        OnboardingViewModel(
+            discover: container.discoverService,
+            preferences: container.preferencesService,
+            profile: container.flags.profile ? container.profileService : nil,
+            rooms: container.flags.rooms ? container.roomsService : nil,
+            analytics: container.analytics,
+            onFinish: {
+                onboardingFinished = true
+                Task { await container.session.markInterestsPrompted() }
+            }
+        )
     }
 
     // MARK: - Unauthenticated stack

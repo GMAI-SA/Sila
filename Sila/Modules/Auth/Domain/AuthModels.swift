@@ -103,6 +103,11 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     /// Your own verified name, hidden or not, and whether it is hidden.
     public let verifiedName: String?
     public let hideVerifiedName: Bool
+    /// Verified and never asked which subjects it wants to read about
+    /// (contract v19). The first-run subjects step shows while this is true.
+    public let needsInterestPrompt: Bool
+    /// 0–99, fixed per account, for turning a flag on for a slice.
+    public let experimentBucket: Int?
 
     public init(
         id: UUID,
@@ -116,8 +121,12 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         avatarURL: URL? = nil,
         phone: String? = nil,
         verifiedName: String? = nil,
-        hideVerifiedName: Bool = false
+        hideVerifiedName: Bool = false,
+        needsInterestPrompt: Bool = false,
+        experimentBucket: Int? = nil
     ) {
+        self.needsInterestPrompt = needsInterestPrompt
+        self.experimentBucket = experimentBucket
         self.id = id
         self.email = email
         self.displayName = displayName
@@ -135,6 +144,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
         case handle, countryCode, phone, verifiedName, hideVerifiedName
+        case needsInterestPrompt, experimentBucket
         case avatarURL = "avatarUrl"
     }
 
@@ -169,6 +179,19 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         let confirmed = (try? container.decodeIfPresent(String.self, forKey: .verifiedName)) ?? nil
         verifiedName = (confirmed?.isEmpty == false) ? confirmed : nil
         hideVerifiedName = ((try? container.decodeIfPresent(Bool.self, forKey: .hideVerifiedName)) ?? nil) ?? false
+        needsInterestPrompt = ((try? container.decodeIfPresent(Bool.self, forKey: .needsInterestPrompt)) ?? nil) ?? false
+        experimentBucket = (try? container.decodeIfPresent(Int.self, forKey: .experimentBucket)) ?? nil
+    }
+
+    /// A copy with the first-run subjects flag changed.
+    public func settingNeedsInterestPrompt(_ value: Bool) -> AuthUser {
+        AuthUser(
+            id: id, email: email, displayName: displayName, emailVerified: emailVerified,
+            verificationStatus: verificationStatus, createdAt: createdAt, handle: handle,
+            countryCode: countryCode, avatarURL: avatarURL, phone: phone,
+            verifiedName: verifiedName, hideVerifiedName: hideVerifiedName,
+            needsInterestPrompt: value, experimentBucket: experimentBucket
+        )
     }
 
     /// The handle as it is rendered, with the `@`, when the account has one.

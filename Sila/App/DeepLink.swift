@@ -28,6 +28,8 @@ public enum DeepLink: Equatable, Sendable {
     case post(id: UUID)
     /// A profile, by handle.
     case profile(handle: String)
+    /// A room, by id — handed over by the first-run flow's last card.
+    case room(id: UUID)
 
     /// Reads a URL the system handed the app.
     ///

@@ -61,7 +61,8 @@ extension ComposerServiceProtocol {
         sensitive: SensitiveKind? = nil,
         sensitiveNote: String = "",
         communityId: UUID? = nil,
-        gif: Gif? = nil
+        gif: Gif? = nil,
+        poll: PollDraft? = nil
     ) async -> ThreadPostReport {
         var queue = segments
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -94,7 +95,9 @@ extension ComposerServiceProtocol {
                 // segment after the first.
                 communityId: posted.isEmpty && parentId == replyToPostId ? communityId : nil,
                 // The GIF too rides on the opening segment only.
-                gif: posted.isEmpty ? gif : nil
+                gif: posted.isEmpty ? gif : nil,
+                // And the poll: its question is the opening segment.
+                poll: posted.isEmpty ? poll : nil
             )
             do {
                 let post = try await createPost(draft)
