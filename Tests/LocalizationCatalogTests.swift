@@ -315,6 +315,9 @@ final class LocalizationCatalogTests: XCTestCase {
         }
 
         XCTAssertFalse(used.isEmpty, "found no L10n call sites — the scanner is broken")
+        // Push loc-keys are looked up by iOS from the notification payload,
+        // never through L10n; PushCopy lists every one the server may send.
+        used.formUnion(PushCopy.keys)
 
         let catalog = try allKeys("en")
 
@@ -368,7 +371,7 @@ final class LocalizationCatalogTests: XCTestCase {
     /// is an SF Symbol, a keychain key or a reverse-DNS identifier.
     static let namespaces = [
         "account.", "app.", "auth.", "biometrics.", "common.", "composer.",
-        "communities.", "discover.", "document.", "ds.", "error.", "feed.", "format.", "groups.", "guest.", "messages.", "nationality.", "notifications.", "onboarding.", "people.", "poll.", "post.",
+        "communities.", "discover.", "document.", "ds.", "error.", "feed.", "format.", "groups.", "guest.", "messages.", "nationality.", "notifications.", "onboarding.", "people.", "poll.", "post.", "prompt.", "push.",
         "preferences.", "profile.", "rooms.", "safety.", "saved.", "search.", "voice.",
         "verification."
     ]

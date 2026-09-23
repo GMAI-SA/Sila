@@ -26,6 +26,7 @@ public struct NotificationsScreen: View {
     private let onOpenRoom: (@MainActor (UUID) -> Void)?
     /// Opens a community, for the three community notification kinds.
     private let onOpenCommunity: (@MainActor (String) -> Void)?
+    private let onOpenHome: (@MainActor () -> Void)?
     private let onOpenSettings: (@MainActor () -> Void)?
 
     /// The kind marker is nudged outwards from the avatar by hand, and a raw
@@ -44,6 +45,7 @@ public struct NotificationsScreen: View {
         onOpenProfile: (@MainActor (String) -> Void)? = nil,
         onOpenRoom: (@MainActor (UUID) -> Void)? = nil,
         onOpenCommunity: (@MainActor (String) -> Void)? = nil,
+        onOpenHome: (@MainActor () -> Void)? = nil,
         onOpenSettings: (@MainActor () -> Void)? = nil
     ) {
         self.viewModel = viewModel
@@ -51,6 +53,7 @@ public struct NotificationsScreen: View {
         self.onOpenProfile = onOpenProfile
         self.onOpenRoom = onOpenRoom
         self.onOpenCommunity = onOpenCommunity
+        self.onOpenHome = onOpenHome
         self.onOpenSettings = onOpenSettings
     }
 
@@ -219,13 +222,23 @@ public struct NotificationsScreen: View {
                     openActor(notification)
                 } label: {
                     ZStack(alignment: .bottomTrailing) {
-                        SLAvatar(
-                            url: notification.actor.avatarURL,
-                            initials: notification.actor.initials,
-                            size: .md,
-                            isVerified: notification.actor.isVerified,
-                            displayName: notification.actor.displayName
-                        )
+                        if notification.kind == .prompt {
+                            // Sila's own card, not a person: the moderator who
+                            // scheduled it is not who is asking.
+                            Image(systemName: "questionmark.bubble.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Circle().fill(SLColor.warning))
+                        } else {
+                            SLAvatar(
+                                url: notification.actor.avatarURL,
+                                initials: notification.actor.initials,
+                                size: .md,
+                                isVerified: notification.actor.isVerified,
+                                displayName: notification.actor.displayName
+                            )
+                        }
 
                         kindMarker(notification.kind)
                             // `.bottomTrailing` mirrors on its own; the nudge that
@@ -374,6 +387,7 @@ public struct NotificationsScreen: View {
             case let .profile(handle): onOpenProfile?(handle)
             case let .room(id): onOpenRoom?(id)
             case let .community(slug): onOpenCommunity?(slug)
+            case .home: onOpenHome?()
             }
         }
     }

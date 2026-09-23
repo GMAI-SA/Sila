@@ -263,6 +263,16 @@ public final class RoomsViewModel {
 
     /// Replaces a room wherever it is held, and moves it between sections when
     /// its status changed — which is what an ended room does.
+    /// A reminder was set or cleared on one of the listed rooms.
+    public func adopt(reminder: RoomReminder) {
+        if let index = scheduled.firstIndex(where: { $0.id == reminder.roomId }) {
+            scheduled[index] = scheduled[index].with(reminder: reminder)
+        }
+        if let index = results.firstIndex(where: { $0.id == reminder.roomId }) {
+            results[index] = results[index].with(reminder: reminder)
+        }
+    }
+
     public func merge(_ room: VoiceRoom) {
         remove(room.id)
         insert(room)

@@ -87,6 +87,13 @@ public final class DiscoverServiceMock: DiscoverServiceProtocol, @unchecked Send
         return Self.samplePoll
     }
 
+    public func fetchCurrentPrompt() async throws -> WeeklyPrompt? {
+        try await pause()
+        guard scenario == .populated else { return nil }
+        return WeeklyPrompt(title: "What are you working on this week?", titleAr: "على ماذا تعمل هذا الأسبوع؟",
+                            hashtag: "WorkingOn", kind: .text, responseCount: 12)
+    }
+
     public func submitOnboardingInterests(topics: [String], skipped: Bool) async throws -> FeedPreferences {
         try await pause()
         lock.lock(); submitted = OnboardingInterestsRequest(topics: topics, skipped: skipped); lock.unlock()

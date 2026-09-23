@@ -384,6 +384,9 @@ public struct LiveRoomScreen: View {
                 }
             )
             .padding(.horizontal, SLSpacing.lg)
+            // A room that has not started yet: be told when it does.
+            RemindMeButtons(room: viewModel.room)
+                .padding(.horizontal, SLSpacing.lg)
             Spacer(minLength: SLSpacing.xxl)
         }
         .accessibilityElement(children: .contain)
@@ -398,6 +401,13 @@ public struct LiveRoomScreen: View {
                 .foregroundStyle(SLColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .slContentDirection(TextDirection.resolve(languageCode: nil, text: viewModel.room.title))
+            if let question = viewModel.room.starterQuestion {
+                Label(question, systemImage: "questionmark.bubble")
+                    .font(SLFont.body)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .slContentDirection(TextDirection.resolve(languageCode: nil, text: question))
+            }
 
             HStack(spacing: SLSpacing.sm) {
                 SLChip(

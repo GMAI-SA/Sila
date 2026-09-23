@@ -199,9 +199,14 @@ public final class AuthSession {
     }
 
     /// Ends the session and returns to the welcome screen.
+    /// Runs before the session is dropped — the push registration is
+    /// withdrawn while there is still a token to withdraw it with.
+    public var willSignOut: (@MainActor () async -> Void)?
+
     public func signOut() async {
         isBusy = true
         defer { isBusy = false }
+        await willSignOut?()
         try? await service.signOut()
         user = nil
         verificationReport = nil

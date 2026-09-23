@@ -70,6 +70,12 @@ public final class DiscoverService: DiscoverServiceProtocol {
         )
     }
 
+    public func fetchCurrentPrompt() async throws -> WeeklyPrompt? {
+        let token = try await tokens.accessToken()
+        return try await network.send(APIRequest(path: "/prompts/current", accessToken: token),
+                                      as: CurrentPromptResponse.self).prompt
+    }
+
     public func submitOnboardingInterests(topics: [String], skipped: Bool) async throws -> FeedPreferences {
         let token = try await tokens.accessToken()
         let request = try APIRequest.json(

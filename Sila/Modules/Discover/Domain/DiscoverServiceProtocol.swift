@@ -15,6 +15,8 @@ public protocol DiscoverServiceProtocol: Sendable {
     func vote(postId: UUID, optionId: UUID) async throws -> Poll
     /// `GET /posts/{id}/poll`.
     func fetchPoll(postId: UUID) async throws -> Poll
+    /// `GET /prompts/current` — Sila's question of the week, when one is live.
+    func fetchCurrentPrompt() async throws -> WeeklyPrompt?
     /// `POST /me/onboarding/interests` — answer or skip the subjects step.
     func submitOnboardingInterests(topics: [String], skipped: Bool) async throws -> FeedPreferences
 }

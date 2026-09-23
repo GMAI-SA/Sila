@@ -99,6 +99,8 @@ public struct NotificationSettingsSheet: View {
                         }
                     }
 
+                    PushSettingsSection(viewModel: viewModel)
+
                     Text(viewModel.summary)
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)

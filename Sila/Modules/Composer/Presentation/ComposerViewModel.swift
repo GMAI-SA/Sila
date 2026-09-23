@@ -233,7 +233,19 @@ public final class ComposerViewModel {
     }
 
     /// The kind the recorder opens in: a reply is a question.
-    public var recorderKind: VoiceKind { context.replyTarget != nil ? .question : .thought }
+    public var recorderKind: VoiceKind { preferredVoiceKind ?? (context.replyTarget != nil ? .question : .thought) }
+    /// The kind a prompt asked for (Thursday's Hot Take).
+    private var preferredVoiceKind: VoiceKind?
+
+    /// Opens with a prompt's hashtag, a poll, or the recorder.
+    public func apply(_ prefill: ComposerPrefill) {
+        setText(prefill.composedText, at: 0)
+        if prefill.poll { addPoll() }
+        if let kind = prefill.voiceKind {
+            preferredVoiceKind = kind
+            openRecorder()
+        }
+    }
 
     public func openRecorder() {
         guard canRecordVoice else { return }
@@ -279,7 +291,8 @@ public final class ComposerViewModel {
     /// Puts a starter's phrase in the composer, in the interface language. A
     /// poll starter opens the poll editor with the phrase as its question.
     public func use(_ starter: ComposerStarter) {
-        setText(starter.phrase(), at: 0)
+        // The weekly prompt rides first in the row with its hashtag.
+        setText(ComposerPrefill(text: starter.phrase(), hashtag: starter.hashtag).composedText, at: 0)
         if starter.kind == .poll { addPoll() }
         analytics.track(.composerStarterUsed, properties: ["kind": starter.kind.rawValue, "source": starter.id])
     }

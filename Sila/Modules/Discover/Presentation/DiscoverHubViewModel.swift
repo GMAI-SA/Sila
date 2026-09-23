@@ -33,6 +33,8 @@ public final class DiscoverHubViewModel {
     public private(set) var trending: HubSection<[TrendingSection]> = .idle
     public private(set) var needsReply: HubSection<[Post]> = .idle
     public private(set) var people: HubSection<[SuggestedPerson]> = .idle
+    /// The question of the week, while one is live.
+    public private(set) var prompt: WeeklyPrompt?
     /// People followed from the hub, so a row can say so without a refetch.
     public private(set) var followed: Set<UUID> = []
     /// People with a follow in flight.
@@ -89,6 +91,16 @@ public final class DiscoverHubViewModel {
             group.addTask { await self.loadTrending() }
             group.addTask { await self.loadNeedsReply() }
             group.addTask { await self.loadPeople() }
+        }
+    }
+
+    /// The question of the week, for the top of For You. Silent on failure.
+    public func loadPrompt() async {
+        do {
+            let current = try await discover.fetchCurrentPrompt()
+            prompt = current?.live == true ? current : nil
+        } catch {
+            // Keep whatever was showing; the card is an offer, not a feature.
         }
     }
 

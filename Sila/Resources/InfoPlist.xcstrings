@@ -1,6 +1,42 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "NSCalendarsUsageDescription" : {
+      "comment" : "System calendar prompt, shown when somebody adds a room to their calendar.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تضيف صلة الغرفة التي تختارها إلى تقويمك لتعرف متى تبدأ. صلة لا تقرأ تقويمك أبدًا."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar."
+          }
+        }
+      }
+    },
+    "NSCalendarsWriteOnlyAccessUsageDescription" : {
+      "comment" : "System calendar prompt, shown when somebody adds a room to their calendar.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تضيف صلة الغرفة التي تختارها إلى تقويمك لتعرف متى تبدأ. صلة لا تقرأ تقويمك أبدًا."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar."
+          }
+        }
+      }
+    },
     "NSCameraUsageDescription" : {
       "comment" : "System camera prompt, shown when the document verification flow opens the camera.",
       "extractionState" : "manual",

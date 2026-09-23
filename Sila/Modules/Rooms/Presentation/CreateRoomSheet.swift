@@ -43,6 +43,7 @@ public struct CreateRoomSheet: View {
             VStack(alignment: .leading, spacing: SLSpacing.lg) {
                 explanation
                 titleField
+                starterQuestionField
                 topicPicker
                 audiencePicker
                 schedule
@@ -224,6 +225,16 @@ public struct CreateRoomSheet: View {
             .tint(SLColor.primary)
             .accessibilityHint(Text(RoomCopy.scheduleExplanation))
 
+            if viewModel.isScheduled, viewModel.canRepeat {
+                Toggle(isOn: $viewModel.repeatsWeekly) {
+                    Text(L10n.t("rooms.create.repeatWeekly"))
+                        .font(SLFont.body)
+                        .foregroundStyle(SLColor.textPrimary)
+                }
+                .tint(SLColor.primary)
+                .accessibilityIdentifier("rooms.create.repeatWeekly")
+            }
+
             if viewModel.isScheduled {
                 DatePicker(
                     L10n.t("rooms.create.startsLabel"),
@@ -240,6 +251,18 @@ public struct CreateRoomSheet: View {
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var starterQuestionField: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.xs) {
+            TextField(L10n.t("rooms.create.starterQuestion"), text: $viewModel.starterQuestion, axis: .vertical)
+                .lineLimit(1...3)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("rooms.create.starterQuestion")
+            Text(L10n.t("rooms.create.starterQuestion.hint"))
+                .font(SLFont.micro)
+                .foregroundStyle(SLColor.textMuted)
         }
     }
 

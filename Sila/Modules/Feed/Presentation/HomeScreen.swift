@@ -26,6 +26,9 @@ public struct HomeScreen: View {
     /// draws nothing.
     private let liveRooms: [VoiceRoom]
     private let onOpenLiveRoom: (@MainActor (VoiceRoom) -> Void)?
+    /// The question of the week, shown at the top of For You while live.
+    private let prompt: WeeklyPrompt?
+    private let onAnswerPrompt: (@MainActor (WeeklyPrompt) -> Void)?
 
     @State private var isShowingOrder = false
 
@@ -57,8 +60,12 @@ public struct HomeScreen: View {
         ownPost: (@MainActor (Post) -> OwnPostActions?)? = nil,
         countryCode: String? = nil,
         liveRooms: [VoiceRoom] = [],
-        onOpenLiveRoom: (@MainActor (VoiceRoom) -> Void)? = nil
+        onOpenLiveRoom: (@MainActor (VoiceRoom) -> Void)? = nil,
+        prompt: WeeklyPrompt? = nil,
+        onAnswerPrompt: (@MainActor (WeeklyPrompt) -> Void)? = nil
     ) {
+        self.prompt = prompt
+        self.onAnswerPrompt = onAnswerPrompt
         self.liveRooms = liveRooms
         self.onOpenLiveRoom = onOpenLiveRoom
         self.countryCode = countryCode
@@ -125,6 +132,13 @@ public struct HomeScreen: View {
     /// said plainly, with the other order one tap away.
     @ViewBuilder
     private var forYouHeader: some View {
+        if let prompt, let onAnswerPrompt {
+            PromptCard(
+                prompt: prompt,
+                onAnswer: { onAnswerPrompt(prompt) },
+                onOpenTag: { onOpenHashtag?(prompt.hashtag) }
+            )
+        }
         if let onOpenLiveRoom {
             LiveNowRail(rooms: liveRooms, onOpen: onOpenLiveRoom)
         }

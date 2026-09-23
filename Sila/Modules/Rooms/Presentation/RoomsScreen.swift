@@ -294,9 +294,19 @@ struct RoomCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .slContentDirection(TextDirection.resolve(languageCode: nil, text: room.title))
 
+                if let question = room.starterQuestion {
+                    Label(question, systemImage: "questionmark.bubble")
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .slContentDirection(TextDirection.resolve(languageCode: nil, text: question))
+                }
+
                 host
 
                 chips
+
+                RemindMeButtons(room: room)
 
                 if room.isHost, room.status.isJoinable, let onEnd {
                     // A host who walked out still owns an open room with

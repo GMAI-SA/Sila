@@ -105,6 +105,38 @@ public enum RoomRole: String, Sendable, Hashable, Decodable, CaseIterable {
 ///
 /// **``isRemoved`` is per-room.** It is not a block, it is not account-level,
 /// and no copy in this module may describe it as either.
+/// What a room carries beyond joining it (contracts v21–v22). Grouped so the
+/// room's long initialiser stays as it was, and every copy carries it along.
+public struct RoomExtras: Equatable, Hashable, Sendable, Decodable {
+    public var starterQuestion: String?
+    /// `room` or `ama`.
+    public var kind: String = "room"
+    public var seriesId: UUID?
+    public var reminderSet: Bool = false
+    public var reminderCount: Int = 0
+
+    public init(starterQuestion: String? = nil, kind: String = "room", seriesId: UUID? = nil,
+                reminderSet: Bool = false, reminderCount: Int = 0) {
+        self.starterQuestion = starterQuestion
+        self.kind = kind
+        self.seriesId = seriesId
+        self.reminderSet = reminderSet
+        self.reminderCount = reminderCount
+    }
+
+    private enum CodingKeys: String, CodingKey { case starterQuestion, kind, seriesId, reminderSet, reminderCount }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let question = (try? c.decodeIfPresent(String.self, forKey: .starterQuestion)) ?? nil
+        starterQuestion = (question?.isEmpty == false) ? question : nil
+        kind = (try? c.decode(String.self, forKey: .kind)) ?? "room"
+        seriesId = (try? c.decodeIfPresent(UUID.self, forKey: .seriesId)) ?? nil
+        reminderSet = (try? c.decode(Bool.self, forKey: .reminderSet)) ?? false
+        reminderCount = (try? c.decode(Int.self, forKey: .reminderCount)) ?? 0
+    }
+}
+
 public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable {
 
     public let id: UUID
@@ -177,6 +209,22 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     /// What people made of the room, and whether this viewer liked it.
     public let metrics: RoomMetrics
     public let viewerLiked: Bool
+    /// Starter question, AMA, series, reminder (contract v21).
+    public var extras = RoomExtras()
+
+    public var starterQuestion: String? { extras.starterQuestion }
+    public var isAMA: Bool { extras.kind == "ama" }
+    public var seriesId: UUID? { extras.seriesId }
+    public var reminderSet: Bool { extras.reminderSet }
+    public var reminderCount: Int { extras.reminderCount }
+
+    /// A copy with the reminder as the server now holds it.
+    public func with(reminder: RoomReminder) -> VoiceRoom {
+        var copy = self
+        copy.extras.reminderSet = reminder.reminderSet
+        copy.extras.reminderCount = reminder.reminderCount
+        return copy
+    }
 
     public init(
         id: UUID,
@@ -251,7 +299,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     /// A copy with new counters — what a like answers with, without asking
     /// the server for the whole room again.
     public func with(metrics: RoomMetrics, viewerLiked: Bool) -> VoiceRoom {
-        VoiceRoom(
+        var copy = VoiceRoom(
             id: id,
             title: title,
             topic: topic,
@@ -286,6 +334,8 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
             metrics: metrics,
             viewerLiked: viewerLiked
         )
+        copy.extras = extras
+        return copy
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
@@ -370,6 +420,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
         communitySlug = (slug?.isEmpty == false) ? slug : nil
         let communityLabel = (try? container.decodeIfPresent(String.self, forKey: .communityName)) ?? nil
         communityName = (communityLabel?.isEmpty == false) ? communityLabel : nil
+        extras = (try? RoomExtras(from: decoder)) ?? RoomExtras()
     }
 
     /// Any closed kind. Everything about the door keys off this.
@@ -715,6 +766,10 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     public let inviteHandles: [String]
     /// One of the host's groups, for a room opened to its members.
     public let groupId: UUID?
+    /// A question pinned to the room before anybody speaks (contract v21).
+    public var starterQuestion: String? = nil
+    /// `room` or `ama`.
+    public var kind: String? = nil
 
     /// - Parameters:
     ///   - title: What to call it. Trimmed.

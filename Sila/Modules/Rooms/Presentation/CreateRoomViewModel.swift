@@ -31,6 +31,13 @@ public final class CreateRoomViewModel {
     public private(set) var scope: ComposeScope
     /// Whether the room is being scheduled rather than opened now.
     public var isScheduled = false
+    /// A question for the room before anybody speaks (≤ 200).
+    public var starterQuestion = ""
+    /// Repeat this scheduled room every week (a series).
+    public var repeatsWeekly = false
+    /// Whether the weekly option is offered: the series backend is wired.
+    public var canRepeat: Bool { engagement != nil }
+    private let engagement: RoomEngagementServiceProtocol?
     /// When a scheduled room starts.
     public var scheduledFor = Date().addingTimeInterval(60 * 60)
     /// How many people fit on the stage.
@@ -112,8 +119,12 @@ public final class CreateRoomViewModel {
         analytics: AnalyticsClient,
         suspension: SuspensionMonitor? = nil,
         people: PeopleDirectory? = nil,
+        engagement: RoomEngagementServiceProtocol? = nil,
+        prefillTitle: String? = nil,
         onCreated: (@MainActor (VoiceRoom) -> Void)? = nil
     ) {
+        self.engagement = engagement
+        if let prefillTitle { self.title = String(prefillTitle.prefix(RoomConstants.maximumTitleLength)) }
         self.people = people
         self.author = author
         self.service = service
@@ -306,9 +317,27 @@ public final class CreateRoomViewModel {
         createError = nil
         defer { isCreating = false }
 
+        let question = starterQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
+        if isScheduled, repeatsWeekly, let engagement {
+            do {
+                let series = try await engagement.createSeries(CreateSeriesRequest(
+                    title: trimmedTitle, topic: topic, starterQuestion: question.isEmpty ? nil : String(question.prefix(200)),
+                    scope: scope, repeating: scheduledFor
+                ))
+                guard let next = series.nextRoomId, let room = try? await service.fetchRoom(id: next) else {
+                    toast = .success(L10n.t("rooms.series.created"))
+                    return nil
+                }
+                onCreated?(room)
+                return room
+            } catch {
+                guard suspension?.notice(error) != true else { return nil }
+                createError = APIError.wrapping(error).presentableMessage
+                return nil
+            }
+        }
         do {
-            let room = try await service.createRoom(
-                CreateRoomRequest(
+            var request = CreateRoomRequest(
                     title: trimmedTitle,
                     topic: topic,
                     scope: scope,
@@ -321,7 +350,8 @@ public final class CreateRoomViewModel {
                     inviteHandles: inviteHandles,
                     groupId: selectedGroupId
                 )
-            )
+            request.starterQuestion = question.isEmpty ? nil : String(question.prefix(200))
+            let room = try await service.createRoom(request)
             onCreated?(room)
             return room
         } catch {

@@ -44,6 +44,12 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case prompt
     /// Somebody may be claiming to be you. Never switch-offable.
     case identityImpostor = "identity_impostor"
+    /// A room you set a reminder for is tomorrow / within the hour / live now,
+    /// or was cancelled before it began (contract v21).
+    case roomTomorrow = "room_tomorrow"
+    case roomSoon = "room_soon"
+    case roomLive = "room_live"
+    case roomCancelled = "room_cancelled"
     /// A kind this build does not recognise.
     case unknown
 
@@ -68,7 +74,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         switch self {
         case .follow, .followRequest, .followAccepted, .roomInvite, .unknown,
              .communityInvite, .communityJoinRequest, .communityAccepted,
-             .roomLike, .prompt, .identityImpostor:
+             .roomLike, .prompt, .identityImpostor, .roomTomorrow, .roomSoon, .roomLive, .roomCancelled:
             return false
         case .like, .repost, .reply, .mention, .roomShared, .pollClosed: return true
         }
@@ -93,6 +99,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .pollClosed: return "chart.bar.fill"
         case .prompt: return "questionmark.bubble.fill"
         case .identityImpostor: return "exclamationmark.shield.fill"
+        case .roomTomorrow: return "calendar"
+        case .roomSoon: return "clock.badge"
+        case .roomLive: return "dot.radiowaves.left.and.right"
+        case .roomCancelled: return "calendar.badge.minus"
         case .unknown: return "bell"
         }
     }
@@ -116,6 +126,9 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .pollClosed: return SLColor.primary
         case .prompt: return SLColor.warning
         case .identityImpostor: return SLColor.danger
+        case .roomTomorrow, .roomSoon: return SLColor.primary
+        case .roomLive: return SLColor.danger
+        case .roomCancelled: return SLColor.textSecondary
         case .unknown: return SLColor.textSecondary
         }
     }
@@ -139,6 +152,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .pollClosed: return L10n.t("notifications.kind.pollClosed.title")
         case .prompt: return L10n.t("notifications.kind.prompt.title")
         case .identityImpostor: return L10n.t("notifications.kind.identityImpostor.title")
+        case .roomTomorrow: return L10n.t("notifications.kind.roomTomorrow.title")
+        case .roomSoon: return L10n.t("notifications.kind.roomSoon.title")
+        case .roomLive: return L10n.t("notifications.kind.roomLive.title")
+        case .roomCancelled: return L10n.t("notifications.kind.roomCancelled.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -182,6 +199,14 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.prompt.detail")
         case .identityImpostor:
             return L10n.t("notifications.kind.identityImpostor.detail")
+        case .roomTomorrow:
+            return L10n.t("notifications.kind.roomTomorrow.detail")
+        case .roomSoon:
+            return L10n.t("notifications.kind.roomSoon.detail")
+        case .roomLive:
+            return L10n.t("notifications.kind.roomLive.detail")
+        case .roomCancelled:
+            return L10n.t("notifications.kind.roomCancelled.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -554,6 +579,8 @@ public struct NotificationGroup: Identifiable, Equatable, Sendable {
         case "rooms": return L10n.t("notifications.settings.group.rooms")
         case "communities": return L10n.t("notifications.settings.group.communities")
         case "sila": return L10n.t("notifications.settings.group.sila")
+        case "more": return L10n.t("notifications.settings.group.more")
+        case "events": return L10n.t("notifications.settings.group.events")
         default: return NotificationGroup.humanised(id)
         }
     }
@@ -617,6 +644,10 @@ public enum NotificationCopy {
         case .pollClosed: return L10n.t("notifications.sentence.pollClosed")
         case .prompt: return L10n.t("notifications.sentence.prompt")
         case .identityImpostor: return L10n.t("notifications.sentence.identityImpostor")
+        case .roomTomorrow: return L10n.t("notifications.sentence.roomTomorrow", name)
+        case .roomSoon: return L10n.t("notifications.sentence.roomSoon", name)
+        case .roomLive: return L10n.t("notifications.sentence.roomLive", name)
+        case .roomCancelled: return L10n.t("notifications.sentence.roomCancelled", name)
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.

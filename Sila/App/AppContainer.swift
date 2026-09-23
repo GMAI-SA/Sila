@@ -50,6 +50,12 @@ public final class AppContainer {
     public let discoverService: DiscoverServiceProtocol
     /// Recording, uploading and captioning voice posts (contract v20).
     public let voiceService: VoiceServiceProtocol
+    /// Room reminders and weekly series (contract v21).
+    public let roomEngagement: RoomEngagementServiceProtocol
+    /// Device registration and push opens.
+    public let pushService: PushServiceProtocol
+    /// Asking for, registering and opening pushes.
+    public let pushRegistrar: PushRegistrar
     /// Contract v4's interests service — topics and feed preferences.
     public let preferencesService: PreferencesServiceProtocol
     /// Contract v5's account service — profile, credentials, export, deletion.
@@ -120,7 +126,9 @@ public final class AppContainer {
         messagesService: MessagesServiceProtocol? = nil,
         languageService: LanguageServiceProtocol? = nil,
         discoverService: DiscoverServiceProtocol? = nil,
-        voiceService: VoiceServiceProtocol? = nil
+        voiceService: VoiceServiceProtocol? = nil,
+        roomEngagement: RoomEngagementServiceProtocol? = nil,
+        pushService: PushServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -273,6 +281,26 @@ public final class AppContainer {
         } else {
             self.voiceService = VoiceService(network: network, tokens: tokens, analytics: analytics)
         }
+
+        if let roomEngagement {
+            self.roomEngagement = roomEngagement
+        } else if flags.useMockRooms {
+            self.roomEngagement = RoomEngagementServiceMock()
+        } else {
+            self.roomEngagement = RoomEngagementService(network: network, tokens: tokens, analytics: analytics)
+        }
+        let push = pushService ?? (flags.useMockAuth ? PushServiceMock() : PushService(network: network, tokens: tokens))
+        self.pushService = push
+        let registrar = PushRegistrar(
+            service: push,
+            storage: storage,
+            analytics: analytics,
+            isSignedIn: { [weak session] in session?.user != nil }
+        )
+        self.pushRegistrar = registrar
+        // Before the access token goes: this phone stops getting this
+        // account's pushes.
+        session.willSignOut = { [weak registrar] in await registrar?.willSignOut() }
 
         if let preferencesService {
             self.preferencesService = preferencesService

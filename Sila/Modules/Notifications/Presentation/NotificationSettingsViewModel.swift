@@ -23,6 +23,10 @@ public final class NotificationSettingsViewModel {
     /// The sections as the server grouped them (contract v19). Falls back to
     /// this build's own list when an older server sends no groups.
     public private(set) var groups: [NotificationGroup] = []
+    /// Which kinds push to the phone, by wire name.
+    public private(set) var push: [String: Bool] = [:]
+    public private(set) var quietHours: QuietHours?
+    public private(set) var savingPush: Set<String> = []
     /// `true` during the first load.
     public private(set) var isLoading = false
     /// `true` once a load has finished, successfully or not.
@@ -86,6 +90,8 @@ public final class NotificationSettingsViewModel {
             let stored = try await service.fetchPreferences()
             preferences = stored.notifications
             groups = stored.notificationGroups
+            push = stored.push
+            quietHours = stored.quietHours
         } catch {
             // Cut short: nothing loaded, nothing failed, ask again next time.
             abandoned = APIError.wrapping(error).isCancellation
@@ -106,6 +112,74 @@ public final class NotificationSettingsViewModel {
     ///   - kind: Which notifications it governs.
     public func setEnabled(_ isEnabled: Bool, for kind: NotificationKind) async {
         await setEnabled(isEnabled, key: kind.rawValue)
+    }
+
+    // MARK: - Push
+
+    /// The push switches, grouped like the in-app ones; kinds that only push
+    /// (a message, a room reminder) are gathered at the end.
+    public var pushSections: [NotificationGroup] {
+        guard !push.isEmpty else { return [] }
+        var seen = Set<String>()
+        var sections: [NotificationGroup] = []
+        for group in groups {
+            let kinds = group.kinds.filter { push[$0] != nil }
+            seen.formUnion(kinds)
+            if !kinds.isEmpty { sections.append(NotificationGroup(id: group.id, kinds: kinds)) }
+        }
+        let rest = push.keys.filter { !seen.contains($0) }.sorted()
+        if !rest.isEmpty { sections.append(NotificationGroup(id: "more", kinds: rest)) }
+        return sections
+    }
+
+    public func isPushOn(_ key: String) -> Bool { push[key] ?? false }
+
+    public func setPush(_ on: Bool, key: String) async {
+        guard !savingPush.contains(key), isPushOn(key) != on else { return }
+        let snapshot = push
+        push[key] = on
+        savingPush.insert(key)
+        defer { savingPush.remove(key) }
+        do {
+            var update = PreferencesUpdate()
+            update.push = [key: on]
+            let stored = try await service.updatePreferences(update)
+            push = stored.push.isEmpty ? push : stored.push
+        } catch {
+            push = snapshot
+            toast = .error(for: error)
+        }
+    }
+
+    /// Minutes after midnight → a date today, for the pickers.
+    public static func date(minutes: Int) -> Date {
+        Calendar.current.startOfDay(for: Date()).addingTimeInterval(TimeInterval(minutes * 60))
+    }
+
+    public static func minutes(of date: Date) -> Int {
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+    }
+
+    /// Turns quiet hours on (22:00–07:00 by default), changes them, or off.
+    public func setQuietHours(_ hours: QuietHours?) async {
+        let snapshot = quietHours
+        if let hours, hours.startMin == hours.endMin { return }
+        quietHours = hours
+        do {
+            var update = PreferencesUpdate()
+            if let hours {
+                update.quietHours = hours
+                update.timezone = TimeZone.current.identifier
+            } else {
+                update.clearQuietHours = true
+            }
+            let stored = try await service.updatePreferences(update)
+            quietHours = stored.quietHours
+        } catch {
+            quietHours = snapshot
+            toast = .error(for: error)
+        }
     }
 
     /// Flips one kind, by its wire name, and writes it — for kinds the server

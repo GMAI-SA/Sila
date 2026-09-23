@@ -17,6 +17,10 @@ public enum Permalink {
     }
 
     /// A profile's page.
+    public static func room(_ id: UUID) -> URL {
+        base.appendingPathComponent("rooms").appendingPathComponent(id.uuidString.lowercased())
+    }
+
     public static func profile(_ handle: String) -> URL {
         base.appendingPathComponent("u").appendingPathComponent(Handle.pathComponent(handle))
     }
@@ -50,6 +54,9 @@ public enum DeepLink: Equatable, Sendable {
         case "posts":
             guard let id = UUID(uuidString: parts[1]) else { return nil }
             return .post(id: id)
+        case "rooms":
+            guard let id = UUID(uuidString: parts[1]) else { return nil }
+            return .room(id: id)
         case "u":
             let handle = Handle.normalised(parts[1].removingPercentEncoding ?? parts[1])
             guard !handle.isEmpty, !Handle.pathComponent(handle).isEmpty else { return nil }

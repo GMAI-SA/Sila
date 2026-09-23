@@ -410,6 +410,20 @@ public enum AnalyticsEvent: String, Sendable {
     case voiceUploaded = "voice_uploaded"
     /// A post carrying a recording was published. Carries `kind`.
     case voicePosted = "voice_posted"
+
+    // MARK: Reach (contract v21)
+
+    /// The app came to the foreground. The retention metrics are built on it.
+    case appOpened = "app.opened"
+    /// The push prompt was answered. Carries `result` and `source`.
+    case pushPermissionAnswered = "push_permission_answered"
+    /// A push was tapped. Carries `kind`.
+    case pushOpened = "push_opened"
+    case roomReminderSet = "room_reminder_set"
+    case roomReminderCleared = "room_reminder_cleared"
+    case roomSeriesCreated = "room_series_created"
+    /// "Answer this" on the question of the week. Carries `kind`, `prompt_id`.
+    case promptAnswered = "prompt_answered"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

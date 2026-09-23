@@ -109,6 +109,11 @@ public final class AppRouter {
     /// `true` when the next composer should open straight onto the GIF
     /// picker — the floating button's GIF choice. Read once, then cleared.
     public var composerOpensGifPicker = false
+    /// What the next composer opens with — a prompt's hashtag, a poll, the
+    /// recorder. Read once, then cleared.
+    public var composerPrefill: ComposerPrefill?
+    /// The title the next create-room sheet opens with.
+    public var createRoomPrefillTitle: String?
     /// App-level toast.
     public var toast: SLToastMessage?
     /// A link the system handed the app that nothing has opened yet.

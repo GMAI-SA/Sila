@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Push notifications (contract v21). Xcode re-signs this as
+	     production for TestFlight and the store. -->
+	<key>aps-environment</key>
+	<string>development</string>
 	<!--
 	  Password AutoFill keys a saved password to a *website*. Without this,
 	  iOS has no way to know that the Sila app is sila.gmai.sa, so a password

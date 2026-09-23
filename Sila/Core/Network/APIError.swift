@@ -302,6 +302,11 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case captionRedoLimit = "caption_redo_limit"
     case ownHotTake = "own_hot_take"
     case notAHotTake = "not_a_hot_take"
+    // MARK: Contract v21 — reach
+    case roomNotScheduled = "room_not_scheduled"
+    case tooManySeries = "too_many_series"
+    case invalidTimezone = "invalid_timezone"
+    case invalidQuietHours = "invalid_quiet_hours"
 
     /// Anything the client does not recognise.
     case unknown
@@ -566,6 +571,10 @@ public enum APIError: Error, Equatable, Sendable {
             case .captionRedoLimit: return L10n.t("voice.error.redoLimit")
             case .ownHotTake: return L10n.t("voice.error.ownHotTake")
             case .notAHotTake: return L10n.t("voice.error.notHotTake")
+            case .roomNotScheduled: return L10n.t("rooms.remind.error.notScheduled")
+            case .tooManySeries: return L10n.t("rooms.series.error.tooMany")
+            case .invalidTimezone: return L10n.t("rooms.series.error.timezone")
+            case .invalidQuietHours: return L10n.t("notifications.quiet.error")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

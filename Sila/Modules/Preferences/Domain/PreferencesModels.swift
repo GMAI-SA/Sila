@@ -155,6 +155,13 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
     /// How the server groups the notification switches (contract v19). Empty
     /// from an older server; the settings sheet then falls back to its own list.
     public var notificationGroups: [NotificationGroup] = []
+    /// Which kinds reach the phone as a push (contract v21). Separate from the
+    /// in-app switches: push off never turns the row off.
+    public var push: [String: Bool] = [:]
+    /// Pushes held (never dropped) between these minutes after midnight.
+    public var quietHours: QuietHours?
+    /// The account's time zone, which quiet hours are in.
+    public var timezone: String?
     /// How a hashtag's page is ordered for this account.
     public var hashtagSort: HashtagSort
 
@@ -187,6 +194,7 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
         case mutedCountries
         case notifications
         case notificationGroups
+        case push, quietHours, timezone
         case hashtagSort
     }
 
@@ -214,6 +222,9 @@ public struct FeedPreferences: Equatable, Sendable, Decodable {
             ((try? container.decodeIfPresent(NotificationPreferences.self, forKey: .notifications)) ?? nil)
             ?? NotificationPreferences()
         hashtagSort = HashtagSort(wire: (try? container.decode(String.self, forKey: .hashtagSort)) ?? nil)
+        push = (try? container.decode([String: Bool].self, forKey: .push)) ?? [:]
+        quietHours = (try? container.decodeIfPresent(QuietHours.self, forKey: .quietHours)) ?? nil
+        timezone = (try? container.decodeIfPresent(String.self, forKey: .timezone)) ?? nil
         notificationGroups = NotificationGroup.ordered(
             (try? container.decode([String: [String]].self, forKey: .notificationGroups)) ?? [:]
         )
@@ -342,6 +353,12 @@ public struct PreferencesUpdate: Encodable, Equatable, Sendable {
     /// New order for hashtag pages. The wire value, so the encoder needs no
     /// special case.
     public var hashtagSort: String?
+    /// Partial: `{"like": true}` turns like pushes on and leaves the rest.
+    public var push: [String: Bool]? = nil
+    public var quietHours: QuietHours? = nil
+    public var clearQuietHours: Bool? = nil
+    /// Sent with quiet hours so they are this phone's hours.
+    public var timezone: String? = nil
 
     public init(
         topics: [TopicStancePayload]? = nil,

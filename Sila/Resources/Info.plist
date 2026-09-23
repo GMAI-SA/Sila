@@ -28,6 +28,10 @@
 	<string>Sila uses the camera only to photograph your identity document and take a short selfie during verification. Nothing is recorded outside that step.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Sign in with Face ID</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Sila uses the microphone when you speak in a room or record a voice post. Rooms are never recorded; a voice post is recorded only when you press record, and only you decide to post it.</string>
 	<key>UIBackgroundModes</key>

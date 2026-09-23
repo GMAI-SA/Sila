@@ -64,6 +64,8 @@ public struct MainTabView: View {
     @State private var deletion: PostDeletionViewModel
     /// The Explore hub's sections and Home's Live now rail (contract v19).
     @State private var hub: DiscoverHubViewModel
+    /// The weekly room being looked at, if any.
+    @State private var openSeriesId: UUID?
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -146,11 +148,22 @@ public struct MainTabView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     // One way to vote, for every poll on every screen below.
                     .environment(\.pollVoter, PollVoter(vote: { postId, optionId in
-                        try await container.discoverService.vote(postId: postId, optionId: optionId)
+                        let poll = try await container.discoverService.vote(postId: postId, optionId: optionId)
+                        Task { await container.pushRegistrar.requestIfAppropriate(after: "vote") }
+                        return poll
                     }))
                     .environment(\.voiceActions, VoiceActions(setStance: { stance, postId in
                         try await container.voiceService.setStance(stance, postId: postId)
                     }))
+                    .environment(\.roomReminders, RoomReminderActions(
+                        toggle: { room, on in
+                            let reminder = try await container.roomEngagement.setReminder(on, roomId: room.id)
+                            roomsViewModel.adopt(reminder: reminder)
+                            if on { Task { await container.pushRegistrar.requestIfAppropriate(after: "reminder") } }
+                            return reminder
+                        },
+                        openSeries: { id in openSeriesId = id }
+                    ))
 
                 // The one thing this tab starts, in the bottom corner where a
                 // thumb already is; held, everything the app can start.
@@ -268,6 +281,14 @@ public struct MainTabView: View {
                 }
             )
             .tint(SLColor.primary)
+        }
+        .sheet(item: Binding(
+            get: { openSeriesId.map(SeriesToken.init) },
+            set: { openSeriesId = $0?.id }
+        )) { token in
+            Owned({ RoomSeriesViewModel(id: token.id, service: container.roomEngagement) }) { series in
+                RoomSeriesSheet(viewModel: series, onClose: { openSeriesId = nil })
+            }
         }
         .sheet(isPresented: $isShowingGroups) {
             GroupsSheet(
@@ -570,7 +591,9 @@ public struct MainTabView: View {
     /// that should hold them, and in the Explore results when they match what
     /// the user is looking at.
     private func composerViewModel(for context: ComposerContext) -> ComposerViewModel {
-        ComposerViewModel(
+        let prefill = container.router.composerPrefill
+        container.router.composerPrefill = nil
+        let composer = ComposerViewModel(
             context: context,
             author: ComposerAuthor(user: container.session.user),
             composer: container.composerService,
@@ -583,9 +606,36 @@ public struct MainTabView: View {
             onPosted: { posted in
                 viewModel.insert(newPosts: posted)
                 exploreViewModel.insert(posted)
+                // Somebody just said something: now a reply is worth hearing about.
+                Task { await container.pushRegistrar.requestIfAppropriate(after: "post") }
             },
             onClose: { container.router.dismissComposer() }
         )
+        if let prefill { composer.apply(prefill) }
+        return composer
+    }
+
+    /// "Answer this" on the question of the week.
+    private func answer(prompt: WeeklyPrompt) {
+        container.analytics.track(.promptAnswered, properties: ["kind": prompt.kind.rawValue, "prompt_id": prompt.id.uuidString.lowercased()])
+        switch prompt.kind {
+        case .text:
+            container.router.composerPrefill = ComposerPrefill(hashtag: prompt.hashtag)
+            composeHandler?(.newPost)
+        case .poll:
+            container.router.composerPrefill = ComposerPrefill(text: prompt.localizedTitle(), hashtag: prompt.hashtag, poll: true)
+            composeHandler?(.newPost)
+        case .voice:
+            // Thursday's question is a Hot Take: agree or disagree.
+            let thursday = Calendar(identifier: .gregorian).component(.weekday, from: Date()) == 5
+            let kind: VoiceKind = (prompt.rhythmKey?.contains("hot") == true || thursday) ? .hotTake : .thought
+            container.router.composerPrefill = ComposerPrefill(hashtag: prompt.hashtag,
+                                                               voiceKind: container.flags.voicePosts ? kind : nil)
+            composeHandler?(.newPost)
+        case .room:
+            container.router.createRoomPrefillTitle = prompt.localizedTitle()
+            container.router.isCreatingRoom = true
+        }
     }
 
     // MARK: - Floating action
@@ -694,9 +744,12 @@ public struct MainTabView: View {
                     ownPost: ownPostMenu(for:),
                     countryCode: container.session.user?.countryCode,
                     liveRooms: container.flags.rooms ? hub.liveRooms : [],
-                    onOpenLiveRoom: container.flags.rooms ? openLiveRoom : nil
+                    onOpenLiveRoom: container.flags.rooms ? openLiveRoom : nil,
+                    prompt: hub.prompt,
+                    onAnswerPrompt: answer(prompt:)
                 )
                 .task { if container.flags.rooms { await hub.loadLive() } }
+                .task { await hub.loadPrompt() }
                 .tnNavigationBar(title: L10n.t("feed.home.navTitle"))
                 .navigationDestination(for: FeedRoute.self) { route in
                     destination(for: route)
@@ -760,6 +813,7 @@ public struct MainTabView: View {
                     onOpenProfile: openProfile,
                     onOpenRoom: openRoomFromNotification,
                     onOpenCommunity: { slug in push(.community(slug: slug)) },
+                    onOpenHome: { selection = .home },
                     onOpenSettings: {
                         guard container.flags.preferences else {
                             stub(StubFeature.notificationSettings)
@@ -1030,8 +1084,16 @@ public struct MainTabView: View {
             analytics: container.analytics,
             suspension: container.suspension,
             people: container.peopleDirectory,
+            engagement: container.roomEngagement,
+            prefillTitle: consumeRoomPrefill(),
             onCreated: { room in roomsViewModel.insert(room) }
         )
+    }
+
+    private func consumeRoomPrefill() -> String? {
+        let title = container.router.createRoomPrefillTitle
+        container.router.createRoomPrefillTitle = nil
+        return title
     }
 
     /// A room on the Live now rail was tapped.
@@ -1619,4 +1681,9 @@ struct ProfileStubScreen: View {
 #Preview("MainTabView") {
     MainTabView(container: AppContainer.preview(scenario: .verified))
         .preferredColorScheme(.dark)
+}
+
+/// A series id as a sheet item.
+private struct SeriesToken: Identifiable {
+    let id: UUID
 }
