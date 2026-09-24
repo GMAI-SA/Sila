@@ -67,13 +67,44 @@ final class DocumentUploadTests: XCTestCase {
         XCTAssertEqual(viewModel.documentSource, .file)
     }
 
-    func testNoReadableZoneIsSaidAndTheScreenStays() async {
+    func testNoReadableZoneOnAPassportIsSaidAndTheScreenStays() async {
         let (viewModel, _) = make(zone: nil)
         viewModel.choose(.passport)
         await viewModel.importDocument(image(), source: .photos)
         XCTAssertEqual(viewModel.phase, .captureFront)
         XCTAssertEqual(viewModel.importError, L10n.t("document.upload.error.noZone"))
         XCTAssertNil(viewModel.frontImage)
+    }
+
+    /// Every Saudi ID card has no zone: a zoneless card goes to a reviewer,
+    /// exactly as a zoneless photo of it does.
+    func testAZonelessIDCardUploadProceedsToReview() async {
+        let (viewModel, _) = make(zone: nil)
+        viewModel.choose(.nationalId)
+        await viewModel.importDocument(image(), source: .photos)
+        XCTAssertNil(viewModel.importError)
+        XCTAssertEqual(viewModel.phase, .captureBack)
+        await viewModel.importDocument(image(), source: .photos)
+        XCTAssertEqual(viewModel.phase, .review)
+        XCTAssertFalse(viewModel.zoneIsReadable)
+        XCTAssertTrue(viewModel.canContinueFromReview, "a reviewer reads it by hand")
+    }
+
+    func testAZonelessPassportUploadIsRefusedWithTheSentence() async {
+        let (viewModel, _) = make(zone: nil)
+        viewModel.choose(.passport)
+        await viewModel.importDocument(image(), source: .file)
+        XCTAssertEqual(viewModel.phase, .captureFront)
+        XCTAssertEqual(viewModel.importError, L10n.t("document.upload.error.noZone"))
+    }
+
+    func testAPDFIDCardProceeds() async {
+        let (viewModel, _) = make(zone: nil)
+        viewModel.choose(.residencePermit)
+        await viewModel.importDocument(pdf(), isPDF: true, source: .file)
+        XCTAssertEqual(viewModel.phase, .captureBack)
+        XCTAssertNotNil(viewModel.frontImage)
+        XCTAssertEqual(viewModel.documentSource, .file)
     }
 
     func testAnUnopenableFileIsSaid() async {

@@ -290,8 +290,10 @@ public final class DocumentVerificationViewModel {
     /// A photo or file was chosen for the current side. It is turned into
     /// the camera's JPEG and — on the front — read for the zone exactly as a
     /// photo would be, so expiry, nationality and birthdate are checked the
-    /// same way. A front with no readable zone is refused: the choice is then
-    /// another file or the camera.
+    /// same way, through the same `acceptFront`. A zoneless front goes to a
+    /// reviewer exactly as a zoneless photo does — except a passport, whose
+    /// photo page always has a zone: not reading one there means the scan is
+    /// unclear, and it is refused with the choice of another file or the camera.
     public func importDocument(_ data: Data, isPDF: Bool? = nil, source: DocumentSource) async {
         guard phase == .captureFront || phase == .captureBack, !isImporting else { return }
         isImporting = true
@@ -308,7 +310,8 @@ public final class DocumentVerificationViewModel {
             return
         }
         let text = await zoneReader(jpeg)
-        guard let text, MRZParser.parseRepairing(text)?.isValid == true else {
+        let readable = text.flatMap { MRZParser.parseRepairing($0) }?.isValid == true
+        if !readable, documentType?.zoneOnFront == true {
             importError = L10n.t("document.upload.error.noZone")
             return
         }

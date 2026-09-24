@@ -17,6 +17,13 @@ public enum DocumentType: String, CaseIterable, Identifiable, Sendable, Equatabl
     /// data page is one side; cards carry information on both.
     public var hasBack: Bool { self != .passport }
 
+    /// Whether the machine-readable zone is always on the side photographed
+    /// first. A passport's photo page always carries one; an ID card's zone
+    /// is on the back if it has one at all — every Saudi ID has none — and a
+    /// reviewer reads those by hand. So a zoneless front is only a problem
+    /// for a passport.
+    public var zoneOnFront: Bool { self == .passport }
+
     public var title: String {
         switch self {
         case .passport: return L10n.t("document.type.passport.title")

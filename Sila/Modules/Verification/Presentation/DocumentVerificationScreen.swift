@@ -241,6 +241,12 @@ public struct DocumentVerificationScreen: View {
                     .foregroundStyle(SLColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                Label(L10n.t("document.upload.hint"), systemImage: "photo.on.rectangle")
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.primary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("document.upload.hint")
             }
 
             VStack(spacing: SLSpacing.md) {
@@ -577,8 +583,8 @@ private struct DocumentUploadBar: View {
     var body: some View {
         VStack(spacing: SLSpacing.sm) {
             Text(L10n.t("document.upload.or"))
-                .font(SLFont.micro)
-                .foregroundStyle(SLColor.textMuted)
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textSecondary)
             HStack(spacing: SLSpacing.md) {
                 PhotosPicker(selection: $picked, matching: .images) {
                     Label(L10n.t("document.upload.photo"), systemImage: "photo.on.rectangle")

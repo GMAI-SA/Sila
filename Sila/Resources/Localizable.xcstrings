@@ -12977,6 +12977,23 @@
         }
       }
     },
+    "document.upload.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك أيضًا رفع صورة أو نسخة ممسوحة من وثيقتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can also upload a photo or a scan of your document."
+          }
+        }
+      }
+    },
     "document.upload.liveOnly": {
       "extractionState": "manual",
       "localizations": {
