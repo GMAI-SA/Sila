@@ -32,6 +32,15 @@ final class NafathComingSoonTests: XCTestCase {
         XCTAssertFalse(VerificationWallViewModel.routesStraightToNafath(claim: "EG", nafathAvailable: true))
     }
 
+    /// Web-parity review: a Saudi whose claim was already on file was sent
+    /// straight into Nafath by Start while it was still coming soon.
+    func testStartDoesNotSendAnAlreadyDeclaredSaudiToAClosedNafath() {
+        XCTAssertEqual(VerificationWallViewModel.startStep(declared: "SA", nafathAvailable: false), .chooseMethod)
+        XCTAssertEqual(VerificationWallViewModel.startStep(declared: "SA", nafathAvailable: true), .nafath)
+        XCTAssertEqual(VerificationWallViewModel.startStep(declared: "EG", nafathAvailable: true), .chooseMethod)
+        XCTAssertEqual(VerificationWallViewModel.startStep(declared: nil, nafathAvailable: true), .pickNationality)
+    }
+
     func testNafathUnavailableHasItsOwnSentence() {
         let error = APIError.api(code: .nafathUnavailable, message: "server words", status: 503)
         XCTAssertEqual(error.userMessage, L10n.t("error.nafathUnavailable"))

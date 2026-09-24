@@ -135,6 +135,16 @@ public final class VerificationWallViewModel {
 
     /// Whether a nationality claim goes straight to Nafath, skipping the
     /// chooser: only a Nafath-only nationality, and only while Nafath is live.
+    /// What "Start" opens: the nationality question when there is no claim,
+    /// Nafath only for a Nafath-only claim while Nafath is live, otherwise the
+    /// method chooser. Every door into Nafath goes through this rule.
+    public enum StartStep: Equatable, Sendable { case pickNationality, nafath, chooseMethod }
+
+    nonisolated public static func startStep(declared: String?, nafathAvailable: Bool) -> StartStep {
+        guard let declared, !declared.isEmpty else { return .pickNationality }
+        return routesStraightToNafath(claim: declared, nafathAvailable: nafathAvailable) ? .nafath : .chooseMethod
+    }
+
     nonisolated public static func routesStraightToNafath(claim: String, nafathAvailable: Bool) -> Bool {
         nafathAvailable && DocumentVerificationViewModel.nafathOnly.contains(claim.uppercased())
     }

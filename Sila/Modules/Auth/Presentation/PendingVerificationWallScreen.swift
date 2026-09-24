@@ -15,6 +15,9 @@ public struct PendingVerificationWallScreen: View {
     @State private var isSavingNationality = false
     @State private var routeAfterPicking: VerificationRoute?
     @State private var chooseAfterPicking = false
+    /// The document flow sent a Saudi to Nafath while Nafath is closed: the
+    /// chooser opens again once the cover has gone.
+    @State private var chooseAfterCover = false
     @State private var reopenPickerAfterChoosing = false
     @State private var pendingRoute: VerificationRoute?
     @State private var route: VerificationRoute?
@@ -181,6 +184,9 @@ public struct PendingVerificationWallScreen: View {
             if let next = pendingRoute {
                 pendingRoute = nil
                 route = next
+            } else if chooseAfterCover {
+                chooseAfterCover = false
+                isChoosingMethod = true
             }
         }) { chosen in
             if let verification {
@@ -234,7 +240,12 @@ public struct PendingVerificationWallScreen: View {
                             // A Saudi document: close this flow, open Nafath
                             // once the cover has actually gone.
                             analytics.track(.verificationMethodChosen, properties: ["method": "nafath_redirect"])
-                            pendingRoute = .nafath
+                            // Only while Nafath is live; otherwise back to the chooser.
+                            if viewModel.nafathAvailable {
+                                pendingRoute = .nafath
+                            } else {
+                                chooseAfterCover = true
+                            }
                             route = nil
                         },
                         onClose: {
@@ -364,12 +375,13 @@ public struct PendingVerificationWallScreen: View {
             analytics.track(.verificationStarted, properties: ["status": viewModel.status.rawValue])
             // No claim yet: ask for it first. The chooser follows on its own —
             // unless the claim is Saudi, whose one door is Nafath.
-            if viewModel.declaredNationality == nil {
-                isPickingNationality = true
-            } else if DocumentVerificationViewModel.nafathOnly.contains(viewModel.declaredNationality ?? "") {
-                route = .nafath
-            } else {
-                isChoosingMethod = true
+            // An already-declared Saudi went straight into Nafath even while
+            // it was "coming soon"; the rule is now one function for every door.
+            switch VerificationWallViewModel.startStep(declared: viewModel.declaredNationality,
+                                                      nafathAvailable: viewModel.nafathAvailable) {
+            case .pickNationality: isPickingNationality = true
+            case .nafath: route = .nafath
+            case .chooseMethod: isChoosingMethod = true
             }
         }
     }

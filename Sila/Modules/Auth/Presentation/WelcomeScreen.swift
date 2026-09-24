@@ -51,7 +51,7 @@ public struct WelcomeScreen: View {
                 Spacer(minLength: SLSpacing.xxl)
 
                 VStack(spacing: SLSpacing.lg) {
-                    SLVerifiedBadge(size: 56)
+                    SLVerifiedBadge(size: 56, isPulsing: true)
 
                     Text(L10n.t("auth.brand.wordmark"))
                         .font(SLFont.displayXL)

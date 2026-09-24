@@ -22,7 +22,9 @@ public struct SLVerifiedBadge: View {
     /// - Parameters:
     ///   - size: Diameter in points. Defaults to 16.
     ///   - isPulsing: Whether the halo animates. Ignored when Reduce Motion is on.
-    public init(size: CGFloat = 16, isPulsing: Bool = true) {
+    /// Static unless asked: a seal pulsing on every row of a list reads as
+    /// something happening. The welcome screen asks; lists never do.
+    public init(size: CGFloat = 16, isPulsing: Bool = false) {
         self.size = size
         self.isPulsing = isPulsing
     }
