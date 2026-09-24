@@ -85,6 +85,23 @@ public final class DocumentVerificationViewModel {
     public private(set) var underAgeMessage = ""
     /// Banner message.
     public var toast: SLToastMessage?
+    /// Where the front and back images came from.
+    public private(set) var frontSource: DocumentSource = .camera
+    public private(set) var backSource: DocumentSource = .camera
+    /// A chosen photo or file is being read.
+    public private(set) var isImporting = false
+    /// Why a chosen photo or file was not accepted, on the capture screen.
+    public private(set) var importError: String?
+    /// Reads the zone off a JPEG. Injectable so tests need no Vision.
+    var zoneReader: @Sendable (Data) async -> String? = { jpeg in
+        DocumentTextReader.zone(from: await DocumentTextReader.lines(in: jpeg))
+    }
+
+    /// The source sent with the submission: a chosen image on either side
+    /// counts, the front first.
+    public var documentSource: DocumentSource {
+        frontSource != .camera ? frontSource : backSource
+    }
 
     private let service: VerificationServiceProtocol
     private let analytics: AnalyticsClient
@@ -268,8 +285,46 @@ public final class DocumentVerificationViewModel {
         phase = .review
     }
 
+    // MARK: Uploading instead of photographing
+
+    /// A photo or file was chosen for the current side. It is turned into
+    /// the camera's JPEG and — on the front — read for the zone exactly as a
+    /// photo would be, so expiry, nationality and birthdate are checked the
+    /// same way. A front with no readable zone is refused: the choice is then
+    /// another file or the camera.
+    public func importDocument(_ data: Data, isPDF: Bool? = nil, source: DocumentSource) async {
+        guard phase == .captureFront || phase == .captureBack, !isImporting else { return }
+        isImporting = true
+        importError = nil
+        defer { isImporting = false }
+        guard let jpeg = DocumentImport.jpeg(from: data, isPDF: isPDF) else {
+            importError = L10n.t("document.upload.error.unreadableFile")
+            return
+        }
+        analytics.track(.documentUploaded, properties: ["source": source.rawValue, "step": phase == .captureFront ? "front" : "back"])
+        if phase == .captureBack {
+            backSource = source
+            acceptBack(jpeg: jpeg)
+            return
+        }
+        let text = await zoneReader(jpeg)
+        guard let text, MRZParser.parseRepairing(text)?.isValid == true else {
+            importError = L10n.t("document.upload.error.noZone")
+            return
+        }
+        frontSource = source
+        acceptFront(jpeg: jpeg, recognisedText: text)
+    }
+
+    /// The camera took over again on this side.
+    public func clearImportError() {
+        importError = nil
+    }
+
     /// Discards the front photo (and the zone read from it) for another try.
     public func retakeFront() {
+        frontSource = .camera
+        backSource = .camera
         frontImage = nil
         backImage = nil
         mrz = nil
@@ -319,9 +374,11 @@ public final class DocumentVerificationViewModel {
             challenges: sweep == nil ? completedChallenges : [],
             sweep: sweep
         )
+        var sent = submission
+        sent.source = documentSource
 
         do {
-            submittedCase = try await service.submitDocument(submission)
+            submittedCase = try await service.submitDocument(sent)
             releaseImages()
             phase = .submitted
         } catch let error as APIError {

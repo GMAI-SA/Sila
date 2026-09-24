@@ -76,6 +76,9 @@ public enum AnalyticsEvent: String, Sendable {
     /// The submit was refused. Carries `code` — the structured error code
     /// only.
     case documentSubmitRefused = "document_submit_refused"
+    /// A document image was chosen instead of photographed. Carries `source`
+    /// (photos | file) and `step` (front | back) — never the image.
+    case documentUploaded = "document_uploaded"
 
     // MARK: Settings
 

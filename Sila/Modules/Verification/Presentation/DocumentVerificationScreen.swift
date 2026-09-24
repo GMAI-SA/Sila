@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// **The document + selfie verification flow.**
@@ -92,19 +93,36 @@ public struct DocumentVerificationScreen: View {
         case .birthdate: birthdate
         case .chooseDocument: chooseDocument
         case .captureFront:
-            DocumentCaptureView(side: .front, documentType: viewModel.documentType ?? .passport) { jpeg, text in
-                viewModel.acceptFront(jpeg: jpeg, recognisedText: text)
+            VStack(spacing: SLSpacing.md) {
+                DocumentCaptureView(side: .front, documentType: viewModel.documentType ?? .passport) { jpeg, text in
+                    viewModel.clearImportError()
+                    viewModel.acceptFront(jpeg: jpeg, recognisedText: text)
+                }
+                .id("front")
+                DocumentUploadBar(viewModel: viewModel)
             }
-            .id("front")
         case .captureBack:
-            DocumentCaptureView(side: .back, documentType: viewModel.documentType ?? .nationalId) { jpeg, _ in
-                viewModel.acceptBack(jpeg: jpeg)
+            VStack(spacing: SLSpacing.md) {
+                DocumentCaptureView(side: .back, documentType: viewModel.documentType ?? .nationalId) { jpeg, _ in
+                    viewModel.clearImportError()
+                    viewModel.acceptBack(jpeg: jpeg)
+                }
+                .id("back")
+                DocumentUploadBar(viewModel: viewModel)
             }
-            .id("back")
         case .review: review
         case .liveness:
-            SweepCaptureView { sweep in
-                viewModel.sweepCompleted(sweep)
+            VStack(spacing: SLSpacing.sm) {
+                // No upload here, on purpose: the face check has to be live.
+                Label(L10n.t("document.upload.liveOnly"), systemImage: "faceid")
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, SLSpacing.lg)
+                    .accessibilityIdentifier("document.liveOnly")
+                SweepCaptureView { sweep in
+                    viewModel.sweepCompleted(sweep)
+                }
             }
         case .submitting: submitting
         case .submitted: submitted
@@ -546,4 +564,69 @@ public struct DocumentVerificationScreen: View {
         onClose: {}
     )
     .preferredColorScheme(.dark)
+}
+
+/// "Upload a photo" and "Choose a file", beside the camera, for the front and
+/// back of the document only.
+@MainActor
+private struct DocumentUploadBar: View {
+    @Bindable var viewModel: DocumentVerificationViewModel
+    @State private var picked: PhotosPickerItem?
+    @State private var isChoosingFile = false
+
+    var body: some View {
+        VStack(spacing: SLSpacing.sm) {
+            Text(L10n.t("document.upload.or"))
+                .font(SLFont.micro)
+                .foregroundStyle(SLColor.textMuted)
+            HStack(spacing: SLSpacing.md) {
+                PhotosPicker(selection: $picked, matching: .images) {
+                    Label(L10n.t("document.upload.photo"), systemImage: "photo.on.rectangle")
+                        .font(SLFont.caption)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(RoundedRectangle(cornerRadius: SLRadius.md).strokeBorder(SLColor.primary, lineWidth: 1))
+                }
+                .accessibilityIdentifier("document.upload.photo")
+                Button {
+                    isChoosingFile = true
+                } label: {
+                    Label(L10n.t("document.upload.file"), systemImage: "doc")
+                        .font(SLFont.caption)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(RoundedRectangle(cornerRadius: SLRadius.md).strokeBorder(SLColor.primary, lineWidth: 1))
+                }
+                .accessibilityIdentifier("document.upload.file")
+            }
+            .disabled(viewModel.isImporting)
+            if viewModel.isImporting {
+                ProgressView(L10n.t("document.upload.reading")).font(SLFont.caption)
+            }
+            if let error = viewModel.importError {
+                Text(error)
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.warning)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("document.upload.error")
+            }
+        }
+        .padding(.horizontal, SLSpacing.lg)
+        .onChange(of: picked) { _, item in
+            guard let item else { return }
+            picked = nil
+            Task {
+                guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+                await viewModel.importDocument(data, isPDF: false, source: .photos)
+            }
+        }
+        .fileImporter(isPresented: $isChoosingFile, allowedContentTypes: DocumentImport.fileTypes) { result in
+            guard case let .success(url) = result else { return }
+            let scoped = url.startAccessingSecurityScopedResource()
+            let data = try? Data(contentsOf: url)
+            if scoped { url.stopAccessingSecurityScopedResource() }
+            guard let data else { return }
+            let isPDF = url.pathExtension.lowercased() == "pdf" || DocumentImport.looksLikePDF(data)
+            Task { await viewModel.importDocument(data, isPDF: isPDF, source: .file) }
+        }
+    }
 }

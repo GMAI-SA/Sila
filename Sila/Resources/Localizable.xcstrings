@@ -12841,6 +12841,125 @@
         }
       }
     },
+    "document.upload.error.noZone": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّرت قراءة الأسطر أسفل هذه الوثيقة — جرّب مسحًا أوضح أو التقط صورة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't read the lines at the bottom of this document — try a clearer scan or take a photo."
+          }
+        }
+      }
+    },
+    "document.upload.error.unreadableFile": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر فتح هذا الملف كصورة أو ملف PDF — اختر غيره أو التقط صورة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That file couldn't be opened as a picture or a PDF — choose another, or take a photo."
+          }
+        }
+      }
+    },
+    "document.upload.file": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر ملفًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a file"
+          }
+        }
+      }
+    },
+    "document.upload.liveOnly": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يجب أن يكون التحقق من الوجه مباشرًا — هكذا نعرف أنك أنت من يحمل الوثيقة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The face check has to be live — it's how we know it's you holding the document."
+          }
+        }
+      }
+    },
+    "document.upload.or": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أو استخدم صورة لديك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or use one you already have"
+          }
+        }
+      }
+    },
+    "document.upload.photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ارفع صورة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload a photo"
+          }
+        }
+      }
+    },
+    "document.upload.reading": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نقرأ الوثيقة…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading the document…"
+          }
+        }
+      }
+    },
     "document.useNafath.button": {
       "comment": "Button that opens the Nafath flow.",
       "extractionState": "manual",

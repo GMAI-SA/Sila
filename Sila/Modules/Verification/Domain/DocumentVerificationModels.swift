@@ -140,6 +140,8 @@ public struct DocumentSubmission: Equatable, Sendable {
     /// The live head-turn, when the sequence was the ring. Legacy three-pose
     /// submissions carry ``turn`` and ``challenges`` instead.
     public let sweep: LivenessSweep?
+    /// Taken with the camera, or chosen from Photos or Files.
+    public var source: DocumentSource = .camera
 
     public init(
         documentType: DocumentType,
@@ -170,6 +172,7 @@ public struct DocumentSubmission: Equatable, Sendable {
     public func form(boundary: String? = nil) -> MultipartFormData {
         var form = boundary.map { MultipartFormData(boundary: $0) } ?? MultipartFormData()
         form.appendField(documentType.wireValue, name: "document_type")
+        form.appendField(source.rawValue, name: "document_source")
         if let mrz, mrz.isValid {
             form.appendField(mrz.text, name: "mrz")
         }
