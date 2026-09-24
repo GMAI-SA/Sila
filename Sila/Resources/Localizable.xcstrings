@@ -18233,6 +18233,74 @@
       },
       "comment": "The third option on the welcome screen, under Create account and Sign in."
     },
+    "guidelines.accept": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قرأتها — انشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've read them — post"
+          }
+        }
+      }
+    },
+    "guidelines.error.changed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيّرت الإرشادات أثناء قراءتك — اقرأها مرة أخرى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guidelines changed while you were reading — please read them again"
+          }
+        }
+      }
+    },
+    "guidelines.link": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقرأ إرشادات المجتمع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read the community guidelines"
+          }
+        }
+      }
+    },
+    "guidelines.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرشادات المجتمع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Community guidelines"
+          }
+        }
+      }
+    },
     "messages.avatar.a11yLabel": {
       "extractionState": "manual",
       "localizations": {
@@ -18624,6 +18692,23 @@
         }
       }
     },
+    "messages.report.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبلاغ عن الرسالة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report message"
+          }
+        }
+      }
+    },
     "messages.request.accept": {
       "extractionState": "manual",
       "localizations": {
@@ -18722,6 +18807,125 @@
           "stringUnit": {
             "state": "translated",
             "value": "Messages"
+          }
+        }
+      }
+    },
+    "mutedTerms.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute"
+          }
+        }
+      }
+    },
+    "mutedTerms.error.tooMany": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك كتم 100 كلمة على الأكثر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can mute 100 words at most"
+          }
+        }
+      }
+    },
+    "mutedTerms.error.tooShort": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتم حرفين على الأقل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute at least two letters"
+          }
+        }
+      }
+    },
+    "mutedTerms.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المنشورات والردود والإشعارات التي تحتوي عليها تختفي من خلاصاتك وبحثك وتنبيهاتك. تُطابَق صيغ الكتابة العربية والتشكيل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posts, replies and notifications containing these leave your timelines, search and alerts. Arabic spelling variants and diacritics are matched."
+          }
+        }
+      }
+    },
+    "mutedTerms.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كلمة أو عبارة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A word or phrase"
+          }
+        }
+      }
+    },
+    "mutedTerms.remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إلغاء الكتم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmute"
+          }
+        }
+      }
+    },
+    "mutedTerms.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الكلمات المكتومة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muted words"
           }
         }
       }
@@ -19454,6 +19658,40 @@
         }
       }
     },
+    "notifications.kind.reaction.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما يجد أحد منشورك مفيدًا أو ملهمًا أو مضحكًا أو سؤالًا رائعًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When someone finds your post helpful, insightful, funny or a great question."
+          }
+        }
+      }
+    },
+    "notifications.kind.reaction.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التفاعلات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reactions"
+          }
+        }
+      }
+    },
     "notifications.kind.reply.detail": {
       "comment": "What the reply switch governs.",
       "extractionState": "manual",
@@ -19762,6 +20000,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Room tomorrow"
+          }
+        }
+      }
+    },
+    "notifications.kind.threadReply.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما يرد أحد في عمق سلسلة بدأتها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When someone replies deeper in a thread you started."
+          }
+        }
+      }
+    },
+    "notifications.kind.threadReply.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ردود السلاسل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thread replies"
           }
         }
       }
@@ -20244,6 +20516,23 @@
         }
       }
     },
+    "notifications.sentence.answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أجاب %@ عن سؤالك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ answered your question"
+          }
+        }
+      }
+    },
     "notifications.sentence.communityAccepted": {
       "extractionState": "manual",
       "localizations": {
@@ -20436,6 +20725,91 @@
         }
       }
     },
+    "notifications.sentence.reaction": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفاعل %@ مع منشورك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ reacted to your post"
+          }
+        }
+      }
+    },
+    "notifications.sentence.reaction.funny": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وجد %@ منشورك مضحكًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ found your post funny"
+          }
+        }
+      }
+    },
+    "notifications.sentence.reaction.helpful": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وجد %@ منشورك مفيدًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ found your post helpful"
+          }
+        }
+      }
+    },
+    "notifications.sentence.reaction.insight": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وجد %@ منشورك ملهمًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ found your post insightful"
+          }
+        }
+      }
+    },
+    "notifications.sentence.reaction.question": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرى %@ أنك طرحت سؤالًا رائعًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ thinks you asked a great question"
+          }
+        }
+      }
+    },
     "notifications.sentence.reply": {
       "comment": "A reply notification. %@ is who did it.",
       "extractionState": "manual",
@@ -20606,6 +20980,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Someone"
+          }
+        }
+      }
+    },
+    "notifications.sentence.threadReply": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رد %@ في سلسلتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ replied in your thread"
           }
         }
       }
@@ -23862,6 +24253,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opens the share sheet with a link to this post"
+          }
+        }
+      }
+    },
+    "post.thread.moreReplies": {
+      "comment": "Replies under a reply, opened in that reply's thread.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا ردود أخرى"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أظهر ردًا آخر"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أظهر ردّين آخرين"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أظهر %lld ردود أخرى"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أظهر %lld ردًا آخر"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أظهر %lld رد آخر"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Show %lld more reply"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Show %lld more replies"
+                }
+              }
+            }
           }
         }
       }
@@ -27952,6 +28409,142 @@
         }
       }
     },
+    "reaction.chip.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "reaction.error.ownPost": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكنك التفاعل مع منشورك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can't react to your own post"
+          }
+        }
+      }
+    },
+    "reaction.error.unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا التفاعل غير متاح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That reaction isn't available"
+          }
+        }
+      }
+    },
+    "reaction.funny": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مضحك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funny"
+          }
+        }
+      }
+    },
+    "reaction.helpful": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مفيد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Helpful"
+          }
+        }
+      }
+    },
+    "reaction.insight": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملهم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insightful"
+          }
+        }
+      }
+    },
+    "reaction.picker.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تفاعل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "React"
+          }
+        }
+      }
+    },
+    "reaction.question": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سؤال رائع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Great question"
+          }
+        }
+      }
+    },
     "rooms.access.following.explanation": {
       "comment": "Access option detail.",
       "extractionState": "manual",
@@ -28604,6 +29197,57 @@
         }
       }
     },
+    "rooms.chat.error.notLive": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُفتح الدردشة عندما تكون الغرفة مباشرة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat opens when the room is live"
+          }
+        }
+      }
+    },
+    "rooms.chat.hidden": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أخفته المنصة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hidden by the stage"
+          }
+        }
+      }
+    },
+    "rooms.chat.hide": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إخفاء السطر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide line"
+          }
+        }
+      }
+    },
     "rooms.chat.notKept": {
       "extractionState": "manual",
       "localizations": {
@@ -28672,6 +29316,23 @@
         }
       }
     },
+    "rooms.chat.report": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبلاغ عن السطر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report line"
+          }
+        }
+      }
+    },
     "rooms.chat.send.a11yLabel": {
       "extractionState": "manual",
       "localizations": {
@@ -28736,6 +29397,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "You"
+          }
+        }
+      }
+    },
+    "rooms.cohosts.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أضف مضيفًا مشاركًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ADD A CO-HOST"
+          }
+        }
+      }
+    },
+    "rooms.cohosts.error.alreadyHost": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا هو المضيف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's the host"
+          }
+        }
+      }
+    },
+    "rooms.cohosts.error.tooMany": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "للغرفة ثلاثة مضيفين مشاركين على الأكثر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A room has three co-hosts at most"
+          }
+        }
+      }
+    },
+    "rooms.cohosts.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن لثلاثة مضيفين مشاركين على الأكثر دعوة الناس إلى المنصة وكتمهم وإدارة الأسئلة والاستطلاعات وإنهاء الغرفة. أنت وحدك من يلغي أو يدعو أو يعيّن المضيفين المشاركين."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to three co-hosts can bring people up, mute, run the questions and polls, and end the room. Only you can cancel, invite or name co-hosts."
+          }
+        }
+      }
+    },
+    "rooms.cohosts.remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
           }
         }
       }
@@ -28843,6 +29589,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chooses who can enter the room"
+          }
+        }
+      }
+    },
+    "rooms.create.ama": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسألني أي شيء"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask me anything"
+          }
+        }
+      }
+    },
+    "rooms.create.ama.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت الضيف: قائمة الأسئلة هي واجهة الغرفة الرئيسية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're the guest: the question queue is the room's main surface."
           }
         }
       }
@@ -29830,6 +30610,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "WHO CAN SPEAK"
+          }
+        }
+      }
+    },
+    "rooms.depth.cohosts": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المضيفون المشاركون"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co-hosts"
+          }
+        }
+      }
+    },
+    "rooms.depth.polls": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاستطلاعات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polls"
+          }
+        }
+      }
+    },
+    "rooms.depth.questions": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأسئلة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questions"
+          }
+        }
+      }
+    },
+    "rooms.depth.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأسئلة والاستطلاعات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questions & polls"
           }
         }
       }
@@ -31628,6 +32476,363 @@
         }
       }
     },
+    "rooms.polls.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أغلق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "rooms.polls.empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا استطلاعات بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No polls yet"
+          }
+        }
+      }
+    },
+    "rooms.polls.error.open": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هناك استطلاع مفتوح — أغلقه أولًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A poll is already open — close it first"
+          }
+        }
+      }
+    },
+    "rooms.polls.minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مدته %@ د"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs %@ min"
+          }
+        }
+      }
+    },
+    "rooms.polls.open": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح الاستطلاع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open poll"
+          }
+        }
+      }
+    },
+    "rooms.polls.question": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السؤال"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Question"
+          }
+        }
+      }
+    },
+    "rooms.questions.answered": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُجيب عنها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ANSWERED"
+          }
+        }
+      }
+    },
+    "rooms.questions.ask": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اطرح سؤالًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask a question"
+          }
+        }
+      }
+    },
+    "rooms.questions.askHost": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسأل %@ أي شيء"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask %@ anything"
+          }
+        }
+      }
+    },
+    "rooms.questions.dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجاهل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "rooms.questions.empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا أسئلة بعد — اطرح الأول"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No questions yet — ask the first"
+          }
+        }
+      }
+    },
+    "rooms.questions.error.own": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكنك تأييد سؤالك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can't upvote your own question"
+          }
+        }
+      }
+    },
+    "rooms.questions.markAnswered": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت الإجابة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark answered"
+          }
+        }
+      }
+    },
+    "rooms.questions.menu.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خيارات السؤال"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Question options"
+          }
+        }
+      }
+    },
+    "rooms.questions.onStage": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على المنصة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On stage"
+          }
+        }
+      }
+    },
+    "rooms.questions.pin": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اعرضه على المنصة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put on stage"
+          }
+        }
+      }
+    },
+    "rooms.questions.pinned.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على المنصة: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On stage: %@"
+          }
+        }
+      }
+    },
+    "rooms.questions.send": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسأل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask"
+          }
+        }
+      }
+    },
+    "rooms.questions.unpin": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أزله من المنصة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take off stage"
+          }
+        }
+      }
+    },
+    "rooms.questions.upvote.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تأييد، %@ حتى الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upvote, %@ so far"
+          }
+        }
+      }
+    },
+    "rooms.questions.withdraw": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب سؤالي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw my question"
+          }
+        }
+      }
+    },
     "rooms.reactions.label": {
       "extractionState": "manual",
       "localizations": {
@@ -31846,6 +33051,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ was removed from this room. They can still join other rooms."
+          }
+        }
+      }
+    },
+    "rooms.report": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبلاغ عن الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report room"
           }
         }
       }
@@ -34717,6 +35939,23 @@
         }
       }
     },
+    "safety.report.headline.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبلاغ عن رسالة من %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report a message from %@"
+          }
+        }
+      }
+    },
     "safety.report.headline.post": {
       "comment": "What the report sheet says it is reporting. %@ is the post's author.",
       "extractionState": "manual",
@@ -34731,6 +35970,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Report this post by %@"
+          }
+        }
+      }
+    },
+    "safety.report.headline.room": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبلاغ عن الغرفة «%@»"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report the room “%@”"
+          }
+        }
+      }
+    },
+    "safety.report.headline.roomMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبلاغ عن سطر دردشة من %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report a chat line from %@"
           }
         }
       }

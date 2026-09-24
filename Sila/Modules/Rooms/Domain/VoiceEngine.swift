@@ -126,6 +126,18 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
     public let toHost: Bool
     /// A held reaction: drawn much larger for everyone (owner request 2026-09-23).
     public var big: Bool = false
+    /// A persisted chat line the server fanned out (contract v22).
+    public var message: RoomMessage?
+    /// The line a `chat_hidden` event hides.
+    public var messageId: String?
+    /// The co-hosts after a `cohosts_changed` event, when the server says.
+    public var cohosts: [UserSummary]?
+
+    /// A server event that asks the room to refresh one of its panels.
+    public var isDepthEvent: Bool {
+        ["cohosts_changed", "questions_changed", "polls_changed", "chat_hidden"].contains(type)
+            || (type == "chat" && message != nil)
+    }
 
     public init(
         type: String = "hand",
@@ -182,12 +194,25 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
         )
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        try container.encode(userId, forKey: .userId)
+        try container.encode(raised, forKey: .raised)
+        try container.encodeIfPresent(emoji, forKey: .emoji)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encodeIfPresent(handle, forKey: .handle)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encode(toHost, forKey: .toHost)
+        try container.encode(big, forKey: .big)
+    }
+
     public var isHand: Bool { type == "hand" }
     public var isReaction: Bool { type == "reaction" && !(emoji ?? "").isEmpty }
     public var isChat: Bool { type == "chat" && !(text ?? "").isEmpty }
 
     private enum CodingKeys: String, CodingKey {
-        case type, userId, raised, emoji, text, handle, name, toHost, big
+        case type, userId, raised, emoji, text, handle, name, toHost, big, message, messageId, cohosts
     }
 
     /// Tolerant: a build that has never heard of a type still decodes the
@@ -203,6 +228,9 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
         name = (try? container.decodeIfPresent(String.self, forKey: .name)) ?? nil
         toHost = ((try? container.decodeIfPresent(Bool.self, forKey: .toHost)) ?? nil) ?? false
         big = ((try? container.decodeIfPresent(Bool.self, forKey: .big)) ?? nil) ?? false
+        message = (try? container.decodeIfPresent(RoomMessage.self, forKey: .message)) ?? nil
+        messageId = (try? container.decodeIfPresent(String.self, forKey: .messageId)) ?? nil
+        cohosts = (try? container.decodeIfPresent([UserSummary].self, forKey: .cohosts)) ?? nil
     }
 
     public func encoded() -> Data {

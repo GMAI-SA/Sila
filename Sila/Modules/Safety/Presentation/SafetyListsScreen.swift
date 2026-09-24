@@ -28,15 +28,33 @@ public struct SafetyListsScreen: View {
     public init(
         viewModel: SafetyListsViewModel,
         onClose: (@MainActor () -> Void)? = nil,
-        onOpenProfile: (@MainActor (String) -> Void)? = nil
+        onOpenProfile: (@MainActor (String) -> Void)? = nil,
+        mutedTerms: SafetyDepthServiceProtocol? = nil
     ) {
+        self.mutedTerms = mutedTerms
         self.viewModel = viewModel
         self.onClose = onClose
         self.onOpenProfile = onOpenProfile
     }
 
+    private let mutedTerms: SafetyDepthServiceProtocol?
+
     public var body: some View {
         VStack(spacing: 0) {
+            if let mutedTerms {
+                NavigationLink {
+                    Owned({ MutedTermsViewModel(service: mutedTerms) }) { terms in
+                        MutedTermsScreen(viewModel: terms)
+                    }
+                } label: {
+                    Label(L10n.t("mutedTerms.title"), systemImage: "text.badge.xmark")
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(SLSpacing.lg)
+                }
+                .accessibilityIdentifier("safety.mutedTerms")
+            }
             SLSegmentedControl(
                 items: SafetyListTab.allCases,
                 selection: $viewModel.tab,

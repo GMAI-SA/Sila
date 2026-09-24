@@ -35,6 +35,8 @@ public final class CreateRoomViewModel {
     public var starterQuestion = ""
     /// Repeat this scheduled room every week (a series).
     public var repeatsWeekly = false
+    /// Ask me anything: the host is the guest, the queue is the room.
+    public var isAMA = false
     /// Whether the weekly option is offered: the series backend is wired.
     public var canRepeat: Bool { engagement != nil }
     private let engagement: RoomEngagementServiceProtocol?
@@ -351,6 +353,7 @@ public final class CreateRoomViewModel {
                     groupId: selectedGroupId
                 )
             request.starterQuestion = question.isEmpty ? nil : String(question.prefix(200))
+            request.kind = isAMA ? "ama" : "room"
             let room = try await service.createRoom(request)
             onCreated?(room)
             return room

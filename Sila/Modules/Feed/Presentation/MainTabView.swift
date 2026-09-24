@@ -155,6 +155,10 @@ public struct MainTabView: View {
                     .environment(\.voiceActions, VoiceActions(setStance: { stance, postId in
                         try await container.voiceService.setStance(stance, postId: postId)
                     }))
+                    .environment(\.reactionActions, ReactionActions(set: { kind, on, postId in
+                        try await container.feedService.setReaction(kind, on: on, postId: postId)
+                    }))
+                    .environment(\.guidelinesGate, container.guidelinesGate)
                     .environment(\.roomReminders, RoomReminderActions(
                         toggle: { room, on in
                             let reminder = try await container.roomEngagement.setReminder(on, roomId: room.id)
@@ -312,7 +316,8 @@ public struct MainTabView: View {
                         onOpenProfile: { handle in
                             isShowingSafety = false
                             openProfile(handle)
-                        }
+                        },
+                        mutedTerms: container.safetyDepth
                     )
                 }
                 .tint(SLColor.primary)
@@ -603,6 +608,7 @@ public struct MainTabView: View {
             openGifPicker: container.router.composerOpensGifPicker,
             starters: container.discoverService,
             voice: container.flags.voicePosts ? container.voiceService : nil,
+            guidelines: guidelinesGateForComposer(),
             onPosted: { posted in
                 viewModel.insert(newPosts: posted)
                 exploreViewModel.insert(posted)
@@ -613,6 +619,15 @@ public struct MainTabView: View {
         )
         if let prefill { composer.apply(prefill) }
         return composer
+    }
+
+    /// The guidelines gate, told the account's versions first.
+    private func guidelinesGateForComposer() -> GuidelinesGate {
+        let gate = container.guidelinesGate
+        if let user = container.session.user, gate.acceptedVersion == nil {
+            gate.update(accepted: user.guidelinesVersion, current: user.currentGuidelinesVersion)
+        }
+        return gate
     }
 
     /// "Answer this" on the question of the week.
@@ -1168,7 +1183,8 @@ public struct MainTabView: View {
                     engine: container.makeVoiceEngine(),
                     analytics: container.analytics,
                     suspension: container.suspension,
-                    people: container.peopleDirectory
+                    people: container.peopleDirectory,
+                    depth: container.roomDepth
                 )
             }) { viewModel in
                 LiveRoomScreen(
@@ -1182,7 +1198,8 @@ public struct MainTabView: View {
                         Task { await roomsViewModel.reload(isRefresh: true) }
                     },
                     onOpenProfile: openRoomProfile,
-                    safetyMenu: { target in safety.menu(for: target) }
+                    safetyMenu: { target in safety.menu(for: target) },
+                    onReport: { subject in safety.openReport(subject) }
                 )
             }
             .id(room.id)
@@ -1266,7 +1283,8 @@ public struct MainTabView: View {
                 ChatScreen(
                     viewModel: viewModel,
                     onOpenProfile: openProfile,
-                    safetyMenu: safetyMenu(for:)
+                    safetyMenu: safetyMenu(for:),
+                    onReport: { subject in safety.openReport(subject) }
                 )
             }
             .id(conversation.id)

@@ -307,6 +307,17 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case tooManySeries = "too_many_series"
     case invalidTimezone = "invalid_timezone"
     case invalidQuietHours = "invalid_quiet_hours"
+    // MARK: Contract v22 — depth
+    case unknownReaction = "unknown_reaction"
+    case ownPost = "own_post"
+    case tooManyCohosts = "too_many_cohosts"
+    case alreadyHost = "already_host"
+    case ownQuestion = "own_question"
+    case pollOpen = "poll_open"
+    case roomNotLive = "room_not_live"
+    case termTooShort = "term_too_short"
+    case tooManyTerms = "too_many_terms"
+    case guidelinesChanged = "guidelines_changed"
 
     /// Nafath is not open yet ("coming soon"): verify with a document (HTTP 503).
     case nafathUnavailable = "nafath_unavailable"
@@ -580,6 +591,16 @@ public enum APIError: Error, Equatable, Sendable {
             case .invalidQuietHours: return L10n.t("notifications.quiet.error")
             case .nafathUnavailable:
                 return L10n.t("error.nafathUnavailable")
+            case .unknownReaction: return L10n.t("reaction.error.unknown")
+            case .ownPost: return L10n.t("reaction.error.ownPost")
+            case .tooManyCohosts: return L10n.t("rooms.cohosts.error.tooMany")
+            case .alreadyHost: return L10n.t("rooms.cohosts.error.alreadyHost")
+            case .ownQuestion: return L10n.t("rooms.questions.error.own")
+            case .pollOpen: return L10n.t("rooms.polls.error.open")
+            case .roomNotLive: return L10n.t("rooms.chat.error.notLive")
+            case .termTooShort: return L10n.t("mutedTerms.error.tooShort")
+            case .tooManyTerms: return L10n.t("mutedTerms.error.tooMany")
+            case .guidelinesChanged: return L10n.t("guidelines.error.changed")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

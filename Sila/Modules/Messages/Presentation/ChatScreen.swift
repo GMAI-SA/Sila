@@ -12,14 +12,18 @@ public struct ChatScreen: View {
     @Bindable private var viewModel: ChatViewModel
     private let onOpenProfile: @MainActor (String) -> Void
     private let safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)?
+    /// Reports one message sent to the viewer (contract v22).
+    private let onReport: (@MainActor (ReportSubject) -> Void)?
 
     @FocusState private var isComposing: Bool
 
     public init(
         viewModel: ChatViewModel,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
-        safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil
+        safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
+        onReport: (@MainActor (ReportSubject) -> Void)? = nil
     ) {
+        self.onReport = onReport
         self.viewModel = viewModel
         self.onOpenProfile = onOpenProfile
         self.safetyMenu = safetyMenu
@@ -144,6 +148,14 @@ public struct ChatScreen: View {
                 if mine && !message.deleted {
                     Button(L10n.t("messages.delete.action"), role: .destructive) {
                         viewModel.requestDeletion(of: message)
+                    }
+                }
+                if !mine, !message.deleted, let onReport {
+                    Button(role: .destructive) {
+                        onReport(.message(id: message.id, author: SafetyTarget(user: message.sender),
+                                          excerpt: message.text ?? ""))
+                    } label: {
+                        Label(L10n.t("messages.report.action"), systemImage: "flag")
                     }
                 }
             }

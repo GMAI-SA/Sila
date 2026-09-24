@@ -114,6 +114,10 @@ public struct RoomExtras: Equatable, Hashable, Sendable, Decodable {
     public var seriesId: UUID?
     public var reminderSet: Bool = false
     public var reminderCount: Int = 0
+    /// Up to three people who run the room with the host (contract v22).
+    public var cohosts: [UserSummary] = []
+    public var isCohost: Bool = false
+    public var pinnedQuestion: PinnedQuestion?
 
     public init(starterQuestion: String? = nil, kind: String = "room", seriesId: UUID? = nil,
                 reminderSet: Bool = false, reminderCount: Int = 0) {
@@ -124,7 +128,9 @@ public struct RoomExtras: Equatable, Hashable, Sendable, Decodable {
         self.reminderCount = reminderCount
     }
 
-    private enum CodingKeys: String, CodingKey { case starterQuestion, kind, seriesId, reminderSet, reminderCount }
+    private enum CodingKeys: String, CodingKey {
+        case starterQuestion, kind, seriesId, reminderSet, reminderCount, cohosts, isCohost, pinnedQuestion
+    }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -134,6 +140,9 @@ public struct RoomExtras: Equatable, Hashable, Sendable, Decodable {
         seriesId = (try? c.decodeIfPresent(UUID.self, forKey: .seriesId)) ?? nil
         reminderSet = (try? c.decode(Bool.self, forKey: .reminderSet)) ?? false
         reminderCount = (try? c.decode(Int.self, forKey: .reminderCount)) ?? 0
+        cohosts = (try? c.decode([UserSummary].self, forKey: .cohosts)) ?? []
+        isCohost = (try? c.decode(Bool.self, forKey: .isCohost)) ?? false
+        pinnedQuestion = (try? c.decodeIfPresent(PinnedQuestion.self, forKey: .pinnedQuestion)) ?? nil
     }
 }
 
@@ -217,6 +226,9 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     public var seriesId: UUID? { extras.seriesId }
     public var reminderSet: Bool { extras.reminderSet }
     public var reminderCount: Int { extras.reminderCount }
+    public var cohosts: [UserSummary] { extras.cohosts }
+    public var isCohost: Bool { extras.isCohost }
+    public var pinnedQuestion: PinnedQuestion? { extras.pinnedQuestion }
 
     /// A copy with the reminder as the server now holds it.
     public func with(reminder: RoomReminder) -> VoiceRoom {
@@ -1336,6 +1348,11 @@ public struct RoomReaction: Identifiable, Equatable, Sendable {
 /// is not kept afterwards. Nothing here reaches the API.
 public struct RoomChatMessage: Identifiable, Equatable, Sendable {
     public let id = UUID()
+    /// The server's id, for a persisted line (contract v22). `nil` for a
+    /// private line to the host, which still travels on the data channel only.
+    public var serverId: UUID?
+    /// Hidden by the stage: shown only to the stage and its author.
+    public var hidden = false
     public let userId: String
     public let handle: String?
     public let name: String

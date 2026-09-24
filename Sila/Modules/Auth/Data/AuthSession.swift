@@ -119,7 +119,7 @@ public final class AuthSession {
             let report = try await service.verificationStatus()
             verificationReport = report
             if let current = user {
-                let updated = AuthUser(
+                var updated = AuthUser(
                     id: current.id,
                     email: current.email,
                     displayName: current.displayName,
@@ -138,6 +138,8 @@ public final class AuthSession {
                     needsInterestPrompt: current.needsInterestPrompt,
                     experimentBucket: current.experimentBucket
                 )
+                updated.guidelinesVersion = current.guidelinesVersion
+                updated.currentGuidelinesVersion = current.currentGuidelinesVersion
                 user = updated
                 await store.updateUser(updated)
             }

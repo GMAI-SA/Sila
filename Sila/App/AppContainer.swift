@@ -56,6 +56,12 @@ public final class AppContainer {
     public let pushService: PushServiceProtocol
     /// Asking for, registering and opening pushes.
     public let pushRegistrar: PushRegistrar
+    /// Co-hosts, questions, room polls and persisted chat (contract v22).
+    public let roomDepth: RoomDepthServiceProtocol
+    /// Muted words and the community guidelines.
+    public let safetyDepth: SafetyDepthServiceProtocol
+    /// Whether this account has read the current guidelines.
+    public let guidelinesGate: GuidelinesGate
     /// Contract v4's interests service — topics and feed preferences.
     public let preferencesService: PreferencesServiceProtocol
     /// Contract v5's account service — profile, credentials, export, deletion.
@@ -128,7 +134,9 @@ public final class AppContainer {
         discoverService: DiscoverServiceProtocol? = nil,
         voiceService: VoiceServiceProtocol? = nil,
         roomEngagement: RoomEngagementServiceProtocol? = nil,
-        pushService: PushServiceProtocol? = nil
+        pushService: PushServiceProtocol? = nil,
+        roomDepth: RoomDepthServiceProtocol? = nil,
+        safetyDepth: SafetyDepthServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -298,6 +306,11 @@ public final class AppContainer {
             isSignedIn: { [weak session] in session?.user != nil }
         )
         self.pushRegistrar = registrar
+        self.roomDepth = roomDepth ?? (flags.useMockRooms ? RoomDepthServiceMock() : RoomDepthService(network: network, tokens: tokens))
+        let safetyDepthService = safetyDepth
+            ?? (flags.useMockSafety ? SafetyDepthServiceMock() : SafetyDepthService(network: network, tokens: tokens))
+        self.safetyDepth = safetyDepthService
+        self.guidelinesGate = GuidelinesGate(service: safetyDepthService)
         // Before the access token goes: this phone stops getting this
         // account's pushes.
         session.willSignOut = { [weak registrar] in await registrar?.willSignOut() }

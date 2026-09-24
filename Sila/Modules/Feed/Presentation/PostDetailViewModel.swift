@@ -15,6 +15,9 @@ public final class PostDetailViewModel {
     public private(set) var parent: Post?
     /// Direct replies, chronologically.
     public private(set) var replies: [Post] = []
+    /// The thread above the post, root first (contract v22). Empty when the
+    /// server has no thread route — the single parent then stands in.
+    public private(set) var ancestors: [Post] = []
     /// `true` while the thread is loading for the first time.
     public private(set) var isLoading = false
     /// `true` while another page of replies is being appended.
@@ -55,6 +58,16 @@ public final class PostDetailViewModel {
         }
 
         analytics.track(.postOpened, properties: ["scope": post.scope.rawValue])
+
+        if let thread = try? await service.fetchThread(post.id) {
+            post = thread.post
+            ancestors = thread.ancestors
+            parent = thread.ancestors.last
+            replies = thread.replies.posts
+            replyCursor = thread.replies.nextCursor
+            hasMoreReplies = thread.replies.hasMore && thread.replies.nextCursor != nil
+            return
+        }
 
         // A stale detail view is worse than a slightly slow one, so the post is
         // re-read even though the feed handed us a copy.

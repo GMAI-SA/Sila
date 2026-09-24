@@ -39,13 +39,17 @@ public struct LiveRoomScreen: View {
         viewModel: LiveRoomViewModel,
         onLeave: @escaping @MainActor () -> Void,
         onOpenProfile: (@MainActor (String) -> Void)? = nil,
-        safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil
+        safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
+        onReport: (@MainActor (ReportSubject) -> Void)? = nil
     ) {
+        self.onReport = onReport
         self.viewModel = viewModel
         self.onLeave = onLeave
         self.onOpenProfile = onOpenProfile
         self.safetyMenu = safetyMenu
     }
+
+    private let onReport: (@MainActor (ReportSubject) -> Void)?
 
     public var body: some View {
         Group {
@@ -107,6 +111,35 @@ public struct LiveRoomScreen: View {
                 }
             }
 
+            if viewModel.depth != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.isDepthOpen = true
+                    } label: {
+                        Image(systemName: "questionmark.bubble")
+                            .foregroundStyle(SLColor.primary)
+                    }
+                    .accessibilityLabel(Text(L10n.t("rooms.depth.title")))
+                    .accessibilityIdentifier("rooms.depth.open")
+                }
+            }
+
+            if let onReport, !viewModel.isHost {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(role: .destructive) {
+                            onReport(.room(id: viewModel.room.id, host: SafetyTarget(user: viewModel.room.host),
+                                           title: viewModel.room.title))
+                        } label: {
+                            Label(L10n.t("rooms.report"), systemImage: "flag")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle").foregroundStyle(SLColor.primary)
+                    }
+                    .accessibilityLabel(Text(L10n.t("rooms.report")))
+                }
+            }
+
             if viewModel.isHost && viewModel.room.isClosed {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -118,6 +151,17 @@ public struct LiveRoomScreen: View {
                     .accessibilityLabel(Text(L10n.t("rooms.invites.title")))
                     .accessibilityHint(Text(L10n.t("rooms.invites.open.a11yHint")))
                 }
+            }
+        }
+        .sheet(isPresented: $viewModel.isDepthOpen) {
+            if let depth = viewModel.depth {
+                RoomDepthSheet(
+                    viewModel: depth,
+                    candidates: (viewModel.speakers + viewModel.listeners).map(\.user)
+                        .filter { $0.id != viewModel.room.host.id },
+                    hostName: viewModel.room.isAMA ? viewModel.room.host.displayName : nil,
+                    onClose: { viewModel.isDepthOpen = false }
+                )
             }
         }
         .sheet(isPresented: $viewModel.isSharing) {
@@ -281,11 +325,28 @@ public struct LiveRoomScreen: View {
             }
             Text(line.text)
                 .font(SLFont.body)
-                .foregroundStyle(SLColor.textPrimary)
+                .foregroundStyle(line.hidden ? SLColor.textMuted : SLColor.textPrimary)
+                .strikethrough(line.hidden, color: SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
                 .slContentDirection(TextDirection.resolve(languageCode: nil, text: line.text))
+            if line.hidden {
+                Text(L10n.t("rooms.chat.hidden")).font(SLFont.micro).foregroundStyle(SLColor.textMuted)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contextMenu {
+            if viewModel.isStage, line.serverId != nil, !line.hidden, !line.isMine {
+                Button(L10n.t("rooms.chat.hide")) { Task { await viewModel.hide(line) } }
+            }
+            if let onReport, let id = line.serverId, !line.isMine {
+                Button(role: .destructive) {
+                    onReport(.roomMessage(id: id, author: SafetyTarget(handle: line.handle ?? "", name: line.name),
+                                          excerpt: line.text))
+                } label: {
+                    Label(L10n.t("rooms.chat.report"), systemImage: "flag")
+                }
+            }
+        }
         .accessibilityElement(children: .combine)
     }
 
@@ -344,12 +405,20 @@ public struct LiveRoomScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: SLSpacing.lg) {
                     header
+                    if let pinned = viewModel.depth?.pinned?.text ?? viewModel.room.pinnedQuestion?.text {
+                        PinnedQuestionBanner(text: pinned)
+                    }
+                    if viewModel.room.isAMA, let depth = viewModel.depth {
+                        // An AMA's main surface is its queue.
+                        QuestionQueueView(viewModel: depth, hostName: viewModel.room.host.displayName)
+                            .task { await depth.loadQuestions() }
+                    }
                     connectionBanner
                     if viewModel.phase == .joining {
                         joining
                     } else {
                         stage
-                        if viewModel.isHost { handsQueue }
+                        if viewModel.isStage { handsQueue }
                         audience
                     }
                     notRecorded
@@ -885,7 +954,7 @@ public struct LiveRoomScreen: View {
             if viewModel.isListening {
                 listeningState
             }
-            if let removed = viewModel.lastRemoved, viewModel.isHost {
+            if let removed = viewModel.lastRemoved, viewModel.isStage {
                 SLButton(
                     RoomCopy.readmit(removed.name),
                     variant: .ghost,
@@ -936,7 +1005,7 @@ public struct LiveRoomScreen: View {
                     )
                 }
 
-                if viewModel.isHost {
+                if viewModel.isStage {
                     SLButton(
                         L10n.t("rooms.live.end"),
                         variant: .destructive,

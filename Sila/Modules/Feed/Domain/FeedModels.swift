@@ -145,6 +145,20 @@ public struct PostMetrics: Equatable, Sendable, Decodable, Hashable {
     public let replies: Int
     public let views: Int
     public let bookmarks: Int
+    /// The four qualitative reactions (contract v22).
+    public var helpful = 0
+    public var question = 0
+    public var insight = 0
+    public var funny = 0
+
+    public func count(for kind: ReactionKind) -> Int {
+        switch kind {
+        case .helpful: return helpful
+        case .question: return question
+        case .insight: return insight
+        case .funny: return funny
+        }
+    }
 
     public init(likes: Int = 0, reposts: Int = 0, replies: Int = 0, views: Int = 0, bookmarks: Int = 0) {
         self.likes = likes
@@ -156,6 +170,7 @@ public struct PostMetrics: Equatable, Sendable, Decodable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case likes, reposts, replies, views, bookmarks
+        case helpful, question, insight, funny
     }
 
     public init(from decoder: Decoder) throws {
@@ -165,6 +180,10 @@ public struct PostMetrics: Equatable, Sendable, Decodable, Hashable {
         replies = (try? container.decode(Int.self, forKey: .replies)) ?? 0
         views = (try? container.decode(Int.self, forKey: .views)) ?? 0
         bookmarks = (try? container.decode(Int.self, forKey: .bookmarks)) ?? 0
+        helpful = (try? container.decode(Int.self, forKey: .helpful)) ?? 0
+        question = (try? container.decode(Int.self, forKey: .question)) ?? 0
+        insight = (try? container.decode(Int.self, forKey: .insight)) ?? 0
+        funny = (try? container.decode(Int.self, forKey: .funny)) ?? 0
     }
 
     /// A copy with counters nudged, never below zero.
@@ -200,6 +219,8 @@ public struct PostViewerState: Equatable, Sendable, Decodable, Hashable {
     /// loading, and an empty handle matches nobody, so Delete quietly stopped
     /// being offered on anybody's own posts.
     public let isAuthor: Bool
+    /// The viewer's own qualitative reactions on this post.
+    public var reactions: [String] = []
 
     public init(
         liked: Bool = false,
@@ -218,7 +239,7 @@ public struct PostViewerState: Equatable, Sendable, Decodable, Hashable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case liked, reposted, bookmarked, canReply, replyBlockReason, isAuthor
+        case liked, reposted, bookmarked, canReply, replyBlockReason, isAuthor, reactions
     }
 
     public init(from decoder: Decoder) throws {
@@ -235,6 +256,7 @@ public struct PostViewerState: Equatable, Sendable, Decodable, Hashable {
         // A server too old to say defaults to `false`, which leaves the app
         // exactly where it was: falling back to the handle comparison.
         isAuthor = (try? container.decode(Bool.self, forKey: .isAuthor)) ?? false
+        reactions = (try? container.decode([String].self, forKey: .reactions)) ?? []
     }
 
     /// A copy with one flag flipped.

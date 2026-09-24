@@ -424,6 +424,11 @@ public enum AnalyticsEvent: String, Sendable {
     case roomSeriesCreated = "room_series_created"
     /// "Answer this" on the question of the week. Carries `kind`, `prompt_id`.
     case promptAnswered = "prompt_answered"
+
+    // MARK: Depth (contract v22)
+
+    /// A question joined a room's queue.
+    case roomQuestionAsked = "room_question_asked"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

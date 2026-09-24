@@ -224,6 +224,9 @@ extension ReportSubject: Identifiable {
         switch self {
         case let .post(id, _, _): return "post:\(id.uuidString)"
         case let .account(target): return "user:\(target.handle)"
+        case let .message(id, _, _): return "message:\(id.uuidString)"
+        case let .room(id, _, _): return "room:\(id.uuidString)"
+        case let .roomMessage(id, _, _): return "roomMessage:\(id.uuidString)"
         }
     }
 }

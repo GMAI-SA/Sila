@@ -50,6 +50,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case roomSoon = "room_soon"
     case roomLive = "room_live"
     case roomCancelled = "room_cancelled"
+    /// Somebody gave one of your posts a qualitative reaction (contract v22).
+    case reaction
+    /// Somebody replied deeper in a thread you started.
+    case threadReply = "thread_reply"
     /// A kind this build does not recognise.
     case unknown
 
@@ -76,7 +80,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
              .communityInvite, .communityJoinRequest, .communityAccepted,
              .roomLike, .prompt, .identityImpostor, .roomTomorrow, .roomSoon, .roomLive, .roomCancelled:
             return false
-        case .like, .repost, .reply, .mention, .roomShared, .pollClosed: return true
+        case .like, .repost, .reply, .mention, .roomShared, .pollClosed, .reaction, .threadReply: return true
         }
     }
 
@@ -103,6 +107,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .roomSoon: return "clock.badge"
         case .roomLive: return "dot.radiowaves.left.and.right"
         case .roomCancelled: return "calendar.badge.minus"
+        case .reaction: return "hands.clap.fill"
+        case .threadReply: return "bubble.left.and.bubble.right.fill"
         case .unknown: return "bell"
         }
     }
@@ -129,6 +135,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .roomTomorrow, .roomSoon: return SLColor.primary
         case .roomLive: return SLColor.danger
         case .roomCancelled: return SLColor.textSecondary
+        case .reaction: return SLColor.warning
+        case .threadReply: return SLColor.primary
         case .unknown: return SLColor.textSecondary
         }
     }
@@ -156,6 +164,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .roomSoon: return L10n.t("notifications.kind.roomSoon.title")
         case .roomLive: return L10n.t("notifications.kind.roomLive.title")
         case .roomCancelled: return L10n.t("notifications.kind.roomCancelled.title")
+        case .reaction: return L10n.t("notifications.kind.reaction.title")
+        case .threadReply: return L10n.t("notifications.kind.threadReply.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -207,6 +217,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.roomLive.detail")
         case .roomCancelled:
             return L10n.t("notifications.kind.roomCancelled.detail")
+        case .reaction:
+            return L10n.t("notifications.kind.reaction.detail")
+        case .threadReply:
+            return L10n.t("notifications.kind.threadReply.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -236,6 +250,9 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     public let postId: UUID?
     /// The room it is about, for a room invitation.
     public let roomId: UUID?
+    /// A qualifier the server adds (contract v22): `answer` on a reply to a
+    /// question, the reaction's kind on `reaction`.
+    public var detail: String? = nil
     /// The community a community notification points at, and its address.
     public let communityId: UUID?
     public let communitySlug: String?
@@ -285,7 +302,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// Explicit keys are required because ``init(from:)`` is custom, and the
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
-        case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive, roomId
+        case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive, roomId, detail
         case communityId, communitySlug, communityName
     }
 
@@ -325,6 +342,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         postSensitive = (try? container.decodeIfPresent(SensitiveKind.self, forKey: .postSensitive)) ?? nil
         read = (try? container.decode(Bool.self, forKey: .read)) ?? false
         createdAt = (try? container.decode(Date.self, forKey: .createdAt)) ?? Date()
+        detail = (try? container.decodeIfPresent(String.self, forKey: .detail)) ?? nil
     }
 
     // MARK: Derived
@@ -338,7 +356,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
 
     /// The sentence the row leads with.
     public var sentence: String {
-        NotificationCopy.sentence(kind, actor: actor.displayName, community: communityName)
+        NotificationCopy.sentence(kind, actor: actor.displayName, community: communityName, detail: detail)
     }
 
     /// The whole row as one line for VoiceOver.
@@ -622,8 +640,18 @@ public enum NotificationCopy {
     /// - Parameters:
     ///   - kind: What happened.
     ///   - actor: The display name of whoever did it.
-    public static func sentence(_ kind: NotificationKind, actor: String, community: String? = nil) -> String {
+    public static func sentence(_ kind: NotificationKind, actor: String, community: String? = nil, detail: String? = nil) -> String {
         let name = actor.isEmpty ? L10n.t("notifications.sentence.someone") : actor
+        // The server's qualifiers make two rows say what actually happened.
+        if kind == .reply, detail == "answer" { return L10n.t("notifications.sentence.answer", name) }
+        if kind == .reaction, let detail, let reaction = ReactionKind(rawValue: detail) {
+            switch reaction {
+            case .helpful: return L10n.t("notifications.sentence.reaction.helpful", name)
+            case .question: return L10n.t("notifications.sentence.reaction.question", name)
+            case .insight: return L10n.t("notifications.sentence.reaction.insight", name)
+            case .funny: return L10n.t("notifications.sentence.reaction.funny", name)
+            }
+        }
         // A community row names the space, which is the part that makes it
         // legible: "Noura invited you to Riyadh runners".
         let place = (community?.isEmpty == false) ? community! : L10n.t("communities.title")
@@ -648,6 +676,8 @@ public enum NotificationCopy {
         case .roomSoon: return L10n.t("notifications.sentence.roomSoon", name)
         case .roomLive: return L10n.t("notifications.sentence.roomLive", name)
         case .roomCancelled: return L10n.t("notifications.sentence.roomCancelled", name)
+        case .reaction: return L10n.t("notifications.sentence.reaction", name)
+        case .threadReply: return L10n.t("notifications.sentence.threadReply", name)
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.

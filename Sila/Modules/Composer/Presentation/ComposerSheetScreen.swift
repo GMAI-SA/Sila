@@ -85,6 +85,14 @@ public struct ComposerSheetScreen: View {
             }
             .onAppear { focusedSegment = viewModel.segments.first?.id }
             .task { await viewModel.loadStarters() }
+            .sheet(isPresented: $viewModel.isShowingGuidelines) {
+                if let gate = viewModel.guidelines {
+                    GuidelinesSheet(gate: gate, onAccept: {
+                        viewModel.isShowingGuidelines = false
+                        Task { await viewModel.post() }
+                    }, onClose: { viewModel.isShowingGuidelines = false })
+                }
+            }
             .sheet(isPresented: $viewModel.isShowingRecorder) {
                 if let voice = viewModel.voice {
                     Owned({

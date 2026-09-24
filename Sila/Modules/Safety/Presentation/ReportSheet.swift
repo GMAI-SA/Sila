@@ -34,6 +34,7 @@ public struct ReportSheet: View {
                     outcomeContent(outcome)
                 } else {
                     form
+                    GuidelinesLink()
                 }
             }
             .padding(SLSpacing.lg)

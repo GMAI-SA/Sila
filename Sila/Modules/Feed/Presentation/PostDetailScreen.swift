@@ -95,6 +95,15 @@ public struct PostDetailScreen: View {
         VStack(spacing: 0) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
+                    // The thread above, root first: every ancestor but the
+                    // nearest compact, the nearest as the "replying to" card.
+                    ForEach(viewModel.ancestors.dropLast()) { ancestor in
+                        PostCardView(post: ancestor, style: .reply, actions: actions(for: ancestor))
+                        Rectangle()
+                            .fill(SLColor.stroke)
+                            .frame(width: 2, height: 12)
+                            .padding(.leading, SLSpacing.lg + 21)
+                    }
                     if let parent = viewModel.parent {
                         parentContext(parent)
                     }
@@ -198,6 +207,21 @@ public struct PostDetailScreen: View {
             ForEach(viewModel.replies) { reply in
                 PostCardView(post: reply, style: .reply, actions: actions(for: reply))
                     .task { await viewModel.loadMoreRepliesIfNeeded(currentReply: reply) }
+
+                if reply.replyCountDirect > 0 {
+                    // One level of indent; deeper answers live in that reply's own thread.
+                    Button {
+                        onOpenPost(reply)
+                    } label: {
+                        Label(L10n.plural("post.thread.moreReplies", reply.replyCountDirect), systemImage: "arrow.turn.down.right")
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, SLSpacing.lg + 56)
+                    .padding(.bottom, SLSpacing.sm)
+                    .accessibilityIdentifier("post.thread.more")
+                }
 
                 SLDivider()
             }

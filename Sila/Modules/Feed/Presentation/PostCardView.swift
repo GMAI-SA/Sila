@@ -208,6 +208,9 @@ public struct PostCardView: View {
                 detailFooter
             }
 
+            ReactionControls(post: post)
+                .padding(.leading, style == .detail ? 0 : 56)
+
             engagementRow
                 .padding(.leading, style == .detail ? 0 : 52)
         }
@@ -571,6 +574,8 @@ public struct PostCardView: View {
             )
 
             likeButton
+
+            ReactionControls(post: post).picker
 
             engagementButton(
                 icon: post.viewer.bookmarked ? "bookmark.fill" : "bookmark",

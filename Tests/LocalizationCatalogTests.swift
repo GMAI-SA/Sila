@@ -371,7 +371,7 @@ final class LocalizationCatalogTests: XCTestCase {
     /// is an SF Symbol, a keychain key or a reverse-DNS identifier.
     static let namespaces = [
         "account.", "app.", "auth.", "biometrics.", "common.", "composer.",
-        "communities.", "discover.", "document.", "ds.", "error.", "feed.", "format.", "groups.", "guest.", "messages.", "nationality.", "notifications.", "onboarding.", "people.", "poll.", "post.", "prompt.", "push.",
+        "communities.", "discover.", "document.", "ds.", "error.", "feed.", "format.", "guidelines.", "groups.", "guest.", "messages.", "mutedTerms.", "nationality.", "notifications.", "onboarding.", "people.", "poll.", "post.", "prompt.", "push.", "reaction.",
         "preferences.", "profile.", "rooms.", "safety.", "saved.", "search.", "voice.",
         "verification."
     ]

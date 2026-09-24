@@ -73,6 +73,9 @@ public final class ComposerViewModel {
     public var isShowingRecorder = false
     /// The voice backend. `nil` hides the microphone.
     public let voice: VoiceServiceProtocol?
+    /// The community guidelines, shown before a first post (contract v22).
+    public let guidelines: GuidelinesGate?
+    public var isShowingGuidelines = false
     /// `true` while the GIF picker sheet is up.
     public var isShowingGifPicker = false
     /// Mention candidates for the segment being typed.
@@ -127,11 +130,13 @@ public final class ComposerViewModel {
         openGifPicker: Bool = false,
         starters: DiscoverServiceProtocol? = nil,
         voice: VoiceServiceProtocol? = nil,
+        guidelines: GuidelinesGate? = nil,
         onPosted: @escaping @MainActor ([Post]) -> Void = { _ in },
         onClose: @escaping @MainActor () -> Void = {}
     ) {
         self.starterSource = starters
         self.voice = voice
+        self.guidelines = guidelines
         self.context = context
         self.author = author
         self.composer = composer
@@ -491,6 +496,11 @@ public final class ComposerViewModel {
 
     public func post() async {
         guard canPost else { return }
+        if let guidelines, guidelines.needsAcceptance {
+            // Read before the first post, and again when they change.
+            isShowingGuidelines = true
+            return
+        }
         isPosting = true
         partialFailureMessage = nil
         defer { isPosting = false }

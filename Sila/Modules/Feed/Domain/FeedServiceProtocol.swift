@@ -73,6 +73,12 @@ public protocol FeedServiceProtocol: Sendable {
 
     /// Collapse or restore a reply in your own thread. Defaulted below.
     func setHidden(_ hidden: Bool, replyId: UUID) async throws -> Post
+
+    /// A qualitative reaction on or off (contract v22). Defaulted below.
+    func setReaction(_ kind: ReactionKind, on: Bool, postId: UUID) async throws -> PostMetrics
+
+    /// `GET /posts/{id}/thread` — ancestors, the post, its replies. Defaulted below.
+    func fetchThread(_ id: UUID) async throws -> PostThread
 }
 
 /// How For You is ordered (contract v19): ranked — newest first, lifted for
@@ -100,6 +106,14 @@ extension FeedServiceProtocol {
     /// the confirmation. Stubs that never hide inherit this refusal.
     public func setHidden(_ hidden: Bool, replyId: UUID) async throws -> Post {
         throw APIError.transport("Hiding replies is not available here")
+    }
+
+    public func setReaction(_ kind: ReactionKind, on: Bool, postId: UUID) async throws -> PostMetrics {
+        throw APIError.transport("Reactions are not available here")
+    }
+
+    public func fetchThread(_ id: UUID) async throws -> PostThread {
+        throw APIError.transport("Threads are not available here")
     }
 
     /// A service with no notion of subjects serves the whole feed.

@@ -141,8 +141,10 @@ public final class LiveRoomViewModel {
         suspension: SuspensionMonitor? = nil,
         people: PeopleDirectory? = nil,
         pollInterval: TimeInterval = RoomConstants.participantPollInterval,
-        eventDebounce: TimeInterval = 0.4
+        eventDebounce: TimeInterval = 0.4,
+        depth: RoomDepthServiceProtocol? = nil
     ) {
+        self.depthService = depth
         self.people = people
         self.room = room
         self.viewerHandle = Handle.normalised(viewerHandle)
@@ -190,6 +192,13 @@ public final class LiveRoomViewModel {
     }
 
     public var isHost: Bool { room.isHost || role.isHost }
+    /// Host or co-host: runs hands, the queue, polls and chat (contract v22).
+    /// Only the host cancels, invites and names co-hosts.
+    public var isStage: Bool { isHost || room.isCohost }
+    /// The questions, polls and co-hosts panel.
+    public private(set) var depth: RoomDepthViewModel?
+    private let depthService: RoomDepthServiceProtocol?
+    public var isDepthOpen = false
 
     /// The people on stage, host first.
     public var speakers: [RoomParticipant] { participants.stage }
@@ -218,8 +227,10 @@ public final class LiveRoomViewModel {
 
     /// The host menu for one person, or `nil` when there should not be one.
     public func hostActions(for participant: RoomParticipant) -> RoomHostActions? {
-        guard isHost else { return nil }
+        guard isStage else { return nil }
         let handle = Handle.normalised(participant.user.handle)
+        // A co-host never gets a menu over the host.
+        if !isHost, participant.role.isHost { return nil }
         guard handle != viewerHandle else { return nil }
         return RoomHostActions(
             target: SafetyTarget(user: participant.user),
@@ -251,6 +262,8 @@ public final class LiveRoomViewModel {
         engine.onRoomEvent = { [weak self] event in self?.handle(event) }
         phase = .inRoom
         await refresh()
+        prepareDepth()
+        await loadChatHistory()
         startPolling()
     }
 
@@ -307,6 +320,9 @@ public final class LiveRoomViewModel {
         case let .message(message) where message.isReaction:
             receive(reaction: message)
             return  // Nothing on the roster changed; do not spend a read on it.
+        case let .message(message) where message.isDepthEvent:
+            receive(depth: message)
+            return
         case let .message(message) where message.isChat:
             receive(chat: message)
             return
@@ -388,6 +404,20 @@ public final class LiveRoomViewModel {
         let text = chatDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard canSendChat, let viewerId else { return }
         let toHost = chatToHostOnly && !isHost
+        // A line to everyone is kept, so a late arrival can read it; the
+        // server fans it out. A private line to the host stays on the wire.
+        if !toHost, let depthService {
+            chatDraft = ""
+            do {
+                let sent = try await depthService.send(text, roomId: room.id)
+                adopt(persisted: sent)
+                analytics.track(.roomChatSent, properties: ["to_host": "false"])
+            } catch {
+                chatDraft = text
+                toast = .error(for: error)
+            }
+            return
+        }
         chatDraft = ""
         append(
             RoomChatMessage(
@@ -424,6 +454,71 @@ public final class LiveRoomViewModel {
         guard let emoji = message.emoji, !emoji.isEmpty else { return }
         guard message.userId != viewerId?.uuidString.lowercased() else { return }  // ours is already up
         show(RoomReaction(emoji: emoji, name: message.name ?? message.handle, big: message.big))
+    }
+
+    // MARK: - Depth (contract v22)
+
+    /// Builds the questions/polls panel once the room is known.
+    func prepareDepth() {
+        guard depth == nil, let depthService else { return }
+        depth = RoomDepthViewModel(roomId: room.id, isHost: isHost, isStage: isStage, cohosts: room.cohosts,
+                                   service: depthService, analytics: analytics)
+    }
+
+    /// History for somebody arriving late.
+    func loadChatHistory() async {
+        guard let depthService, let history = try? await depthService.messages(roomId: room.id) else { return }
+        for message in history { adopt(persisted: message) }
+    }
+
+    private func adopt(persisted message: RoomMessage) {
+        guard !chat.contains(where: { $0.serverId == message.id }) else { return }
+        let mine = message.author?.id == viewerId
+        var line = RoomChatMessage(
+            userId: message.author?.id.uuidString.lowercased() ?? "",
+            handle: message.author?.handle,
+            name: mine ? L10n.t("rooms.chat.you") : (message.author?.displayName ?? L10n.t("rooms.chat.someone")),
+            text: String(message.text.prefix(Self.chatCharacterLimit)),
+            toHost: false,
+            isMine: mine
+        )
+        line.serverId = message.id
+        line.hidden = message.hidden
+        append(line)
+        if !isChatOpen, !mine { unreadChat += 1 }
+    }
+
+    private func receive(depth message: RoomDataMessage) {
+        switch message.type {
+        case "chat":
+            if let persisted = message.message { adopt(persisted: persisted) }
+        case "chat_hidden":
+            guard let raw = message.messageId, let id = UUID(uuidString: raw) else { return }
+            if isStage {
+                if let i = chat.firstIndex(where: { $0.serverId == id }) { chat[i].hidden = true }
+            } else {
+                chat.removeAll { $0.serverId == id && !$0.isMine }
+            }
+        case "cohosts_changed":
+            Task { [weak self] in
+                await self?.depth?.handle(event: message.type, cohosts: message.cohosts)
+                await self?.refresh()
+                if let self { self.depth?.setStage(self.isStage) }
+            }
+        default:
+            Task { [weak self] in await self?.depth?.handle(event: message.type) }
+        }
+    }
+
+    /// The stage hides a line; it stays visible to the stage and its author.
+    public func hide(_ line: RoomChatMessage) async {
+        guard isStage, let id = line.serverId, let depthService else { return }
+        do {
+            try await depthService.hide(messageId: id, roomId: room.id)
+            if let i = chat.firstIndex(where: { $0.serverId == id }) { chat[i].hidden = true }
+        } catch {
+            toast = .error(for: error)
+        }
     }
 
     private func receive(chat message: RoomDataMessage) {
@@ -659,7 +754,7 @@ public final class LiveRoomViewModel {
 
     /// Undoes the last removal.
     public func readmitLastRemoved() async {
-        guard isHost, let target = lastRemoved else { return }
+        guard isStage, let target = lastRemoved else { return }
         do {
             room = try await service.readmit(roomId: room.id, handle: target.handle)
             analytics.track(.roomParticipantReadmitted)
@@ -678,7 +773,7 @@ public final class LiveRoomViewModel {
         _ call: @escaping (String) async throws -> VoiceRoom,
         success: () -> String
     ) async {
-        guard isHost, !actions.isBusy else { return }
+        guard isStage, !actions.isBusy else { return }
         let handle = actions.target.handle
         busyHandles.insert(handle)
         defer { busyHandles.remove(handle) }
@@ -695,7 +790,7 @@ public final class LiveRoomViewModel {
     }
 
     public func requestEnd() {
-        guard isHost, !isEnding else { return }
+        guard isStage, !isEnding else { return }
         isConfirmingEnd = true
     }
 
@@ -776,7 +871,7 @@ public final class LiveRoomViewModel {
     }
 
     public func endRoom() async {
-        guard isHost, !isEnding else { return }
+        guard isStage, !isEnding else { return }
         isConfirmingEnd = false
         isConfirmingLeave = false
         isEnding = true

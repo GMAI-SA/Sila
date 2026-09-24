@@ -279,12 +279,21 @@ public enum ReportSubject: Equatable, Sendable, Hashable {
     case post(id: UUID, author: SafetyTarget, excerpt: String)
     /// A whole account.
     case account(SafetyTarget)
+    /// A direct message sent to the viewer (contract v22).
+    case message(id: UUID, author: SafetyTarget, excerpt: String)
+    /// A voice room — there is no transcript; the server snapshots who spoke.
+    case room(id: UUID, host: SafetyTarget, title: String)
+    /// One line of a room's chat.
+    case roomMessage(id: UUID, author: SafetyTarget, excerpt: String)
 
     /// The account behind the report, either way.
     public var target: SafetyTarget {
         switch self {
         case let .post(_, author, _): return author
         case let .account(target): return target
+        case let .message(_, author, _): return author
+        case let .room(_, host, _): return host
+        case let .roomMessage(_, author, _): return author
         }
     }
 
@@ -292,7 +301,7 @@ public enum ReportSubject: Equatable, Sendable, Hashable {
     public var postId: UUID? {
         switch self {
         case let .post(id, _, _): return id
-        case .account: return nil
+        case .account, .message, .room, .roomMessage: return nil
         }
     }
 
@@ -301,14 +310,18 @@ public enum ReportSubject: Equatable, Sendable, Hashable {
         switch self {
         case let .post(_, author, _): return L10n.t("safety.report.headline.post", author.name)
         case let .account(target): return L10n.t("safety.report.headline.account", target.name)
+        case let .message(_, author, _): return L10n.t("safety.report.headline.message", author.name)
+        case let .room(_, _, title): return L10n.t("safety.report.headline.room", title)
+        case let .roomMessage(_, author, _): return L10n.t("safety.report.headline.roomMessage", author.name)
         }
     }
 
     /// The quoted post text, when there is one.
     public var excerpt: String? {
         switch self {
-        case let .post(_, _, excerpt): return excerpt.isEmpty ? nil : excerpt
-        case .account: return nil
+        case let .post(_, _, excerpt), let .message(_, _, excerpt), let .roomMessage(_, _, excerpt):
+            return excerpt.isEmpty ? nil : excerpt
+        case .account, .room: return nil
         }
     }
 
@@ -343,6 +356,10 @@ public struct ReportRequest: Encodable, Equatable, Sendable {
     /// that, from enough established people, puts the account in front of a
     /// moderator. Nothing pauses the account; a person decides.
     public let claimedIdentity: String?
+    /// The subjects added in contract v22; each is omitted unless set.
+    public var messageId: UUID? = nil
+    public var roomId: UUID? = nil
+    public var roomMessageId: UUID? = nil
 
     public init(
         postId: UUID? = nil,
@@ -368,6 +385,15 @@ public struct ReportRequest: Encodable, Equatable, Sendable {
             self.init(postId: id, userHandle: nil, reason: reason, detail: detail, claimedIdentity: claimedIdentity)
         case let .account(target):
             self.init(postId: nil, userHandle: target.handle, reason: reason, detail: detail, claimedIdentity: claimedIdentity)
+        case let .message(id, _, _):
+            self.init(postId: nil, userHandle: nil, reason: reason, detail: detail, claimedIdentity: nil)
+            messageId = id
+        case let .room(id, _, _):
+            self.init(postId: nil, userHandle: nil, reason: reason, detail: detail, claimedIdentity: nil)
+            roomId = id
+        case let .roomMessage(id, _, _):
+            self.init(postId: nil, userHandle: nil, reason: reason, detail: detail, claimedIdentity: nil)
+            roomMessageId = id
         }
     }
 }

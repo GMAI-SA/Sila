@@ -132,6 +132,24 @@ public final class FeedService: FeedServiceProtocol {
         )
     }
 
+    public func setReaction(_ kind: ReactionKind, on: Bool, postId: UUID) async throws -> PostMetrics {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(path: "/posts/\(postId.uuidString.lowercased())/reactions/\(kind.rawValue)",
+                       method: on ? .post : .delete, accessToken: token),
+            as: PostMetrics.self
+        )
+    }
+
+    public func fetchThread(_ id: UUID) async throws -> PostThread {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(path: "/posts/\(id.uuidString.lowercased())/thread", accessToken: token,
+                       query: [URLQueryItem(name: "limit", value: "30")]),
+            as: PostThread.self
+        )
+    }
+
     public func setHidden(_ hidden: Bool, replyId: UUID) async throws -> Post {
         let token = try await tokens.accessToken()
         return try await network.send(

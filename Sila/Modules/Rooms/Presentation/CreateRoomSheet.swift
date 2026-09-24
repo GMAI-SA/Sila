@@ -44,6 +44,14 @@ public struct CreateRoomSheet: View {
                 explanation
                 titleField
                 starterQuestionField
+                Toggle(isOn: $viewModel.isAMA) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.t("rooms.create.ama")).font(SLFont.body).foregroundStyle(SLColor.textPrimary)
+                        Text(L10n.t("rooms.create.ama.hint")).font(SLFont.micro).foregroundStyle(SLColor.textMuted)
+                    }
+                }
+                .tint(SLColor.primary)
+                .accessibilityIdentifier("rooms.create.ama")
                 topicPicker
                 audiencePicker
                 schedule

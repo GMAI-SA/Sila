@@ -108,6 +108,10 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     public let needsInterestPrompt: Bool
     /// 0–99, fixed per account, for turning a flag on for a slice.
     public let experimentBucket: Int?
+    /// The guidelines version this account accepted, and the current one
+    /// (contract v22). The composer shows the guidelines when they differ.
+    public var guidelinesVersion: String? = nil
+    public var currentGuidelinesVersion: String? = nil
 
     public init(
         id: UUID,
@@ -144,7 +148,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
         case handle, countryCode, phone, verifiedName, hideVerifiedName
-        case needsInterestPrompt, experimentBucket
+        case needsInterestPrompt, experimentBucket, guidelinesVersion, currentGuidelinesVersion
         case avatarURL = "avatarUrl"
     }
 
@@ -181,17 +185,29 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         hideVerifiedName = ((try? container.decodeIfPresent(Bool.self, forKey: .hideVerifiedName)) ?? nil) ?? false
         needsInterestPrompt = ((try? container.decodeIfPresent(Bool.self, forKey: .needsInterestPrompt)) ?? nil) ?? false
         experimentBucket = (try? container.decodeIfPresent(Int.self, forKey: .experimentBucket)) ?? nil
+        guidelinesVersion = AuthUser.version(container, .guidelinesVersion)
+        currentGuidelinesVersion = AuthUser.version(container, .currentGuidelinesVersion)
+    }
+
+    /// A version the server may send as a number or a string.
+    private static func version(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> String? {
+        if let text = try? container.decodeIfPresent(String.self, forKey: key) { return text }
+        if let number = try? container.decodeIfPresent(Int.self, forKey: key) { return String(number) }
+        return nil
     }
 
     /// A copy with the first-run subjects flag changed.
     public func settingNeedsInterestPrompt(_ value: Bool) -> AuthUser {
-        AuthUser(
+        var copy = AuthUser(
             id: id, email: email, displayName: displayName, emailVerified: emailVerified,
             verificationStatus: verificationStatus, createdAt: createdAt, handle: handle,
             countryCode: countryCode, avatarURL: avatarURL, phone: phone,
             verifiedName: verifiedName, hideVerifiedName: hideVerifiedName,
             needsInterestPrompt: value, experimentBucket: experimentBucket
         )
+        copy.guidelinesVersion = guidelinesVersion
+        copy.currentGuidelinesVersion = currentGuidelinesVersion
+        return copy
     }
 
     /// The handle as it is rendered, with the `@`, when the account has one.
