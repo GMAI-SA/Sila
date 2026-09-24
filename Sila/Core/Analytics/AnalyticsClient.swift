@@ -432,6 +432,12 @@ public enum AnalyticsEvent: String, Sendable {
 
     /// A question joined a room's queue.
     case roomQuestionAsked = "room_question_asked"
+
+    // MARK: Recognition and reach (contract v23)
+
+    case eventCreated = "event_created"
+    /// An RSVP. Carries `result`: going, interested, declined, none.
+    case eventRSVP = "event_rsvp"
 }
 
 /// Default ``AnalyticsClient``: writes to the unified log in debug and does

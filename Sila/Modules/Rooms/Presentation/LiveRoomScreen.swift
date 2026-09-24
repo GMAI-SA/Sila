@@ -50,6 +50,7 @@ public struct LiveRoomScreen: View {
     }
 
     private let onReport: (@MainActor (ReportSubject) -> Void)?
+    @Environment(\.recognitionService) private var recognition
 
     public var body: some View {
         Group {
@@ -456,6 +457,11 @@ public struct LiveRoomScreen: View {
             // A room that has not started yet: be told when it does.
             RemindMeButtons(room: viewModel.room)
                 .padding(.horizontal, SLSpacing.lg)
+            // An ended room leaves a recap — metadata only, never what was said.
+            if let recognition, viewModel.room.status == .ended || reason == RoomCopy.roomEnded {
+                RoomRecapView(roomId: viewModel.room.id, service: recognition)
+                    .padding(.horizontal, SLSpacing.lg)
+            }
             Spacer(minLength: SLSpacing.xxl)
         }
         .accessibilityElement(children: .contain)

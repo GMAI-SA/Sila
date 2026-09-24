@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// One community: who it is, the door, and what is inside.
@@ -107,13 +108,7 @@ public struct CommunityScreen: View {
     private func header(_ community: Community) -> some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             HStack(spacing: SLSpacing.md) {
-                SLAvatar(
-                    url: community.avatarURL,
-                    initials: String(community.name.prefix(2)).uppercased(),
-                    size: .lg,
-                    isVerified: false,
-                    displayName: community.name
-                )
+                CommunityAvatarEditor(community: community, onChange: { viewModel.adopt($0) })
                 VStack(alignment: .leading, spacing: 2) {
                     Text(community.name)
                         .font(SLFont.displayM)
@@ -410,5 +405,50 @@ public struct CommunityScreen: View {
         }
         .padding(.horizontal, SLSpacing.lg)
         .padding(.vertical, SLSpacing.sm)
+    }
+}
+
+/// The community's picture; owners and admins can change it.
+private struct CommunityAvatarEditor: View {
+    let community: Community
+    let onChange: (Community) -> Void
+    @Environment(\.recognitionService) private var service
+    @State private var picked: PhotosPickerItem?
+    @State private var isUploading = false
+
+    var body: some View {
+        let avatar = SLAvatar(
+            url: community.avatarURL,
+            initials: String(community.name.prefix(2)).uppercased(),
+            size: .lg,
+            isVerified: false,
+            displayName: community.name
+        )
+        if community.isAdmin, service != nil {
+            PhotosPicker(selection: $picked, matching: .images) {
+                avatar
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: isUploading ? "hourglass" : "camera.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(Circle().fill(SLColor.primary))
+                    }
+            }
+            .accessibilityLabel(Text(L10n.t("communities.avatar.change")))
+            .onChange(of: picked) { _, item in
+                guard let item, let service else { return }
+                Task {
+                    isUploading = true
+                    defer { isUploading = false }
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let updated = try? await service.uploadCommunityAvatar(slug: community.slug, jpeg: data) {
+                        onChange(updated)
+                    }
+                }
+            }
+        } else {
+            avatar
+        }
     }
 }

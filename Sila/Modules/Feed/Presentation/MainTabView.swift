@@ -66,6 +66,9 @@ public struct MainTabView: View {
     @State private var hub: DiscoverHubViewModel
     /// The weekly room being looked at, if any.
     @State private var openSeriesId: UUID?
+    /// The Events section of the Rooms tab (contract v23).
+    @State private var eventsViewModel: EventsViewModel
+    @State private var isCreatingEvent = false
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -122,6 +125,7 @@ public struct MainTabView: View {
                 viewerHandle: container.session.user?.handle
             )
         )
+        self._eventsViewModel = State(initialValue: EventsViewModel(service: container.eventsService))
         self._hub = State(
             initialValue: DiscoverHubViewModel(
                 discover: container.discoverService,
@@ -159,6 +163,8 @@ public struct MainTabView: View {
                         try await container.feedService.setReaction(kind, on: on, postId: postId)
                     }))
                     .environment(\.guidelinesGate, container.guidelinesGate)
+                    .environment(\.recognitionService, container.recognitionService)
+                    .environment(\.openEvent, { id in openEvent(id) })
                     .environment(\.roomReminders, RoomReminderActions(
                         toggle: { room, on in
                             let reminder = try await container.roomEngagement.setReminder(on, roomId: room.id)
@@ -292,6 +298,14 @@ public struct MainTabView: View {
         )) { token in
             Owned({ RoomSeriesViewModel(id: token.id, service: container.roomEngagement) }) { series in
                 RoomSeriesSheet(viewModel: series, onClose: { openSeriesId = nil })
+            }
+        }
+        .sheet(isPresented: $isCreatingEvent) {
+            Owned({
+                CreateEventViewModel(author: ComposerAuthor(user: container.session.user), service: container.eventsService,
+                                     onCreated: { event in eventsViewModel.insert(event) })
+            }) { create in
+                CreateEventSheet(viewModel: create, onClose: { isCreatingEvent = false })
             }
         }
         .sheet(isPresented: $isShowingGroups) {
@@ -809,7 +823,10 @@ public struct MainTabView: View {
                     viewModel: roomsViewModel,
                     onOpen: { room in container.router.roomsPath.append(.room(room)) },
                     onCreate: roomCreationHandler,
-                    onOpenProfile: openRoomProfile
+                    onOpenProfile: openRoomProfile,
+                    events: eventsViewModel,
+                    onOpenEvent: { event in container.router.roomsPath.append(.event(event.id)) },
+                    onCreateEvent: { isCreatingEvent = true }
                 )
                 .navigationDestination(for: RoomsRoute.self) { route in
                     roomsDestination(for: route)
@@ -829,6 +846,7 @@ public struct MainTabView: View {
                     onOpenRoom: openRoomFromNotification,
                     onOpenCommunity: { slug in push(.community(slug: slug)) },
                     onOpenHome: { selection = .home },
+                    onOpenEvent: { id in openEvent(id) },
                     onOpenSettings: {
                         guard container.flags.preferences else {
                             stub(StubFeature.notificationSettings)
@@ -984,6 +1002,8 @@ public struct MainTabView: View {
             openProfile(handle)
         case let .room(id):
             openRoomFromNotification(id)
+        case let .event(id):
+            openEvent(id)
         }
     }
 
@@ -1100,6 +1120,7 @@ public struct MainTabView: View {
             suspension: container.suspension,
             people: container.peopleDirectory,
             engagement: container.roomEngagement,
+            communities: container.communitiesService,
             prefillTitle: consumeRoomPrefill(),
             onCreated: { room in roomsViewModel.insert(room) }
         )
@@ -1109,6 +1130,12 @@ public struct MainTabView: View {
         let title = container.router.createRoomPrefillTitle
         container.router.createRoomPrefillTitle = nil
         return title
+    }
+
+    /// An event, from a card, a notification or a link: on the Rooms tab.
+    private func openEvent(_ id: UUID) {
+        selection = .rooms
+        container.router.roomsPath = [.event(id)]
     }
 
     /// A room on the Live now rail was tapped.
@@ -1167,6 +1194,16 @@ public struct MainTabView: View {
         switch route {
         case let .community(slug):
             communityScreen(slug: slug, push: { container.router.roomsPath.append($0) })
+
+        case let .event(id):
+            Owned({
+                EventDetailViewModel(eventId: id, service: container.eventsService,
+                                     onChange: { event in eventsViewModel.merge(event) })
+            }) { detail in
+                EventDetailScreen(viewModel: detail, onOpenRoom: { roomId in openRoomFromNotification(roomId) },
+                                  onOpenProfile: openRoomProfile)
+            }
+            .id(id)
 
         case let .room(room):
             // Owned, keyed on the room: a destination closure is re-run on

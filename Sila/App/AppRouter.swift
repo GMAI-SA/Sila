@@ -60,6 +60,8 @@ public enum FeedRoute: Hashable, Sendable {
 public enum RoomsRoute: Hashable, Sendable {
     /// A room to join.
     case room(VoiceRoom)
+    /// An event, by id; read on arrival (contract v23).
+    case event(UUID)
     /// One account's public page, reached from the participant list.
     case profile(handle: String)
     /// The community a room belongs to.

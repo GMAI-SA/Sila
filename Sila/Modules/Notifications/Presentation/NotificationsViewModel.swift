@@ -44,6 +44,8 @@ public enum NotificationDestination: Equatable, Sendable {
     case community(slug: String)
     /// Sila's weekly question: it lives at the top of For You.
     case home
+    /// An event (contract v23).
+    case event(id: UUID)
 }
 
 /// Drives ``NotificationsScreen``.
@@ -295,6 +297,10 @@ public final class NotificationsViewModel {
             "deleted_post": String(notification.postWasDeleted)
         ])
 
+        if let eventId = notification.eventId {
+            await markRead(notification)
+            return .event(id: eventId)
+        }
         if notification.kind == .prompt {
             await markRead(notification)
             return .home

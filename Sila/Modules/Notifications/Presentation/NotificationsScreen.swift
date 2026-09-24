@@ -27,6 +27,7 @@ public struct NotificationsScreen: View {
     /// Opens a community, for the three community notification kinds.
     private let onOpenCommunity: (@MainActor (String) -> Void)?
     private let onOpenHome: (@MainActor () -> Void)?
+    private let onOpenEvent: (@MainActor (UUID) -> Void)?
     private let onOpenSettings: (@MainActor () -> Void)?
 
     /// The kind marker is nudged outwards from the avatar by hand, and a raw
@@ -46,6 +47,7 @@ public struct NotificationsScreen: View {
         onOpenRoom: (@MainActor (UUID) -> Void)? = nil,
         onOpenCommunity: (@MainActor (String) -> Void)? = nil,
         onOpenHome: (@MainActor () -> Void)? = nil,
+        onOpenEvent: (@MainActor (UUID) -> Void)? = nil,
         onOpenSettings: (@MainActor () -> Void)? = nil
     ) {
         self.viewModel = viewModel
@@ -54,6 +56,7 @@ public struct NotificationsScreen: View {
         self.onOpenRoom = onOpenRoom
         self.onOpenCommunity = onOpenCommunity
         self.onOpenHome = onOpenHome
+        self.onOpenEvent = onOpenEvent
         self.onOpenSettings = onOpenSettings
     }
 
@@ -388,6 +391,7 @@ public struct NotificationsScreen: View {
             case let .room(id): onOpenRoom?(id)
             case let .community(slug): onOpenCommunity?(slug)
             case .home: onOpenHome?()
+            case let .event(id): onOpenEvent?(id)
             }
         }
     }

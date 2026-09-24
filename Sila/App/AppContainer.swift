@@ -62,6 +62,10 @@ public final class AppContainer {
     public let safetyDepth: SafetyDepthServiceProtocol
     /// Whether this account has read the current guidelines.
     public let guidelinesGate: GuidelinesGate
+    /// Events (contract v23).
+    public let eventsService: EventsServiceProtocol
+    /// Room recaps and community pictures.
+    public let recognitionService: RecognitionServiceProtocol
     /// Contract v4's interests service — topics and feed preferences.
     public let preferencesService: PreferencesServiceProtocol
     /// Contract v5's account service — profile, credentials, export, deletion.
@@ -136,7 +140,8 @@ public final class AppContainer {
         roomEngagement: RoomEngagementServiceProtocol? = nil,
         pushService: PushServiceProtocol? = nil,
         roomDepth: RoomDepthServiceProtocol? = nil,
-        safetyDepth: SafetyDepthServiceProtocol? = nil
+        safetyDepth: SafetyDepthServiceProtocol? = nil,
+        eventsService: (EventsServiceProtocol & RecognitionServiceProtocol)? = nil
     ) {
         self.flags = flags
 
@@ -311,6 +316,10 @@ public final class AppContainer {
             ?? (flags.useMockSafety ? SafetyDepthServiceMock() : SafetyDepthService(network: network, tokens: tokens))
         self.safetyDepth = safetyDepthService
         self.guidelinesGate = GuidelinesGate(service: safetyDepthService)
+        let events: EventsServiceProtocol & RecognitionServiceProtocol = eventsService
+            ?? (flags.useMockRooms ? EventsServiceMock() : EventsService(network: network, tokens: tokens, analytics: analytics))
+        self.eventsService = events
+        self.recognitionService = events
         // Before the access token goes: this phone stops getting this
         // account's pushes.
         session.willSignOut = { [weak registrar] in await registrar?.willSignOut() }

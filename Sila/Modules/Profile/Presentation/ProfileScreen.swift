@@ -537,6 +537,8 @@ public struct ProfileScreen: View {
                     }
                 }
 
+                BadgeLabels(badges: profile.badges)
+
                 if let bio = profile.bio {
                     // The bio is the person's own words; it follows them, not
                     // the app's language.

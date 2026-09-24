@@ -139,6 +139,7 @@ public struct PostCardView: View {
     /// people who can still see it (the thread's author, the reply's author)
     /// open it with one tap.
     @State private var showsHidden = false
+    @Environment(\.openEvent) private var openEvent
 
     /// Creates a card.
     /// - Parameters:
@@ -273,6 +274,11 @@ public struct PostCardView: View {
                         .padding(.leading, style == .detail ? 0 : 56)
                 }
 
+                if let card = post.event {
+                    PostEventCard(card: card, onOpen: openEvent.map { open in { id in open(id) } })
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
+
                 if post.poll != nil {
                     PollView(post: post, isDetail: style == .detail)
                         .padding(.leading, style == .detail ? 0 : 56)
@@ -309,6 +315,11 @@ public struct PostCardView: View {
 
                     VStack(alignment: .leading, spacing: SLSpacing.xs) {
                         header
+                        // Weekly recognition, in threads: a small label below
+                        // the name, never beside the seal (contract v23).
+                        if style != .feed {
+                            BadgeLabels(badges: RecognitionBadge.parse(post.authorBadges))
+                        }
                         scopeChip
                     }
                 }

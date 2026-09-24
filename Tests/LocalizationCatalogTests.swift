@@ -370,8 +370,8 @@ final class LocalizationCatalogTests: XCTestCase {
     /// The catalog's top-level namespaces. A dotted literal outside all of them
     /// is an SF Symbol, a keychain key or a reverse-DNS identifier.
     static let namespaces = [
-        "account.", "app.", "auth.", "biometrics.", "common.", "composer.",
-        "communities.", "discover.", "document.", "ds.", "error.", "feed.", "format.", "guidelines.", "groups.", "guest.", "messages.", "mutedTerms.", "nationality.", "notifications.", "onboarding.", "people.", "poll.", "post.", "prompt.", "push.", "reaction.",
+        "account.", "app.", "auth.", "badge.", "biometrics.", "common.", "composer.",
+        "communities.", "discover.", "document.", "ds.", "error.", "events.", "feed.", "format.", "guidelines.", "groups.", "guest.", "messages.", "mutedTerms.", "nationality.", "notifications.", "onboarding.", "people.", "poll.", "post.", "prompt.", "push.", "reaction.",
         "preferences.", "profile.", "rooms.", "safety.", "saved.", "search.", "voice.",
         "verification."
     ]

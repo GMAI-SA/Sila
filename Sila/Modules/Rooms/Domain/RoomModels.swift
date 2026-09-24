@@ -782,6 +782,8 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     public var starterQuestion: String? = nil
     /// `room` or `ama`.
     public var kind: String? = nil
+    /// A room inside one of the host's communities — the fourth door.
+    public var communityId: UUID? = nil
 
     /// - Parameters:
     ///   - title: What to call it. Trimmed.

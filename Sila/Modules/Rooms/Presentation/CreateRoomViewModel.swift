@@ -37,6 +37,18 @@ public final class CreateRoomViewModel {
     public var repeatsWeekly = false
     /// Ask me anything: the host is the guest, the queue is the room.
     public var isAMA = false
+    /// Communities the host belongs to, for the community door.
+    public private(set) var communities: [Community] = []
+    /// A room inside a community: its members are the door.
+    public var selectedCommunityId: UUID? {
+        didSet { if selectedCommunityId != nil { access = .open; selectedGroupId = nil } }
+    }
+    private let communitiesService: CommunitiesServiceProtocol?
+
+    public func loadCommunities() async {
+        guard let communitiesService, communities.isEmpty else { return }
+        communities = (try? await communitiesService.fetchCommunities(mine: true, forYou: false, topic: nil, limit: 50)) ?? []
+    }
     /// Whether the weekly option is offered: the series backend is wired.
     public var canRepeat: Bool { engagement != nil }
     private let engagement: RoomEngagementServiceProtocol?
@@ -122,10 +134,12 @@ public final class CreateRoomViewModel {
         suspension: SuspensionMonitor? = nil,
         people: PeopleDirectory? = nil,
         engagement: RoomEngagementServiceProtocol? = nil,
+        communities: CommunitiesServiceProtocol? = nil,
         prefillTitle: String? = nil,
         onCreated: (@MainActor (VoiceRoom) -> Void)? = nil
     ) {
         self.engagement = engagement
+        self.communitiesService = communities
         if let prefillTitle { self.title = String(prefillTitle.prefix(RoomConstants.maximumTitleLength)) }
         self.people = people
         self.author = author
@@ -354,6 +368,7 @@ public final class CreateRoomViewModel {
                 )
             request.starterQuestion = question.isEmpty ? nil : String(question.prefix(200))
             request.kind = isAMA ? "ama" : "room"
+            request.communityId = selectedCommunityId
             let room = try await service.createRoom(request)
             onCreated?(room)
             return room

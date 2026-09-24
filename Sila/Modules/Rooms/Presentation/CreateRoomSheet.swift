@@ -57,6 +57,7 @@ public struct CreateRoomSheet: View {
                 schedule
                 stageSize
                 whoMayEnter
+                communityDoor
                 notRecorded
 
                 if let error = viewModel.createError {
@@ -98,6 +99,7 @@ public struct CreateRoomSheet: View {
             }
         }
         .task { await viewModel.loadTopics() }
+        .task { await viewModel.loadCommunities() }
         .tnToast($viewModel.toast)
     }
 
@@ -259,6 +261,20 @@ public struct CreateRoomSheet: View {
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private var communityDoor: some View {
+        if !viewModel.communities.isEmpty {
+            Picker(L10n.t("rooms.create.community"), selection: $viewModel.selectedCommunityId) {
+                Text(L10n.t("rooms.create.community.none")).tag(UUID?.none)
+                ForEach(viewModel.communities) { community in
+                    Text(community.name).tag(UUID?.some(community.id))
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("rooms.create.community")
         }
     }
 

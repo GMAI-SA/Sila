@@ -318,6 +318,13 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case termTooShort = "term_too_short"
     case tooManyTerms = "too_many_terms"
     case guidelinesChanged = "guidelines_changed"
+    // MARK: Contract v23 — events
+    case invalidTime = "invalid_time"
+    case invalidVenue = "invalid_venue"
+    case tooManyUpcoming = "too_many_upcoming"
+    case eventFull = "event_full"
+    case eventOver = "event_over"
+    case eventNotShareable = "event_not_shareable"
 
     /// Nafath is not open yet ("coming soon"): verify with a document (HTTP 503).
     case nafathUnavailable = "nafath_unavailable"
@@ -601,6 +608,12 @@ public enum APIError: Error, Equatable, Sendable {
             case .termTooShort: return L10n.t("mutedTerms.error.tooShort")
             case .tooManyTerms: return L10n.t("mutedTerms.error.tooMany")
             case .guidelinesChanged: return L10n.t("guidelines.error.changed")
+            case .invalidTime: return L10n.t("events.error.time")
+            case .invalidVenue: return L10n.t("events.error.venue")
+            case .tooManyUpcoming: return L10n.t("events.error.tooMany")
+            case .eventFull: return L10n.t("events.full")
+            case .eventOver: return L10n.t("events.error.over")
+            case .eventNotShareable: return L10n.t("events.error.notShareable")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

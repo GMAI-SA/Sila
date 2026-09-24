@@ -32,13 +32,23 @@ public struct RoomsScreen: View {
         viewModel: RoomsViewModel,
         onOpen: (@MainActor (VoiceRoom) -> Void)? = nil,
         onCreate: (@MainActor () -> Void)? = nil,
-        onOpenProfile: (@MainActor (String) -> Void)? = nil
+        onOpenProfile: (@MainActor (String) -> Void)? = nil,
+        events: EventsViewModel? = nil,
+        onOpenEvent: (@MainActor (SilaEvent) -> Void)? = nil,
+        onCreateEvent: (@MainActor () -> Void)? = nil
     ) {
+        self.events = events
+        self.onOpenEvent = onOpenEvent
+        self.onCreateEvent = onCreateEvent
         self.viewModel = viewModel
         self.onOpen = onOpen
         self.onCreate = onCreate
         self.onOpenProfile = onOpenProfile
     }
+
+    private let events: EventsViewModel?
+    private let onOpenEvent: (@MainActor (SilaEvent) -> Void)?
+    private let onCreateEvent: (@MainActor () -> Void)?
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -233,9 +243,33 @@ public struct RoomsScreen: View {
             }
         }
 
+        if !viewModel.isSearchActive {
+            eventsSection
+        }
+
         if viewModel.isSearching {
             SLSkeletonRow(lineCount: 2)
         }
+    }
+
+    /// Events, below the rooms. Its own property: inlined in `rooms`, the
+    /// optional-closure conversions crashed the compiler.
+    @ViewBuilder
+    private var eventsSection: some View {
+        if let events {
+            EventsSection(viewModel: events, onOpen: openEvent, onCreate: createEventAction)
+                .padding(.top, SLSpacing.md)
+        }
+    }
+
+    private func openEvent(_ event: SilaEvent) {
+        onOpenEvent?(event)
+    }
+
+    private var createEventAction: (() -> Void)? {
+        guard let onCreateEvent else { return nil }
+        let action: () -> Void = { onCreateEvent() }
+        return action
     }
 
     private func sectionHeader(_ title: String) -> some View {

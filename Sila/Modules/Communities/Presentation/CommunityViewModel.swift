@@ -55,6 +55,11 @@ public final class CommunityViewModel {
     /// True when the viewer may read what is inside.
     public var canView: Bool { community?.canView ?? false }
 
+    /// A changed community from elsewhere — a new picture.
+    public func adopt(_ updated: Community) {
+        community = updated
+    }
+
     /// The button under the header, or `nil` when there is nothing to press.
     public var doorTitle: String? {
         guard let community else { return nil }

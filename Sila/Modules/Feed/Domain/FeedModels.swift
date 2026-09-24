@@ -362,6 +362,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public let mentions: [PostMention]?
     /// A recording, when the post is a voice post (contract v20).
     public var voice: VoiceClip?
+    /// A shared event (contract v23).
+    public var event: EventCard?
+    /// The author's weekly recognition, raw (contract v23).
+    public var authorBadges: [String] = []
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -449,7 +453,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
         case communityId, communitySlug, communityName, gif, room
-        case poll, hiddenByAuthor, mentions, voice
+        case poll, hiddenByAuthor, mentions, voice, event, authorBadges
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -525,6 +529,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         mentions = (try? container.decodeIfPresent([PostMention].self, forKey: .mentions)) ?? nil
         // A recording that cannot be decoded costs the recording, never the post.
         voice = (try? container.decodeIfPresent(VoiceClip.self, forKey: .voice)) ?? nil
+        event = (try? container.decodeIfPresent(EventCard.self, forKey: .event)) ?? nil
+        authorBadges = (try? container.decode([String].self, forKey: .authorBadges)) ?? []
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.

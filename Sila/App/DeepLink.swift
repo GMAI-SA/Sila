@@ -17,6 +17,10 @@ public enum Permalink {
     }
 
     /// A profile's page.
+    public static func event(_ id: UUID) -> URL {
+        base.appendingPathComponent("events").appendingPathComponent(id.uuidString.lowercased())
+    }
+
     public static func room(_ id: UUID) -> URL {
         base.appendingPathComponent("rooms").appendingPathComponent(id.uuidString.lowercased())
     }
@@ -34,6 +38,8 @@ public enum DeepLink: Equatable, Sendable {
     case profile(handle: String)
     /// A room, by id — handed over by the first-run flow's last card.
     case room(id: UUID)
+    /// An event (contract v23).
+    case event(id: UUID)
 
     /// Reads a URL the system handed the app.
     ///
@@ -54,6 +60,9 @@ public enum DeepLink: Equatable, Sendable {
         case "posts":
             guard let id = UUID(uuidString: parts[1]) else { return nil }
             return .post(id: id)
+        case "events":
+            guard let id = UUID(uuidString: parts[1]) else { return nil }
+            return .event(id: id)
         case "rooms":
             guard let id = UUID(uuidString: parts[1]) else { return nil }
             return .room(id: id)

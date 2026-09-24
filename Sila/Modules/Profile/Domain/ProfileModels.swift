@@ -14,6 +14,8 @@ import Foundation
 /// on each request: ``isFollowing`` and ``isMe`` describe the relationship
 /// between the caller and this account, not a property of the account.
 public struct Profile: Equatable, Sendable, Decodable, Identifiable {
+    /// This week's recognition (contract v23).
+    public var badges: [RecognitionBadge] = []
 
     /// The account, in the shape every other surface already renders.
     public let user: UserSummary
@@ -89,7 +91,7 @@ public struct Profile: Equatable, Sendable, Decodable, Identifiable {
     /// values are the camel-cased forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
         case user, bio, postCount, followerCount, followingCount, isFollowing, isMe
-        case isPrivate, isRequested, canViewPosts, followRequestCount
+        case isPrivate, isRequested, canViewPosts, followRequestCount, badges
     }
 
     /// Tolerant decoder for everything **except** ``user``.
@@ -116,6 +118,7 @@ public struct Profile: Equatable, Sendable, Decodable, Identifiable {
         // A server that predates private accounts never held anything back, so
         // a missing answer is the answer that server would have given.
         canViewPosts = (try? container.decode(Bool.self, forKey: .canViewPosts)) ?? true
+        badges = RecognitionBadge.parse((try? container.decode([String].self, forKey: .badges)) ?? [])
         followRequestCount = me
             ? ((try? container.decodeIfPresent(Int.self, forKey: .followRequestCount)) ?? nil).map { max(0, $0) }
             : nil
