@@ -46,6 +46,9 @@ public struct PostDetailScreen: View {
     ///   - analytics: Event sink for the reply composer.
     ///   - onCompose: Opens the composer sheet for a quote, or for a reply to a
     ///     post other than the focused one. `nil` falls back to the stub toast.
+    ///   - guidelines: The community guidelines, read before a first post —
+    ///     the reply bar's text and voice replies pass the same gate as the
+    ///     composer's.
     public init(
         viewModel: PostDetailViewModel,
         onOpenPost: @escaping @MainActor (Post) -> Void,
@@ -61,7 +64,8 @@ public struct PostDetailScreen: View {
         onCompose: (@MainActor (ComposerContext) -> Void)? = nil,
         onOpenHashtag: (@MainActor (String) -> Void)? = nil,
         onOpenRoom: (@MainActor (RoomCard) -> Void)? = nil,
-        voiceService: VoiceServiceProtocol? = nil
+        voiceService: VoiceServiceProtocol? = nil,
+        guidelines: GuidelinesGate? = nil
     ) {
         self.viewModel = viewModel
         self.onOpenPost = onOpenPost
@@ -74,20 +78,39 @@ public struct PostDetailScreen: View {
         self.safetyMenu = safetyMenu
         self.ownPost = ownPost
 
-        guard let composerService else {
-            self._replyViewModel = State(initialValue: nil)
-            return
-        }
-        self._replyViewModel = State(
-            initialValue: ComposerViewModel(
-                context: .reply(to: viewModel.post),
-                author: author,
-                composer: composerService,
-                search: searchService,
-                analytics: analytics,
-                voice: voiceService,
-                onPosted: { [weak viewModel] posted in viewModel?.insert(replies: posted) }
-            )
+        self._replyViewModel = State(initialValue: Self.replyComposer(
+            for: viewModel,
+            composerService: composerService,
+            searchService: searchService,
+            author: author,
+            analytics: analytics,
+            voiceService: voiceService,
+            guidelines: guidelines
+        ))
+    }
+
+    /// The reply bar's composer, or `nil` for the Phase-3 stub bar. Built
+    /// here rather than inline so the wiring — the guidelines gate above
+    /// all — can be checked without a view.
+    static func replyComposer(
+        for viewModel: PostDetailViewModel,
+        composerService: ComposerServiceProtocol?,
+        searchService: SearchServiceProtocol?,
+        author: ComposerAuthor,
+        analytics: AnalyticsClient,
+        voiceService: VoiceServiceProtocol?,
+        guidelines: GuidelinesGate?
+    ) -> ComposerViewModel? {
+        guard let composerService else { return nil }
+        return ComposerViewModel(
+            context: .reply(to: viewModel.post),
+            author: author,
+            composer: composerService,
+            search: searchService,
+            analytics: analytics,
+            voice: voiceService,
+            guidelines: guidelines,
+            onPosted: { [weak viewModel] posted in viewModel?.insert(replies: posted) }
         )
     }
 

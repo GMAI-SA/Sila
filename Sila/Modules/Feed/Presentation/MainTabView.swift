@@ -401,6 +401,9 @@ public struct MainTabView: View {
         // and told again if the account is swapped.
         .task(id: container.session.user?.handle) {
             deletion.setViewer(handle: container.session.user?.handle)
+            // The reply bar reads the gate without building a composer, so it
+            // is told the account's guidelines versions here, once.
+            _ = guidelinesGateForComposer()
         }
         // Same idea for a deletion: the post leaves both shared lists and any
         // detail screen open on it, rather than lingering until a refresh.
@@ -1450,7 +1453,10 @@ public struct MainTabView: View {
                 onCompose: composeHandler,
                 onOpenHashtag: openHashtag,
                 onOpenRoom: openRoomCard,
-                voiceService: container.flags.voicePosts && container.flags.composer ? container.voiceService : nil
+                voiceService: container.flags.voicePosts && container.flags.composer ? container.voiceService : nil,
+                // A voice clip from the reply bar is a first post like any
+                // other: the guidelines come first here too.
+                guidelines: container.flags.composer ? container.guidelinesGate : nil
             )
         }
         .id(post.id)

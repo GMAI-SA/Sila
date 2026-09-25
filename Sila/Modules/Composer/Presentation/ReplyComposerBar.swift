@@ -140,6 +140,16 @@ public struct ReplyComposerBar: View {
                     .offset(y: -44)
             }
         }
+        // The composer's gate, for the bar's replies — a voice clip included:
+        // the guidelines are read before a first post, wherever it is posted.
+        .sheet(isPresented: $viewModel.isShowingGuidelines) {
+            if let gate = viewModel.guidelines {
+                GuidelinesSheet(gate: gate, onAccept: {
+                    viewModel.isShowingGuidelines = false
+                    Task { await viewModel.post() }
+                }, onClose: { viewModel.isShowingGuidelines = false })
+            }
+        }
         .sheet(isPresented: $viewModel.isShowingRecorder) {
             if let voice = viewModel.voice {
                 Owned({
