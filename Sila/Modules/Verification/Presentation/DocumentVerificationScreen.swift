@@ -621,16 +621,27 @@ private struct DocumentUploadBar: View {
             guard let item else { return }
             picked = nil
             Task {
-                guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+                // An iCloud original that will not download comes back as
+                // nothing: said, rather than a tap that did nothing.
+                guard let data = try? await item.loadTransferable(type: Data.self) else {
+                    viewModel.importFailed()
+                    return
+                }
                 await viewModel.importDocument(data, isPDF: false, source: .photos)
             }
         }
         .fileImporter(isPresented: $isChoosingFile, allowedContentTypes: DocumentImport.fileTypes) { result in
-            guard case let .success(url) = result else { return }
+            guard case let .success(url) = result else {
+                viewModel.importFailed()
+                return
+            }
             let scoped = url.startAccessingSecurityScopedResource()
             let data = try? Data(contentsOf: url)
             if scoped { url.stopAccessingSecurityScopedResource() }
-            guard let data else { return }
+            guard let data else {
+                viewModel.importFailed()
+                return
+            }
             let isPDF = url.pathExtension.lowercased() == "pdf" || DocumentImport.looksLikePDF(data)
             Task { await viewModel.importDocument(data, isPDF: isPDF, source: .file) }
         }

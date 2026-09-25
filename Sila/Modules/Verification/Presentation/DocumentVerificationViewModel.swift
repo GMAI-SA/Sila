@@ -291,9 +291,10 @@ public final class DocumentVerificationViewModel {
     /// the camera's JPEG and — on the front — read for the zone exactly as a
     /// photo would be, so expiry, nationality and birthdate are checked the
     /// same way, through the same `acceptFront`. A zoneless front goes to a
-    /// reviewer exactly as a zoneless photo does — except a passport, whose
-    /// photo page always has a zone: not reading one there means the scan is
-    /// unclear, and it is refused with the choice of another file or the camera.
+    /// reviewer exactly as a zoneless photo does, passports included: the
+    /// review step says the zone could not be read and offers another try,
+    /// as it does for the camera. Refusing an upload the camera would have
+    /// let through made the passport camera-only whenever the reader missed.
     public func importDocument(_ data: Data, isPDF: Bool? = nil, source: DocumentSource) async {
         guard phase == .captureFront || phase == .captureBack, !isImporting else { return }
         isImporting = true
@@ -310,13 +311,16 @@ public final class DocumentVerificationViewModel {
             return
         }
         let text = await zoneReader(jpeg)
-        let readable = text.flatMap { MRZParser.parseRepairing($0) }?.isValid == true
-        if !readable, documentType?.zoneOnFront == true {
-            importError = L10n.t("document.upload.error.noZone")
-            return
-        }
         frontSource = source
         acceptFront(jpeg: jpeg, recognisedText: text)
+    }
+
+    /// The picker or the file browser handed back nothing readable — an
+    /// iCloud photo that would not download, a file that would not open.
+    /// Said on the capture screen rather than swallowed.
+    public func importFailed() {
+        guard phase == .captureFront || phase == .captureBack else { return }
+        importError = L10n.t("document.upload.error.unreadableFile")
     }
 
     /// The camera took over again on this side.

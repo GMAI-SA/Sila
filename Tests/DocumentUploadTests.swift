@@ -67,13 +67,20 @@ final class DocumentUploadTests: XCTestCase {
         XCTAssertEqual(viewModel.documentSource, .file)
     }
 
-    func testNoReadableZoneOnAPassportIsSaidAndTheScreenStays() async {
+    /// A passport whose zone the reader missed goes on exactly as the same
+    /// photo from the camera would: to the review step, which says the zone
+    /// could not be read and offers another try, and then to a reviewer.
+    /// Refusing it here made the passport camera-only whenever the reader missed.
+    func testAPassportWhoseZoneWasNotReadGoesToReviewLikeAPhoto() async {
         let (viewModel, _) = make(zone: nil)
         viewModel.choose(.passport)
         await viewModel.importDocument(image(), source: .photos)
-        XCTAssertEqual(viewModel.phase, .captureFront)
-        XCTAssertEqual(viewModel.importError, L10n.t("document.upload.error.noZone"))
-        XCTAssertNil(viewModel.frontImage)
+        XCTAssertNil(viewModel.importError)
+        XCTAssertEqual(viewModel.phase, .review)
+        XCTAssertNotNil(viewModel.frontImage)
+        XCTAssertFalse(viewModel.zoneIsReadable)
+        XCTAssertTrue(viewModel.canContinueFromReview, "a reviewer reads it by hand")
+        XCTAssertEqual(viewModel.documentSource, .photos)
     }
 
     /// Every Saudi ID card has no zone: a zoneless card goes to a reviewer,
@@ -90,12 +97,43 @@ final class DocumentUploadTests: XCTestCase {
         XCTAssertTrue(viewModel.canContinueFromReview, "a reviewer reads it by hand")
     }
 
-    func testAZonelessPassportUploadIsRefusedWithTheSentence() async {
+    /// Every side of every document takes a photo from Photos or a file —
+    /// the front, the back, the passport's one page — and only the face
+    /// stays live.
+    func testEverySideOfEveryDocumentCanBeUploaded() async {
+        for type in DocumentType.allCases {
+            for source in [DocumentSource.photos, .file] {
+                let (viewModel, _) = make(zone: nil)
+                viewModel.choose(type)
+                await viewModel.importDocument(image(), source: source)
+                XCTAssertNil(viewModel.importError, "\(type) front from \(source)")
+                if type.hasBack {
+                    XCTAssertEqual(viewModel.phase, .captureBack, "\(type) front from \(source)")
+                    await viewModel.importDocument(pdf(), isPDF: true, source: source)
+                    XCTAssertNil(viewModel.importError, "\(type) back from \(source)")
+                    XCTAssertNotNil(viewModel.backImage, "\(type) back from \(source)")
+                }
+                XCTAssertEqual(viewModel.phase, .review, "\(type) from \(source)")
+                XCTAssertEqual(viewModel.documentSource, source)
+                viewModel.confirmDetails()
+                XCTAssertEqual(viewModel.phase, .liveness, "\(type) from \(source) reaches the live face check")
+            }
+        }
+    }
+
+    /// The picker or the browser that hands back nothing is said on the
+    /// screen, on either side — never a tap that did nothing.
+    func testAPickThatBringsNothingIsSaid() async {
         let (viewModel, _) = make(zone: nil)
-        viewModel.choose(.passport)
-        await viewModel.importDocument(image(), source: .file)
+        viewModel.choose(.nationalId)
+        viewModel.importFailed()
+        XCTAssertEqual(viewModel.importError, L10n.t("document.upload.error.unreadableFile"))
         XCTAssertEqual(viewModel.phase, .captureFront)
-        XCTAssertEqual(viewModel.importError, L10n.t("document.upload.error.noZone"))
+        await viewModel.importDocument(image(), source: .photos)
+        XCTAssertNil(viewModel.importError)
+        viewModel.importFailed()
+        XCTAssertEqual(viewModel.importError, L10n.t("document.upload.error.unreadableFile"))
+        XCTAssertEqual(viewModel.phase, .captureBack)
     }
 
     func testAPDFIDCardProceeds() async {

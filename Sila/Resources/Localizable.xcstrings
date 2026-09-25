@@ -12926,23 +12926,6 @@
         }
       }
     },
-    "document.upload.error.noZone": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعذّرت قراءة الأسطر أسفل هذه الوثيقة — جرّب مسحًا أوضح أو التقط صورة."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We couldn't read the lines at the bottom of this document — try a clearer scan or take a photo."
-          }
-        }
-      }
-    },
     "document.upload.error.unreadableFile": {
       "extractionState": "manual",
       "localizations": {
