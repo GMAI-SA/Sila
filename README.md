@@ -397,6 +397,20 @@ production list with nobody in it. It does not remove anybody from a room: a
 removal needs a second real account and leaves a per-room ban this contract has
 no endpoint to lift.
 
+`LiveVerificationPolishTests` (contract v25) needs no live account: each run
+registers a disposable `itest-ios-…@example.com` account through the dev routes
+the backend's integration suite uses, whose purge removes it. The dev routes
+answer only on the host's loopback, so they go through a tunnel while the app's
+own calls go to the public API. It submits flat colour swatches — nothing of a
+person — withdraws them (so nothing waits in the moderators' queue), and opts
+one account into the pre-screen to watch it turn a swatch away:
+
+```bash
+ssh -N -L 18100:127.0.0.1:8100 ubuntu@<host> &
+TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_DEV_API=http://127.0.0.1:18100/api/v1 \
+xcodebuild ... test -only-testing:SilaTests/LiveVerificationPolishTests
+```
+
 ## Layout
 
 ```
