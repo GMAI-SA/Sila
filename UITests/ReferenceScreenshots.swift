@@ -349,7 +349,9 @@ final class ReferenceScreenshots: XCTestCase {
         _ = byId(app, "preferences.topic.technology").waitForExistence(timeout: 10)
         for topic in ["technology", "science", "travel"] {
             let tile = byId(app, "preferences.topic.\(topic)")
-            if tile.exists && tile.isHittable { tile.tap(); settle(0.3) }
+            // The identifier sits on the tile's container, which XCUI reports
+            // as not hittable; a centre tap lands on the tile's own button.
+            if tile.exists { tile.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).tap(); settle(0.4) }
         }
         shot("09-onboarding-subjects", "Onboarding step 1 of 2: subject tiles, three selected (technology, science, travel).")
 
@@ -445,6 +447,18 @@ final class ReferenceScreenshots: XCTestCase {
         _ = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'composer.starter.'"))
             .firstMatch.waitForExistence(timeout: 8)
         shot("16-composer-empty", "Composer, empty new post: starter chips, audience picker, attachments (keyboard up).", settleFor: 1.5)
+
+        // 14a: the voice recorder, idle. No mock post carries a voice clip, so
+        // this is the nearest voice surface the mocks reach.
+        if tap(app, id: "composer.addVoice", timeout: 8),
+           byId(app, "voice.record").waitForExistence(timeout: 10) {
+            shot("14a-voice-recorder", "Voice recorder sheet (from the composer's mic button), idle: kind chips, prompt, level bars, record button, promise.", settleFor: 1.5)
+            let cancel = app.navigationBars.buttons[L("common.cancel")]
+            if cancel.exists { cancel.tap() } else { app.swipeDown() }
+            settle(1.2)
+        } else {
+            skip("14a-voice-recorder", "composer mic button or recorder sheet not reachable")
+        }
 
         if tap(app, id: "composer.addPoll", timeout: 8),
            byId(app, "composer.poll.option.0").waitForExistence(timeout: 8) {
@@ -677,5 +691,12 @@ final class ReferenceScreenshots: XCTestCase {
         } else {
             skip("40-guidelines", "the report sheet shows no 'Read the community guidelines' link (guidelinesGate is nil in the sheet's environment) and the composer gate never triggers for the mock user")
         }
+    }
+
+    // MARK: - 13–14 Post cards no mock serves
+
+    func test16_UnreachablePostCards() {
+        skip("13-post-card-poll", "no feed/hashtag/community/saved mock post carries a poll (DiscoverServiceMock.pollPost exists but nothing serves it; ComposerServiceMock.createPost drops the poll); see 17 for the poll editor")
+        skip("14-post-card-voice", "no mock post carries a voice clip, and ComposerServiceMock.createPost drops voiceClipId; see 14a for the recorder")
     }
 }
