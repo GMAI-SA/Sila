@@ -328,6 +328,10 @@ public enum APIErrorCode: String, Sendable, Equatable {
 
     /// Nafath is not open yet ("coming soon"): verify with a document (HTTP 503).
     case nafathUnavailable = "nafath_unavailable"
+    // MARK: Contract v25 — withdrawing a document submission
+    /// Nothing is waiting to be withdrawn: never sent, already withdrawn, or
+    /// already decided — by a moderator or the pre-screen (HTTP 409).
+    case nothingToWithdraw = "nothing_to_withdraw"
 
     /// Anything the client does not recognise.
     case unknown
@@ -598,6 +602,8 @@ public enum APIError: Error, Equatable, Sendable {
             case .invalidQuietHours: return L10n.t("notifications.quiet.error")
             case .nafathUnavailable:
                 return L10n.t("error.nafathUnavailable")
+            case .nothingToWithdraw:
+                return L10n.t("error.nothingToWithdraw")
             case .unknownReaction: return L10n.t("reaction.error.unknown")
             case .ownPost: return L10n.t("reaction.error.ownPost")
             case .tooManyCohosts: return L10n.t("rooms.cohosts.error.tooMany")

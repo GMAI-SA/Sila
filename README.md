@@ -284,8 +284,9 @@ taxonomy, is a second thing to go stale.
 -mockAuth -mockScenario pendingReview
 -mockFeedScenario unverifiedNoCountry
 ```
-`AuthServiceMock` ships 9 scenarios covering every verification-wall state plus
-`emailUnverified`, `invalidCredentials`, `otpAlwaysInvalid` and `offline`.
+`AuthServiceMock` ships 10 scenarios covering every verification-wall state plus
+`screenedOut` (a rejection by the document pre-screen), `emailUnverified`,
+`invalidCredentials`, `otpAlwaysInvalid` and `offline`.
 
 `FeedServiceMock` ships 5: `populated`, `empty`, `unverifiedNoCountry` (the
 409 `no_country` explainer on My Country), `offline` and `paginationExhausted`

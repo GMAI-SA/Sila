@@ -24,6 +24,9 @@ public actor AuthServiceMock: AuthServiceProtocol {
         case verified
         /// Declined, with a reason.
         case rejected
+        /// Turned away by the document pre-screen (contract v25):
+        /// `not_a_document`, with both claims on file.
+        case screenedOut
         /// `/auth/login` answers 403 `email_unverified`, forcing the OTP screen.
         case emailUnverified
         /// `/auth/login` answers 401 `invalid_credentials`.
@@ -39,17 +42,22 @@ public actor AuthServiceMock: AuthServiceProtocol {
             case .inProgress: return .inProgress
             case .pendingReview: return .pendingReview
             case .verified: return .verified
-            case .rejected: return .rejected
+            case .rejected, .screenedOut: return .rejected
             default: return .unstarted
             }
         }
 
         /// Rejection copy surfaced on the rejected screen.
         var rejectionReason: String? {
-            self == .rejected
-                ? "The photo of your ID was too blurry for our reviewers to read the document number."
-                : nil
+            switch self {
+            case .rejected: return "The photo of your ID was too blurry for our reviewers to read the document number."
+            case .screenedOut: return "not_a_document"
+            default: return nil
+            }
         }
+
+        /// Somebody who has sent a document has declared both claims first.
+        var hasSubmitted: Bool { self == .pendingReview || self == .screenedOut }
     }
 
     /// The scenario currently being played.
@@ -221,8 +229,13 @@ public actor AuthServiceMock: AuthServiceProtocol {
             status: scenario.verificationStatus,
             rejectionReason: scenario.rejectionReason,
             submittedAt: scenario.verificationStatus == .unstarted ? nil : Date().addingTimeInterval(-7200),
-            reviewedAt: scenario == .rejected || scenario == .verified ? Date().addingTimeInterval(-600) : nil,
-            nafathAvailable: nafathAvailable
+            reviewedAt: scenario.verificationStatus == .rejected || scenario == .verified
+                ? Date().addingTimeInterval(-600) : nil,
+            nationality: scenario.hasSubmitted ? "US" : nil,
+            dateOfBirth: scenario.hasSubmitted ? "1990-01-01" : nil,
+            nafathAvailable: nafathAvailable,
+            // A submission waiting for review can be taken back (contract v25).
+            canWithdraw: scenario == .pendingReview
         )
     }
 

@@ -129,6 +129,20 @@ public final class VerificationService: VerificationServiceProtocol {
         return VerificationAppealReceipt(id: decoded.id, status: decoded.status, submittedAt: decoded.submittedAt ?? Date())
     }
 
+    public func withdrawDocument() async throws -> VerificationStatusReport {
+        let token = try await tokens.accessToken()
+        let request = APIRequest(path: "/verification/document/withdraw", method: .post, accessToken: token)
+        do {
+            let report = try await network.send(request, as: VerificationStatusReport.self)
+            analytics.track(.documentWithdrawn)
+            return report
+        } catch {
+            let code = (error as? APIError)?.code?.rawValue ?? "transport"
+            analytics.track(.documentWithdrawRefused, properties: ["code": code])
+            throw error
+        }
+    }
+
     public func latestDocumentCase() async throws -> DocumentCase? {
         let token = try await tokens.accessToken()
         let request = APIRequest(path: "/verification/document", accessToken: token)

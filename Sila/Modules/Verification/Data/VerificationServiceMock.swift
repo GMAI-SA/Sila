@@ -17,7 +17,9 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         /// Document: submitted, then the latest case reads `approved`.
         case approved
         /// Nafath: pending, then rejected with a reason.
-        /// Document: submitted, then the latest case reads `rejected`.
+        /// Document: submitted, then the latest case reads `rejected` — and
+        /// before any submission, an ID card the pre-screen turned away.
+        /// Withdrawing finds it decided (409 `nothing_to_withdraw`).
         case rejected
         /// Nafath: pending forever — the request expires.
         /// Document: submitted, and stays under review.
@@ -273,15 +275,58 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
                 verificationStatus: .pendingReview
             )
             submitted = documentCase
+            withdrawn = false
             return documentCase
         }
+    }
+
+    // MARK: - Taking it back
+
+    /// Set once a submission has been withdrawn, until the next one.
+    private var withdrawn = false
+
+    /// Succeeds once per submission. A mocked session starts at
+    /// `pending_review` without this mock having seen the submission, so one
+    /// is assumed waiting — except in ``MockScenario/rejected`` and
+    /// ``MockScenario/alreadyVerified``, where it was decided first (the
+    /// pre-screen answers within a minute), and after it was withdrawn.
+    public func withdrawDocument() async throws -> VerificationStatusReport {
+        record("withdrawDocument")
+        try await delay()
+        try failIfOffline()
+        if withdrawn || scenario == .rejected || scenario == .alreadyVerified {
+            throw APIError.api(code: .nothingToWithdraw, message: "There is no submission waiting for review", status: 409)
+        }
+        withdrawn = true
+        submitted = nil
+        // Nothing is sent before both claims, so the answer carries them even
+        // when this mock never heard them — as the server's would.
+        return VerificationStatusReport(
+            status: .unstarted,
+            nationality: declared ?? "US",
+            dateOfBirth: declaredDay ?? "1990-01-01",
+            canWithdraw: false
+        )
     }
 
     public func latestDocumentCase() async throws -> DocumentCase? {
         record("latestDocumentCase")
         try await delay()
         try failIfOffline()
-        guard let submitted else { return nil }
+        guard let submitted else {
+            // A mocked session can start rejected without this mock having
+            // seen the submission: the pre-screen turned an ID card away.
+            guard scenario == .rejected else { return nil }
+            return DocumentCase(
+                id: "mock-case-screened",
+                status: .rejected,
+                documentType: DocumentType.nationalId.wireValue,
+                submittedAt: Date().addingTimeInterval(-600),
+                reviewedAt: Date().addingTimeInterval(-540),
+                rejectionReason: "not_a_document",
+                verificationStatus: .rejected
+            )
+        }
 
         switch scenario {
         case .approved:

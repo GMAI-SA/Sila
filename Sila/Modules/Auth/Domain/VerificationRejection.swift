@@ -8,6 +8,18 @@ import Foundation
 /// language they wrote it.
 public enum VerificationRejection {
 
+    /// The document pre-screen's four closed reasons (contract v25), in the
+    /// order the server lets them win. The model on the host can only say no,
+    /// and only when the pictures were unusable: each is fixed by sending
+    /// better ones, so the way on is the camera again, not another route.
+    public static let screeningReasons = ["not_a_document", "not_genuine", "unreadable_document", "no_face"]
+
+    /// Every reason this build translates.
+    private static let machineReasons = Set([
+        "nationality_mismatch", "document_expired", "date_of_birth_mismatch", "under_minimum_age",
+        "verification_revoked"
+    ] + screeningReasons)
+
     /// The sentence to show for `reason`, or `nil` when there is nothing.
     public static func display(_ reason: String?) -> String? {
         guard let reason = reason?.trimmingCharacters(in: .whitespacesAndNewlines), !reason.isEmpty else {
@@ -16,8 +28,13 @@ public enum VerificationRejection {
         switch reason {
         case "nationality_mismatch": return L10n.t("auth.rejected.reason.nationalityMismatch")
         case "document_expired": return L10n.t("auth.rejected.reason.documentExpired")
+        case "date_of_birth_mismatch": return L10n.t("auth.rejected.reason.dateOfBirthMismatch")
         case "under_minimum_age": return L10n.t("auth.rejected.reason.underMinimumAge")
         case "verification_revoked": return L10n.t("auth.rejected.reason.verificationRevoked")
+        case "not_a_document": return L10n.t("auth.rejected.reason.notADocument")
+        case "unreadable_document": return L10n.t("auth.rejected.reason.unreadableDocument")
+        case "not_genuine": return L10n.t("auth.rejected.reason.notGenuine")
+        case "no_face": return L10n.t("auth.rejected.reason.noFace")
         default: return reason
         }
     }
@@ -27,10 +44,16 @@ public enum VerificationRejection {
         reason == "verification_revoked"
     }
 
+    /// Turned away by the pre-screen: the pictures could not be used, and new
+    /// ones are the answer.
+    public static func isScreening(_ reason: String?) -> Bool {
+        screeningReasons.contains(reason ?? "")
+    }
+
     /// Whether `reason` is one of the machine reasons rather than a
     /// reviewer's words — decides whether the text follows the interface
     /// language or its own.
     public static func isMachineReason(_ reason: String?) -> Bool {
-        ["nationality_mismatch", "document_expired", "under_minimum_age", "verification_revoked"].contains(reason ?? "")
+        machineReasons.contains(reason ?? "")
     }
 }

@@ -83,7 +83,10 @@ public struct WallPresentation: Equatable, Sendable {
 
 /// Drives ``PendingVerificationWallScreen``.
 ///
-/// Polls `/verification/status` on appear and on pull-to-refresh. The Nafath
+/// Reads `/verification/status` on appear and on pull-to-refresh, and — while
+/// a submission is under review — every few seconds for a few minutes: the
+/// pre-screen answers within a minute, and a person who just submitted should
+/// not have to pull to hear that the photo was of the wrong thing. The Nafath
 /// flow itself is presented by the screen; ``startVerification()`` remains as
 /// the verification kill switch's honest off state.
 @MainActor
@@ -98,22 +101,43 @@ public final class VerificationWallViewModel {
     public private(set) var isRefreshing = false
     /// Banner message.
     public var toast: SLToastMessage?
+    /// The in-place "are you sure" before a withdrawal.
+    public var isConfirmingWithdrawal = false
+    public private(set) var isWithdrawing = false
+    /// Set while the document flow on screen is the pre-screen's retake: its
+    /// camera opens on this document, and cancelling goes back to the
+    /// rejected screen.
+    public var retake: DocumentRetake?
 
     private let service: AuthServiceProtocol
+    private let verification: VerificationServiceProtocol?
     private let analytics: AnalyticsClient
+    private let onDecision: (@MainActor () async -> Void)?
+    /// Waits between reads while under review. Injectable so tests do not.
+    var pause: (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
 
     /// - Parameters:
     ///   - status: Status known at construction time (from the session).
     ///   - service: Auth backend.
+    ///   - verification: Where a waiting submission is withdrawn. `nil` never
+    ///     offers the withdrawal.
     ///   - analytics: Event sink.
+    ///   - onDecision: A submission under review was rejected while the wall
+    ///     watched — by a moderator or the pre-screen. The session re-routes
+    ///     to the rejected screen, which carries the reason, the retake and
+    ///     the appeal; the wall has none of those to offer.
     public init(
         status: VerificationStatus,
         service: AuthServiceProtocol,
-        analytics: AnalyticsClient
+        verification: VerificationServiceProtocol? = nil,
+        analytics: AnalyticsClient,
+        onDecision: (@MainActor () async -> Void)? = nil
     ) {
         self.status = status
         self.service = service
+        self.verification = verification
         self.analytics = analytics
+        self.onDecision = onDecision
     }
 
     /// How the current status should render.
@@ -151,6 +175,10 @@ public final class VerificationWallViewModel {
     /// The birthdate the person declared, as `YYYY-MM-DD`, or `nil`.
     public var declaredDateOfBirth: String? { report?.dateOfBirth }
 
+    /// Offer "Withdraw and start again" — exactly while the server says a
+    /// submission waits for review (contract v25).
+    public var canWithdraw: Bool { verification != nil && report?.canWithdraw == true }
+
     /// Takes a report another call produced (declaring the nationality
     /// answers with one) so the wall reflects it without a second round trip.
     public func adopt(_ report: VerificationStatusReport) {
@@ -159,19 +187,70 @@ public final class VerificationWallViewModel {
     }
 
     /// Fetches `/verification/status`.
-    public func refresh() async {
+    /// - Parameter quietly: A background read says nothing when it fails;
+    ///   the next one, or the person's own pull, will.
+    public func refresh(quietly: Bool = false) async {
         guard !isRefreshing else { return }
         isRefreshing = true
-        defer { isRefreshing = false }
-
+        let waited = status == .pendingReview
+        var decided = false
         do {
             let report = try await service.verificationStatus()
             self.report = report
             self.status = report.status
+            decided = waited && report.status == .rejected
         } catch let error as APIError {
-            toast = .error(error.userMessage)
+            if !quietly && !error.isCancellation { toast = .error(error.userMessage) }
         } catch {
-            toast = .error(L10n.t("auth.wall.error.statusCheckFailed"))
+            if !quietly { toast = .error(L10n.t("auth.wall.error.statusCheckFailed")) }
+        }
+        isRefreshing = false
+        if decided, let onDecision {
+            analytics.track(.verificationWallShown, properties: ["status": "decided_while_waiting"])
+            await onDecision()
+        }
+    }
+
+    /// Reads the status every `interval` while it is `pending_review`, at most
+    /// `attempts` times, and stops at the first answer or when the screen
+    /// goes (the task is cancelled). Most decisions a person waits for here
+    /// are the pre-screen's, within a minute; after a few minutes the pull
+    /// and "Check status" are there.
+    public func watchForDecision(every interval: Duration = .seconds(10), attempts: Int = 18) async {
+        for _ in 0..<attempts {
+            guard status == .pendingReview else { return }
+            do { try await pause(interval) } catch { return }
+            guard !Task.isCancelled, status == .pendingReview else { return }
+            await refresh(quietly: true)
+        }
+    }
+
+    /// Takes back the submission waiting for review (contract v25), after the
+    /// in-place confirmation. On ``WithdrawalOutcome/withdrawn(_:)`` the wall
+    /// is back at the start and the caller opens the methods again.
+    public func withdraw() async -> WithdrawalOutcome {
+        guard let verification, canWithdraw, !isWithdrawing else { return .failed }
+        isWithdrawing = true
+        defer { isWithdrawing = false }
+        do {
+            let report = try await verification.withdrawDocument()
+            adopt(report)
+            isConfirmingWithdrawal = false
+            return .withdrawn(report)
+        } catch let error as APIError where error.code == .nothingToWithdraw {
+            // Decided — or taken back elsewhere — before this arrived. Said,
+            // and the wall shows where it stands now; a rejection goes on to
+            // the rejected screen.
+            isConfirmingWithdrawal = false
+            toast = .info(error.userMessage)
+            await refresh()
+            return .nothingWaiting
+        } catch let error as APIError {
+            if !error.isCancellation { toast = .error(error.userMessage) }
+            return .failed
+        } catch {
+            toast = .error(L10n.t("common.somethingWentWrong"))
+            return .failed
         }
     }
 

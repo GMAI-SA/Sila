@@ -365,6 +365,10 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     /// with a passport or ID card. Missing from an older server → `false`,
     /// the safe reading.
     public let nafathAvailable: Bool
+    /// A document submission is waiting for review and may be taken back
+    /// (contract v25) — the wall offers "Withdraw and start again" exactly
+    /// while this is true. Missing from an older server → `false`.
+    public let canWithdraw: Bool
 
     public init(
         status: VerificationStatus,
@@ -374,7 +378,8 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         nationality: String? = nil,
         appeal: VerificationAppealReceipt? = nil,
         dateOfBirth: String? = nil,
-        nafathAvailable: Bool = false
+        nafathAvailable: Bool = false,
+        canWithdraw: Bool = false
     ) {
         self.status = status
         self.rejectionReason = rejectionReason
@@ -384,10 +389,11 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         self.appeal = appeal
         self.dateOfBirth = dateOfBirth
         self.nafathAvailable = nafathAvailable
+        self.canWithdraw = canWithdraw
     }
 
     private enum CodingKeys: String, CodingKey {
-        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth, methods
+        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth, methods, canWithdraw
     }
 
     private struct Methods: Decodable {
@@ -405,6 +411,7 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         dateOfBirth = ISODay.normalised((try? container.decodeIfPresent(String.self, forKey: .dateOfBirth)) ?? nil)
         let methods = (try? container.decodeIfPresent(Methods.self, forKey: .methods)) ?? nil
         nafathAvailable = methods?.nafath == "available"
+        canWithdraw = (try? container.decodeIfPresent(Bool.self, forKey: .canWithdraw)) ?? false
     }
 }
 

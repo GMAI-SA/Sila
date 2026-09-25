@@ -5553,6 +5553,24 @@
         }
       }
     },
+    "auth.rejected.reason.dateOfBirthMismatch": {
+      "comment": "Rejection reason `date_of_birth_mismatch`, as the decision email words it.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تاريخ الميلاد في الهوية التي قدّمتها لا يطابق تاريخ الميلاد الذي أدخلته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The date of birth on the identity you presented does not match the date of birth you entered."
+          }
+        }
+      }
+    },
     "auth.rejected.reason.documentExpired": {
       "comment": "Rejection reason: expired document or Iqama.",
       "extractionState": "manual",
@@ -5607,6 +5625,60 @@
         }
       }
     },
+    "auth.rejected.reason.noFace": {
+      "comment": "Rejection reason `no_face` from the document pre-screen (contract v25). The server's decision-email sentence, word for word.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صورتك الذاتية لا تُظهر وجهاً. التقطها مرة أخرى وأنت تنظر إلى الكاميرا، وأرسلها مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your selfie does not show a face. Take the selfie again, looking at the camera, and submit again."
+          }
+        }
+      }
+    },
+    "auth.rejected.reason.notADocument": {
+      "comment": "Rejection reason `not_a_document` from the document pre-screen (contract v25). The server's decision-email sentence, word for word.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الصورة التي أرسلتها على أنها وثيقة الهوية لا تُظهر وثيقة هوية. صوّر الوثيقة نفسها — صفحة الصورة في جوازك أو بطاقة هويتك — وأرسلها مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The picture you sent as your identity document does not show an identity document. Photograph the document itself — your passport's photo page or your ID card — and submit again."
+          }
+        }
+      }
+    },
+    "auth.rejected.reason.notGenuine": {
+      "comment": "Rejection reason `not_genuine` from the document pre-screen (contract v25). The server's decision-email sentence, word for word.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوثيقة التي أرسلتها ليست وثيقة هوية حقيقية — بل نموذج أو عيّنة أو لقطة شاشة أو رسم. صوّر وثيقتك أنت وأرسلها مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document you sent is not a genuine identity document — it is a specimen, a sample, a screenshot or a drawing. Photograph your own document and submit again."
+          }
+        }
+      }
+    },
     "auth.rejected.reason.underMinimumAge": {
       "comment": "Rejection reason: under the minimum age.",
       "extractionState": "manual",
@@ -5621,6 +5693,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "The identity you presented is under the minimum age for Sila."
+          }
+        }
+      }
+    },
+    "auth.rejected.reason.unreadableDocument": {
+      "comment": "Rejection reason `unreadable_document` from the document pre-screen (contract v25). The server's decision-email sentence, word for word.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّرت قراءة وثيقة هويتك: الصورة مشوشة أو مظلمة أو مقصوصة. صوّرها مرة أخرى في إضاءة جيدة، مسطّحة وكاملة، وأرسلها مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your identity document could not be read: the picture is too blurred, dark or cropped. Photograph it again in good light, flat and whole, and submit again."
           }
         }
       }
@@ -5661,6 +5751,42 @@
         }
       }
     },
+    "auth.rejected.retake": {
+      "comment": "Button on the rejected screen after a pre-screen rejection: straight back to the document camera and upload.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حاول مرة أخرى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "auth.rejected.retake.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح الكاميرا لتصوير وثيقتك أو رفعها من جديد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the camera to photograph or upload your document again"
+          }
+        }
+      }
+    },
     "auth.rejected.revoked.message": {
       "comment": "Body when a moderator withdrew the badge.",
       "extractionState": "manual",
@@ -5693,6 +5819,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verification withdrawn"
+          }
+        }
+      }
+    },
+    "auth.rejected.screened.message": {
+      "comment": "Body of the rejected screen after an automatic pre-screen rejection. The images are deleted with every decision (contract v25).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ردّ فحصٌ آلي هذا الطلب قبل أن يطّلع عليه أي مراجع، وحُذفت صوره. أرسله مرة أخرى بصور جديدة — أو قدّم تظلّمًا إن رأيت أن الفحص أخطأ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An automatic check turned this submission away before a reviewer saw it, and its photos have been deleted. Send it again with new photos — or appeal if you think the check got it wrong."
+          }
+        }
+      }
+    },
+    "auth.rejected.screened.title": {
+      "comment": "Title of the rejected screen when the automatic document pre-screen turned the submission away.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر علينا استخدام صورك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't use your photos"
           }
         }
       }
@@ -11942,6 +12104,42 @@
         }
       }
     },
+    "document.changeDocument": {
+      "comment": "Ghost button under the front capture: back to the choice of passport, ID card or residence permit.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر وثيقة أخرى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a different document"
+          }
+        }
+      }
+    },
+    "document.changeDocument.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعود إلى قائمة الوثائق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goes back to the list of documents"
+          }
+        }
+      }
+    },
     "document.expired.title": {
       "comment": "Headline of the expired-document screen.",
       "extractionState": "manual",
@@ -14680,6 +14878,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "They're not on the stage."
+          }
+        }
+      }
+    },
+    "error.nothingToWithdraw": {
+      "comment": "409 nothing_to_withdraw: the submission was decided (or withdrawn) before the withdrawal arrived.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يعد هناك طلب بانتظار المراجعة — ربما صدر فيه قرار بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's no submission waiting for review any more — it may already have been decided."
           }
         }
       }
@@ -40366,6 +40582,132 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open the Nafath app"
+          }
+        }
+      }
+    },
+    "verification.withdraw.action": {
+      "comment": "Button on the verification wall and the under-review screen while a document submission waits for review (contract v25).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب الطلب وابدأ من جديد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw and start again"
+          }
+        }
+      }
+    },
+    "verification.withdraw.action.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يطلب تأكيدك قبل سحب أي شيء"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks you to confirm before anything is withdrawn"
+          }
+        }
+      }
+    },
+    "verification.withdraw.confirm.button": {
+      "comment": "Destructive button that withdraws the submission.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب الطلب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw"
+          }
+        }
+      }
+    },
+    "verification.withdraw.confirm.button.hint": {
+      "comment": "Accessibility hint.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسحب الطلب ويحذف صوره"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraws the submission and deletes its photos"
+          }
+        }
+      }
+    },
+    "verification.withdraw.confirm.message": {
+      "comment": "What withdrawing does: the case is closed, its images deleted, and the next reviewer sees the withdrawn attempt in the history (contract v25).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لن يراجعه أحد، وستُحذف صوره الآن. يمكنك إرسال طلب جديد فورًا، وسيرى مراجع طلبك التالي أن هذا الطلب قد سُحب."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody will review it, and its photos are deleted now. You can send a new one straight away; the reviewer of your next submission will see that this one was withdrawn."
+          }
+        }
+      }
+    },
+    "verification.withdraw.confirm.title": {
+      "comment": "Heading of the in-place confirmation before a submission is withdrawn.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد سحب طلبك؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw your submission?"
+          }
+        }
+      }
+    },
+    "verification.withdraw.keep": {
+      "comment": "Dismisses the withdrawal confirmation and leaves the submission waiting.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أبقِه قيد المراجعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep it under review"
           }
         }
       }

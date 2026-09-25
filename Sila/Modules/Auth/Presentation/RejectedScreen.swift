@@ -13,6 +13,11 @@ import SwiftUI
 /// *rejection* may be tried again by the other route. A *withdrawn badge*
 /// (`verification_revoked`) may only be appealed: re-running Nafath around a
 /// moderator's decision is not a way back, so the button is not offered.
+///
+/// A rejection by the document pre-screen (contract v25) is about the
+/// pictures, not the person: it says so, and "Try again" goes straight back
+/// to the camera and the upload — the appeal stays, in case the check was
+/// wrong.
 @MainActor
 public struct RejectedScreen: View {
 
@@ -21,6 +26,7 @@ public struct RejectedScreen: View {
     private let analytics: AnalyticsClient
     private let onAppeal: ((String) async throws -> VerificationAppealReceipt)?
     private let onTryAgain: (() -> Void)?
+    private let onRetake: (() async -> Void)?
     private let onSignOut: () -> Void
 
     @State private var showsForm = false
@@ -39,6 +45,9 @@ public struct RejectedScreen: View {
     ///     the other route — a document rejected for a blurry photograph is
     ///     not a verdict on the person. `nil` hides the button; so does a
     ///     withdrawn badge.
+    ///   - onRetake: Opens the document flow again at the camera. Offered in
+    ///     place of ``onTryAgain`` when the pre-screen turned the pictures
+    ///     away; `nil` falls back to ``onTryAgain``.
     ///   - onSignOut: Ends the session.
     public init(
         reason: String?,
@@ -46,6 +55,7 @@ public struct RejectedScreen: View {
         analytics: AnalyticsClient,
         onAppeal: ((String) async throws -> VerificationAppealReceipt)? = nil,
         onTryAgain: (() -> Void)? = nil,
+        onRetake: (() async -> Void)? = nil,
         onSignOut: @escaping () -> Void
     ) {
         self.reason = reason
@@ -53,10 +63,25 @@ public struct RejectedScreen: View {
         self.analytics = analytics
         self.onAppeal = onAppeal
         self.onTryAgain = onTryAgain
+        self.onRetake = onRetake
         self.onSignOut = onSignOut
     }
 
     private var isRevocation: Bool { VerificationRejection.isRevocation(reason) }
+    /// The pre-screen's no, with somewhere to go: straight back to the camera.
+    private var retake: (() async -> Void)? {
+        VerificationRejection.isScreening(reason) ? onRetake : nil
+    }
+
+    private var headline: String {
+        if isRevocation { return L10n.t("auth.rejected.revoked.title") }
+        return L10n.t(retake == nil ? "auth.rejected.title" : "auth.rejected.screened.title")
+    }
+
+    private var explanation: String {
+        if isRevocation { return L10n.t("auth.rejected.revoked.message") }
+        return L10n.t(retake == nil ? "auth.rejected.message" : "auth.rejected.screened.message")
+    }
 
     /// The appeal to show: the one just sent, else the one the server knew about.
     private var receipt: VerificationAppealReceipt? { sent ?? appealOnFile }
@@ -89,12 +114,12 @@ public struct RejectedScreen: View {
                 VStack(spacing: SLSpacing.sm) {
                     SLBadge(L10n.t("auth.wall.badge.rejected"), style: .danger)
 
-                    Text(L10n.t(isRevocation ? "auth.rejected.revoked.title" : "auth.rejected.title"))
+                    Text(headline)
                         .font(SLFont.displayL)
                         .foregroundStyle(SLColor.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text(L10n.t(isRevocation ? "auth.rejected.revoked.message" : "auth.rejected.message"))
+                    Text(explanation)
                         .font(SLFont.bodyLight)
                         .foregroundStyle(SLColor.textSecondary)
                         .multilineTextAlignment(.center)
@@ -138,7 +163,16 @@ public struct RejectedScreen: View {
                 }
 
                 VStack(spacing: SLSpacing.md) {
-                    if let onTryAgain, !isRevocation {
+                    if let retake {
+                        SLButton(
+                            L10n.t("auth.rejected.retake"),
+                            variant: .primary,
+                            icon: "camera",
+                            accessibilityHint: L10n.t("auth.rejected.retake.hint"),
+                            asyncAction: retake
+                        )
+                        .accessibilityIdentifier("rejected.retake")
+                    } else if let onTryAgain, !isRevocation {
                         SLButton(
                             L10n.t("auth.rejected.tryAgain"),
                             variant: .primary,
@@ -151,7 +185,7 @@ public struct RejectedScreen: View {
                     if receipt == nil, !showsForm, onAppeal != nil {
                         SLButton(
                             L10n.t("auth.rejected.appeal"),
-                            variant: (onTryAgain == nil || isRevocation) ? .primary : .secondary,
+                            variant: ((onTryAgain == nil && retake == nil) || isRevocation) ? .primary : .secondary,
                             icon: "text.bubble",
                             accessibilityHint: L10n.t("auth.rejected.appeal.hint")
                         ) {
@@ -274,6 +308,17 @@ public struct RejectedScreen: View {
         reason: "The photo of your ID was too blurry for our reviewers to read the document number.",
         analytics: RecordingAnalyticsClient(),
         onAppeal: { _ in VerificationAppealReceipt(status: .pending, submittedAt: Date()) },
+        onSignOut: {}
+    )
+}
+
+#Preview("RejectedScreen — pre-screen") {
+    RejectedScreen(
+        reason: "unreadable_document",
+        analytics: RecordingAnalyticsClient(),
+        onAppeal: { _ in VerificationAppealReceipt(status: .pending, submittedAt: Date()) },
+        onTryAgain: {},
+        onRetake: {},
         onSignOut: {}
     )
 }

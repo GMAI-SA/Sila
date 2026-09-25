@@ -76,6 +76,17 @@ public protocol VerificationServiceProtocol: Sendable {
     /// been one.
     func latestDocumentCase() async throws -> DocumentCase?
 
+    /// Takes back the submission still waiting for review, so a corrected
+    /// one can be sent (contract v25, `POST /verification/document/withdraw`).
+    ///
+    /// Offered exactly while ``VerificationStatusReport/canWithdraw`` is true.
+    /// - Returns: The status afterwards — `unstarted`, nothing to withdraw;
+    ///   the wall offers the methods again.
+    /// - Throws: ``APIError`` with ``APIErrorCode/nothingToWithdraw`` (409)
+    ///   when nothing is waiting: it was already withdrawn, or decided — by a
+    ///   moderator or the pre-screen — before this arrived.
+    func withdrawDocument() async throws -> VerificationStatusReport
+
     // MARK: Contesting a decision
 
     /// Appeals the decision that closed the account, `POST /verification/appeal`.

@@ -199,6 +199,38 @@ public struct DocumentSubmission: Equatable, Sendable {
     }
 }
 
+// MARK: - Taking a submission back
+
+/// What became of a request to withdraw the submission waiting for review
+/// (contract v25).
+public enum WithdrawalOutcome: Equatable, Sendable {
+    /// It went. The status afterwards — `unstarted`, the methods on offer
+    /// again.
+    case withdrawn(VerificationStatusReport)
+    /// Nothing was waiting any more: a moderator or the pre-screen decided it
+    /// first, or it was already taken back. `GET /verification/status` says
+    /// which.
+    case nothingWaiting
+    /// Refused for another reason, or never arrived; the screen has said so.
+    case failed
+}
+
+/// Straight back to the camera after the pre-screen turned a submission away:
+/// the flow opens on the capture step of the document used last, when it is
+/// known, and on the document choice otherwise.
+public struct DocumentRetake: Equatable, Sendable {
+    public let documentType: DocumentType?
+
+    public init(documentType: DocumentType?) {
+        self.documentType = documentType
+    }
+
+    /// The document a case was about, when it is one this build offers.
+    public init(latest: DocumentCase?) {
+        self.documentType = latest.flatMap { DocumentType(rawValue: $0.documentType) }
+    }
+}
+
 // MARK: - What comes back
 
 /// Where a submission stands.

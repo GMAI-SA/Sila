@@ -120,7 +120,8 @@ public struct RootView: View {
                     verification: container.flags.verification ? container.verificationService : nil,
                     analytics: container.analytics,
                     onSignOut: { Task { await container.session.signOut() } },
-                    onVerified: { await container.session.refreshUser() }
+                    onVerified: { await container.session.refreshUser() },
+                    retake: container.session.documentRetake
                 )
                 .transition(.opacity)
 
@@ -133,6 +134,13 @@ public struct RootView: View {
                         try await container.verificationService.appealVerification(message: message)
                     },
                     onTryAgain: { container.session.retryVerification() },
+                    onRetake: container.flags.verification ? {
+                        // The camera for the document used last, when the
+                        // server still says which; the choice otherwise.
+                        let latest = try? await container.verificationService.latestDocumentCase()
+                        container.analytics.track(.verificationStarted, properties: ["status": "retake"])
+                        container.session.retryVerification(retaking: DocumentRetake(latest: latest))
+                    } : nil,
                     onSignOut: { Task { await container.session.signOut() } }
                 )
                 .transition(.opacity)

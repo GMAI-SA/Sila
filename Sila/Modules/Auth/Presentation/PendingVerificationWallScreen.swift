@@ -21,6 +21,11 @@ public struct PendingVerificationWallScreen: View {
     @State private var reopenPickerAfterChoosing = false
     @State private var pendingRoute: VerificationRoute?
     @State private var route: VerificationRoute?
+    /// Opens the first step again once the cover has gone — after a
+    /// submission was withdrawn from the under-review screen.
+    @State private var startAfterCover = false
+    /// The pre-screen's retake, not yet opened. Taken once, on appear.
+    @State private var pendingRetake: DocumentRetake?
     private let verification: VerificationServiceProtocol?
     private let analytics: AnalyticsClient
     private let onSignOut: () -> Void
@@ -39,20 +44,27 @@ public struct PendingVerificationWallScreen: View {
     ///   - onSignOut: Ends the session.
     ///   - onVerified: Refreshes the session after a flow finishes — the
     ///     account's `verification_status` (and, on approval, `country_code`)
-    ///     changed, and this is what moves the wall on.
+    ///     changed, and this is what moves the wall on. Also how a rejection
+    ///     that arrives while the wall watches reaches the rejected screen.
+    ///   - retake: Opens the document flow at once, at the camera, instead of
+    ///     offering the routes — the pre-screen turned the last pictures away.
     public init(
         status: VerificationStatus,
         service: AuthServiceProtocol,
         verification: VerificationServiceProtocol? = nil,
         analytics: AnalyticsClient,
         onSignOut: @escaping () -> Void,
-        onVerified: (() async -> Void)? = nil
+        onVerified: (() async -> Void)? = nil,
+        retake: DocumentRetake? = nil
     ) {
         _viewModel = State(initialValue: VerificationWallViewModel(
             status: status,
             service: service,
-            analytics: analytics
+            verification: verification,
+            analytics: analytics,
+            onDecision: onVerified
         ))
+        _pendingRetake = State(initialValue: verification == nil ? nil : retake)
         self.verification = verification
         self.analytics = analytics
         self.onSignOut = onSignOut
@@ -129,7 +141,15 @@ public struct PendingVerificationWallScreen: View {
         .task {
             await viewModel.refresh()
             startProcessingAnimation()
+            if let retake = pendingRetake {
+                pendingRetake = nil
+                viewModel.retake = retake
+                route = .document
+            }
         }
+        // Restarted whenever the status changes, so a submission sent from
+        // this wall is watched as closely as one the wall opened on.
+        .task(id: viewModel.status) { await viewModel.watchForDecision() }
         // The claim comes first. Once it is saved the chooser opens — after
         // this sheet has gone, for the same reason as below.
         .sheet(isPresented: $isPickingNationality, onDismiss: {
@@ -181,12 +201,16 @@ public struct PendingVerificationWallScreen: View {
             .presentationDragIndicator(.hidden)
         }
         .fullScreenCover(item: $route, onDismiss: {
+            viewModel.retake = nil
             if let next = pendingRoute {
                 pendingRoute = nil
                 route = next
             } else if chooseAfterCover {
                 chooseAfterCover = false
                 isChoosingMethod = true
+            } else if startAfterCover {
+                startAfterCover = false
+                beginVerification()
             }
         }) { chosen in
             if let verification {
@@ -224,7 +248,11 @@ public struct PendingVerificationWallScreen: View {
                             service: verification,
                             analytics: analytics,
                             declaredDateOfBirth: viewModel.declaredDateOfBirth,
-                            nafathAvailable: viewModel.nafathAvailable
+                            nafathAvailable: viewModel.nafathAvailable,
+                            // Read from the model, not from view state: a
+                            // cover's content built in the same update as the
+                            // state it reads can see the value from before it.
+                            documentType: viewModel.retake?.documentType
                         ),
                         onSubmitted: {
                             route = nil
@@ -248,9 +276,25 @@ public struct PendingVerificationWallScreen: View {
                             }
                             route = nil
                         },
-                        onClose: {
+                        onWithdrawn: { report in
+                            // Taken back from the under-review screen: the
+                            // wall is at the start again, and so is the person.
+                            viewModel.adopt(report)
+                            startAfterCover = true
                             route = nil
-                            Task { await viewModel.refresh() }
+                        },
+                        onClose: {
+                            let wasRetake = viewModel.retake != nil
+                            route = nil
+                            // A retake left unfinished goes back to where it
+                            // came from — the reason, and the appeal.
+                            Task {
+                                if wasRetake {
+                                    await refreshAfterFlow()
+                                } else {
+                                    await viewModel.refresh()
+                                }
+                            }
                         }
                     )
                 }
@@ -287,14 +331,14 @@ public struct PendingVerificationWallScreen: View {
         }
     }
 
-    /// Refreshes the session when the host gave us a way to, and the local
-    /// wall otherwise.
+    /// Refreshes the session when the host gave us a way to, then the wall
+    /// itself: a new status on the same route (rejected, then under review
+    /// again) keeps this screen and its state, so it has to re-read too.
     private func refreshAfterFlow() async {
         if let onVerified {
             await onVerified()
-        } else {
-            await viewModel.refresh()
         }
+        await viewModel.refresh()
     }
 
     // MARK: - Pieces
@@ -331,6 +375,18 @@ public struct PendingVerificationWallScreen: View {
                     accessibilityHint: L10n.t("auth.wall.startVerification.hint")
                 ) {
                     primaryAction()
+                }
+            }
+
+            if viewModel.canWithdraw {
+                WithdrawSubmissionControl(
+                    isConfirming: $viewModel.isConfirmingWithdrawal,
+                    isWithdrawing: viewModel.isWithdrawing
+                ) {
+                    // Back to the method choice, to send it again.
+                    if case .withdrawn = await viewModel.withdraw() {
+                        beginVerification()
+                    }
                 }
             }
 
@@ -373,16 +429,22 @@ public struct PendingVerificationWallScreen: View {
                 return
             }
             analytics.track(.verificationStarted, properties: ["status": viewModel.status.rawValue])
-            // No claim yet: ask for it first. The chooser follows on its own —
-            // unless the claim is Saudi, whose one door is Nafath.
-            // An already-declared Saudi went straight into Nafath even while
-            // it was "coming soon"; the rule is now one function for every door.
-            switch VerificationWallViewModel.startStep(declared: viewModel.declaredNationality,
-                                                      nafathAvailable: viewModel.nafathAvailable) {
-            case .pickNationality: isPickingNationality = true
-            case .nafath: route = .nafath
-            case .chooseMethod: isChoosingMethod = true
-            }
+            beginVerification()
+        }
+    }
+
+    /// Opens the first step: the nationality when there is no claim yet (the
+    /// chooser follows on its own), Nafath for a Saudi claim while Nafath is
+    /// live, the method chooser otherwise. An already-declared Saudi once
+    /// went straight into Nafath even while it was "coming soon"; the rule is
+    /// now one function for every door.
+    private func beginVerification() {
+        guard verification != nil else { return }
+        switch VerificationWallViewModel.startStep(declared: viewModel.declaredNationality,
+                                                  nafathAvailable: viewModel.nafathAvailable) {
+        case .pickNationality: isPickingNationality = true
+        case .nafath: route = .nafath
+        case .chooseMethod: isChoosingMethod = true
         }
     }
 
@@ -392,7 +454,8 @@ public struct PendingVerificationWallScreen: View {
             viewModel.presentation.title,
             viewModel.presentation.message
         ]
-        if let reason = viewModel.rejectionReason { parts.append(reason) }
+        // The sentence, never the code: `not_a_document` is not something to read aloud.
+        if let reason = VerificationRejection.display(viewModel.rejectionReason) { parts.append(reason) }
         return parts.joined(separator: ". ")
     }
 

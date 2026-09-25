@@ -92,6 +92,12 @@ public final class DocumentVerificationViewModel {
     public private(set) var isImporting = false
     /// Why a chosen photo or file was not accepted, on the capture screen.
     public private(set) var importError: String?
+    /// The submission can still be taken back: it was accepted by this flow,
+    /// or the server said one is already waiting (contract v25).
+    public private(set) var canWithdraw = false
+    /// The in-place "are you sure" before a withdrawal.
+    public var isConfirmingWithdrawal = false
+    public private(set) var isWithdrawing = false
     /// Reads the zone off a JPEG. Injectable so tests need no Vision.
     var zoneReader: @Sendable (Data) async -> String? = { jpeg in
         DocumentTextReader.zone(from: await DocumentTextReader.lines(in: jpeg))
@@ -112,12 +118,16 @@ public final class DocumentVerificationViewModel {
     ///   - analytics: Event sink. Nothing tracked here carries document data.
     ///   - declaredDateOfBirth: The claim already on file, from the wall's
     ///     status report. When present the birthdate step is skipped.
+    ///   - documentType: The document to photograph again, when the pre-screen
+    ///     turned the last one away: the flow opens on its camera. Only with a
+    ///     birthdate on file — the claim still comes first.
     ///   - now: Clock, injectable so "expired" is testable.
     public init(
         service: VerificationServiceProtocol,
         analytics: AnalyticsClient,
         declaredDateOfBirth: String? = nil,
         nafathAvailable: Bool = false,
+        documentType: DocumentType? = nil,
         now: @escaping @Sendable () -> Date = Date.init
     ) {
         self.nafathAvailable = nafathAvailable
@@ -127,7 +137,12 @@ public final class DocumentVerificationViewModel {
         self.analytics = analytics
         self.now = now
         self.declaredDateOfBirth = declared
-        self.phase = declared == nil ? .birthdate : .chooseDocument
+        if declared != nil, let documentType {
+            self.documentType = documentType
+            self.phase = .captureFront
+        } else {
+            self.phase = declared == nil ? .birthdate : .chooseDocument
+        }
         self.birthdateSelection = ISODay.date(declared ?? "")
             ?? calendar.date(byAdding: .year, value: -25, to: now()) ?? now()
     }
@@ -252,6 +267,19 @@ public final class DocumentVerificationViewModel {
         documentType = type
         phase = .captureFront
         analytics.track(.documentVerificationStarted, properties: ["document_type": type.wireValue])
+    }
+
+    /// Back from the first camera to the document choice — a retake opens on
+    /// the document used last, and that may have been the mistake.
+    public func changeDocument() {
+        guard phase == .captureFront else { return }
+        documentType = nil
+        frontSource = .camera
+        backSource = .camera
+        importError = nil
+        releaseImages()
+        mrz = nil
+        phase = .chooseDocument
     }
 
     /// Accepts the front photo and whatever text the camera recognised on it.
@@ -387,6 +415,7 @@ public final class DocumentVerificationViewModel {
         do {
             submittedCase = try await service.submitDocument(sent)
             releaseImages()
+            canWithdraw = submittedCase?.status == .submitted
             phase = .submitted
         } catch let error as APIError {
             handleSubmitFailure(error)
@@ -409,6 +438,35 @@ public final class DocumentVerificationViewModel {
         phase = declaredDateOfBirth == nil ? .birthdate : .chooseDocument
     }
 
+    /// Takes the submission back so a corrected one can be sent (contract
+    /// v25). Asked from the under-review screen, after the in-place
+    /// confirmation; the caller goes back to the method choice on
+    /// ``WithdrawalOutcome/withdrawn(_:)``.
+    public func withdraw() async -> WithdrawalOutcome {
+        guard canWithdraw, !isWithdrawing else { return .failed }
+        isWithdrawing = true
+        defer { isWithdrawing = false }
+        do {
+            let report = try await service.withdrawDocument()
+            canWithdraw = false
+            isConfirmingWithdrawal = false
+            submittedCase = nil
+            return .withdrawn(report)
+        } catch let error as APIError where error.code == .nothingToWithdraw {
+            // Decided first — the pre-screen answers within a minute — or
+            // already taken back. Where it stands is the wall's to show.
+            canWithdraw = false
+            isConfirmingWithdrawal = false
+            return .nothingWaiting
+        } catch let error as APIError {
+            if !error.isCancellation { toast = .error(error.userMessage) }
+            return .failed
+        } catch {
+            toast = .error(L10n.t("common.somethingWentWrong"))
+            return .failed
+        }
+    }
+
     // MARK: - Internals
 
     private func releaseImages() {
@@ -421,8 +479,14 @@ public final class DocumentVerificationViewModel {
 
     private func handleSubmitFailure(_ error: APIError) {
         switch error.code {
-        case .alreadyVerified, .reviewPending:
+        case .alreadyVerified:
             releaseImages()
+            phase = .submitted
+        case .reviewPending:
+            // One is already waiting — sent from another device, say: this
+            // screen is the place to take that one back and start again.
+            releaseImages()
+            canWithdraw = true
             phase = .submitted
         case .identityAlreadyUsed:
             releaseImages()

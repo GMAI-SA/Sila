@@ -42,6 +42,10 @@ public final class AuthSession {
     public private(set) var verificationReport: VerificationStatusReport?
     /// Where the app should be right now.
     public private(set) var route: SessionRoute = .splash
+    /// Set by ``retryVerification(retaking:)`` for the one wall that call
+    /// opens: back into the document flow at once, at the camera, after the
+    /// pre-screen turned a submission away. Every other route clears it.
+    public private(set) var documentRetake: DocumentRetake?
     /// `true` while a session-level network call is in flight.
     public private(set) var isBusy = false
     /// What a guest was reaching for when they were invited to join, so the
@@ -212,6 +216,7 @@ public final class AuthSession {
         try? await service.signOut()
         user = nil
         verificationReport = nil
+        documentRetake = nil
         route = .unauthenticated
     }
 
@@ -251,12 +256,18 @@ public final class AuthSession {
     /// verification route. The status on the server is still `rejected`;
     /// only the screen changes, and the next refresh routes on whatever the
     /// new attempt produced.
-    public func retryVerification() {
+    ///
+    /// - Parameter retake: After a rejection by the pre-screen, the wall opens
+    ///   the document flow straight away instead of offering the routes —
+    ///   new pictures are the answer, not another door.
+    public func retryVerification(retaking retake: DocumentRetake? = nil) {
+        documentRetake = retake
         route = .verificationWall(.rejected)
-        analytics.track(.verificationWallShown, properties: ["status": "rejected_retry"])
+        analytics.track(.verificationWallShown, properties: ["status": retake == nil ? "rejected_retry" : "rejected_retake"])
     }
 
     private func applyRoute(for status: VerificationStatus, reason: String?) {
+        documentRetake = nil
         switch status {
         case .verified:
             route = .feed

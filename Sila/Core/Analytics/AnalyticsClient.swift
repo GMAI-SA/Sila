@@ -79,6 +79,11 @@ public enum AnalyticsEvent: String, Sendable {
     /// A document image was chosen instead of photographed. Carries `source`
     /// (photos | file) and `step` (front | back) — never the image.
     case documentUploaded = "document_uploaded"
+    /// The person took back a submission still waiting for review.
+    case documentWithdrawn = "document_withdrawn"
+    /// The withdrawal was refused. Carries `code` — the structured error
+    /// code only.
+    case documentWithdrawRefused = "document_withdraw_refused"
 
     // MARK: Settings
 

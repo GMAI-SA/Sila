@@ -528,6 +528,7 @@ private actor DateOfBirthMismatchService: VerificationServiceProtocol {
     func startNafath(nationalID: String) async throws -> NafathStart { try await backing.startNafath(nationalID: nationalID) }
     func pollNafath(requestID: String) async throws -> NafathPoll { try await backing.pollNafath(requestID: requestID) }
     func latestDocumentCase() async throws -> DocumentCase? { try await backing.latestDocumentCase() }
+    func withdrawDocument() async throws -> VerificationStatusReport { try await backing.withdrawDocument() }
     func appealVerification(message: String) async throws -> VerificationAppealReceipt { try await backing.appealVerification(message: message) }
     func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase {
         throw APIError.api(code: .dateOfBirthMismatch, message: "The date of birth on this document does not match the date of birth you entered", status: 403)

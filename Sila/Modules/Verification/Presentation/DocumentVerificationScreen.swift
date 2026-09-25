@@ -20,6 +20,7 @@ public struct DocumentVerificationScreen: View {
     private let onSubmitted: () -> Void
     private let onSignInInstead: (() -> Void)?
     private let onUseNafath: (() -> Void)?
+    private let onWithdrawn: ((VerificationStatusReport) -> Void)?
     private let onClose: () -> Void
 
     /// - Parameters:
@@ -31,18 +32,23 @@ public struct DocumentVerificationScreen: View {
     ///   - onUseNafath: Closes this flow and opens the Nafath one — for a
     ///     Saudi document, which this route does not take. `nil` hides the
     ///     button and leaves only Cancel.
+    ///   - onWithdrawn: The submission was taken back from the under-review
+    ///     screen; the caller closes this flow and offers the methods again,
+    ///     with the status the withdrawal answered. `nil` hides the action.
     ///   - onClose: Dismisses the flow without finishing it.
     public init(
         viewModel: DocumentVerificationViewModel,
         onSubmitted: @escaping () -> Void,
         onSignInInstead: (() -> Void)? = nil,
         onUseNafath: (() -> Void)? = nil,
+        onWithdrawn: ((VerificationStatusReport) -> Void)? = nil,
         onClose: @escaping () -> Void
     ) {
         _viewModel = State(initialValue: viewModel)
         self.onSubmitted = onSubmitted
         self.onSignInInstead = onSignInInstead
         self.onUseNafath = onUseNafath
+        self.onWithdrawn = onWithdrawn
         self.onClose = onClose
     }
 
@@ -100,6 +106,15 @@ public struct DocumentVerificationScreen: View {
                 }
                 .id("front")
                 DocumentUploadBar(viewModel: viewModel)
+                SLButton(
+                    L10n.t("document.changeDocument"),
+                    variant: .ghost,
+                    size: .compact,
+                    accessibilityHint: L10n.t("document.changeDocument.hint")
+                ) {
+                    viewModel.changeDocument()
+                }
+                .accessibilityIdentifier("document.changeDocument")
             }
         case .captureBack:
             VStack(spacing: SLSpacing.md) {
@@ -430,6 +445,21 @@ public struct DocumentVerificationScreen: View {
                 accessibilityHint: L10n.t("document.submitted.continue.hint"),
                 action: onSubmitted
             )
+            if viewModel.canWithdraw, let onWithdrawn {
+                // A wrong photo, the wrong document: taken back and sent
+                // again, until somebody decides it.
+                WithdrawSubmissionControl(
+                    isConfirming: $viewModel.isConfirmingWithdrawal,
+                    isWithdrawing: viewModel.isWithdrawing
+                ) {
+                    switch await viewModel.withdraw() {
+                    case let .withdrawn(report): onWithdrawn(report)
+                    // Decided before it arrived: the wall shows how.
+                    case .nothingWaiting: onSubmitted()
+                    case .failed: break
+                    }
+                }
+            }
         }
         .padding(.horizontal, SLSpacing.lg)
         .padding(.top, SLSpacing.xl)
