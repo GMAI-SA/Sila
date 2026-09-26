@@ -177,6 +177,7 @@ public struct VouchClaimScreen: View {
                     Text(voucher.atHandle)
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
+                        .slContentDirection(.leftToRight)
                     if voucher.isVerified, let since = voucher.verifiedSince {
                         Text(L10n.t("profile.verifiedSince", SLFormat.monthAndYear(since)))
                             .font(SLFont.micro)

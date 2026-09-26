@@ -344,6 +344,7 @@ public struct CommunityScreen: View {
                                 .font(SLFont.micro)
                                 .foregroundStyle(SLColor.textMuted)
                                 .lineLimit(1)
+                                .slContentDirection(.leftToRight)
                             if member.role.isAdmin {
                                 SLBadge(member.role.title, style: .neutral)
                             }

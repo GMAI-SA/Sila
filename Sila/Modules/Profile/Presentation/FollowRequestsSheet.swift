@@ -81,6 +81,7 @@ public struct FollowRequestsSheet: View {
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textSecondary)
                     .lineLimit(1)
+                    .slContentDirection(.leftToRight)
             }
 
             Spacer(minLength: 0)

@@ -428,6 +428,7 @@ public struct PostCardView: View {
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
                         .lineLimit(1)
+                        .slContentDirection(.leftToRight)
 
                     Text("·")
                         .font(SLFont.caption)

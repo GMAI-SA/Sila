@@ -265,6 +265,7 @@ public struct GroupsSheet: View {
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
                         .lineLimit(1)
+                        .slContentDirection(.leftToRight)
                     Spacer(minLength: 0)
                     Button {
                         remove(person.handle)
@@ -301,6 +302,7 @@ public struct GroupsSheet: View {
                             .font(SLFont.micro)
                             .foregroundStyle(SLColor.textMuted)
                             .lineLimit(1)
+                            .slContentDirection(.leftToRight)
                     }
                     Spacer(minLength: 0)
                     if editable {

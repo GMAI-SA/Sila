@@ -209,6 +209,7 @@ struct QuestionQueueView: View {
                     .slContentDirection(TextDirection.resolve(languageCode: nil, text: question.text))
                 if let author = question.author {
                     Text(author.atHandle).font(SLFont.micro).foregroundStyle(SLColor.textMuted)
+                        .slContentDirection(.leftToRight)
                 }
             }
             Spacer(minLength: 0)
@@ -389,6 +390,7 @@ public struct RoomDepthSheet: View {
             HStack {
                 Text(user.displayName).font(SLFont.body)
                 Text(user.atHandle).font(SLFont.micro).foregroundStyle(SLColor.textMuted)
+                    .slContentDirection(.leftToRight)
                 Spacer(minLength: 0)
                 Button(L10n.t("rooms.cohosts.remove"), role: .destructive) { Task { await viewModel.removeCohost(user.handle) } }
                     .font(SLFont.caption)

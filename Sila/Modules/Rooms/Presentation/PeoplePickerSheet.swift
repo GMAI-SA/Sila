@@ -140,6 +140,7 @@ public struct PeoplePickerSheet: View {
                             .font(SLFont.micro)
                             .foregroundStyle(SLColor.textMuted)
                             .lineLimit(1)
+                            .slContentDirection(.leftToRight)
                         SLCountryBadge(countryCode: person.countryCode)
                     }
                 }

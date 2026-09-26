@@ -19255,7 +19255,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أُزيل @%@"
+            "value": "أُزيل ⁦@%@⁩"
           }
         },
         "en": {
@@ -34254,7 +34254,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لم يعد بإمكان @%@ الانضمام."
+            "value": "لم يعد بإمكان ⁦@%@⁩ الانضمام."
           }
         },
         "en": {

@@ -87,6 +87,7 @@ struct RoomParticipantSheet: View {
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
                         .lineLimit(1)
+                        .slContentDirection(.leftToRight)
                     SLCountryBadge(countryCode: participant.user.countryCode)
                 }
                 Text(roleLine)

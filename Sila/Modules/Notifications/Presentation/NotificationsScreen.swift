@@ -297,6 +297,7 @@ public struct NotificationsScreen: View {
                             .font(SLFont.micro)
                             .foregroundStyle(SLColor.textMuted)
                             .lineLimit(1)
+                            .slContentDirection(.leftToRight)
                     }
                 }
 

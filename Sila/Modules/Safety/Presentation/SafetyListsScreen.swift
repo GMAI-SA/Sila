@@ -225,6 +225,7 @@ public struct SafetyListsScreen: View {
                                 .font(SLFont.caption)
                                 .foregroundStyle(SLColor.textSecondary)
                                 .lineLimit(1)
+                                .slContentDirection(.leftToRight)
                         }
                     }
                     .contentShape(Rectangle())

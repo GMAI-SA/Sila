@@ -187,6 +187,7 @@ public struct ConversationsScreen: View {
                             .foregroundStyle(SLColor.textMuted)
                             .lineLimit(1)
                             .layoutPriority(-1)
+                            .slContentDirection(.leftToRight)
 
                         Spacer(minLength: 0)
 

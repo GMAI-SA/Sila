@@ -436,6 +436,7 @@ public struct CreateRoomSheet: View {
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
                         .lineLimit(1)
+                        .slContentDirection(.leftToRight)
                     Spacer(minLength: 0)
                     Button {
                         viewModel.removeGuest(guest.handle)

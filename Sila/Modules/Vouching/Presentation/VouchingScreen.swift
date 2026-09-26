@@ -346,9 +346,12 @@ public struct VouchingScreen: View {
                 .foregroundStyle(vouch.status == .graduated ? SLColor.secondary : SLColor.textMuted)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
+                // Handles are Latin: pinned, so the "@" stays in front of the
+                // name in an Arabic row.
                 Text(vouch.atVouchee)
                     .font(SLFont.body)
                     .foregroundStyle(SLColor.textPrimary)
+                    .slContentDirection(.leftToRight)
                 Text(VouchCopy.endReason(vouch.endReason))
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textSecondary)
@@ -381,6 +384,7 @@ public struct VouchingScreen: View {
                     Text(person.atHandle)
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
+                        .slContentDirection(.leftToRight)
                 }
             } else {
                 Text(L10n.t("vouch.list.gone", vouch.voucheeHandle))

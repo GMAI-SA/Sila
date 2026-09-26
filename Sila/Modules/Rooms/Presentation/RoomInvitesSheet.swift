@@ -144,6 +144,7 @@ public struct RoomInvitesSheet: View {
                                 .font(SLFont.caption)
                                 .foregroundStyle(SLColor.textSecondary)
                                 .lineLimit(1)
+                                .slContentDirection(.leftToRight)
                         }
                         Spacer(minLength: 0)
                         Button(L10n.t("rooms.invites.revoke")) {

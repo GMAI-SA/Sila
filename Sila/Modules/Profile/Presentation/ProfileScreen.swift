@@ -543,6 +543,7 @@ public struct ProfileScreen: View {
                             .font(SLFont.mono)
                             .foregroundStyle(SLColor.textSecondary)
                             .lineLimit(1)
+                            .slContentDirection(.leftToRight)
 
                         // The country flag is drawn only for a verified
                         // account. `country_code` is written by the
