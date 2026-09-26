@@ -35,6 +35,11 @@ public actor AuthServiceMock: AuthServiceProtocol {
         case otpAlwaysInvalid
         /// Every call fails with a transport error.
         case offline
+        /// Not verified, but @noura vouches for them (contract v24): the
+        /// feed, the tag, the limited tier and 23 days on the clock.
+        case vouched
+        /// Claimed @noura's link; waiting for her to confirm it is them.
+        case vouchPending
 
         /// The verification status the mocked user carries.
         var verificationStatus: VerificationStatus {
@@ -76,6 +81,9 @@ public actor AuthServiceMock: AuthServiceProtocol {
 
     private var storedPair: TokenPair?
     private var biometricAccount: String?
+    /// The vouch a mocked claim (or a mocked removal) set, which `/auth/me`
+    /// then reports — the two mocks stay in step, as the server would.
+    private var vouchOverride: (vouch: VouchState?, standing: Standing)?
 
     /// Calls recorded for test assertions.
     public private(set) var recordedCalls: [String] = []
@@ -114,6 +122,11 @@ public actor AuthServiceMock: AuthServiceProtocol {
     /// Switches scenario mid-flight (used by previews and UI test hooks).
     public func setScenario(_ scenario: MockScenario) {
         self.scenario = scenario
+    }
+
+    /// What the mocked vouching service did to this account's own vouch.
+    public func setVouch(_ vouch: VouchState?, standing: Standing) {
+        vouchOverride = (vouch, standing)
     }
 
     // MARK: - AuthServiceProtocol
@@ -218,6 +231,9 @@ public actor AuthServiceMock: AuthServiceProtocol {
         try await delay()
         try failIfOffline()
         guard let pair = storedPair else { throw APIError.unauthenticated }
+        if let vouchOverride {
+            return pair.user.settingVouch(vouchOverride.vouch, standing: vouchOverride.standing)
+        }
         return pair.user
     }
 
@@ -266,25 +282,50 @@ public actor AuthServiceMock: AuthServiceProtocol {
         scenario: MockScenario,
         emailVerified: Bool = false
     ) -> TokenPair {
-        TokenPair(
+        let user = AuthUser(
+            id: UUID(uuidString: "11111111-2222-3333-4444-555555555555") ?? UUID(),
+            email: email,
+            displayName: nil,
+            emailVerified: emailVerified,
+            verificationStatus: scenario.verificationStatus,
+            createdAt: Date().addingTimeInterval(-86_400),
+            handle: "aziz",
+            // Only a verified account carries a country badge, which is what
+            // makes the composer's "My Country" scope appear or not appear
+            // in a mocked run.
+            countryCode: scenario.verificationStatus == .verified ? "SA" : nil
+        )
+        return TokenPair(
             token: AuthToken(
                 accessToken: "mock-access-token",
                 refreshToken: "mock-refresh-token",
                 expiresAt: Date().addingTimeInterval(3600)
             ),
-            user: AuthUser(
-                id: UUID(uuidString: "11111111-2222-3333-4444-555555555555") ?? UUID(),
-                email: email,
-                displayName: nil,
-                emailVerified: emailVerified,
-                verificationStatus: scenario.verificationStatus,
-                createdAt: Date().addingTimeInterval(-86_400),
-                handle: "aziz",
-                // Only a verified account carries a country badge, which is what
-                // makes the composer's "My Country" scope appear or not appear
-                // in a mocked run.
-                countryCode: scenario.verificationStatus == .verified ? "SA" : nil
-            )
+            user: {
+                switch scenario {
+                case .vouched:
+                    return user.settingVouch(mockVouch(pending: false), standing: .vouched)
+                case .vouchPending:
+                    return user.settingVouch(mockVouch(pending: true), standing: .noStanding)
+                default:
+                    return user
+                }
+            }()
+        )
+    }
+
+    /// @noura's vouch: live with 23 days left, or claimed an hour ago.
+    static func mockVouch(pending: Bool) -> VouchState {
+        let now = Date()
+        return VouchState(
+            id: UUID(uuidString: "66666666-0000-4000-8000-0000000000aa")!,
+            status: pending ? .pending : .active,
+            voucher: VouchingServiceMock.voucher,
+            voucherHandle: VouchingServiceMock.voucher.handle,
+            acceptedAt: now.addingTimeInterval(pending ? -3_600 : -86_400 * 8),
+            confirmBy: pending ? now.addingTimeInterval(3_600 * 47) : nil,
+            confirmedAt: pending ? nil : now.addingTimeInterval(-86_400 * 7),
+            expiresAt: pending ? nil : now.addingTimeInterval(86_400 * 23)
         )
     }
 }

@@ -333,6 +333,57 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// already decided — by a moderator or the pre-screen (HTTP 409).
     case nothingToWithdraw = "nothing_to_withdraw"
 
+    // MARK: Contract v24 — vouching
+    /// A vouched account reached something only a verified one may do (HTTP
+    /// 403). Answered with "verify your identity to do this" and the
+    /// verification flow — never with the wall, which is for ``unverified``.
+    case selfVerificationRequired = "self_verification_required"
+    /// Messaging a vouched account, which cannot use messages (HTTP 403).
+    case recipientCannotMessage = "recipient_cannot_message"
+    /// A vouched account's post names more than three people (HTTP 400).
+    case tooManyMentions = "too_many_mentions"
+    /// Making a vouched member a community admin (HTTP 409).
+    case notVerified = "not_verified"
+    /// Minting a link while the server's flag is off (HTTP 403).
+    case vouchingNotOpen = "vouching_not_open"
+    /// Minting refused — a hold or a flag, deliberately one code (HTTP 403).
+    case vouchUnavailable = "vouch_unavailable"
+    case vouchPrivilegeRevoked = "vouch_privilege_revoked"
+    case vouchTooNew = "vouch_too_new"
+    case vouchSlotsFull = "vouch_slots_full"
+    case vouchRateLimited = "vouch_rate_limited"
+    /// A promise left unticked (HTTP 400).
+    case attestationsRequired = "attestations_required"
+    /// Any link that cannot be used — one answer for all of them (HTTP 404).
+    case inviteUnavailable = "invite_unavailable"
+    case inviteNotFound = "invite_not_found"
+    case inviteClaimed = "invite_claimed"
+    case alreadyVouched = "already_vouched"
+    case vouchLifetimeReached = "vouch_lifetime_reached"
+    case vouchTooSoon = "vouch_too_soon"
+    /// An account a verification decision closed (HTTP 403).
+    case vouchNotEligible = "vouch_not_eligible"
+    case vouchNotFound = "vouch_not_found"
+    case notPending = "not_pending"
+    case notLive = "not_live"
+    /// Confirming after the 48 hours (HTTP 410).
+    case confirmWindowPassed = "confirm_window_passed"
+    case voucheeGone = "vouchee_gone"
+    case noSummons = "no_summons"
+    case summonsClosed = "summons_closed"
+    case invalidAction = "invalid_action"
+    /// A detail missing, or one that cannot be right (HTTP 400, §11).
+    case detailsRequired = "details_required"
+    case invalidFullName = "invalid_full_name"
+    /// Under 18: nobody that age can be vouched for (400 minting, 403 claiming).
+    case vouchUnderAge = "vouch_under_age"
+    /// The claim's details differ from the voucher's (HTTP 409). Arrives as
+    /// ``APIError/detailsMismatch(fields:attemptsLeft:message:)``, which
+    /// carries which fields.
+    case detailsMismatch = "details_mismatch"
+    /// The third mismatch closed the link for good (HTTP 409).
+    case inviteClosed = "invite_closed"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -360,10 +411,17 @@ public enum APIError: Error, Equatable, Sendable {
     case unauthenticated
     /// The device refused or failed the biometric prompt.
     case biometricFailed(String)
+    /// `409 details_mismatch` on a vouch claim (contract v24 §11): which of
+    /// the person's own details differ from what the voucher wrote — the
+    /// fields' names only, never the voucher's values — and how many tries
+    /// the link has left. Its own case because ``api(code:message:status:)``
+    /// has nowhere to put the fields.
+    case detailsMismatch(fields: [String], attemptsLeft: Int, message: String)
 
     /// The structured code when one is available.
     public var code: APIErrorCode? {
         if case let .api(code, _, _) = self { return code }
+        if case .detailsMismatch = self { return .detailsMismatch }
         return nil
     }
 
@@ -620,6 +678,37 @@ public enum APIError: Error, Equatable, Sendable {
             case .eventFull: return L10n.t("events.full")
             case .eventOver: return L10n.t("events.error.over")
             case .eventNotShareable: return L10n.t("events.error.notShareable")
+            case .selfVerificationRequired: return L10n.t("vouch.error.selfVerificationRequired")
+            case .recipientCannotMessage: return L10n.t("vouch.error.recipientCannotMessage")
+            case .tooManyMentions: return L10n.t("vouch.error.tooManyMentions")
+            case .notVerified: return L10n.t("vouch.error.notVerified")
+            case .vouchingNotOpen: return L10n.t("vouch.refusal.notOpen")
+            case .vouchUnavailable: return L10n.t("vouch.refusal.unavailable")
+            case .vouchPrivilegeRevoked: return L10n.t("vouch.refusal.revoked")
+            case .vouchTooNew: return L10n.t("vouch.refusal.tooNew.plain", SLFormat.number(30))
+            case .vouchSlotsFull: return L10n.t("vouch.error.slotsFull")
+            case .vouchRateLimited: return L10n.t("vouch.refusal.rateLimited")
+            case .attestationsRequired: return L10n.t("vouch.error.attestationsRequired")
+            case .inviteUnavailable: return L10n.t("vouch.claim.unavailable.title")
+            case .inviteNotFound: return L10n.t("vouch.error.inviteNotFound")
+            case .inviteClaimed: return L10n.t("vouch.error.inviteClaimed")
+            case .alreadyVouched: return L10n.t("vouch.error.alreadyVouched")
+            case .vouchLifetimeReached: return L10n.t("vouch.error.lifetimeReached")
+            case .vouchTooSoon: return L10n.t("vouch.error.tooSoon")
+            case .vouchNotEligible: return L10n.t("vouch.error.notEligible")
+            case .vouchNotFound: return L10n.t("vouch.error.notFound")
+            case .notPending: return L10n.t("vouch.error.notPending")
+            case .notLive: return L10n.t("vouch.error.notLive")
+            case .confirmWindowPassed: return L10n.t("vouch.error.confirmWindowPassed")
+            case .voucheeGone: return L10n.t("vouch.error.voucheeGone")
+            case .noSummons: return L10n.t("vouch.error.noSummons")
+            case .summonsClosed: return L10n.t("vouch.error.summonsClosed")
+            case .invalidAction: return L10n.t("common.somethingWentWrong")
+            case .detailsRequired: return L10n.t("vouch.error.detailsRequired")
+            case .invalidFullName: return L10n.t("vouch.error.invalidFullName")
+            case .vouchUnderAge: return L10n.t("vouch.error.underAge")
+            case .detailsMismatch: return L10n.t("vouch.error.detailsMismatch")
+            case .inviteClosed: return L10n.t("vouch.error.inviteClosed")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }
@@ -638,6 +727,8 @@ public enum APIError: Error, Equatable, Sendable {
             return L10n.t("error.sessionEnded")
         case let .biometricFailed(message):
             return message
+        case .detailsMismatch:
+            return L10n.t("vouch.error.detailsMismatch")
         }
     }
 }
@@ -651,6 +742,31 @@ struct APIErrorEnvelope: Decodable {
         let message: String
         /// Present on `validation_error`: what was wrong with which field.
         let fields: [ValidationField]?
+        /// Present on `details_mismatch` (contract v24 §11): the *names* of
+        /// the fields that differ — the same key, carrying strings.
+        let mismatchedFields: [String]?
+        /// Present on `details_mismatch`: tries the link has left.
+        let attemptsLeft: Int?
+
+        /// Decoded with a plain decoder (see `makeError`), so the wire's
+        /// snake case is spelled out.
+        private enum CodingKeys: String, CodingKey {
+            case code, message, fields
+            case attemptsLeft = "attempts_left"
+        }
+
+        /// `fields` is objects on a validation error and strings on a
+        /// mismatch; whichever it is, the other reading is simply empty, and
+        /// neither can fail the envelope — which used to put raw JSON on
+        /// screen as an HTTP error.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            code = try container.decode(String.self, forKey: .code)
+            message = (try? container.decode(String.self, forKey: .message)) ?? ""
+            fields = (try? container.decodeIfPresent([ValidationField].self, forKey: .fields)) ?? nil
+            mismatchedFields = (try? container.decodeIfPresent([String].self, forKey: .fields)) ?? nil
+            attemptsLeft = (try? container.decodeIfPresent(Int.self, forKey: .attemptsLeft)) ?? nil
+        }
     }
 }
 

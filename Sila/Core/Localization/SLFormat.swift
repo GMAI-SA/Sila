@@ -63,6 +63,16 @@ public enum SLFormat {
         )
     }
 
+    /// Day and month only — the tag's "since 3 Sep" / "منذ 3 سبتمبر".
+    public static func dayAndMonth(_ date: Date, locale: Locale? = nil) -> String {
+        date.formatted(
+            Date.FormatStyle()
+                .day()
+                .month(.abbreviated)
+                .locale(locale ?? L10n.formattingLocale)
+        )
+    }
+
     /// Month and year only — the "Joined March 2025" line.
     public static func monthAndYear(_ date: Date, locale: Locale? = nil) -> String {
         date.formatted(

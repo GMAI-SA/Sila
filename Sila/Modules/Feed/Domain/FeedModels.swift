@@ -9,7 +9,7 @@ import Foundation
 /// verified ID) and is `nil` until an account is verified. It is never derived
 /// from an IP address, a phone prefix or a locale, which is why the UI shows
 /// nothing at all rather than a guess when it is absent.
-public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
+public struct UserSummary: Identifiable, Hashable, Sendable, Codable {
 
     public let id: UUID
     /// Unique, lowercase, 3–20 chars of `[a-z0-9_]`. No leading `@`.
@@ -27,6 +27,11 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
     /// identity check, never by the person; they may hide it, not change it.
     public let verifiedName: String?
     public let verifiedSince: Date?
+    /// Who vouches for this account while it has not verified its own
+    /// identity (contract v24) — the tag, never the seal. Always `nil` beside
+    /// ``isVerified``: the two are never drawn together, and the client keeps
+    /// that order even though the server already guarantees it.
+    public let vouchedBy: VouchedBy?
 
     public init(
         id: UUID,
@@ -36,7 +41,8 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
         isVerified: Bool,
         countryCode: String? = nil,
         verifiedSince: Date? = nil,
-        verifiedName: String? = nil
+        verifiedName: String? = nil,
+        vouchedBy: VouchedBy? = nil
     ) {
         self.id = id
         self.handle = handle
@@ -46,12 +52,13 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
         self.countryCode = CountryCode.normalised(countryCode)
         self.verifiedSince = verifiedSince
         self.verifiedName = verifiedName
+        self.vouchedBy = isVerified ? nil : vouchedBy
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
-        case id, handle, displayName, isVerified, countryCode, verifiedSince, verifiedName
+        case id, handle, displayName, isVerified, countryCode, verifiedSince, verifiedName, vouchedBy
         case avatarURL = "avatarUrl"
     }
 
@@ -84,6 +91,25 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Decodable {
         verifiedSince = (try? container.decodeIfPresent(Date.self, forKey: .verifiedSince)) ?? nil
         let confirmed = (try? container.decodeIfPresent(String.self, forKey: .verifiedName)) ?? nil
         verifiedName = (confirmed?.isEmpty == false) ? confirmed : nil
+        // The seal wins: a tag beside `is_verified` is never drawn, whatever
+        // arrives. A tag with no handle is nothing to draw either.
+        let vouch = (try? container.decodeIfPresent(VouchedBy.self, forKey: .vouchedBy)) ?? nil
+        vouchedBy = (isVerified || vouch?.handle.isEmpty != false) ? nil : vouch
+    }
+
+    /// Written only into the device's own copy of the session (a vouch's
+    /// voucher travels inside ``AuthUser``); the same keys it is read with.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(handle, forKey: .handle)
+        try container.encode(displayName, forKey: .displayName)
+        try container.encodeIfPresent(avatarURL?.absoluteString, forKey: .avatarURL)
+        try container.encode(isVerified, forKey: .isVerified)
+        try container.encodeIfPresent(countryCode, forKey: .countryCode)
+        try container.encodeIfPresent(verifiedSince, forKey: .verifiedSince)
+        try container.encodeIfPresent(verifiedName, forKey: .verifiedName)
+        try container.encodeIfPresent(vouchedBy, forKey: .vouchedBy)
     }
 
     /// Two-letter monogram for ``SLAvatar``.

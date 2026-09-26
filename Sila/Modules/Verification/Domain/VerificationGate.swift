@@ -9,18 +9,50 @@ import Observation
 public protocol VerificationGateReporting: Sendable {
     /// Called every time a request comes back `403 unverified`.
     func verificationRequired()
+    /// Called every time a request comes back `403
+    /// self_verification_required` — a vouched account reached for
+    /// something only a verified one may do (contract v24 §4).
+    func selfVerificationRequired(message: String)
+}
+
+extension VerificationGateReporting {
+    public func selfVerificationRequired(message: String) {}
 }
 
 /// A ``VerificationGateReporting`` built from a closure.
 public struct VerificationGateSignal: VerificationGateReporting {
 
     private let handler: @Sendable () -> Void
+    private let selfVerification: (@Sendable (String) -> Void)?
 
-    public init(_ handler: @escaping @Sendable () -> Void) {
+    public init(_ handler: @escaping @Sendable () -> Void, selfVerification: (@Sendable (String) -> Void)? = nil) {
         self.handler = handler
+        self.selfVerification = selfVerification
     }
 
     public func verificationRequired() { handler() }
+
+    public func selfVerificationRequired(message: String) { selfVerification?(message) }
+}
+
+/// What a vouched account was refused, and the offer that answers it:
+/// "Verify your identity to do this", with the verification flow one tap
+/// away. Identified per refusal, so a second one re-presents the offer.
+public struct SelfVerificationPrompt: Identifiable, Equatable, Sendable {
+    public let id = UUID()
+    /// The server's sentence about the one thing refused ("Verify your
+    /// identity to take the microphone"), when it sent one. English only,
+    /// so it is kept for the record and never drawn.
+    public let message: String?
+    /// What the app itself was asked to do, in the reader's language, when
+    /// the offer comes before the request rather than after a refusal.
+    public let reason: String?
+
+    public init(message: String?, reason: String? = nil) {
+        let trimmed = message?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.message = (trimmed?.isEmpty == false) ? trimmed : nil
+        self.reason = reason
+    }
 }
 
 /// Turns `403 unverified` — from anywhere — back into the verification wall.
@@ -103,14 +135,36 @@ public final class VerificationGate {
     public func clear() {
         wasRefused = false
         isReconciling = false
+        selfVerificationPrompt = nil
+    }
+
+    // MARK: - A vouched account (contract v24)
+
+    /// The offer to verify, while one is showing. Set by any `403
+    /// self_verification_required`; the shell presents it and clears it.
+    ///
+    /// Not a route change: a vouched account refused one thing may still do
+    /// everything else, so this is a sheet over wherever they are, never the
+    /// wall.
+    public var selfVerificationPrompt: SelfVerificationPrompt?
+
+    /// Records a `403 self_verification_required` seen anywhere. One offer at
+    /// a time: a burst of refusals from one screen is one question.
+    public func noticeSelfVerification(message: String?) {
+        guard selfVerificationPrompt == nil else { return }
+        analytics?.track(.selfVerificationOffered, properties: ["source": "403"])
+        selfVerificationPrompt = SelfVerificationPrompt(message: message)
     }
 
     /// The `Sendable` handle handed to the network client.
     public var signal: VerificationGateReporting {
         // Resolved on the main actor *inside* the task, for the same isolation
         // reason as ``SuspensionMonitor/signal``.
-        VerificationGateSignal {
-            Task { @MainActor [weak self] in self?.noticeRefusal() }
-        }
+        VerificationGateSignal(
+            { Task { @MainActor [weak self] in self?.noticeRefusal() } },
+            selfVerification: { message in
+                Task { @MainActor [weak self] in self?.noticeSelfVerification(message: message) }
+            }
+        )
     }
 }

@@ -117,6 +117,11 @@ public final class URLSessionNetworkClient: NetworkClient {
             if error.code == .unverified {
                 verification?.verificationRequired()
             }
+            // A vouched account reaching for something only a verified one
+            // may do: an offer to verify, never the wall (contract v24 §4).
+            if case let .api(.selfVerificationRequired, message, _) = error {
+                verification?.selfVerificationRequired(message: message)
+            }
             throw error
         }
 
@@ -158,6 +163,14 @@ public final class URLSessionNetworkClient: NetworkClient {
     static func makeError(status: Int, data: Data) -> APIError {
         if let envelope = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data) {
             let code = APIErrorCode(serverCode: envelope.detail.code)
+            if code == .detailsMismatch {
+                // Which fields, never what the voucher wrote in them.
+                return .detailsMismatch(
+                    fields: envelope.detail.mismatchedFields ?? [],
+                    attemptsLeft: max(0, envelope.detail.attemptsLeft ?? 0),
+                    message: envelope.detail.message
+                )
+            }
             return .api(
                 code: code,
                 // A validation reply's wording is rebuilt here from the field

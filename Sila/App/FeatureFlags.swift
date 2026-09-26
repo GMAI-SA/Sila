@@ -33,6 +33,9 @@ import Foundation
 /// -mockRooms           run against RoomsServiceMock instead of the live API
 /// -mockRoomsScenario X pick a RoomsServiceMock.MockScenario
 /// -mockVoiceEngine     run against VoiceEngineMock instead of LiveKit
+/// -mockVouching        run against VouchingServiceMock instead of the live API
+/// -mockVouchingScenario X  pick a VouchingServiceMock.MockScenario
+/// -openLink URL        open a sila.gmai.sa link on launch, as a tap would
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -206,6 +209,13 @@ public struct FeatureFlags: Sendable {
     /// microphone.
     public var useMockVoiceEngine = false
 
+    // MARK: Contract v24 — vouching
+
+    /// Use ``VouchingServiceMock`` instead of the live backend.
+    public var useMockVouching = false
+    /// Which voucher world to serve when ``useMockVouching`` is on.
+    public var mockVouchingScenario: VouchingServiceMock.MockScenario = .voucher
+
     public init() {}
 
     /// Builds the flag set for a launch, applying launch-argument overrides.
@@ -378,6 +388,21 @@ public struct FeatureFlags: Sendable {
         }
         if arguments.contains("-mockVoiceEngine") {
             flags.useMockVoiceEngine = true
+        }
+        if arguments.contains("-mockVouching") {
+            flags.useMockVouching = true
+        }
+        if let index = arguments.firstIndex(of: "-mockVouchingScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = VouchingServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockVouching = true
+            flags.mockVouchingScenario = scenario
+        }
+        // Once more: a mocked session's token would 401 against the real
+        // `/vouching`, and the claim is the one flow a UI journey must be
+        // able to walk without anybody's real link.
+        if flags.useMockAuth && !arguments.contains("-mockVouchingScenario") {
+            flags.useMockVouching = true
         }
         if arguments.contains("-noVoicePosts") {
             flags.voicePosts = false

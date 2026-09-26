@@ -144,6 +144,8 @@ public final class AuthSession {
                 )
                 updated.guidelinesVersion = current.guidelinesVersion
                 updated.currentGuidelinesVersion = current.currentGuidelinesVersion
+                // The status says nothing about a vouch; only `/auth/me` does.
+                updated = updated.settingVouch(current.vouch, standing: current.standing)
                 user = updated
                 await store.updateUser(updated)
             }
@@ -204,6 +206,17 @@ public final class AuthSession {
         route = .verificationWall(.unstarted)
     }
 
+    /// Takes the vouch a claim just produced (contract v24), before the next
+    /// `/auth/me` says so: the wall's copy becomes "Waiting for @aziz to
+    /// confirm it's you" at once.
+    public func adoptVouch(_ vouch: VouchState?, standing: Standing = .noStanding) async {
+        guard let current = user else { return }
+        let updated = current.settingVouch(vouch, standing: standing)
+        user = updated
+        await store.updateUser(updated)
+        await applyRouteForCurrentUser()
+    }
+
     /// Ends the session and returns to the welcome screen.
     /// Runs before the session is dropped — the push registration is
     /// withdrawn while there is still a token to withdraw it with.
@@ -241,6 +254,12 @@ public final class AuthSession {
             route = .awaitingEmailVerification(email: user.email)
             return
         }
+        // A vouched account is a member: the feed, whatever the identity
+        // pipeline says — a refused document included (contract v24 §2).
+        if user.isVouched {
+            applyRoute(for: user.verificationStatus, reason: nil)
+            return
+        }
         if user.verificationStatus == .rejected || user.verificationStatus == .pendingReview {
             // Fetch the reason / timestamps the wall wants to show.
             if let report = try? await service.verificationStatus() {
@@ -268,9 +287,20 @@ public final class AuthSession {
 
     private func applyRoute(for status: VerificationStatus, reason: String?) {
         documentRetake = nil
+        if user?.isVouched == true, status != .verified {
+            route = .feed
+            return
+        }
         switch status {
         case .verified:
             route = .feed
+        case .rejected where user?.vouch?.isPending == true:
+            // A claim waiting for its voucher is the wall's to show, with
+            // its own copy (contract v24 §2) — a refused document does not
+            // stop somebody being vouched for, and the claim is what they
+            // are waiting on now.
+            route = .verificationWall(.rejected)
+            analytics.track(.verificationWallShown, properties: ["status": "vouch_pending"])
         case .rejected:
             route = .rejected(reason: reason)
             analytics.track(.verificationWallShown, properties: ["status": status.rawValue])

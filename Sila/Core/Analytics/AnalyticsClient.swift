@@ -85,6 +85,43 @@ public enum AnalyticsEvent: String, Sendable {
     /// code only.
     case documentWithdrawRefused = "document_withdraw_refused"
 
+    // MARK: Contract v24 — vouching
+    //
+    // Outcomes and the server's refusal codes only. Never a name, a
+    // nationality or a date either side typed, never a handle.
+
+    /// A voucher minted a link.
+    case vouchLinkCreated = "vouch_link_created"
+    /// Minting was refused. Carries `reason` — the error code.
+    case vouchLinkRefused = "vouch_link_refused"
+    /// A voucher burned an unclaimed link.
+    case vouchLinkBurned = "vouch_link_burned"
+    /// A voucher shared a freshly minted link.
+    case vouchLinkShared = "vouch_link_shared"
+    /// A link's landing was read. Carries `result`: `open` or the code.
+    case vouchLinkOpened = "vouch_link_opened"
+    /// "Yes, that's who I meant." Carries `result: refused` and `reason`
+    /// when the server said no.
+    case vouchConfirmed = "vouch_confirmed"
+    /// "That's not who I meant."
+    case vouchDeclined = "vouch_declined"
+    /// A voucher took their word back.
+    case vouchWithdrawn = "vouch_withdrawn"
+    /// A voucher answered a moderator's finding. Carries `result`.
+    case vouchAnswered = "vouch_answered"
+    /// A person claimed a link; it now waits for the voucher.
+    case vouchClaimed = "vouch_claimed"
+    /// A claim was refused. Carries `reason` — `details_mismatch` says a
+    /// mismatch happened, never which field or what was typed.
+    case vouchClaimRefused = "vouch_claim_refused"
+    /// The person took their tag off, or withdrew a pending claim.
+    case vouchRemoved = "vouch_removed"
+    /// A tag was tapped. Carries `source`: `own` or `other`.
+    case vouchTagOpened = "vouch_tag_opened"
+    /// "Verify your identity to do this" was offered to a vouched account.
+    /// Carries `source`.
+    case selfVerificationOffered = "self_verification_offered"
+
     // MARK: Settings
 
     /// The in-app language changed. Carries `language`: `system`, `en` or `ar`.

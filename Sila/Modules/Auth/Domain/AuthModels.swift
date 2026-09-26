@@ -112,6 +112,17 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     /// (contract v22). The composer shows the guidelines when they differ.
     public var guidelinesVersion: String? = nil
     public var currentGuidelinesVersion: String? = nil
+    /// Where the account stands (contract v24): its own identity, somebody's
+    /// word, or neither. Routing reads this before ``verificationStatus``: a
+    /// vouched account reaches the feed whatever the identity pipeline says.
+    /// An older server sends nothing, which reads from the status alone.
+    public var standing: Standing = .noStanding
+    /// The account's own pending-or-active vouch, when it has one. Never
+    /// what the voucher wrote about it.
+    public var vouch: VouchState? = nil
+
+    /// Carries a live vouch — the tag, the limited tier, the feed.
+    public var isVouched: Bool { standing == .vouched }
 
     public init(
         id: UUID,
@@ -143,12 +154,14 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         self.phone = phone
         self.verifiedName = verifiedName
         self.hideVerifiedName = hideVerifiedName
+        self.standing = verificationStatus == .verified ? .verified : .noStanding
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
         case handle, countryCode, phone, verifiedName, hideVerifiedName
         case needsInterestPrompt, experimentBucket, guidelinesVersion, currentGuidelinesVersion
+        case standing, vouch
         case avatarURL = "avatarUrl"
     }
 
@@ -187,6 +200,17 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         experimentBucket = (try? container.decodeIfPresent(Int.self, forKey: .experimentBucket)) ?? nil
         guidelinesVersion = AuthUser.version(container, .guidelinesVersion)
         currentGuidelinesVersion = AuthUser.version(container, .currentGuidelinesVersion)
+        vouch = (try? container.decodeIfPresent(VouchState.self, forKey: .vouch)) ?? nil
+        // Identity always wins; a server that predates `standing` is read
+        // from the status, which is all it knew.
+        let sent = (try? container.decodeIfPresent(Standing.self, forKey: .standing)) ?? nil
+        if verificationStatus == .verified {
+            standing = .verified
+        } else if sent == .vouched, vouch?.isActive != false {
+            standing = .vouched
+        } else {
+            standing = .noStanding
+        }
     }
 
     /// A version the server may send as a number or a string.
@@ -207,6 +231,17 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         )
         copy.guidelinesVersion = guidelinesVersion
         copy.currentGuidelinesVersion = currentGuidelinesVersion
+        copy.standing = standing
+        copy.vouch = vouch
+        return copy
+    }
+
+    /// A copy with the vouch and standing changed — after a claim, or the
+    /// tag taken off, before the next `/auth/me` says so.
+    public func settingVouch(_ vouch: VouchState?, standing: Standing) -> AuthUser {
+        var copy = self
+        copy.vouch = vouch
+        copy.standing = verificationStatus == .verified ? .verified : standing
         return copy
     }
 
