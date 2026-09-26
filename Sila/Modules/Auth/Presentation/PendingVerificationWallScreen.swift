@@ -30,6 +30,13 @@ public struct PendingVerificationWallScreen: View {
     private let analytics: AnalyticsClient
     private let onSignOut: () -> Void
     private let onVerified: (() async -> Void)?
+    /// Takes back a pending vouch claim. `nil` offers nothing.
+    private let onWithdrawClaim: (() async throws -> Void)?
+    /// The session's copy of the account's own vouch, followed as it changes.
+    private let vouch: VouchState?
+    /// Presented over the app for a vouched account making the vouch its own
+    /// (contract v24 §3): "Not now" replaces "Sign out", and closes.
+    private let onClose: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isSigningOut = false
@@ -55,20 +62,28 @@ public struct PendingVerificationWallScreen: View {
         analytics: AnalyticsClient,
         onSignOut: @escaping () -> Void,
         onVerified: (() async -> Void)? = nil,
-        retake: DocumentRetake? = nil
+        retake: DocumentRetake? = nil,
+        vouch: VouchState? = nil,
+        onWithdrawClaim: (() async throws -> Void)? = nil,
+        onClose: (() -> Void)? = nil
     ) {
-        _viewModel = State(initialValue: VerificationWallViewModel(
+        let model = VerificationWallViewModel(
             status: status,
             service: service,
             verification: verification,
             analytics: analytics,
             onDecision: onVerified
-        ))
+        )
+        model.pendingVouch = vouch?.isPending == true ? vouch : nil
+        _viewModel = State(initialValue: model)
         _pendingRetake = State(initialValue: verification == nil ? nil : retake)
         self.verification = verification
         self.analytics = analytics
         self.onSignOut = onSignOut
         self.onVerified = onVerified
+        self.onWithdrawClaim = onWithdrawClaim
+        self.onClose = onClose
+        self.vouch = vouch
     }
 
     public var body: some View {
@@ -116,6 +131,13 @@ public struct PendingVerificationWallScreen: View {
                 .accessibilityLabel(Text(spokenSummary))
                 .accessibilityHint(Text(L10n.t("auth.wall.a11yHint")))
 
+                // A claim waiting for its voucher, when the wall's own copy
+                // is about a submission instead (contract v24 §2).
+                if let vouch = viewModel.pendingVouch, viewModel.status == .pendingReview {
+                    pendingVouchCard(vouch)
+                        .padding(.horizontal, SLSpacing.lg)
+                }
+
                 if let submitted = viewModel.submittedText {
                     SLCard(padding: SLSpacing.md) {
                         HStack(spacing: SLSpacing.sm) {
@@ -150,6 +172,10 @@ public struct PendingVerificationWallScreen: View {
         // Restarted whenever the status changes, so a submission sent from
         // this wall is watched as closely as one the wall opened on.
         .task(id: viewModel.status) { await viewModel.watchForDecision() }
+        // A claim made — or answered — while the wall is up.
+        .onChange(of: vouch) { _, current in
+            viewModel.pendingVouch = current?.isPending == true ? current : nil
+        }
         // The claim comes first. Once it is saved the chooser opens — after
         // this sheet has gone, for the same reason as below.
         .sheet(isPresented: $isPickingNationality, onDismiss: {
@@ -399,18 +425,67 @@ public struct PendingVerificationWallScreen: View {
                 Task { await viewModel.refresh() }
             }
 
-            SLButton(
-                L10n.t("common.signOut"),
-                variant: .ghost,
-                size: .compact,
-                isLoading: isSigningOut,
-                accessibilityHint: L10n.t("auth.signOut.hint")
-            ) {
-                isSigningOut = true
-                onSignOut()
+            if viewModel.pendingVouch != nil, let onWithdrawClaim {
+                VouchConfirmControl(
+                    isConfirming: $viewModel.isConfirmingClaimWithdrawal,
+                    isBusy: viewModel.isWithdrawingClaim,
+                    copy: VouchConfirmControl.Copy(
+                        action: L10n.t("vouch.wall.pending.withdraw"),
+                        actionIcon: "arrow.uturn.backward",
+                        title: L10n.t("vouch.wall.pending.withdraw.title"),
+                        message: L10n.t("vouch.wall.pending.withdraw.message", viewModel.pendingVouch?.voucherHandle ?? ""),
+                        confirm: L10n.t("vouch.wall.pending.withdraw.yes"),
+                        keep: L10n.t("vouch.wall.pending.withdraw.keep")
+                    ),
+                    identifier: "vouching.wall.withdraw"
+                ) {
+                    await viewModel.withdrawClaim(onWithdrawClaim)
+                    await onVerified?()
+                }
+            }
+
+            if let onClose {
+                SLButton(L10n.t("vouch.own.later"), variant: .ghost, size: .compact, action: onClose)
+                    .accessibilityIdentifier("verification.selfCover.close")
+            } else {
+                SLButton(
+                    L10n.t("common.signOut"),
+                    variant: .ghost,
+                    size: .compact,
+                    isLoading: isSigningOut,
+                    accessibilityHint: L10n.t("auth.signOut.hint")
+                ) {
+                    isSigningOut = true
+                    onSignOut()
+                }
             }
         }
         .padding(.horizontal, SLSpacing.lg)
+    }
+
+    /// "Waiting for @noura to confirm it's you", beside a submission's own
+    /// copy — both can be true at once.
+    private func pendingVouchCard(_ vouch: VouchState) -> some View {
+        SLCard(padding: SLSpacing.md) {
+            HStack(alignment: .top, spacing: SLSpacing.sm) {
+                Image(systemName: SLVouchTag.glyph)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: SLSpacing.xs) {
+                    Text(L10n.t("vouch.wall.pending.title", vouch.voucher?.handle ?? vouch.voucherHandle))
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let confirmBy = vouch.confirmBy {
+                        Text(L10n.t("vouch.wall.pending.until", SLFormat.dateTime(confirmBy)))
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.textSecondary)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("vouching.wall.pendingCard")
     }
 
     /// What the primary CTA actually does, by status.

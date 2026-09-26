@@ -53,6 +53,7 @@ public enum PollCopy {
         switch poll.voteBlockReason {
         case .guest: return L10n.t("poll.blocked.guest")
         case .unverified: return L10n.t("poll.blocked.unverified")
+        case .selfVerificationRequired: return L10n.t("poll.blocked.selfVerify")
         case .countryMismatch:
             let name = post.scopeCountry.flatMap { CountryCode.shortName($0, locale: L10n.locale) } ?? post.scopeCountry ?? ""
             return L10n.t("poll.blocked.country", name)

@@ -45,6 +45,12 @@ public enum FeedRoute: Hashable, Sendable {
     case hashtag(tag: String)
     /// Recent posts nobody has answered, that the viewer may answer.
     case needsReply
+    /// The voucher's own list (contract v24): claims to confirm, live
+    /// vouches, links, and a moderator's question.
+    case vouching
+    /// The vouched person's own vouch: its clock, what it allows, the way
+    /// to verify.
+    case ownVouch
 }
 
 /// Screens reachable inside the Rooms tab's stack.

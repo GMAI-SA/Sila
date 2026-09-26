@@ -18,7 +18,9 @@
 	<array>
 		<string>webcredentials:sila.gmai.sa</string>
 		<!-- sila.gmai.sa/posts/… and /u/… open in the app; the site's
-		     apple-app-site-association lists those paths. -->
+		     apple-app-site-association lists those paths. Vouch links
+		     (/vouch/…, /vouch, /vouching — contract v24) open in the app
+		     once it lists those too. -->
 		<string>applinks:sila.gmai.sa</string>
 	</array>
 </dict>

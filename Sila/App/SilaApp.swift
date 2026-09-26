@@ -25,7 +25,7 @@ struct SilaApp: App {
                     // router; the tab view opens it when it can.
                     .onOpenURL { url in
                         guard let link = DeepLink.parse(url) else { return }
-                        container.router.pendingLink = link
+                        container.open(link)
                     }
                     .task {
                         container.analytics.track(
@@ -33,13 +33,24 @@ struct SilaApp: App {
                             properties: ["mockAuth": String(container.flags.useMockAuth)]
                         )
                         appDelegate.registrar = container.pushRegistrar
-                        container.pushRegistrar.openLink = { link in container.router.pendingLink = link }
+                        container.pushRegistrar.openLink = { link in container.open(link) }
+                        // `-openLink URL`: a UI journey's way to tap a link.
+                        let arguments = ProcessInfo.processInfo.arguments
+                        if let index = arguments.firstIndex(of: "-openLink"), arguments.indices.contains(index + 1),
+                           let url = URL(string: arguments[index + 1]), let link = DeepLink.parse(url) {
+                            container.open(link)
+                        }
                         await container.pushRegistrar.refreshRegistration()
                     }
                     // Every foreground: retention is measured from this.
                     .onChange(of: scenePhase, initial: true) { _, phase in
                         guard phase == .active else { return }
                         container.analytics.track(.appOpened)
+                        // A claim waiting at the wall: the voucher may have
+                        // answered while the app was away.
+                        if container.session.user?.vouch?.isPending == true {
+                            Task { await container.session.refreshUser() }
+                        }
                     }
                     .onChange(of: container.session.user?.id) { _, id in
                         guard id != nil else { return }

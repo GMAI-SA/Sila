@@ -69,6 +69,21 @@ public struct MainTabView: View {
     /// The Events section of the Rooms tab (contract v23).
     @State private var eventsViewModel: EventsViewModel
     @State private var isCreatingEvent = false
+    /// A vouch tag tapped anywhere below (contract v24 §3): the explainer,
+    /// or — on your own — "Make it your own".
+    @State private var vouchSelection: VouchTagSelection?
+    /// The verification flow, over the app, for a vouched account making
+    /// the vouch its own. Never the wall: they keep the app behind it.
+    @State private var isVerifyingSelf = false
+    /// Opens ``isVerifyingSelf`` once the sheet that asked has gone — a
+    /// cover cannot rise while a sheet is still leaving.
+    @State private var verifyAfterSheet = false
+    /// `GET /vouching` — the voucher's list, and the Profile entry drawn from
+    /// it: whether it is there at all, and dimmed with the reason when the
+    /// account cannot vouch now. Up here, like the notifications model, so a
+    /// link minted from the sheet shows in the list behind it at once.
+    @State private var vouching: VouchingViewModel
+    @State private var isMintingLink = false
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -93,7 +108,8 @@ public struct MainTabView: View {
                 service: container.notificationsService,
                 feed: container.feedService,
                 analytics: container.analytics,
-                suspension: container.suspension
+                suspension: container.suspension,
+                viewerIsVouched: { container.session.user?.isVouched == true }
             )
         )
         self._communitiesViewModel = State(
@@ -126,6 +142,7 @@ public struct MainTabView: View {
             )
         )
         self._eventsViewModel = State(initialValue: EventsViewModel(service: container.eventsService))
+        self._vouching = State(initialValue: VouchingViewModel(service: container.vouchingService))
         self._hub = State(
             initialValue: DiscoverHubViewModel(
                 discover: container.discoverService,
@@ -163,6 +180,9 @@ public struct MainTabView: View {
                         try await container.feedService.setReaction(kind, on: on, postId: postId)
                     }))
                     .environment(\.guidelinesGate, container.guidelinesGate)
+                    // Every tag below opens its explainer up here, where the
+                    // sheet can outlive the card it came from.
+                    .environment(\.vouchTagAction, VouchTagAction { person in openVouchTag(person) })
                     .environment(\.recognitionService, container.recognitionService)
                     .environment(\.openEvent, { id in openEvent(id) })
                     .environment(\.roomReminders, RoomReminderActions(
@@ -321,6 +341,77 @@ public struct MainTabView: View {
             )
             .tint(SLColor.primary)
         }
+        .sheet(item: $vouchSelection, onDismiss: {
+            if verifyAfterSheet {
+                verifyAfterSheet = false
+                isVerifyingSelf = true
+            }
+        }) { selection in
+            VouchExplainerSheet(
+                person: selection.person,
+                vouchedBy: selection.vouchedBy,
+                isOwn: selection.isOwn,
+                onSeeVoucher: container.flags.profile ? {
+                    let handle = selection.vouchedBy.handle
+                    vouchSelection = nil
+                    openProfile(handle)
+                } : nil,
+                onVerify: container.flags.verification ? {
+                    verifyAfterSheet = true
+                    vouchSelection = nil
+                } : nil,
+                onClose: { vouchSelection = nil }
+            )
+        }
+        .sheet(item: Binding(
+            get: { container.verificationGate.selfVerificationPrompt },
+            set: { container.verificationGate.selfVerificationPrompt = $0 }
+        ), onDismiss: {
+            if verifyAfterSheet {
+                verifyAfterSheet = false
+                isVerifyingSelf = true
+            }
+        }) { prompt in
+            SelfVerificationPromptSheet(
+                prompt: prompt,
+                onVerify: {
+                    verifyAfterSheet = container.flags.verification
+                    container.verificationGate.selfVerificationPrompt = nil
+                },
+                onClose: { container.verificationGate.selfVerificationPrompt = nil }
+            )
+        }
+        .sheet(isPresented: $isMintingLink) {
+            Owned({
+                VouchInviteViewModel(
+                    service: container.vouchingService,
+                    analytics: container.analytics,
+                    onMinted: { await vouching.minted() }
+                )
+            }) { invite in
+                VouchInviteSheet(
+                    viewModel: invite,
+                    inviteHours: vouching.overview?.rules.inviteHours ?? VouchRules().inviteHours,
+                    onClose: { isMintingLink = false }
+                )
+            }
+        }
+        // A vouched account's own verification, over the app (contract v24
+        // §3.6): the same flow as the wall's, closed with "Not now".
+        .fullScreenCover(isPresented: $isVerifyingSelf) {
+            PendingVerificationWallScreen(
+                status: container.session.user?.verificationStatus ?? .unstarted,
+                service: container.authService,
+                verification: container.flags.verification ? container.verificationService : nil,
+                analytics: container.analytics,
+                onSignOut: { isVerifyingSelf = false },
+                onVerified: {
+                    await container.session.refreshUser()
+                    if container.session.user?.standing == .verified { isVerifyingSelf = false }
+                },
+                onClose: { isVerifyingSelf = false }
+            )
+        }
         .sheet(isPresented: $isShowingSafety) {
             Owned({ safetyListsViewModel() }) { viewModel in
                 NavigationStack {
@@ -415,6 +506,8 @@ public struct MainTabView: View {
                 pruneStacks(deletedPost: id)
             }
         }
+        // Whether the Profile draws "Vouch for someone you know", and how.
+        .task(id: container.session.user?.id) { await refreshVouching() }
         // A link into the app: one waiting from before sign-in, or one that
         // arrives while the tabs are up.
         .task { await openPendingLink() }
@@ -482,7 +575,7 @@ public struct MainTabView: View {
             case let .postDetail(post): return Handle.normalised(post.author.handle) == target
             case let .conversation(conversation):
                 return Handle.normalised(conversation.other.handle) == target
-            case .savedPosts, .community, .communities, .hashtag, .needsReply:
+            case .savedPosts, .community, .communities, .hashtag, .needsReply, .vouching, .ownVouch:
                 return false
             }
         }
@@ -624,7 +717,9 @@ public struct MainTabView: View {
             analytics: container.analytics,
             openGifPicker: container.router.composerOpensGifPicker,
             starters: container.discoverService,
-            voice: container.flags.voicePosts ? container.voiceService : nil,
+            // A recorded voice is a microphone in front of strangers: verified
+            // members only (contract v24 §4), so a vouched account types.
+            voice: container.flags.voicePosts && !isVouched ? container.voiceService : nil,
             guidelines: guidelinesGateForComposer(),
             onPosted: { posted in
                 viewModel.insert(newPosts: posted)
@@ -763,23 +858,30 @@ public struct MainTabView: View {
                 get: { container.router.feedPath },
                 set: { container.router.feedPath = $0 }
             )) {
-                HomeScreen(
-                    viewModel: viewModel,
-                    onOpenPost: openPost,
-                    onStub: stub,
-                    onOpenProfile: openProfile,
-                    onCompose: composeHandler,
-                    onOpenHashtag: openHashtag,
-                    onOpenRoom: openRoomCard,
-                    onOpenPreferences: preferencesHandler,
-                    safetyMenu: safetyMenu(for:),
-                    ownPost: ownPostMenu(for:),
-                    countryCode: container.session.user?.countryCode,
-                    liveRooms: container.flags.rooms ? hub.liveRooms : [],
-                    onOpenLiveRoom: container.flags.rooms ? openLiveRoom : nil,
-                    prompt: hub.prompt,
-                    onAnswerPrompt: answer(prompt:)
-                )
+                VStack(spacing: 0) {
+                    // The 30 days, above Home, for a vouched account: a bridge to
+                    // verification, not a place to live (contract v24 §2).
+                    if isVouched, let vouch = container.session.user?.vouch, vouch.isActive {
+                        VouchCountdownBanner(vouch: vouch, onOpen: { push(.ownVouch) })
+                    }
+                    HomeScreen(
+                        viewModel: viewModel,
+                        onOpenPost: openPost,
+                        onStub: stub,
+                        onOpenProfile: openProfile,
+                        onCompose: composeHandler,
+                        onOpenHashtag: openHashtag,
+                        onOpenRoom: openRoomCard,
+                        onOpenPreferences: preferencesHandler,
+                        safetyMenu: safetyMenu(for:),
+                        ownPost: ownPostMenu(for:),
+                        countryCode: container.session.user?.countryCode,
+                        liveRooms: container.flags.rooms ? hub.liveRooms : [],
+                        onOpenLiveRoom: container.flags.rooms ? openLiveRoom : nil,
+                        prompt: hub.prompt,
+                        onAnswerPrompt: answer(prompt:)
+                    )
+                }
                 .task { if container.flags.rooms { await hub.loadLive() } }
                 .task { await hub.loadPrompt() }
                 .tnNavigationBar(title: L10n.t("feed.home.navTitle"))
@@ -829,7 +931,11 @@ public struct MainTabView: View {
                     onOpenProfile: openRoomProfile,
                     events: eventsViewModel,
                     onOpenEvent: { event in container.router.roomsPath.append(.event(event.id)) },
-                    onCreateEvent: { isCreatingEvent = true }
+                    onCreateEvent: {
+                        // Hosting an event is a verified member's (contract v24 §4).
+                        guard !isVouched else { return offerSelfVerification(L10n.t("vouch.limited.host")) }
+                        isCreatingEvent = true
+                    }
                 )
                 .navigationDestination(for: RoomsRoute.self) { route in
                     roomsDestination(for: route)
@@ -850,6 +956,8 @@ public struct MainTabView: View {
                     onOpenCommunity: { slug in push(.community(slug: slug)) },
                     onOpenHome: { selection = .home },
                     onOpenEvent: { id in openEvent(id) },
+                    onOpenVouching: openVouchingList,
+                    onOpenOwnVouch: openOwnVouch,
                     onOpenSettings: {
                         guard container.flags.preferences else {
                             stub(StubFeature.notificationSettings)
@@ -869,15 +977,30 @@ public struct MainTabView: View {
                 get: { container.router.messagesPath },
                 set: { container.router.messagesPath = $0 }
             )) {
-                ConversationsScreen(
-                    viewModel: conversationsViewModel,
-                    onOpen: { conversation in
-                        container.router.messagesPath.append(.conversation(conversation))
-                    },
-                    onOpenProfile: openProfile,
-                    people: container.peopleDirectory,
-                    viewerHandle: container.session.user?.handle ?? ""
-                )
+                Group {
+                    if isVouched {
+                        // Nobody can message a vouched account and it cannot
+                        // message anybody (contract v24 §4): the tab says so,
+                        // with the one door that opens it.
+                        VouchedNotice(
+                            icon: "envelope.badge.shield.half.filled",
+                            title: L10n.t("vouch.limited.messages.title"),
+                            message: L10n.t("vouch.limited.messages.message"),
+                            onVerify: selfVerifyHandler
+                        )
+                        .tnNavigationBar(title: L10n.t("feed.tab.messages.label"))
+                    } else {
+                        ConversationsScreen(
+                            viewModel: conversationsViewModel,
+                            onOpen: { conversation in
+                                container.router.messagesPath.append(.conversation(conversation))
+                            },
+                            onOpenProfile: openProfile,
+                            people: container.peopleDirectory,
+                            viewerHandle: container.session.user?.handle ?? ""
+                        )
+                    }
+                }
                 .navigationDestination(for: FeedRoute.self) { route in
                     destination(for: route)
                 }
@@ -931,7 +1054,8 @@ public struct MainTabView: View {
                         Task { await container.session.signOut() }
                     },
                     onOpenSaved: openSavedPosts,
-                    onOpenGroups: openGroups
+                    onOpenGroups: openGroups,
+                    vouching: vouchingEntry
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
@@ -1007,7 +1131,94 @@ public struct MainTabView: View {
             openRoomFromNotification(id)
         case let .event(id):
             openEvent(id)
+        case .vouching:
+            openVouchingList()
+        case .ownVouch:
+            openOwnVouch()
+        case .vouchInvite:
+            // Taken by the inbox before it reaches the router (see
+            // `AppContainer.open`); nothing to push here.
+            break
         }
+    }
+
+    // MARK: - Vouching (contract v24)
+
+    /// Whether vouching is anybody's business on this account: a vouched
+    /// account always (it carries one); a verified one only while the
+    /// server says vouching is open to it.
+    private var isVouched: Bool { container.session.user?.isVouched == true }
+
+    /// Reads `GET /vouching` for a verified account — the Profile entry is
+    /// drawn from it. Nothing for anybody else: a vouched account's entry is
+    /// its own vouch, which `/auth/me` already carries.
+    private func refreshVouching() async {
+        guard container.session.user?.standing == .verified else { return }
+        await vouching.load()
+    }
+
+    /// The Profile row between Groups and Account, or `nil` when there is
+    /// nothing to draw: "Your vouch" for a vouched account; "Vouch for
+    /// someone you know" for a verified one while vouching is open to it —
+    /// dimmed, never hidden, when it cannot vouch right now.
+    private var vouchingEntry: VouchingEntry? {
+        if isVouched {
+            let vouch = container.session.user?.vouch
+            let detail: String
+            if let vouch, let expires = vouch.expiresAt {
+                detail = L10n.t("vouch.profile.own.detail", vouch.voucher?.handle ?? vouch.voucherHandle,
+                                VouchCopy.daysLeftText(until: expires))
+            } else {
+                detail = L10n.t("vouch.profile.own.detailNoDate")
+            }
+            return VouchingEntry(title: L10n.t("vouch.profile.own.title"), detail: detail, open: openOwnVouch)
+        }
+        guard container.session.user?.standing == .verified,
+              let overview = vouching.overview, overview.isOpen else { return nil }
+        let detail: String
+        if !overview.canVouch, let reason = overview.reason {
+            detail = VouchCopy.refusal(reason, in: overview)
+        } else if overview.slots.total > 0 {
+            detail = L10n.t("vouch.slots", SLFormat.number(overview.slots.used), SLFormat.number(overview.slots.total))
+        } else {
+            detail = L10n.t("vouch.profile.entry.detail")
+        }
+        return VouchingEntry(
+            title: L10n.t("vouch.profile.entry.title"),
+            detail: detail,
+            isDimmed: !overview.canVouch,
+            open: { push(.vouching) }
+        )
+    }
+
+    /// The voucher's list, from a push, a link or a notification row: on the
+    /// Profile tab, where its entry lives.
+    private func openVouchingList() {
+        selection = .profile
+        container.router.profilePath = [.vouching]
+    }
+
+    /// The person's own vouch, from the same places, on the tab they are on.
+    private func openOwnVouch() {
+        if container.router.profilePath.last == .ownVouch, selection == .profile { return }
+        selection = .profile
+        container.router.profilePath = [.ownVouch]
+    }
+
+    /// A tag tapped on any card, header or row below: the explainer, or —
+    /// on your own tag — "Make it your own" (contract v24 §3.6).
+    private func openVouchTag(_ person: UserSummary) {
+        guard let tapped = VouchTagSelection(person: person, viewerId: container.session.user?.id) else { return }
+        container.analytics.track(.vouchTagOpened, properties: ["source": tapped.isOwn ? "own" : "other"])
+        vouchSelection = tapped
+    }
+
+    /// "Verify your identity to do this", asked before a vouched account
+    /// reaches for something it cannot do — rather than after the server
+    /// has said no. `reason` says which thing, in the reader's language.
+    private func offerSelfVerification(_ reason: String) {
+        container.analytics.track(.selfVerificationOffered, properties: ["source": "client"])
+        container.verificationGate.selfVerificationPrompt = SelfVerificationPrompt(message: nil, reason: reason)
     }
 
     /// Opens a thread with somebody, from wherever they were tapped.
@@ -1016,6 +1227,7 @@ public struct MainTabView: View {
     /// server owns the one-per-pair rule, so a draft stands in until the
     /// first message has been sent.
     private func openConversation(with person: UserSummary) {
+        guard !isVouched else { return offerSelfVerification(L10n.t("vouch.limited.messages.title")) }
         selection = .messages
         let existing = conversationsViewModel.conversation(with: person.handle)
         container.router.messagesPath.append(.conversation(existing ?? Conversation.draft(with: person)))
@@ -1107,6 +1319,9 @@ public struct MainTabView: View {
     /// affordance rather than showing one that goes nowhere.
     private var roomCreationHandler: (@MainActor () -> Void)? {
         guard container.flags.rooms else { return nil }
+        // A vouched account listens; hosting waits for its own verification
+        // (contract v24 §4) — said before the sheet, not after the server.
+        if isVouched { return { offerSelfVerification(L10n.t("vouch.limited.host")) } }
         return { container.router.isCreatingRoom = true }
     }
 
@@ -1224,7 +1439,8 @@ public struct MainTabView: View {
                     analytics: container.analytics,
                     suspension: container.suspension,
                     people: container.peopleDirectory,
-                    depth: container.roomDepth
+                    depth: container.roomDepth,
+                    viewerIsVouched: isVouched
                 )
             }) { viewModel in
                 LiveRoomScreen(
@@ -1257,7 +1473,8 @@ public struct MainTabView: View {
                     onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler,
                     onOpenSaved: openSavedPosts,
-                    onOpenGroups: openGroups
+                    onOpenGroups: openGroups,
+                    vouching: vouchingEntry
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
@@ -1374,6 +1591,12 @@ public struct MainTabView: View {
                 })
             }
 
+        case .vouching:
+            vouchingScreen
+
+        case .ownVouch:
+            ownVouchScreen
+
         case let .hashtag(tag):
             HashtagScreen(
                 viewModel: HashtagViewModel(
@@ -1411,7 +1634,8 @@ public struct MainTabView: View {
                     onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler,
                     onOpenSaved: openSavedPosts,
-                    onOpenGroups: openGroups
+                    onOpenGroups: openGroups,
+                    vouching: vouchingEntry
                 ),
                 safetyMenu: safetyMenu(for:),
                 postSafetyMenu: safetyMenu(for:),
@@ -1422,6 +1646,37 @@ public struct MainTabView: View {
                     onOpenRoom: openRoomCard
             )
             .tnNavigationBar(title: "@\(handle)")
+        }
+    }
+
+    /// Opens the verification flow over the app for a vouched account, or
+    /// `nil` when the phase is off.
+    private var selfVerifyHandler: (@MainActor () -> Void)? {
+        guard container.flags.verification else { return nil }
+        return { isVerifyingSelf = true }
+    }
+
+    /// The voucher's list — the shared model, so the mint sheet's new link
+    /// is in it when the sheet closes.
+    private var vouchingScreen: some View {
+        VouchingScreen(
+            viewModel: vouching,
+            onOpenProfile: { handle in openProfile(handle) },
+            onCreateLink: { isMintingLink = true }
+        )
+    }
+
+    /// The person's own vouch. Taking the tag off re-reads `/auth/me`, which
+    /// routes back to the wall.
+    private var ownVouchScreen: some View {
+        let verify = selfVerifyHandler
+        return Owned({
+            OwnVouchViewModel(
+                service: container.vouchingService,
+                onChanged: { await container.session.refreshUser() }
+            )
+        }) { own in
+            OwnVouchScreen(viewModel: own, onVerify: verify, onOpenProfile: { handle in openProfile(handle) })
         }
     }
 
@@ -1453,7 +1708,7 @@ public struct MainTabView: View {
                 onCompose: composeHandler,
                 onOpenHashtag: openHashtag,
                 onOpenRoom: openRoomCard,
-                voiceService: container.flags.voicePosts && container.flags.composer ? container.voiceService : nil,
+                voiceService: container.flags.voicePosts && container.flags.composer && !isVouched ? container.voiceService : nil,
                 // A voice clip from the reply bar is a first post like any
                 // other: the guidelines come first here too.
                 guidelines: container.flags.composer ? container.guidelinesGate : nil

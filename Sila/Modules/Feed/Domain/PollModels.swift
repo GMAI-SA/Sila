@@ -54,6 +54,9 @@ public enum PollVoteBlock: String, Sendable, Hashable {
     case countryMismatch = "country_mismatch"
     case regionMismatch = "region_mismatch"
     case guest
+    /// A vouched account: voting waits for its own verification (contract
+    /// v24 §4).
+    case selfVerificationRequired = "self_verification_required"
     case unknown
 }
 

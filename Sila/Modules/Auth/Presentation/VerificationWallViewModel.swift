@@ -23,6 +23,29 @@ public struct WallPresentation: Equatable, Sendable {
     /// Whether the hero glyph animates (the "processing" indicator).
     public let showsProcessingAnimation: Bool
 
+    /// The wall of somebody who claimed a vouch link and is waiting for the
+    /// voucher to confirm it is them (contract v24 §2): its own copy, and
+    /// their own verification still one tap away — it never needs anyone's
+    /// word. Only while nothing is under review (a refused document
+    /// included: the claim is what they wait on now); a submission waiting
+    /// for a reviewer keeps its own copy, with the vouch beside it.
+    public static func make(for status: VerificationStatus, pendingVouch: VouchState?) -> WallPresentation {
+        guard let vouch = pendingVouch, vouch.isPending, status != .pendingReview, status != .verified else {
+            return make(for: status)
+        }
+        let handle = vouch.voucher?.handle ?? vouch.voucherHandle
+        return WallPresentation(
+            icon: SLVouchTag.glyph,
+            title: L10n.t("vouch.wall.pending.title", handle),
+            message: vouch.confirmBy.map { L10n.t("vouch.wall.pending.message", handle, SLFormat.dateTime($0)) }
+                ?? L10n.t("vouch.wall.pending.messageNoDate", handle),
+            badgeText: L10n.t("vouch.wall.pending.badge"),
+            badgeStyle: .warning,
+            primaryActionTitle: L10n.t("vouch.wall.pending.verify"),
+            showsProcessingAnimation: false
+        )
+    }
+
     /// Maps a status to its presentation.
     /// - Parameter status: The user's current verification stage.
     public static func make(for status: VerificationStatus) -> WallPresentation {
@@ -108,6 +131,13 @@ public final class VerificationWallViewModel {
     /// camera opens on this document, and cancelling goes back to the
     /// rejected screen.
     public var retake: DocumentRetake?
+    /// A vouch this account claimed and its voucher has not confirmed yet
+    /// (contract v24). Comes from the session's `/auth/me`, not from the
+    /// status this model reads.
+    public var pendingVouch: VouchState?
+    /// The in-place "are you sure" before a pending claim is withdrawn.
+    public var isConfirmingClaimWithdrawal = false
+    public private(set) var isWithdrawingClaim = false
 
     private let service: AuthServiceProtocol
     private let verification: VerificationServiceProtocol?
@@ -141,7 +171,30 @@ public final class VerificationWallViewModel {
     }
 
     /// How the current status should render.
-    public var presentation: WallPresentation { .make(for: status) }
+    public var presentation: WallPresentation { .make(for: status, pendingVouch: pendingVouch) }
+
+    /// Takes back a claim still waiting for its voucher (`DELETE /me/vouch`),
+    /// after the in-place confirmation. The account stays at the wall, with
+    /// its own verification ahead of it, and the voucher is never asked.
+    public func withdrawClaim(_ withdraw: () async throws -> Void) async {
+        guard pendingVouch != nil, !isWithdrawingClaim else { return }
+        isWithdrawingClaim = true
+        defer { isWithdrawingClaim = false }
+        do {
+            try await withdraw()
+            pendingVouch = nil
+            isConfirmingClaimWithdrawal = false
+            toast = .success(L10n.t("vouch.wall.pending.withdrawn"))
+        } catch let error as APIError where error.code == .vouchNotFound {
+            // Already gone — confirmed, declined or lapsed meanwhile.
+            pendingVouch = nil
+            isConfirmingClaimWithdrawal = false
+        } catch let error as APIError {
+            if !error.isCancellation { toast = .error(error.userMessage) }
+        } catch {
+            toast = .error(L10n.t("common.somethingWentWrong"))
+        }
+    }
 
     /// Human-readable submission timestamp, when known.
     public var submittedText: String? {

@@ -142,8 +142,10 @@ public final class LiveRoomViewModel {
         people: PeopleDirectory? = nil,
         pollInterval: TimeInterval = RoomConstants.participantPollInterval,
         eventDebounce: TimeInterval = 0.4,
-        depth: RoomDepthServiceProtocol? = nil
+        depth: RoomDepthServiceProtocol? = nil,
+        viewerIsVouched: Bool = false
     ) {
+        self.viewerIsVouched = viewerIsVouched
         self.depthService = depth
         self.people = people
         self.room = room
@@ -168,6 +170,9 @@ public final class LiveRoomViewModel {
 
     /// Where the invites picker gets its people.
     private let people: PeopleDirectory?
+    /// A vouched listener (contract v24 §4): the microphone, chat and
+    /// questions wait for their own verification.
+    private let viewerIsVouched: Bool
 
     // MARK: - Derived state
 
@@ -188,6 +193,10 @@ public final class LiveRoomViewModel {
     /// Why the microphone is not on offer, or `nil` when it is.
     public var speakRefusal: String? {
         guard isListening, !room.canSpeak else { return nil }
+        // A vouched listener is refused for who they are, not for the room's
+        // rule: the server's sentence says so in English only, and this says
+        // the same in the reader's language.
+        if viewerIsVouched, !room.isRemoved { return L10n.t("vouch.limited.rooms") }
         return room.speakRefusalMessage ?? RoomCopy.speakRefusalFallback
     }
 

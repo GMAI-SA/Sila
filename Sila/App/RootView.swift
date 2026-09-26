@@ -34,6 +34,71 @@ public struct RootView: View {
         // device's: without this an in-app switch to Arabic would translate
         // every sentence and leave the layout running the wrong way.
         .environment(\.layoutDirection, container.language.layoutDirection)
+        // A vouch link, wherever the person is (contract v24 §5): its
+        // landing for somebody signed out, the claim for somebody in.
+        .fullScreenCover(item: vouchClaimBinding) { invite in
+            vouchClaim(invite)
+                .environment(\.layoutDirection, container.language.layoutDirection)
+        }
+        // Signed in at last: a link parked for the sign-up comes back, now
+        // as the claim form.
+        .onChange(of: isSignedIn) { _, signedIn in
+            if signedIn { container.vouchInbox.unpark() }
+        }
+    }
+
+    // MARK: - Vouch links
+
+    /// The link to show, when the person is somewhere it can be shown: not
+    /// the boot screen, not the email code, not a suspension, and not while
+    /// they are filling in the forms they left the landing for.
+    private var vouchClaimBinding: Binding<PendingVouchInvite?> {
+        Binding(
+            get: {
+                guard let invite = container.vouchInbox.pending, !container.vouchInbox.isParked else { return nil }
+                if container.suspension.isSuspended, isSignedIn { return nil }
+                switch container.session.route {
+                case .splash, .awaitingEmailVerification: return nil
+                case .unauthenticated: return container.router.authPath.isEmpty ? invite : nil
+                case .guest, .verificationWall, .rejected, .feed: return invite
+                }
+            },
+            set: { value in
+                if value == nil, container.vouchInbox.pending != nil, !container.vouchInbox.isParked {
+                    container.vouchInbox.forget()
+                }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func vouchClaim(_ invite: PendingVouchInvite) -> some View {
+        let signedIn = isSignedIn
+        VouchClaimScreen(
+            viewModel: VouchClaimViewModel(
+                token: invite.token,
+                isSignedIn: signedIn,
+                standing: container.session.user?.standing ?? .noStanding,
+                service: container.vouchingService,
+                onClaimed: { vouch in
+                    container.vouchInbox.settle()
+                    await container.session.adoptVouch(vouch)
+                    // "@noura confirmed your vouch" is worth hearing about now.
+                    Task { await container.pushRegistrar.requestIfAppropriate(after: "vouch_claim") }
+                }
+            ),
+            onCreateAccount: signedIn ? nil : {
+                container.vouchInbox.park()
+                if container.session.route == .guest { container.session.leaveGuest() }
+                container.router.push(.register)
+            },
+            onSignIn: signedIn ? nil : {
+                container.vouchInbox.park()
+                if container.session.route == .guest { container.session.leaveGuest() }
+                container.router.push(.signIn)
+            },
+            onClose: { container.vouchInbox.forget() }
+        )
     }
 
     @ViewBuilder
@@ -121,7 +186,9 @@ public struct RootView: View {
                     analytics: container.analytics,
                     onSignOut: { Task { await container.session.signOut() } },
                     onVerified: { await container.session.refreshUser() },
-                    retake: container.session.documentRetake
+                    retake: container.session.documentRetake,
+                    vouch: container.session.user?.vouch,
+                    onWithdrawClaim: { try await container.vouchingService.removeMyVouch() }
                 )
                 .transition(.opacity)
 

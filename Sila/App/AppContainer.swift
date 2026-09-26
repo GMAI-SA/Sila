@@ -80,6 +80,10 @@ public final class AppContainer {
     /// Live voice rooms — listing, joining, hosting.
     public let roomsService: RoomsServiceProtocol
     public let communitiesService: CommunitiesServiceProtocol
+    /// Vouching (contract v24): the voucher's list, the links, the claim.
+    public let vouchingService: VouchingServiceProtocol
+    /// A vouch link opened and not yet claimed, kept through sign-up.
+    public let vouchInbox: VouchInviteInbox
     /// Where pickers get their people: the viewer's followers and following,
     /// plus search. Built on demand from the two services it reads.
     public var peopleDirectory: PeopleDirectory {
@@ -141,7 +145,8 @@ public final class AppContainer {
         pushService: PushServiceProtocol? = nil,
         roomDepth: RoomDepthServiceProtocol? = nil,
         safetyDepth: SafetyDepthServiceProtocol? = nil,
-        eventsService: (EventsServiceProtocol & RecognitionServiceProtocol)? = nil
+        eventsService: (EventsServiceProtocol & RecognitionServiceProtocol)? = nil,
+        vouchingService: VouchingServiceProtocol? = nil
     ) {
         self.flags = flags
 
@@ -182,6 +187,7 @@ public final class AppContainer {
         // Before any service resolves and long before anything renders: the
         // stored language choice must be live for the very first string.
         self.language = LanguagePreference(storage: storage)
+        self.vouchInbox = VouchInviteInbox(storage: storage)
 
         let store = AuthTokenStore(keychain: keychain, storage: storage)
 
@@ -444,6 +450,29 @@ public final class AppContainer {
             )
         }
 
+        if let vouchingService {
+            self.vouchingService = vouchingService
+        } else if flags.useMockVouching {
+            let mock = VouchingServiceMock(scenario: flags.mockVouchingScenario, latency: 0.3)
+            // A mocked claim changes what the mocked `/auth/me` reports, as a
+            // real one changes the server's answer — and a mocked vouched
+            // session starts with its vouch on both sides.
+            if let authMock = resolvedService as? AuthServiceMock {
+                let scenario = flags.mockScenario
+                Task {
+                    await mock.setOnOwnVouchChange { vouch, standing in await authMock.setVouch(vouch, standing: standing) }
+                    switch scenario {
+                    case .vouched: await mock.setOwnVouch(AuthServiceMock.mockVouch(pending: false), standing: .vouched)
+                    case .vouchPending: await mock.setOwnVouch(AuthServiceMock.mockVouch(pending: true), standing: .noStanding)
+                    default: break
+                    }
+                }
+            }
+            self.vouchingService = mock
+        } else {
+            self.vouchingService = VouchingService(network: network, tokens: tokens, analytics: analytics)
+        }
+
         // Mocked alongside the feed: a mock launch renders mock posts, and the
         // direction those posts are laid out in has to be decided the same way
         // it is in production or the UI tests prove nothing about RTL.
@@ -456,6 +485,25 @@ public final class AppContainer {
         }
 
         self.router = AppRouter()
+    }
+
+    /// Takes a link the system handed the app: a vouch link goes to the
+    /// inbox, which shows its landing wherever the person is; anything else
+    /// waits on the router for the tab view.
+    public func open(_ link: DeepLink) {
+        switch link {
+        case let .vouchInvite(token):
+            vouchInbox.receive(token: token)
+        case .vouching, .ownVouch:
+            // A vouching push is about standing — confirmed, declined, ended,
+            // verified — so the session reads `/auth/me` again: somebody
+            // waiting at the wall may be a member now, or the other way round.
+            // The page itself opens once the tabs are up.
+            router.pendingLink = link
+            Task { await session.refreshUser() }
+        default:
+            router.pendingLink = link
+        }
     }
 
     /// Fills ``LanguageDirectory/shared`` from the server.
@@ -519,6 +567,7 @@ public final class AppContainer {
         flags.useMockRooms = true
         flags.mockRoomsScenario = roomsScenario
         flags.useMockVoiceEngine = true
+        flags.useMockVouching = true
         return AppContainer(
             flags: flags,
             network: URLSessionNetworkClient(),
