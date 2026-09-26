@@ -70,7 +70,11 @@ struct VouchDetailsForm: View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
             SLTextField(
                 L10n.t("vouch.form.fullName"),
-                text: $draft.fullName,
+                // The server's limit, counted as it counts: code points.
+                text: Binding(
+                    get: { draft.fullName },
+                    set: { draft.fullName = $0.clamped(toServerLength: VouchDetails.fullNameLimit) }
+                ),
                 placeholder: isOwn ? L10n.t("vouch.form.fullName.placeholder.own") : L10n.t("vouch.form.fullName.placeholder"),
                 contentType: isOwn ? .name : nil,
                 autocapitalization: .words,

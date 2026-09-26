@@ -289,6 +289,9 @@ public struct VouchDetails: Equatable, Sendable, Codable, Hashable {
         self.dateOfBirth = dateOfBirth
     }
 
+    /// The server's limit on the name, in code points (contract v24 §11).
+    public static let fullNameLimit = 120
+
     private enum CodingKeys: String, CodingKey {
         case fullName, nationality, dateOfBirth
     }

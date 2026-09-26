@@ -254,7 +254,7 @@ public struct VouchingScreen: View {
                     L10n.t("vouch.summons.statement"),
                     text: Binding(
                         get: { viewModel.statements[vouch.id] ?? "" },
-                        set: { viewModel.statements[vouch.id] = String($0.prefix(1_000)) }
+                        set: { viewModel.statements[vouch.id] = $0.clamped(toServerLength: VouchingViewModel.statementLimit) }
                     ),
                     prompt: Text(L10n.t("vouch.summons.placeholder")).foregroundColor(SLColor.textMuted),
                     axis: .vertical

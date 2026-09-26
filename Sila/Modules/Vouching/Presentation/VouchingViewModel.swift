@@ -114,36 +114,50 @@ public final class VouchingViewModel {
         }
     }
 
+    /// The server's bounds on the written answer, in code points — the way
+    /// it counts them.
+    public static let statementMinimum = 10
+    public static let statementLimit = 1_000
+
     /// The written answer to a moderator's finding: 10 to 1,000 characters.
+    /// Kept in the box unless the server took it — an answer that failed to
+    /// send is not one the voucher should have to write again inside the
+    /// 48 hours.
     public func answer(_ vouch: Vouch, _ action: VouchAnswer) async {
         let statement = (statements[vouch.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard statement.count >= 10 else {
+        guard statement.serverLength >= Self.statementMinimum else {
             toast = .warning(L10n.t("vouch.summons.tooShort"))
             return
         }
-        await act(vouch.id, success: L10n.t("vouch.summons.sent")) {
-            _ = try await self.service.answer(vouchId: vouch.id, action: action, statement: String(statement.prefix(1_000)))
+        let sent = await act(vouch.id, success: L10n.t("vouch.summons.sent")) {
+            _ = try await self.service.answer(vouchId: vouch.id, action: action,
+                                              statement: statement.clamped(toServerLength: Self.statementLimit))
         }
-        if case .loaded = state { statements[vouch.id] = nil }
+        if sent { statements[vouch.id] = nil }
     }
 
     /// One request per row at a time; the list is re-read afterwards, so
     /// what shows is the server's answer, not a guess at it.
-    private func act(_ id: UUID, success: String, _ request: @escaping () async throws -> Void) async {
-        guard !busy.contains(id) else { return }
+    /// - Returns: Whether the server took the request.
+    @discardableResult
+    private func act(_ id: UUID, success: String, _ request: @escaping () async throws -> Void) async -> Bool {
+        guard !busy.contains(id) else { return false }
         busy.insert(id)
         defer { busy.remove(id) }
+        var succeeded = false
         do {
             try await request()
+            succeeded = true
             confirming = nil
             toast = .success(success)
         } catch let error as APIError {
-            guard !error.isCancellation else { return }
+            guard !error.isCancellation else { return false }
             confirming = nil
             toast = .error(error.userMessage)
         } catch {
             toast = .error(L10n.t("common.somethingWentWrong"))
         }
         await load()
+        return succeeded
     }
 }
