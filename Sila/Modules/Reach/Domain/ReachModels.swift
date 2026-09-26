@@ -247,6 +247,24 @@ public enum PushCopy {
         "push.room_tomorrow", "push.room_soon", "push.room_live", "push.room_cancelled", "push.community_invite",
         "push.community_join_request", "push.community_accepted", "push.poll_closed", "push.prompt",
         "push.identity_impostor", "push.reaction", "push.thread_reply", "push.event_invite", "push.event_tomorrow",
-        "push.event_soon", "push.event_live", "push.event_changed", "push.event_cancelled"
+        "push.event_soon", "push.event_live", "push.event_changed", "push.event_cancelled",
+        // Vouching (contract v24): a category, never a name.
+        "push.vouch_claimed", "push.vouch_confirmed", "push.vouch_declined", "push.vouch_expiring",
+        "push.vouch_ended", "push.vouch_graduated", "push.vouch_verified", "push.vouch_review",
+        "push.vouch_strike", "push.vouch_invite_closed"
+    ]
+
+    /// Where a vouching push lands when its `url` is missing or unreadable:
+    /// the voucher's kinds open their list, the rest the person's own vouch
+    /// (the server's `push.VOUCHER_KINDS`). `nil` for any other kind.
+    /// `vouch_ended` reaches either side and is routed by its `url`, which
+    /// names the recipient's page; without one it opens the person's own.
+    public static func vouchLink(forKind kind: String) -> DeepLink? {
+        guard kind.hasPrefix("vouch_") else { return nil }
+        return voucherKinds.contains(kind) ? .vouching : .ownVouch
+    }
+
+    static let voucherKinds: Set<String> = [
+        "vouch_claimed", "vouch_graduated", "vouch_review", "vouch_strike", "vouch_invite_closed"
     ]
 }

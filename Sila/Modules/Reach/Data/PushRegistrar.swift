@@ -120,6 +120,10 @@ public final class PushRegistrar {
     public func handleTap(userInfo: [AnyHashable: Any]) async {
         if let raw = userInfo["url"] as? String, let url = URL(string: raw), let link = DeepLink.parse(url) {
             openLink?(link)
+        } else if let kind = userInfo["kind"] as? String, let link = PushCopy.vouchLink(forKind: kind) {
+            // A vouching push always carries its page; this is the fallback
+            // for one that arrives without it.
+            openLink?(link)
         }
         analytics.track(.pushOpened, properties: ["kind": userInfo["kind"] as? String ?? "unknown"])
         if let pushId = userInfo["push_id"] as? String, isSignedIn() {
