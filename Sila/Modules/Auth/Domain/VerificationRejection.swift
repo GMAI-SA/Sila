@@ -50,6 +50,16 @@ public enum VerificationRejection {
         screeningReasons.contains(reason ?? "")
     }
 
+    /// What VoiceOver says the reason card is: the automatic check's reason
+    /// for a pre-screen rejection (no reviewer saw it), the reviewer's own
+    /// explanation for their free text, and neither for one of the app's
+    /// coded reasons, which may be either's.
+    public static func reasonHint(_ reason: String?) -> String {
+        if isScreening(reason) { return L10n.t("auth.rejected.reason.hint.screening") }
+        if isMachineReason(reason) { return L10n.t("auth.rejected.reason.hint.decision") }
+        return L10n.t("auth.rejected.reason.hint")
+    }
+
     /// Whether `reason` is one of the machine reasons rather than a
     /// reviewer's words — decides whether the text follows the interface
     /// language or its own.

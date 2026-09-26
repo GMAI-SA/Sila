@@ -58,13 +58,12 @@ public struct DocumentVerificationScreen: View {
                 VStack(spacing: SLSpacing.lg) {
                     if let step = viewModel.progress {
                         VStack(spacing: SLSpacing.xs) {
+                            // The bar draws its own "Step 4 of 6" beside the
+                            // track, and reads it to VoiceOver; once is enough.
                             SLProgressBar(
                                 value: Double(step.index) / Double(step.count),
                                 label: L10n.t("document.step.progress", step.index, step.count)
                             )
-                            Text(L10n.t("document.step.progress", step.index, step.count))
-                                .font(SLFont.micro)
-                                .foregroundStyle(SLColor.textMuted)
                         }
                         .padding(.horizontal, SLSpacing.lg)
                     }

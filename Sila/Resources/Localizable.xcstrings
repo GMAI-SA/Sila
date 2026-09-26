@@ -5607,6 +5607,42 @@
         }
       }
     },
+    "auth.rejected.reason.hint.decision": {
+      "comment": "VoiceOver hint on the reason card for a decision given as one of the app's own reasons (a date of birth that did not match, an expired document…).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سبب القرار"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why the decision was made"
+          }
+        }
+      }
+    },
+    "auth.rejected.reason.hint.screening": {
+      "comment": "VoiceOver hint on the reason card when the automatic document pre-screen turned the submission away (contract v25).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سبب رفض الفحص الآلي للصور"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why the automatic check turned the photos away"
+          }
+        }
+      }
+    },
     "auth.rejected.reason.nationalityMismatch": {
       "comment": "Rejection reason: the document contradicted the declared nationality.",
       "extractionState": "manual",
@@ -6863,13 +6899,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أهلًا بك في صلة. كل حساب تراه هنا يعود إلى إنسان حقيقي موثّق."
+            "value": "أهلًا بك في صلة. كل حساب تراه هنا يعود إلى شخص حقيقي — موثّق، أو مُزكّى من موثّق."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Welcome to Sila. Every account you'll see here belongs to a real, verified human."
+            "value": "Welcome to Sila. Every account you'll see here belongs to a real person — verified, or vouched for by one."
           }
         }
       }
@@ -12669,13 +12705,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "سيقارن مراجعٌ السيلفي بالوثيقة. سترى النتيجة هنا — عادةً خلال يوم."
+            "value": "سيقارن مراجعٌ السيلفي بالوثيقة، عادةً خلال يوم. وإن تعذّر استخدام الصور أصلًا فستعرف خلال دقائق. تظهر النتيجة هنا."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A reviewer will compare your selfie with the document. You'll see the result here — usually within a day."
+            "value": "A reviewer will compare your selfie with the document, usually within a day. If the photos can't be used at all, you'll know within minutes. The result shows here."
           }
         }
       }
@@ -12774,7 +12810,7 @@
               "zero": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "لا اتجاهات من 8"
+                  "value": "%lld من 8 اتجاهات"
                 }
               }
             }

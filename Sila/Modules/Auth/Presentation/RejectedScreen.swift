@@ -151,7 +151,7 @@ public struct RejectedScreen: View {
                     .padding(.horizontal, SLSpacing.lg)
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel(Text(L10n.t("auth.rejected.reason.a11yLabel", shown)))
-                    .accessibilityHint(Text(L10n.t("auth.rejected.reason.hint")))
+                    .accessibilityHint(Text(VerificationRejection.reasonHint(reason)))
                 }
 
                 if let receipt {
