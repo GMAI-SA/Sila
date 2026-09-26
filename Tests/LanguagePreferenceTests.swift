@@ -77,6 +77,45 @@ final class LanguagePreferenceTests: XCTestCase {
         XCTAssertEqual(storage.value(for: .appLanguage, as: String.self), "system")
     }
 
+    /// The suite's own value, not the device-wide one the global domain
+    /// would answer with.
+    private func own(_ defaults: UserDefaults, _ suite: String) -> [String]? {
+        defaults.persistentDomain(forName: suite)?[LanguagePreference.appleLanguagesKey] as? [String]
+    }
+
+    /// A push arriving while the app is closed is drawn by iOS from the
+    /// app's strings, in the language iOS thinks the app is in.
+    func testAForcedLanguageIsToldToTheSystemAndSystemHandsItBack() throws {
+        let suite = "sila.tests.language.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let preference = LanguagePreference(storage: InMemoryStorageClient(), systemDefaults: defaults)
+        XCTAssertNil(own(defaults, suite), "the device's choice is not touched")
+
+        preference.select(.arabic)
+        XCTAssertEqual(own(defaults, suite), ["ar"])
+        preference.select(.system)
+        XCTAssertNil(own(defaults, suite))
+    }
+
+    func testFollowingTheDeviceLeavesIOSsOwnPerAppSettingAlone() throws {
+        let suite = "sila.tests.language.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        // What Settings › Sila › Language writes.
+        defaults.set(["ar"], forKey: LanguagePreference.appleLanguagesKey)
+
+        _ = LanguagePreference(storage: InMemoryStorageClient(), systemDefaults: defaults)
+        XCTAssertEqual(own(defaults, suite), ["ar"])
+
+        let storage = InMemoryStorageClient()
+        storage.set("en", for: .appLanguage)
+        _ = LanguagePreference(storage: storage, systemDefaults: defaults)
+        XCTAssertEqual(own(defaults, suite), ["en"],
+                       "a forced language is told again at launch")
+    }
+
     func testEveryChoiceHasATitleWrittenInItsOwnLanguage() {
         // Somebody stranded in the wrong language must be able to find their
         // own name for it, whatever the interface currently speaks.

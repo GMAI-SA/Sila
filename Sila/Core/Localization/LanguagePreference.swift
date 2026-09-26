@@ -46,15 +46,27 @@ public final class LanguagePreference {
     public private(set) var choice: AppLanguageChoice
 
     private let storage: StorageClient
+    /// Where the system reads the app's own language from — the key iOS's
+    /// per-app language setting writes. `nil` in tests.
+    private let systemDefaults: UserDefaults?
 
     /// Restores the stored choice and installs it before anything renders.
-    /// - Parameter storage: Where the choice persists.
-    public init(storage: StorageClient) {
+    /// - Parameters:
+    ///   - storage: Where the choice persists.
+    ///   - systemDefaults: Told a forced language, so words the system draws
+    ///     for the app follow it too — push banners, whose `loc-key` iOS
+    ///     resolves from the app's strings in the app's language (contract
+    ///     v21: the payload carries a key, never words).
+    public init(storage: StorageClient, systemDefaults: UserDefaults? = AppConfig.isRunningUnitTests ? nil : .standard) {
         self.storage = storage
+        self.systemDefaults = systemDefaults
         let stored = storage.value(for: .appLanguage, as: String.self)
             .flatMap(AppLanguageChoice.init(rawValue:)) ?? .system
         self.choice = stored
         apply(stored)
+        // A forced language is told to the system again on every launch; the
+        // device's own choice is left exactly as iOS's settings made it.
+        if stored != .system { tellSystem(stored) }
     }
 
     /// Adopts and persists a choice.
@@ -65,7 +77,23 @@ public final class LanguagePreference {
         guard apply(choice) else { return }
         self.choice = choice
         storage.set(choice.rawValue, for: .appLanguage)
+        tellSystem(choice)
     }
+
+    /// Writes the app's language where iOS looks for it: a push that arrives
+    /// while the app is closed is drawn by the system from `push.<kind>`, and
+    /// without this it came out in the device's language — English banners
+    /// for somebody reading the app in Arabic. "System" hands the choice back.
+    private func tellSystem(_ choice: AppLanguageChoice) {
+        guard let systemDefaults else { return }
+        if let code = choice.overrideCode {
+            systemDefaults.set([code], forKey: Self.appleLanguagesKey)
+        } else {
+            systemDefaults.removeObject(forKey: Self.appleLanguagesKey)
+        }
+    }
+
+    static let appleLanguagesKey = "AppleLanguages"
 
     /// The direction the whole interface should run in right now.
     ///
