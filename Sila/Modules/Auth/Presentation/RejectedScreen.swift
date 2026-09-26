@@ -133,7 +133,7 @@ public struct RejectedScreen: View {
                         VStack(alignment: .leading, spacing: SLSpacing.sm) {
                             Text(L10n.t("auth.rejected.reasonLabel"))
                                 .font(SLFont.micro)
-                                .tracking(0.8)
+                                .slTracking(0.8)
                                 .foregroundStyle(SLColor.textMuted)
                             // A machine reason reads in the interface language;
                             // a reviewer's words read in their own direction.

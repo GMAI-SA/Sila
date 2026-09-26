@@ -81,7 +81,7 @@ public struct SuspensionScreen: View {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
                 Text(L10n.t(viewModel.hasServerReason ? "safety.suspended.whyHeader" : "safety.suspended.noReasonHeader"))
                     .font(SLFont.micro)
-                    .tracking(0.8)
+                    .slTracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
 
                 Text(viewModel.reasonText)
@@ -122,7 +122,7 @@ public struct SuspensionScreen: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.t("safety.suspended.rightNowHeader"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityAddTraits(.isHeader)
 
@@ -157,7 +157,7 @@ public struct SuspensionScreen: View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
             Text(L10n.t("safety.appeal.header"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityAddTraits(.isHeader)
 

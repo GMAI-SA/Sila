@@ -157,6 +157,9 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
                     .font(SLFont.micro)
                     .foregroundStyle(isSelected ? SLColor.primary : SLColor.textMuted)
                     .lineLimit(1)
+                    // Six slots on a 375pt phone leave about 60pt each:
+                    // «الملف الشخصي» shrinks a little rather than losing its end.
+                    .minimumScaleFactor(0.7)
             }
             .frame(maxWidth: .infinity)
             .padding(.bottom, SLSpacing.xs)
@@ -211,6 +214,7 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
                     .font(SLFont.micro)
                     .foregroundStyle(SLColor.textMuted)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .offset(y: 2)
             }
             .frame(maxWidth: .infinity)

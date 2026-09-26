@@ -77,7 +77,7 @@ public struct SLTextField: View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
             Text(label.uppercased())
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(hasError ? SLColor.danger : SLColor.textSecondary)
                 .accessibilityHidden(true)
 

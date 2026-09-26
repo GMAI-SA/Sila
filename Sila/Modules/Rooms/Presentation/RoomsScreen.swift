@@ -275,7 +275,7 @@ public struct RoomsScreen: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(SLFont.micro)
-            .tracking(0.8)
+            .slTracking(0.8)
             .foregroundStyle(SLColor.textSecondary)
             .accessibilityAddTraits(.isHeader)
     }
@@ -416,7 +416,7 @@ struct RoomCardView: View {
                         : L10n.t("rooms.status.ended")
             )
                 .font(.system(size: 10, weight: .bold))
-                .tracking(0.6)
+                .slTracking(0.6)
                 .foregroundStyle(room.status == .live ? SLColor.danger : SLColor.textMuted)
         }
         .padding(.horizontal, SLSpacing.sm)

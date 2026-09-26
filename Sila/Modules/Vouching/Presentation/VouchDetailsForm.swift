@@ -166,9 +166,13 @@ struct VouchDetailsForm: View {
     ) -> some View {
         let problem = message(for: field)
         return VStack(alignment: .leading, spacing: SLSpacing.xs) {
-            Text(title)
-                .font(SLFont.caption)
-                .foregroundStyle(SLColor.textSecondary)
+            // The same label as the name field's above, so the three details
+            // read as one form.
+            Text(title.uppercased())
+                .font(SLFont.micro)
+                .slTracking(0.8)
+                .foregroundStyle(problem == nil ? SLColor.textSecondary : SLColor.danger)
+                .accessibilityHidden(true)
             Button(action: action) {
                 HStack {
                     Text(value ?? placeholder)

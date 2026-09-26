@@ -82,7 +82,7 @@ struct HubHeader: View {
                 .accessibilityHidden(true)
             Text(title)
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
             Spacer(minLength: 0)
             if let actionTitle, let action {

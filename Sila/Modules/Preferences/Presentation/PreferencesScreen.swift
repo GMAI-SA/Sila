@@ -158,7 +158,7 @@ public struct PreferencesScreen: View {
                     ? "preferences.summary.inEffect"
                     : "preferences.summary.notSaved"))
                     .font(SLFont.micro)
-                    .tracking(0.8)
+                    .slTracking(0.8)
                     .foregroundStyle(
                         viewModel.summaryIsInEffect ? SLColor.textSecondary : SLColor.warning
                     )
@@ -437,7 +437,7 @@ public struct PreferencesScreen: View {
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
             .font(SLFont.micro)
-            .tracking(0.8)
+            .slTracking(0.8)
             .foregroundStyle(SLColor.textSecondary)
             .accessibilityAddTraits(.isHeader)
     }

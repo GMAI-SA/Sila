@@ -159,7 +159,7 @@ struct QuestionQueueView: View {
             if !viewModel.answered.isEmpty {
                 Text(L10n.t("rooms.questions.answered"))
                     .font(SLFont.micro)
-                    .tracking(0.8)
+                    .slTracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
                 ForEach(viewModel.answered) { question in
                     Label(question.text, systemImage: "checkmark.circle")
@@ -378,7 +378,7 @@ public struct RoomDepthSheet: View {
         if viewModel.cohosts.count < RoomDepthViewModel.maxCohosts {
             let others = candidates.filter { !viewModel.isCohost($0) }
             if !others.isEmpty {
-                Text(L10n.t("rooms.cohosts.add")).font(SLFont.micro).tracking(0.8).foregroundStyle(SLColor.textSecondary)
+                Text(L10n.t("rooms.cohosts.add")).font(SLFont.micro).slTracking(0.8).foregroundStyle(SLColor.textSecondary)
                 ForEach(others, id: \.id) { user in
                     Button {
                         Task { await viewModel.addCohost(user.handle) }

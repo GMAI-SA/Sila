@@ -122,7 +122,7 @@ public struct ReportSheet: View {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
                 Text(L10n.t("safety.report.subjectHeader"))
                     .font(SLFont.micro)
-                    .tracking(0.8)
+                    .slTracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
 
                 Text(viewModel.subject.headline)
@@ -147,7 +147,7 @@ public struct ReportSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.t("safety.report.reasonHeader"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityAddTraits(.isHeader)
 
@@ -406,7 +406,7 @@ public struct ReportSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.t("safety.report.nextSteps.header"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityAddTraits(.isHeader)
 

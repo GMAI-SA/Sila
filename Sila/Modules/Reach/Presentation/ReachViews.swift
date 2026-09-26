@@ -320,7 +320,7 @@ struct PushSettingsSection: View {
                 ForEach(viewModel.pushSections) { group in
                     Text(group.title)
                         .font(SLFont.micro)
-                        .tracking(0.8)
+                        .slTracking(0.8)
                         .foregroundStyle(SLColor.textSecondary)
                         .accessibilityAddTraits(.isHeader)
                     ForEach(group.kinds, id: \.self) { key in

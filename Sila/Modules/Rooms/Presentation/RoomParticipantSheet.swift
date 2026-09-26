@@ -135,7 +135,7 @@ struct RoomParticipantSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.t("rooms.live.hostMenu.header").uppercased())
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
             if actions.canPromote, let onPromote {
                 SLButton(

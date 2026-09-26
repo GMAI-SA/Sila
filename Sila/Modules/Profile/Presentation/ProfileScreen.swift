@@ -437,7 +437,7 @@ public struct ProfileScreen: View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
             Text(L10n.t("profile.timeline.heading"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
 
             // Stated whether or not the list has rows: the exclusion is a fact

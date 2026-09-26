@@ -122,7 +122,7 @@ public struct RoomInvitesSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.plural("rooms.invites.count", viewModel.invited.count))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
 
             ForEach(viewModel.invited) { guest in

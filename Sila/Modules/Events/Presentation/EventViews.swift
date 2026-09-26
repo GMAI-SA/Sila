@@ -14,7 +14,7 @@ struct EventsSection: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             HStack {
                 Text(L10n.t("events.section.title"))
-                    .font(SLFont.micro).tracking(0.8).foregroundStyle(SLColor.textSecondary)
+                    .font(SLFont.micro).slTracking(0.8).foregroundStyle(SLColor.textSecondary)
                 Spacer(minLength: 0)
                 if let onCreate {
                     Button(L10n.t("events.create.action"), action: onCreate)
@@ -182,7 +182,7 @@ public struct EventDetailScreen: View {
     @ViewBuilder
     private func venue(_ event: SilaEvent) -> some View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
-            Text(L10n.t("events.venue.title")).font(SLFont.micro).tracking(0.8).foregroundStyle(SLColor.textSecondary)
+            Text(L10n.t("events.venue.title")).font(SLFont.micro).slTracking(0.8).foregroundStyle(SLColor.textSecondary)
             switch event.venueKind {
             case .room:
                 if let roomId = event.roomId {
@@ -202,7 +202,7 @@ public struct EventDetailScreen: View {
 
     private func guests(_ event: SilaEvent) -> some View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
-            Text(L10n.t("events.guests.title")).font(SLFont.micro).tracking(0.8).foregroundStyle(SLColor.textSecondary)
+            Text(L10n.t("events.guests.title")).font(SLFont.micro).slTracking(0.8).foregroundStyle(SLColor.textSecondary)
             if !event.cohosts.isEmpty {
                 Text(L10n.t("events.cohosts", event.cohosts.map(\.displayName).joined(separator: "، ")))
                     .font(SLFont.caption).foregroundStyle(SLColor.textSecondary)
@@ -225,7 +225,7 @@ public struct EventDetailScreen: View {
 
     private func hostTools(_ event: SilaEvent) -> some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
-            Text(L10n.t("events.host.title")).font(SLFont.micro).tracking(0.8).foregroundStyle(SLColor.textSecondary)
+            Text(L10n.t("events.host.title")).font(SLFont.micro).slTracking(0.8).foregroundStyle(SLColor.textSecondary)
             if !event.isInviteOnly {
                 Button(L10n.t("events.share")) { Task { _ = await viewModel.share(text: nil) } }
             }

@@ -144,7 +144,7 @@ public struct PendingVerificationWallScreen: View {
                             Image(systemName: "clock")
                                 .foregroundStyle(SLColor.textSecondary)
                             Text(submitted)
-                                .font(SLFont.mono)
+                                .font(SLFont.monoSentence)
                                 .foregroundStyle(SLColor.textSecondary)
                         }
                     }

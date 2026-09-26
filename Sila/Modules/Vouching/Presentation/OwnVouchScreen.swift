@@ -195,7 +195,7 @@ public struct OwnVouchScreen: View {
             VStack(alignment: .leading, spacing: SLSpacing.sm) {
                 Text(title.uppercased())
                     .font(SLFont.micro)
-                    .tracking(0.8)
+                    .slTracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
                     .accessibilityAddTraits(.isHeader)
                 ForEach(keys, id: \.self) { key in
@@ -211,7 +211,7 @@ public struct OwnVouchScreen: View {
         VStack(alignment: .leading, spacing: SLSpacing.xs) {
             Text(L10n.t("vouch.mine.limits.header").uppercased())
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityAddTraits(.isHeader)
             let limits = viewModel.limits

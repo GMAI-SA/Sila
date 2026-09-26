@@ -29,7 +29,7 @@ public struct SLDivider: View {
                     rule
                     Text(text.uppercased())
                         .font(SLFont.micro)
-                        .tracking(1)
+                        .slTracking(1)
                         .foregroundStyle(SLColor.textMuted)
                     rule
                 }

@@ -309,7 +309,7 @@ public struct VouchClaimScreen: View {
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
             .font(SLFont.micro)
-            .tracking(0.8)
+            .slTracking(0.8)
             .foregroundStyle(SLColor.textSecondary)
             .accessibilityAddTraits(.isHeader)
     }

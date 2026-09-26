@@ -164,18 +164,25 @@ public enum L10n {
 
     // MARK: - Formatting locale
 
-    /// ``locale``, pinned to Western digits.
+    /// ``locale``, pinned to Western digits and the Gregorian calendar.
     ///
     /// CLDR's default numbering system for Arabic is `arab`, which renders
     /// `١٢٣`. Saudi product UI — every bank app, every government portal, every
     /// competitor — uses `123`, and a follower count in Arabic-Indic digits
     /// reads as a typo rather than as localisation. The plural *rules* still
     /// come from the Arabic locale; only the glyphs are pinned.
+    ///
+    /// The calendar is pinned for the same reason. A device in `ar_SA`
+    /// defaults to Umm al-Qura, so dates came out Hijri («18 ربيع٢، 1448 هـ»,
+    /// the abbreviated month carrying an Arabic-Indic digit) right beside a
+    /// date of birth that is always Gregorian. One calendar everywhere, as on
+    /// the web and in the contract's own copy («منذ 3 سبتمبر»).
     public static var formattingLocale: Locale { westernDigits(locale) }
 
     static func westernDigits(_ base: Locale) -> Locale {
         var components = Locale.Components(locale: base)
         components.numberingSystem = Locale.NumberingSystem("latn")
+        components.calendar = .gregorian
         return Locale(components: components)
     }
 

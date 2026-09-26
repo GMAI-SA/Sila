@@ -383,6 +383,10 @@ public struct DocumentVerificationScreen: View {
     private func formatted(_ date: Date?) -> String {
         guard let date else { return "—" }
         let formatter = DateFormatter()
+        // The interface's language, Western digits and the Gregorian
+        // calendar, like every other date in the app.
+        formatter.locale = L10n.formattingLocale
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
         formatter.timeZone = TimeZone(identifier: "UTC")

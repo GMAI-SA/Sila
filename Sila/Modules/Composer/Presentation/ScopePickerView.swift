@@ -25,7 +25,7 @@ struct ScopePickerSection: View {
             HStack(spacing: SLSpacing.sm) {
                 Text(L10n.t("composer.scope.sectionHeader"))
                     .font(SLFont.micro)
-                    .tracking(0.8)
+                    .slTracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
                 Spacer(minLength: 0)
                 Text(L10n.t("composer.scope.everyoneCanRead"))

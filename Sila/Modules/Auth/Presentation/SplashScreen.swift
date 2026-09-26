@@ -47,12 +47,12 @@ public struct SplashScreen: View {
 
                 Text(L10n.t("auth.brand.wordmark"))
                     .font(SLFont.displayXL)
-                    .tracking(-0.5)
+                    .slTracking(-0.5)
                     .foregroundStyle(SLColor.textPrimary)
 
                 Text(L10n.t("auth.splash.tagline"))
                     .font(SLFont.caption)
-                    .tracking(1.4)
+                    .slTracking(1.4)
                     .textCase(.uppercase)
                     .foregroundStyle(SLColor.textMuted)
             }

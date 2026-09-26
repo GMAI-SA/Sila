@@ -40,6 +40,28 @@ public enum SLFont {
     public static let mono = Font.system(size: 15, weight: .regular, design: .monospaced)
     /// 26pt semibold monospaced — OTP digit boxes.
     public static let monoLarge = Font.system(size: 26, weight: .semibold, design: .monospaced)
+
+    /// ``mono`` for a sentence that may be in the interface language. The
+    /// monospaced face has no Arabic: a line set in it falls back letter by
+    /// letter and loses its joins ("أُرسلت قبل ساعتين" drawn as separate
+    /// letters). In a right-to-left interface the sentence reads in the text
+    /// face instead; codes and handles that are always Latin keep ``mono``.
+    public static var monoSentence: Font {
+        L10n.isRightToLeft ? Font.system(size: 15, weight: .regular, design: .default) : mono
+    }
+}
+
+extension View {
+
+    /// Letter-spacing for the small upper-case labels — in Latin script only.
+    ///
+    /// Tracking pulls a cursive script's joins apart: an Arabic label drawn
+    /// with it reads «كـلمة الـمرور» instead of «كلمة المرور». In a
+    /// right-to-left interface the spacing is dropped, as the web does
+    /// (`--track: 0` under `:lang(ar)`).
+    public func slTracking(_ value: CGFloat) -> some View {
+        tracking(L10n.isRightToLeft ? 0 : value)
+    }
 }
 
 /// Layout constants shared by every Sila component.

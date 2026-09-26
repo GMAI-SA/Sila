@@ -49,38 +49,34 @@ public enum SLFormat {
     /// A date with no time — `"12 Aug 2025"` / `"١٢ أغسطس ٢٠٢٥"` with Western
     /// digits, so `"12 أغسطس 2025"`.
     public static func date(_ date: Date, locale: Locale? = nil) -> String {
-        date.formatted(
-            Date.FormatStyle(date: .abbreviated, time: .omitted)
-                .locale(locale ?? L10n.formattingLocale)
-        )
+        date.formatted(gregorian(Date.FormatStyle(date: .abbreviated, time: .omitted), locale))
     }
 
     /// A date and a time of day.
     public static func dateTime(_ date: Date, locale: Locale? = nil) -> String {
-        date.formatted(
-            Date.FormatStyle(date: .abbreviated, time: .shortened)
-                .locale(locale ?? L10n.formattingLocale)
-        )
+        date.formatted(gregorian(Date.FormatStyle(date: .abbreviated, time: .shortened), locale))
     }
 
     /// Day and month only — the tag's "since 3 Sep" / "منذ 3 سبتمبر".
     public static func dayAndMonth(_ date: Date, locale: Locale? = nil) -> String {
-        date.formatted(
-            Date.FormatStyle()
-                .day()
-                .month(.abbreviated)
-                .locale(locale ?? L10n.formattingLocale)
-        )
+        date.formatted(gregorian(Date.FormatStyle().day().month(.abbreviated), locale))
     }
 
     /// Month and year only — the "Joined March 2025" line.
     public static func monthAndYear(_ date: Date, locale: Locale? = nil) -> String {
-        date.formatted(
-            Date.FormatStyle()
-                .month(.wide)
-                .year()
-                .locale(locale ?? L10n.formattingLocale)
-        )
+        date.formatted(gregorian(Date.FormatStyle().month(.wide).year(), locale))
+    }
+
+    /// The style on the Gregorian calendar, in `locale`.
+    ///
+    /// Set on the style itself, and before the locale: `.locale(_:)` alone
+    /// takes the calendar from the locale's region — Umm al-Qura for `ar_SA`
+    /// — whatever the locale's own calendar keyword says, so a Saudi phone
+    /// read «10 ربيع٢، 1448 هـ» beside a Gregorian date of birth.
+    private static func gregorian(_ base: Date.FormatStyle, _ locale: Locale?) -> Date.FormatStyle {
+        var style = base
+        style.calendar = Calendar(identifier: .gregorian)
+        return style.locale(locale ?? L10n.formattingLocale)
     }
 
     /// Long-form relative time, as VoiceOver reads it — `"2 hours ago"` /

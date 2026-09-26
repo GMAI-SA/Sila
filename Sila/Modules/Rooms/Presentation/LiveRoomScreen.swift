@@ -707,7 +707,7 @@ public struct LiveRoomScreen: View {
         HStack {
             Text(title.uppercased())
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
             Spacer(minLength: 0)
             if let count {

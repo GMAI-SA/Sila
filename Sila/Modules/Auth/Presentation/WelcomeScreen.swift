@@ -55,7 +55,7 @@ public struct WelcomeScreen: View {
 
                     Text(L10n.t("auth.brand.wordmark"))
                         .font(SLFont.displayXL)
-                        .tracking(-0.5)
+                        .slTracking(-0.5)
                         .foregroundStyle(SLColor.textPrimary)
 
                     Text(L10n.t("auth.welcome.tagline"))

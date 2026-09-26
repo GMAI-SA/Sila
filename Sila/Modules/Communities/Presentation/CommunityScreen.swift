@@ -250,7 +250,7 @@ public struct CommunityScreen: View {
                 if !community.rules.isEmpty {
                     Text(L10n.t("communities.rules.heading").uppercased())
                         .font(SLFont.micro)
-                        .tracking(0.8)
+                        .slTracking(0.8)
                         .foregroundStyle(SLColor.textSecondary)
                     ForEach(Array(community.rules.enumerated()), id: \.offset) { index, rule in
                         HStack(alignment: .top, spacing: SLSpacing.sm) {
@@ -309,7 +309,7 @@ public struct CommunityScreen: View {
         HStack {
             Text(title.uppercased())
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
             Spacer(minLength: 0)
             Text(SLFormat.number(count))

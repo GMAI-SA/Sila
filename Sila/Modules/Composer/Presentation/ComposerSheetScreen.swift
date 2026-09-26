@@ -404,7 +404,7 @@ public struct ComposerSheetScreen: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.t("composer.quote.sectionHeader"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityHidden(true)
 

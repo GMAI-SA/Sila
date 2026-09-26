@@ -76,7 +76,7 @@ public struct NotificationSettingsSheet: View {
                     ForEach(viewModel.sections) { group in
                         Text(group.title)
                             .font(SLFont.micro)
-                            .tracking(0.8)
+                            .slTracking(0.8)
                             .foregroundStyle(SLColor.textSecondary)
                             .padding(.top, SLSpacing.sm)
                             .accessibilityAddTraits(.isHeader)

@@ -170,7 +170,7 @@ public struct CreateRoomSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.t("rooms.create.topicHeader"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
 
             if viewModel.isLoadingTopics {
@@ -201,7 +201,7 @@ public struct CreateRoomSheet: View {
             HStack(spacing: SLSpacing.sm) {
                 Text(L10n.t("rooms.create.whoCanSpeak"))
                     .font(SLFont.micro)
-                    .tracking(0.8)
+                    .slTracking(0.8)
                     .foregroundStyle(SLColor.textSecondary)
                 Spacer(minLength: 0)
                 Text(L10n.t("rooms.create.everyoneCanListen"))
@@ -294,7 +294,7 @@ public struct CreateRoomSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
             Text(L10n.t("rooms.create.stageSizeHeader"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
 
             HStack(spacing: SLSpacing.sm) {

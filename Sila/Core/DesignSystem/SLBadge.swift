@@ -54,7 +54,7 @@ public struct SLBadge: View {
             if let icon {
                 Image(systemName: icon).font(.system(size: 9, weight: .bold))
             }
-            Text(text.uppercased()).font(SLFont.micro).tracking(0.6)
+            Text(text.uppercased()).font(SLFont.micro).slTracking(0.6)
         }
         .foregroundStyle(style.tint)
         .padding(.horizontal, SLSpacing.sm)

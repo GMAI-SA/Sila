@@ -628,7 +628,7 @@ public struct AccountScreen: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title)
                             .font(SLFont.micro)
-                            .tracking(0.6)
+                            .slTracking(0.6)
                             .foregroundStyle(SLColor.textSecondary)
                         Text(value)
                             .font(SLFont.body)
@@ -682,7 +682,7 @@ public struct AccountScreen: View {
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
             .font(SLFont.micro)
-            .tracking(0.8)
+            .slTracking(0.8)
             .foregroundStyle(SLColor.textSecondary)
             .accessibilityAddTraits(.isHeader)
     }

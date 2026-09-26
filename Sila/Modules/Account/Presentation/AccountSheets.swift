@@ -199,7 +199,7 @@ struct EmailChangeSheet: View {
                 VStack(alignment: .leading, spacing: SLSpacing.xs) {
                     Text(L10n.t("account.email.code.sentTo"))
                         .font(SLFont.micro)
-                        .tracking(0.8)
+                        .slTracking(0.8)
                         .foregroundStyle(SLColor.textSecondary)
                     Text(address)
                         .font(SLFont.mono)
@@ -293,7 +293,7 @@ struct PhoneSheet: View {
                     VStack(alignment: .leading, spacing: SLSpacing.xs) {
                         Text(L10n.t("account.phone.notAVerification"))
                             .font(SLFont.micro)
-                            .tracking(0.8)
+                            .slTracking(0.8)
                             .foregroundStyle(SLColor.warning)
                         Text(PhoneNumber.unverifiedCaption)
                             .font(SLFont.body)
@@ -311,7 +311,7 @@ struct PhoneSheet: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(L10n.t("account.phone.onFile"))
                             .font(SLFont.micro)
-                            .tracking(0.8)
+                            .slTracking(0.8)
                             .foregroundStyle(SLColor.textSecondary)
                         // `+966 501 234 567` is one left-to-right run. Mirrored,
                         // the `+` lands at the end and the groups read backwards.
@@ -565,7 +565,7 @@ struct AccountRecoveryScreen: View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
             Text(L10n.t("account.recovery.currentState.header"))
                 .font(SLFont.micro)
-                .tracking(0.8)
+                .slTracking(0.8)
                 .foregroundStyle(SLColor.textSecondary)
                 .accessibilityAddTraits(.isHeader)
 

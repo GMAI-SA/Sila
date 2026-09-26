@@ -140,7 +140,7 @@ public struct SLCountryBadge: View {
                 if size == .regular {
                     Text(code)
                         .font(SLFont.micro)
-                        .tracking(0.5)
+                        .slTracking(0.5)
                         .foregroundStyle(SLColor.secondary)
                 }
             }
