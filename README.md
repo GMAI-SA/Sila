@@ -277,6 +277,60 @@ list is the same `GET /topics` the feed preferences screen reads. Both are reuse
 for the same reason: a second copy of the country rule, or a hard-coded
 taxonomy, is a second thing to go stale.
 
+## Vouching, and the two rules it keeps
+
+Contract v24 (with §11, the details both sides give, and §12, the two warnings).
+A verified member can stand behind somebody who has not verified yet; that
+person reaches the app for 30 days, with a tag instead of a seal, and verifies
+to keep it. `Modules/Vouching/` holds all of it; the rest of the app only reads
+`AuthUser.standing` and `UserSummary.vouchedBy`.
+
+**1. The tag is never the seal.** `if is_verified { seal; flag } else if
+vouched_by { tag }` — `UserSummary` drops a tag that arrives beside
+`is_verified`, and `VouchTag` checks again. It reads "vouched by @x · Country" /
+«بتزكية @x · الدولة», the country as its name in text (the nationality both
+sides gave), never a flag and never `country_code`. `SLVouchTag` is a chip with
+a hairline border and no fill, deliberately the opposite of the filled seal. A
+tap by anybody opens the explainer with **See @x**; a tap on your own tag opens
+"Make it your own" and the verification flow over the app. Guests get the
+explainer too. Post cards, quote cards (icon only), profile headers, room tiles
+and the room's participant sheet, notification rows and search results carry it.
+
+**2. What the voucher wrote never reaches the person.** The link carries a full
+name, nationality and date of birth; whoever claims it gives their own, sent as
+typed (the server folds case, spacing, tashkeel and letter variants). A
+mismatch names *which* fields — "These don't match what @x entered: name, date
+of birth" — never a value, and says how many tries the link has left; the third
+closes it. Analytics carry the refusal code only.
+
+Around those two:
+
+* **Standing routes before status.** `vouched` reaches the feed whatever
+  `verification_status` says (a refused document included); `none` with a
+  pending claim is the wall, with "Waiting for @x to confirm it's you" and a way
+  to withdraw the claim; the person's own verification stays one tap away.
+* **The limited tier is said where it bites.** A countdown above Home, a
+  Messages tab that explains itself, "Verify your identity to host" before the
+  room or event sheet, no voice recorder, a localized listener line in rooms,
+  "Verify your identity to vote" on polls, no Message button on a vouched
+  profile. Anything the server still refuses with `403
+  self_verification_required` opens one sheet offering verification — never
+  the wall.
+* **The entry points appear only while vouching is open to the account.** The
+  Profile row "Vouch for someone you know" (between Groups and Account) is drawn
+  from `GET /vouching`: hidden on `vouching_not_open`, dimmed with the reason
+  otherwise when the account cannot vouch now. A vouched account's row is "Your
+  vouch" instead.
+* **A link waits through sign-up.** `VouchInviteInbox` keeps the token (never a
+  name) through registration, the email code and a relaunch, for 72 hours; the
+  landing shows over whatever screen the person is on, and signed out it asks
+  them to join first.
+* **Both sides are warned before they commit** (§12): a card drawn in place,
+  every time, before the voucher's details form and before the person's.
+* **Push words come from the bundle.** `push.vouch_*` names nobody (the payload
+  carries no name); a tap lands on the voucher's list or the person's own vouch,
+  by the push's link, or by its kind when the link is missing.
+
 ## Running without a backend
 
 ```bash
@@ -330,9 +384,21 @@ server would accept. `VoiceEngineMock` **enforces** the rule rather than
 recording it: a connection made with `canPublish: false` refuses to open the
 microphone, exactly as the media server would.
 
+`VouchingServiceMock` ships 4: `voucher` (a claim to confirm, a live vouch with a
+moderator's question, one ended, one open link), `notOpen` (the flag is off: no
+entry points), `struck` (one strike: the right to vouch is gone) and `empty`. Its
+link `mock-khalid-2026-link` was written by @noura for Khalid Al-Harbi, Saudi,
+born 12 April 1995: the claim plays the server's matching, mismatches and the
+third that closes it. `AuthServiceMock` adds `vouched` and `vouchPending`.
+`-openLink URL` opens a sila.gmai.sa link on launch, as a tap would:
+
+```bash
+-mockScenario unstarted -openLink https://sila.gmai.sa/vouch/mock-khalid-2026-link
+```
+
 `-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch`,
 `-mockPreferences`, `-mockAccount`, `-mockProfile`, `-mockNotifications`,
-`-mockSafety` and `-mockRooms` unless the matching
+`-mockSafety`, `-mockRooms` and `-mockVouching` unless the matching
 `-mock…Scenario` argument says otherwise, because a mocked session carries no bearer token the
 live API would accept — and in the account module's case because the live
 version of the deletion demo costs a real account.
@@ -411,6 +477,14 @@ TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_DEV_API=http://127.0.0.1:18100/api/
 xcodebuild ... test -only-testing:SilaTests/LiveVerificationPolishTests
 ```
 
+`LiveVouchingTests` (contract v24) works the same way, with disposable accounts
+only: two made vouchers through the dev hook (verified forty days ago — the
+thirty-day rule), two people. Vouching is closed in production except for
+exactly these dev-mode `@example.com` accounts. It mints a link, reads it
+through the app's own link parser, claims it after a mismatch, confirms,
+checks the tag, the thirty days and the limited tier, and takes the tag off
+again; the second link is closed by three mismatches. Nothing is left live.
+
 ## Layout
 
 ```
@@ -446,6 +520,11 @@ Sila/
 │                         file that imports a third-party library — VoiceEngineMock)
 │                         Presentation (RoomsScreen, CreateRoomSheet,
 │                         LiveRoomScreen, three view models)
+├── Modules/Vouching/     Domain (Standing, VouchedBy, VouchState, Vouch, VouchInvite,
+│                         VouchingOverview, VouchDetails, VouchCopy)
+│                         Data (VouchingService, mock, VouchInviteInbox)
+│                         Presentation (the voucher's list, the link sheet, the
+│                         claim, the person's own vouch, the tag, the tier)
 └── Modules/Notifications/ Domain (UserNotification/NotificationKind/Page,
                            NotificationPreferences, NotificationCopy)
                            Data (NotificationsService, mock)
