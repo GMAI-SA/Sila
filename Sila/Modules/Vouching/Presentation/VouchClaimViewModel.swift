@@ -19,8 +19,13 @@ public final class VouchClaimViewModel {
         /// The link works: the form (or, signed out, the way to join).
         case open(VouchInviteLanding)
         /// One state for every link that cannot be used — unknown, used,
-        /// expired, burned, a voucher who can no longer vouch.
+        /// expired, burned, a voucher who can no longer vouch. Only the
+        /// server's own answer lands here (`404 invite_unavailable`).
         case unavailable
+        /// The landing could not be read at all — offline, a timeout, a
+        /// server error. Not an answer about the link, so never "ask for a
+        /// new one": the way on is to try again.
+        case failed(String)
         /// Three tries did not match; the link is closed for good.
         case closed
         /// Accepted: now the voucher confirms it is them.
@@ -40,6 +45,10 @@ public final class VouchClaimViewModel {
     /// The fields the last try did not match, in the server's order.
     public private(set) var mismatched: [VouchDetailField] = []
     public private(set) var attemptsLeft: Int?
+    /// Counts the mismatches this screen has shown, so each one can be
+    /// announced — the banner appears above the fields, away from the
+    /// button VoiceOver is on.
+    public private(set) var mismatchSerial = 0
     /// A detail the server refused as impossible (not a mismatch).
     public private(set) var fieldErrors: [VouchDetailField: String] = [:]
     public private(set) var isSubmitting = false
@@ -55,6 +64,10 @@ public final class VouchClaimViewModel {
     /// Where the signed-in account stands. A verified or vouched one is told
     /// at once that the link is not for it, rather than after the form.
     private let standing: Standing
+    /// A claim this account already made and its voucher has not answered:
+    /// one live vouch at a time (`409 already_vouched`), said before the
+    /// warnings and the form rather than after them.
+    private let pendingClaim: VouchState?
     private let service: VouchingServiceProtocol
     private let onClaimed: @MainActor (VouchState?) async -> Void
 
@@ -62,12 +75,14 @@ public final class VouchClaimViewModel {
         token: String,
         isSignedIn: Bool,
         standing: Standing = .noStanding,
+        pendingClaim: VouchState? = nil,
         service: VouchingServiceProtocol,
         onClaimed: @escaping @MainActor (VouchState?) async -> Void
     ) {
         self.token = token
         self.isSignedIn = isSignedIn
         self.standing = isSignedIn ? standing : .noStanding
+        self.pendingClaim = isSignedIn ? pendingClaim : nil
         self.service = service
         self.onClaimed = onClaimed
     }
@@ -107,15 +122,30 @@ public final class VouchClaimViewModel {
         case .noStanding:
             break
         }
+        if let pendingClaim {
+            phase = .refused(L10n.t("vouch.claim.member.pending", pendingClaim.voucher?.handle ?? pendingClaim.voucherHandle))
+            return
+        }
         phase = .loading
         do {
             phase = .open(try await service.landing(token: token))
         } catch let error as APIError where error.isCancellation {
             return
         } catch {
-            // One state for all of them, as the server gives one answer:
-            // a link that answered differently for each could be probed.
-            phase = .unavailable
+            // The server's one answer for every link that cannot be used is
+            // one state, so a token cannot be probed. Anything else — no
+            // connection, a timeout, a server error — said nothing about the
+            // link, and must not send the voucher off to burn a good one.
+            phase = Self.isUnusableLink(error) ? .unavailable : .failed(APIError.wrapping(error).userMessage)
+        }
+    }
+
+    /// `404 invite_unavailable` (or a bare 404 from the same route).
+    nonisolated static func isUnusableLink(_ error: Error) -> Bool {
+        switch APIError.wrapping(error) {
+        case let .api(code, _, status): return code == .inviteUnavailable || status == 404
+        case let .http(status, _): return status == 404
+        default: return false
         }
     }
 
@@ -150,6 +180,7 @@ public final class VouchClaimViewModel {
             mismatched = VouchDetailField.parse(fields)
             attemptsLeft = left
             fieldErrors = [:]
+            mismatchSerial += 1
         } catch let error as APIError {
             apply(error)
         } catch {

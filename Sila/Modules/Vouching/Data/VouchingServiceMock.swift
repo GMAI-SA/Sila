@@ -50,6 +50,14 @@ public actor VouchingServiceMock: VouchingServiceProtocol {
     public private(set) var recordedCalls: [String] = []
     /// The details the last claim carried, so a test can check what was sent.
     public private(set) var lastClaimedDetails: VouchDetails?
+    /// What every written answer to a finding fails with, when set — the
+    /// dropped connection or the `422` a screen must survive.
+    private var answerFailure: APIError?
+    /// What reading a link's landing fails with, when set.
+    private var landingFailure: APIError?
+
+    public func setAnswerFailure(_ error: APIError?) { answerFailure = error }
+    public func setLandingFailure(_ error: APIError?) { landingFailure = error }
 
     public init(scenario: MockScenario = .voucher, latency: Double = 0) {
         self.scenario = scenario
@@ -131,6 +139,7 @@ public actor VouchingServiceMock: VouchingServiceProtocol {
     public func answer(vouchId: UUID, action: VouchAnswer, statement: String) async throws -> Vouch {
         record("answer:\(action.rawValue)")
         try await delay()
+        if let failure = answerFailure { throw failure }
         return try update(vouchId) { old in
             let summons = VouchSummons(reason: old.summons?.reason, summonedAt: old.summons?.summonedAt,
                                        deadline: old.summons?.deadline, answer: action.rawValue, answeredAt: Date())
@@ -147,6 +156,7 @@ public actor VouchingServiceMock: VouchingServiceProtocol {
     public func landing(token: String) async throws -> VouchInviteLanding {
         record("landing")
         try await delay()
+        if let failure = landingFailure { throw failure }
         guard token == Self.openToken, !closed, claimed == nil else { throw Self.unavailable }
         return VouchInviteLanding(voucher: Self.voucher, expiresAt: Date().addingTimeInterval(60 * 3_600))
     }

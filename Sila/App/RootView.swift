@@ -84,6 +84,8 @@ public struct RootView: View {
                 token: invite.token,
                 isSignedIn: signedIn,
                 standing: container.session.user?.standing ?? .noStanding,
+                // A claim already waiting: refused at once, not after the form.
+                pendingClaim: container.session.user?.vouch?.isPending == true ? container.session.user?.vouch : nil,
                 service: container.vouchingService,
                 onClaimed: { vouch in
                     container.vouchInbox.settle()

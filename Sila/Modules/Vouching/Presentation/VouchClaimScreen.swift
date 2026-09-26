@@ -47,9 +47,14 @@ public struct VouchClaimScreen: View {
                 }
                 // A mismatch is said above the fields; the form is scrolled
                 // back to it, so the tries left are read, not missed.
-                .onChange(of: viewModel.attemptsLeft) { _, left in
-                    guard left != nil else { return }
+                .onChange(of: viewModel.mismatchSerial) { _, _ in
                     withAnimation { proxy.scrollTo(Self.mismatchAnchor, anchor: .top) }
+                    // Said aloud too: VoiceOver's focus is still on Accept,
+                    // far from the banner, and a try has just been spent.
+                    if let text = viewModel.mismatchText {
+                        let left = viewModel.attemptsLeft.map { " " + VouchCopy.attemptsLeft($0) } ?? ""
+                        AccessibilityNotification.Announcement(text + "." + left).post()
+                    }
                 }
             }
             .scrollDismissesKeyboard(.interactively)
@@ -71,7 +76,7 @@ public struct VouchClaimScreen: View {
     private var isFinished: Bool {
         switch viewModel.phase {
         case .claimed, .unavailable, .closed, .refused: return true
-        case .loading, .open: return false
+        case .loading, .open, .failed: return false
         }
     }
 
@@ -93,6 +98,17 @@ public struct VouchClaimScreen: View {
                 tint: SLColor.textSecondary
             )
             .accessibilityIdentifier("vouching.claim.unavailable")
+
+        case let .failed(message):
+            SLEmptyState(
+                icon: "wifi.exclamationmark",
+                title: L10n.t("vouch.claim.failed.title"),
+                subtitle: message,
+                tint: SLColor.warning,
+                actionTitle: L10n.t("vouch.claim.failed.retry"),
+                action: { Task { await viewModel.load() } }
+            )
+            .accessibilityIdentifier("vouching.claim.failed")
 
         case .closed:
             SLEmptyState(

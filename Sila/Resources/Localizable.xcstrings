@@ -42621,6 +42621,42 @@
         }
       }
     },
+    "vouch.claim.failed.retry": {
+      "comment": "Reads a vouch link's landing again after it failed to load.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أعد المحاولة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "vouch.claim.failed.title": {
+      "comment": "A vouch link's landing could not be read — offline, a timeout, a server error. Not the same as a link that cannot be used.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر فتح هذا الرابط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This link didn't load"
+          }
+        }
+      }
+    },
     "vouch.claim.guest": {
       "extractionState": "manual",
       "localizations": {
@@ -42651,6 +42687,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opening the vouch link"
+          }
+        }
+      }
+    },
+    "vouch.claim.member.pending": {
+      "comment": "A person whose claim is already waiting for its voucher opens another vouch link. %@ is the voucher of the claim already made.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد قبلت تزكية من ⁦@%@⁩، وهي بانتظار أن يؤكّد أنك أنت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've already accepted a vouch from @%@. It's waiting for them to confirm it's you."
           }
         }
       }
