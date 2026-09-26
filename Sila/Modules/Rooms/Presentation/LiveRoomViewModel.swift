@@ -170,9 +170,13 @@ public final class LiveRoomViewModel {
 
     /// Where the invites picker gets its people.
     private let people: PeopleDirectory?
-    /// A vouched listener (contract v24 §4): the microphone, chat and
-    /// questions wait for their own verification.
-    private let viewerIsVouched: Bool
+    /// A vouched listener (contract v24 §4, and the addendum of 2026-09-26).
+    /// They listen, like the room and set reminders; everything else a room
+    /// offers — the hand, the chat to the room or privately to the host,
+    /// questions, room polls, reactions and sharing — waits for their own
+    /// verification. The media server refuses their data messages anyway, so
+    /// none of those is offered or sent from here.
+    public let viewerIsVouched: Bool
 
     // MARK: - Derived state
 
@@ -185,7 +189,19 @@ public final class LiveRoomViewModel {
     public var isListening: Bool { phase == .inRoom && !role.canPublish }
 
     /// Whether a listener may ask for the microphone: the room's rule allows it.
-    public var canRaiseHand: Bool { isListening && room.canSpeak && room.status.isJoinable }
+    public var canRaiseHand: Bool { isListening && room.canSpeak && room.status.isJoinable && !viewerIsVouched }
+
+    /// Whether the room's text chat takes a line from this viewer — to the
+    /// room or to the host alone. A vouched listener reads it only.
+    public var canChat: Bool { !viewerIsVouched }
+
+    /// Whether this viewer may send an emoji up the screen.
+    public var canReact: Bool { !viewerIsVouched }
+
+    /// Whether the room can be put on the viewer's timeline: never a closed
+    /// room (advertising one is how it would leak), and never by a vouched
+    /// account (sharing is a verified member's, contract v24 §4).
+    public var canShare: Bool { !room.isClosed && !viewerIsVouched }
 
     /// Whether this viewer's hand is up.
     public var handRaised: Bool { room.handRaised }
@@ -389,7 +405,7 @@ public final class LiveRoomViewModel {
     private var lastBigReactionAt: Date?
 
     public func react(_ emoji: String, big requested: Bool = false) async {
-        guard let viewerId, !hasLeft else { return }
+        guard let viewerId, !hasLeft, canReact else { return }
         var big = requested
         if big, let last = lastBigReactionAt, Date().timeIntervalSince(last) < Self.bigReactionInterval {
             big = false
@@ -405,13 +421,17 @@ public final class LiveRoomViewModel {
     /// True when there is something to send.
     public var canSendChat: Bool {
         let trimmed = chatDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmed.isEmpty && trimmed.count <= Self.chatCharacterLimit && !hasLeft
+        return canChat && !trimmed.isEmpty && trimmed.count <= Self.chatCharacterLimit && !hasLeft
     }
 
     /// Says a line, to the room or to the host alone.
+    ///
+    /// Never for a vouched listener, by either path: the line to the room
+    /// would be refused by the server, and the private line to the host goes
+    /// over the media server's data channel, past the server entirely.
     public func sendChat() async {
         let text = chatDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard canSendChat, let viewerId else { return }
+        guard canChat, canSendChat, let viewerId else { return }
         let toHost = chatToHostOnly && !isHost
         // A line to everyone is kept, so a late arrival can read it; the
         // server fans it out. A private line to the host stays on the wire.
@@ -471,7 +491,7 @@ public final class LiveRoomViewModel {
     func prepareDepth() {
         guard depth == nil, let depthService else { return }
         depth = RoomDepthViewModel(roomId: room.id, isHost: isHost, isStage: isStage, cohosts: room.cohosts,
-                                   service: depthService, analytics: analytics)
+                                   service: depthService, analytics: analytics, viewerIsVouched: viewerIsVouched)
     }
 
     /// History for somebody arriving late.
@@ -701,7 +721,7 @@ public final class LiveRoomViewModel {
 
     /// Asks for the microphone, or withdraws the request.
     public func toggleHand() async {
-        guard isListening, !isTogglingHand else { return }
+        guard isListening, !isTogglingHand, !viewerIsVouched else { return }
         isTogglingHand = true
         defer { isTogglingHand = false }
         let raising = !handRaised
@@ -835,6 +855,7 @@ public final class LiveRoomViewModel {
     /// their own. A room leaves no recording, so this is how it is referred
     /// to afterwards.
     public func share(text: String) async -> Bool {
+        guard canShare else { return false }
         do {
             _ = try await service.shareRoom(id: room.id, text: text)
             room = room.with(

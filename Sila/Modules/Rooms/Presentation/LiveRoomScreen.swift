@@ -40,9 +40,11 @@ public struct LiveRoomScreen: View {
         onLeave: @escaping @MainActor () -> Void,
         onOpenProfile: (@MainActor (String) -> Void)? = nil,
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
-        onReport: (@MainActor (ReportSubject) -> Void)? = nil
+        onReport: (@MainActor (ReportSubject) -> Void)? = nil,
+        onVerifySelf: (@MainActor () -> Void)? = nil
     ) {
         self.onReport = onReport
+        self.onVerifySelf = onVerifySelf
         self.viewModel = viewModel
         self.onLeave = onLeave
         self.onOpenProfile = onOpenProfile
@@ -50,6 +52,9 @@ public struct LiveRoomScreen: View {
     }
 
     private let onReport: (@MainActor (ReportSubject) -> Void)?
+    /// A vouched listener's own verification, from where the room says what
+    /// waits for it. `nil` offers the sentence alone.
+    private let onVerifySelf: (@MainActor () -> Void)?
     @Environment(\.recognitionService) private var recognition
 
     public var body: some View {
@@ -98,8 +103,9 @@ public struct LiveRoomScreen: View {
 
             // A room is never recorded; putting it on a timeline is the only
             // way it is referred to after it ends. Closed rooms are absent —
-            // advertising one is how an invite-only room would leak.
-            if !viewModel.room.isClosed {
+            // advertising one is how an invite-only room would leak — and so
+            // is a vouched listener's share, which waits for verification.
+            if viewModel.canShare {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         viewModel.isSharing = true
@@ -293,7 +299,11 @@ public struct LiveRoomScreen: View {
                     }
                 }
 
-                composer
+                if viewModel.canChat {
+                    composer
+                } else {
+                    vouchedComposer
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .tnScreenBackground()
@@ -349,6 +359,30 @@ public struct LiveRoomScreen: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// Where a vouched listener's composer would be: why there is none — to
+    /// the room or to the host alone — and the one door that opens it
+    /// (contract v24 §4).
+    private var vouchedComposer: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            Rectangle().fill(SLColor.stroke).frame(height: 1)
+            Text(L10n.t("vouch.limited.rooms"))
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, SLSpacing.lg)
+                .accessibilityIdentifier("rooms.chat.vouched")
+            if let onVerifySelf {
+                SLButton(L10n.t("vouch.own.action"), variant: .secondary, size: .compact, icon: "checkmark.seal",
+                         action: onVerifySelf)
+                    .padding(.horizontal, SLSpacing.lg)
+                    .accessibilityIdentifier("rooms.chat.vouched.verify")
+            }
+        }
+        .padding(.bottom, SLSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(SLColor.surface1)
     }
 
     private var composer: some View {
@@ -911,9 +945,13 @@ public struct LiveRoomScreen: View {
     /// The strip anybody can hit while listening, and the way into the chat.
     private var expression: some View {
         HStack(spacing: SLSpacing.xs) {
-            ForEach(RoomReaction.palette, id: \.self) { emoji in
-                ReactionChip(emoji: emoji) { big in
-                    Task { await viewModel.react(emoji, big: big) }
+            // A vouched listener's reactions would ride the data channel the
+            // media server refuses them; the strip is not drawn at all.
+            if viewModel.canReact {
+                ForEach(RoomReaction.palette, id: \.self) { emoji in
+                    ReactionChip(emoji: emoji) { big in
+                        Task { await viewModel.react(emoji, big: big) }
+                    }
                 }
             }
 
@@ -940,8 +978,11 @@ public struct LiveRoomScreen: View {
                 .contentShape(Rectangle())
             }
             .accessibilityLabel(Text(L10n.t("rooms.chat.open.a11yLabel")))
+            .accessibilityIdentifier("rooms.chat.open")
         }
-        .padding(.horizontal, SLSpacing.lg)
+        // No inset of its own: the control bar already keeps the gutter. Both
+        // together made this row 412pt wide, which pushed the whole room past
+        // the edges of a 375pt screen.
         .padding(.top, SLSpacing.sm)
     }
 
@@ -1137,7 +1178,10 @@ private struct ReactionChip: View {
     var body: some View {
         Text(emoji)
             .font(.system(size: 20))
-            .frame(width: 34, height: 34)
+            // Gives a little on a narrow phone rather than pushing the room
+            // wider than the screen: eight of these and the chat button have
+            // to fit in 343pt on an iPhone SE.
+            .frame(minWidth: 28, idealWidth: 34, maxWidth: 34, minHeight: 34, maxHeight: 34)
             .background(Circle().fill(isArmed ? SLColor.primary.opacity(0.25) : SLColor.surface2))
             .scaleEffect(isArmed ? 1.6 : (isPressed ? 1.12 : 1))
             .animation(.spring(response: 0.25, dampingFraction: 0.6), value: isArmed)

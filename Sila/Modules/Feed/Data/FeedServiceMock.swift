@@ -295,6 +295,13 @@ extension FeedServiceMock {
         id: id(104), handle: "noor", displayName: "Noor Al-Fahad",
         isVerified: true, countryCode: "AE", verifiedSince: minutesAgo(60 * 24 * 7)
     )
+    /// An account a verified member vouches for (contract v24): no seal, no
+    /// flag — the tag "vouched by @noor · Saudi Arabia" instead.
+    static let vouched = UserSummary(
+        id: id(106), handle: "khalid", displayName: "Khalid Al-Harbi",
+        isVerified: false, countryCode: nil, verifiedSince: nil,
+        vouchedBy: VouchedBy(id: id(104), handle: "noor", since: minutesAgo(60 * 24 * 7), country: "SA")
+    )
     /// An account still in the verification queue: verified `false`, and
     /// therefore **no country flag at all**. The card must show nothing.
     static let pending = UserSummary(

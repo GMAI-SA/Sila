@@ -31,6 +31,11 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         case offline
         /// Reads fine; every write is throttled with `429`.
         case writesFail
+        /// The viewer is vouched for (contract v24 §4): a listener in every
+        /// room, refused the microphone for who they are rather than for the
+        /// room's rule, beside another vouched listener whose tile carries
+        /// the tag. What `-mockScenario vouched` serves by default.
+        case vouched
     }
 
     /// The scenario currently being played.
@@ -73,6 +78,8 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             stored = []
         case .listenerOnly:
             stored = Self.cast.map { Self.asListener($0) }
+        case .vouched:
+            stored = Self.cast.map { Self.asVouchedListener($0) }
         case .hosting:
             stored = Self.cast.enumerated().map { index, room in
                 index == 0 ? Self.asHost(room) : room
@@ -84,7 +91,13 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         case .populated, .writesFail:
             stored = Self.cast
         }
-        rosters = Dictionary(uniqueKeysWithValues: stored.map { ($0.id, Self.roster(for: $0)) })
+        var built = Dictionary(uniqueKeysWithValues: stored.map { ($0.id, Self.roster(for: $0)) })
+        if scenario == .vouched {
+            for id in built.keys {
+                built[id]?.append(RoomParticipant(role: .listener, user: FeedServiceMock.vouched, joinedAt: Date()))
+            }
+        }
+        rosters = built
     }
 
     /// Adds a live closed room hosted by the viewer, and returns it.
@@ -783,6 +796,12 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
                 ?? "Only accounts verified in this room's audience can speak here. You can still listen.",
             isHost: false
         )
+    }
+
+    /// The room as the server shows it to a vouched account: the server's
+    /// own English sentence, which the app replaces with its own.
+    private static func asVouchedListener(_ room: VoiceRoom) -> VoiceRoom {
+        copy(room, canSpeak: false, speakRefusal: "Verify your identity to take the microphone", isHost: false)
     }
 
     private static func asHost(_ room: VoiceRoom) -> VoiceRoom {

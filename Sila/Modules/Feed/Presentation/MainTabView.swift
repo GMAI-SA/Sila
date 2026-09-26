@@ -1455,7 +1455,8 @@ public struct MainTabView: View {
                     },
                     onOpenProfile: openRoomProfile,
                     safetyMenu: { target in safety.menu(for: target) },
-                    onReport: { subject in safety.openReport(subject) }
+                    onReport: { subject in safety.openReport(subject) },
+                    onVerifySelf: isVouched ? selfVerifyHandler : nil
                 )
             }
             .id(room.id)

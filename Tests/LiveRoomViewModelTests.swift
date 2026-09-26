@@ -537,6 +537,116 @@ final class LiveRoomViewModelTests: XCTestCase {
     }
 }
 
+// MARK: - A vouched listener (contract v24 §4)
+
+extension LiveRoomViewModelTests {
+
+    private func vouchedListener() -> (LiveRoomViewModel, VoiceEngineMock, ScriptedRoomService, RoomDepthServiceMock) {
+        let engine = VoiceEngineMock()
+        let depth = RoomDepthServiceMock()
+        let served = room(canSpeak: false, refusal: "Verify your identity to take the microphone")
+        let service = ScriptedRoomService(room: served, viewerRole: .listener)
+        let viewModel = LiveRoomViewModel(
+            room: served, viewerHandle: "khalid", viewerId: FeedServiceMock.aziz.id,
+            service: service, engine: engine, analytics: RecordingAnalyticsClient(),
+            pollInterval: 0, eventDebounce: 0, depth: depth, viewerIsVouched: true
+        )
+        return (viewModel, engine, service, depth)
+    }
+
+    /// The private line to the host rides the media server's data channel,
+    /// past the server: hiding the composer is not enough, the model must
+    /// refuse to send it too.
+    func testAVouchedListenerSendsNoLineToTheRoomOrPrivatelyToTheHost() async {
+        let (viewModel, engine, _, depth) = vouchedListener()
+        await viewModel.start()
+        XCTAssertFalse(viewModel.canChat, "no composer is drawn")
+        let publishedBefore = engine.publishedMessages.count
+        let keptBefore = depth.messageList.count
+
+        viewModel.chatDraft = "a word for the host alone"
+        viewModel.chatToHostOnly = true
+        XCTAssertFalse(viewModel.canSendChat)
+        await viewModel.sendChat()
+        XCTAssertEqual(engine.publishedMessages.count, publishedBefore, "nothing went over the data channel")
+
+        viewModel.chatToHostOnly = false
+        viewModel.chatDraft = "a word for everybody"
+        await viewModel.sendChat()
+        XCTAssertEqual(depth.messageList.count, keptBefore, "nothing went to the server either")
+        XCTAssertTrue(viewModel.chat.allSatisfy { !$0.isMine }, "no line of theirs appears as sent")
+    }
+
+    func testAVouchedListenerHasNoReactionsHandShareQuestionsOrVotes() async {
+        let (viewModel, engine, service, _) = vouchedListener()
+        await viewModel.start()
+        let publishedBefore = engine.publishedMessages.count
+
+        XCTAssertFalse(viewModel.canReact)
+        await viewModel.react("👏", big: true)
+        XCTAssertEqual(engine.publishedMessages.count, publishedBefore, "a reaction is a data message the grant refuses")
+
+        XCTAssertFalse(viewModel.canRaiseHand)
+        await viewModel.toggleHand()
+        XCTAssertFalse(viewModel.canShare, "sharing a room is a verified member's")
+        let shared = await viewModel.share(text: "worth a listen")
+        XCTAssertFalse(shared)
+        let calls = await service.calls
+        XCTAssertFalse(calls.contains("hand:up"))
+        XCTAssertFalse(calls.contains { $0.hasPrefix("shareRoom") })
+
+        let depth = try? XCTUnwrap(viewModel.depth)
+        XCTAssertEqual(depth?.canTakePart, false, "questions and room polls are read, not joined")
+        depth?.askDraft = "Will there be a recap?"
+        XCTAssertEqual(depth?.canAsk, false)
+
+        L10n.use("en")
+        defer { L10n.use(nil) }
+        XCTAssertEqual(viewModel.speakRefusal, L10n.t("vouch.limited.rooms"), "said in the reader's language")
+    }
+
+    func testAVerifiedListenerStillChatsReactsAndShares() async {
+        let (viewModel, engine, _) = makeViewModel(room: room(canSpeak: false), role: .listener)
+        await viewModel.start()
+        XCTAssertTrue(viewModel.canChat)
+        XCTAssertTrue(viewModel.canReact)
+        XCTAssertTrue(viewModel.canShare)
+        viewModel.chatDraft = "hello host"
+        viewModel.chatToHostOnly = true
+        await viewModel.sendChat()
+        XCTAssertTrue(engine.publishedMessages.contains { $0.isChat }, "the private line goes to the host")
+    }
+}
+
+@MainActor
+final class VouchedRoomDepthTests: XCTestCase {
+
+    func testAVouchedListenerCanReadButNotAskUpvoteOrVote() async throws {
+        let service = RoomDepthServiceMock()
+        let stage = RoomDepthViewModel(roomId: UUID(), isHost: true, isStage: true, cohosts: [],
+                                       service: service, analytics: RecordingAnalyticsClient())
+        let opened = await stage.openPoll(question: "Tonight?", options: ["Yes", "No"], durationSeconds: 120)
+        XCTAssertTrue(opened)
+
+        let vouched = RoomDepthViewModel(roomId: UUID(), isHost: false, isStage: false, cohosts: [],
+                                         service: service, analytics: RecordingAnalyticsClient(), viewerIsVouched: true)
+        await vouched.load()
+        XCTAssertFalse(vouched.questions.isEmpty, "the queue is readable")
+        vouched.askDraft = "A perfectly good question"
+        XCTAssertFalse(vouched.canAsk)
+        await vouched.ask()
+        XCTAssertFalse(service.questionList.contains { $0.text == "A perfectly good question" })
+
+        let target = try XCTUnwrap(vouched.questions.first)
+        await vouched.toggleUpvote(target)
+        XCTAssertEqual(service.questionList.first { $0.id == target.id }?.upvoteCount, target.upvoteCount)
+
+        let poll = try XCTUnwrap(vouched.polls.first)
+        await vouched.vote(poll.poll.options[0], in: poll)
+        XCTAssertEqual(service.pollList.first?.poll.totalVotes, 0, "no vote was cast")
+    }
+}
+
 // MARK: - Test double
 
 /// Serves one room whose status, removal flag, roster role and hands the test

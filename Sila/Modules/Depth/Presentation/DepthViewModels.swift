@@ -22,6 +22,10 @@ public final class RoomDepthViewModel {
     public private(set) var isStage: Bool
     /// Only the host adds or removes co-hosts.
     public let isHost: Bool
+    /// A vouched listener reads the questions and polls but cannot ask,
+    /// upvote or vote (contract v24 §4): each waits for their own
+    /// verification, and the panel says so where the field would be.
+    public let viewerIsVouched: Bool
     private let service: RoomDepthServiceProtocol
     private let analytics: AnalyticsClient
 
@@ -29,7 +33,8 @@ public final class RoomDepthViewModel {
     public static let maxCohosts = 3
 
     public init(roomId: UUID, isHost: Bool, isStage: Bool, cohosts: [UserSummary],
-                service: RoomDepthServiceProtocol, analytics: AnalyticsClient) {
+                service: RoomDepthServiceProtocol, analytics: AnalyticsClient, viewerIsVouched: Bool = false) {
+        self.viewerIsVouched = viewerIsVouched
         self.roomId = roomId
         self.isHost = isHost
         self.isStage = isStage
@@ -43,8 +48,12 @@ public final class RoomDepthViewModel {
 
     public var canAsk: Bool {
         let text = askDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.count >= 2 && text.count <= Self.maxQuestionLength && !isAsking
+        return !viewerIsVouched && text.count >= 2 && text.count <= Self.maxQuestionLength && !isAsking
     }
+
+    /// Whether this viewer may push a question up the queue or vote in a
+    /// room poll.
+    public var canTakePart: Bool { !viewerIsVouched }
 
     public func load() async {
         async let q: Void = loadQuestions()
@@ -92,7 +101,7 @@ public final class RoomDepthViewModel {
     }
 
     public func toggleUpvote(_ question: RoomQuestion) async {
-        guard !question.isAuthor else { return }
+        guard !question.isAuthor, canTakePart else { return }
         do {
             try await service.setUpvote(!question.viewerUpvoted, questionId: question.id, roomId: roomId)
             await loadQuestions()
@@ -138,6 +147,7 @@ public final class RoomDepthViewModel {
     }
 
     public func vote(_ option: PollOption, in poll: RoomPoll) async {
+        guard canTakePart else { return }
         do {
             let updated = try await service.vote(optionId: option.id, pollId: poll.id, roomId: roomId)
             replace(updated)

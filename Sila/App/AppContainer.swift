@@ -421,7 +421,10 @@ public final class AppContainer {
             self.roomsService = roomsService
         } else if flags.useMockRooms {
             self.roomsService = RoomsServiceMock(
-                scenario: flags.mockRoomsScenario,
+                // A vouched session listens: its rooms say so, unless a test
+                // asked for another world.
+                scenario: flags.mockScenario == .vouched && flags.mockRoomsScenario == .populated
+                    ? .vouched : flags.mockRoomsScenario,
                 latency: 0.25,
                 // The demo cast's own handle. The mock only uses it for the
                 // host-only refusals, and a mocked session is not signed into

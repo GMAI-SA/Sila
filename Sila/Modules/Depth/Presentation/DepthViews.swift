@@ -137,15 +137,26 @@ struct QuestionQueueView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: SLSpacing.md) {
-            HStack(spacing: SLSpacing.sm) {
-                TextField(hostName.map { L10n.t("rooms.questions.askHost", $0) } ?? L10n.t("rooms.questions.ask"),
-                          text: $viewModel.askDraft, axis: .vertical)
-                    .lineLimit(1...3)
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("rooms.questions.field")
-                Button(L10n.t("rooms.questions.send")) { Task { await viewModel.ask() } }
-                    .disabled(!viewModel.canAsk)
-                    .accessibilityIdentifier("rooms.questions.send")
+            if viewModel.viewerIsVouched {
+                // Where the field would be, the reason it is not (contract
+                // v24 §4): a vouched listener reads the queue, and asks once
+                // they have verified.
+                Text(L10n.t("vouch.limited.rooms"))
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("rooms.questions.vouched")
+            } else {
+                HStack(spacing: SLSpacing.sm) {
+                    TextField(hostName.map { L10n.t("rooms.questions.askHost", $0) } ?? L10n.t("rooms.questions.ask"),
+                              text: $viewModel.askDraft, axis: .vertical)
+                        .lineLimit(1...3)
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier("rooms.questions.field")
+                    Button(L10n.t("rooms.questions.send")) { Task { await viewModel.ask() } }
+                        .disabled(!viewModel.canAsk)
+                        .accessibilityIdentifier("rooms.questions.send")
+                }
             }
 
             if viewModel.questions.isEmpty {
@@ -183,7 +194,7 @@ struct QuestionQueueView: View {
                 .frame(width: 36)
             }
             .buttonStyle(.plain)
-            .disabled(question.isAuthor)
+            .disabled(question.isAuthor || !viewModel.canTakePart)
             .accessibilityLabel(Text(L10n.t("rooms.questions.upvote.a11yLabel", SLFormat.number(question.upvoteCount))))
 
             VStack(alignment: .leading, spacing: 2) {
@@ -227,6 +238,8 @@ struct QuestionQueueView: View {
 struct RoomPollCard: View {
     let poll: RoomPoll
     let isStage: Bool
+    /// `false` for a vouched listener: the tally, never the vote.
+    var canTakePart = true
     let onVote: (PollOption) -> Void
     let onClose: () -> Void
 
@@ -257,7 +270,7 @@ struct RoomPollCard: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .disabled(!poll.poll.canVote)
+                    .disabled(!poll.poll.canVote || !canTakePart)
                 }
                 HStack {
                     Text(PollCopy.footer(poll.poll)).font(SLFont.micro).foregroundStyle(SLColor.textMuted)
@@ -341,9 +354,15 @@ public struct RoomDepthSheet: View {
                         }
                         if viewModel.polls.isEmpty {
                             Text(L10n.t("rooms.polls.empty")).font(SLFont.caption).foregroundStyle(SLColor.textMuted)
+                        } else if !viewModel.canTakePart {
+                            // The tally, and why there is no vote in it.
+                            Text(L10n.t("poll.blocked.selfVerify"))
+                                .font(SLFont.caption)
+                                .foregroundStyle(SLColor.textSecondary)
+                                .accessibilityIdentifier("rooms.polls.vouched")
                         }
                         ForEach(viewModel.polls) { poll in
-                            RoomPollCard(poll: poll, isStage: viewModel.isStage,
+                            RoomPollCard(poll: poll, isStage: viewModel.isStage, canTakePart: viewModel.canTakePart,
                                          onVote: { option in Task { await viewModel.vote(option, in: poll) } },
                                          onClose: { Task { await viewModel.close(poll) } })
                         }
