@@ -143,6 +143,7 @@
 		5419D09DFA05C73AAB54F720 /* PostCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F67A6ED7C1083C38BECCA3 /* PostCardView.swift */; };
 		54C6B4B2915C714FB781F79A /* VoiceEngineMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A64378E776156F50207975E /* VoiceEngineMock.swift */; };
 		5624311D77390A8822D3D2B0 /* FollowRequestsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD190A751F238D9A04E16F9 /* FollowRequestsSheet.swift */; };
+		56F913869D0AB0A44907C54E /* SLVouchTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D793791D5D06B8F191DCE0 /* SLVouchTag.swift */; };
 		573D120011CF5733F326FF3B /* SuspensionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6A5C13E8B78B3969481F2 /* SuspensionScreen.swift */; };
 		588268FA158DF7D0E8F0F82D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAEA39D81FB2D898ECFB57 /* ChatViewModel.swift */; };
 		593B203DF576283334B6E9D8 /* ExploreViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA1B35F0350EC9376691BF9 /* ExploreViewModelTests.swift */; };
@@ -199,6 +200,7 @@
 		7AB5A40071EBB1D50D23A889 /* SLCredentialUsername.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5385C03704F8BE6679AD697 /* SLCredentialUsername.swift */; };
 		7D37655605B1EE465512E592 /* ComposerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ABE27D887D1712FFFF2362F /* ComposerModels.swift */; };
 		8283E7FE67C7CE90AB50F9A5 /* VouchingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5E05EF438DB78505EF8CE8 /* VouchingModels.swift */; };
+		8287D8ECECF56D8DE4C84DE4 /* VouchTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6929F8A260A7F600D912112 /* VouchTag.swift */; };
 		83057E69459F2E272C48C3EE /* GifModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE17CCDF3937531701DC21D /* GifModels.swift */; };
 		8344E7FE7D0F0A1B85CDCBA1 /* MRZParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCA15E47760844AE1A2A1DC /* MRZParser.swift */; };
 		8367D66A1CF9C1BAD67DCC98 /* GifServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C876D056B9562F4843FECD /* GifServiceProtocol.swift */; };
@@ -300,6 +302,7 @@
 		C45C5E996454CD1DE5D1F906 /* ResetPasswordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87049179E9FA4F5130D3B24A /* ResetPasswordTests.swift */; };
 		C547B70CF5B8F855BDE05F5C /* NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23DF23F9A7F7396A9149F670 /* NotificationModels.swift */; };
 		C712B0F7FD7747BAFB5D79D5 /* SuspensionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC2A336B2D9F182F17ECE05 /* SuspensionMonitor.swift */; };
+		C904D2D242768BC2879C1A77 /* VouchExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8262A1FD551822E7C5B75A92 /* VouchExplainerSheet.swift */; };
 		CA4AFDF2D02E7B74CFFC6526 /* NotificationModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 570A55BB802ADD07DE815942 /* NotificationModelsTests.swift */; };
 		CBC7020D4C4108325648CDCD /* NotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74933824CBB6EB2014F6463 /* NotificationsViewModel.swift */; };
 		CC281CA82DEAC8D98C616D8E /* EventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C543DBBC521716439D8889 /* EventModels.swift */; };
@@ -571,6 +574,7 @@
 		807A599E9C328EDEEC79A791 /* ProfileServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileServiceProtocol.swift; sourceTree = "<group>"; };
 		818A6D6BCBED101236CFB88E /* SearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchService.swift; sourceTree = "<group>"; };
 		82442BEA04C02C9DAF117B4A /* SafetyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyService.swift; sourceTree = "<group>"; };
+		8262A1FD551822E7C5B75A92 /* VouchExplainerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchExplainerSheet.swift; sourceTree = "<group>"; };
 		82FEAF0FACD46B3AFF7E3397 /* GifService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GifService.swift; sourceTree = "<group>"; };
 		83EA7F298A179109D6CFB224 /* ArabicRTLJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArabicRTLJourneyUITests.swift; sourceTree = "<group>"; };
 		848E7AEFF966EC4F800B7686 /* WithdrawSubmissionControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WithdrawSubmissionControl.swift; sourceTree = "<group>"; };
@@ -612,6 +616,7 @@
 		A1D6BB0C0BBB3FF8C3C304A1 /* AccountScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountScreen.swift; sourceTree = "<group>"; };
 		A2215FF0CFA036984E2C871B /* ConversationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsViewModel.swift; sourceTree = "<group>"; };
 		A2C1F4F0B0F0FC9214608731 /* SignInViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInViewModelTests.swift; sourceTree = "<group>"; };
+		A2D793791D5D06B8F191DCE0 /* SLVouchTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLVouchTag.swift; sourceTree = "<group>"; };
 		A3298CCDBCB604F92DD00E4B /* PublicFeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicFeedService.swift; sourceTree = "<group>"; };
 		A36099BF27554FC085493E13 /* VerificationMethodSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationMethodSheet.swift; sourceTree = "<group>"; };
 		A36B5BC6BD8E3C2B6BF31029 /* LivePreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePreferencesTests.swift; sourceTree = "<group>"; };
@@ -652,6 +657,7 @@
 		B4E6B037F6AD9160F8F705F9 /* AnalyticsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsClient.swift; sourceTree = "<group>"; };
 		B5488A312B23AF72B78C2CB5 /* PostPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostPresentation.swift; sourceTree = "<group>"; };
 		B6906DBCFD3EE0BF96910A85 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		B6929F8A260A7F600D912112 /* VouchTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchTag.swift; sourceTree = "<group>"; };
 		B7CE7EE8581100F056A61306 /* SafetyModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyModelsTests.swift; sourceTree = "<group>"; };
 		B88C66FE719CBE1A4202F73D /* LiveSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSafetyTests.swift; sourceTree = "<group>"; };
 		B8DC0894AC2BD9F6864E8507 /* VouchingServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchingServiceMock.swift; sourceTree = "<group>"; };
@@ -1356,6 +1362,15 @@
 			path = Data;
 			sourceTree = "<group>";
 		};
+		85EA28DED14E064AB738E43C /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				8262A1FD551822E7C5B75A92 /* VouchExplainerSheet.swift */,
+				B6929F8A260A7F600D912112 /* VouchTag.swift */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
 		87E7CA29F01E46172B2E7034 /* Composer */ = {
 			isa = PBXGroup;
 			children = (
@@ -1554,6 +1569,7 @@
 			children = (
 				183B16F95F53614B563EED52 /* Data */,
 				CFAEA258C7CA2B3AB799DB02 /* Domain */,
+				85EA28DED14E064AB738E43C /* Presentation */,
 			);
 			path = Vouching;
 			sourceTree = "<group>";
@@ -1831,6 +1847,7 @@
 				B10E9EEBD1691555AF5F2038 /* SLToast.swift */,
 				0232D4131612B29C811A26AF /* SLTypography.swift */,
 				ADCD505083ED32DAE8D32525 /* SLVerifiedBadge.swift */,
+				A2D793791D5D06B8F191DCE0 /* SLVouchTag.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -2190,6 +2207,7 @@
 				48F7FAF37E29CB02F08E18A9 /* SLToast.swift in Sources */,
 				031405DDE6DD9874015A5DB4 /* SLTypography.swift in Sources */,
 				5139C0A4A0B757CEDF9F9CBF /* SLVerifiedBadge.swift in Sources */,
+				56F913869D0AB0A44907C54E /* SLVouchTag.swift in Sources */,
 				3E6943B4EA680A23EA8352B5 /* SafetyListsScreen.swift in Sources */,
 				9046B392A2FA1ABA2845C338 /* SafetyListsViewModel.swift in Sources */,
 				5A23C1744AEAE34F28A68EFB /* SafetyMenu.swift in Sources */,
@@ -2242,7 +2260,9 @@
 				86F2A18797A75762E16C7AF7 /* VoiceServiceMock.swift in Sources */,
 				0A1D471F347584F640B964AA /* VoiceServiceProtocol.swift in Sources */,
 				F80AD647DA01A56A54BF84F3 /* VouchCopy.swift in Sources */,
+				C904D2D242768BC2879C1A77 /* VouchExplainerSheet.swift in Sources */,
 				2CDA82A38C6CF4F169AFB731 /* VouchInviteInbox.swift in Sources */,
+				8287D8ECECF56D8DE4C84DE4 /* VouchTag.swift in Sources */,
 				8283E7FE67C7CE90AB50F9A5 /* VouchingModels.swift in Sources */,
 				1C68726A3E923FE5ACE37D17 /* VouchingService.swift in Sources */,
 				FE184138A4EFC746C7562CCC /* VouchingServiceMock.swift in Sources */,

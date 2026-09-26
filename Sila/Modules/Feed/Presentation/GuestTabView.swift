@@ -23,6 +23,10 @@ public struct GuestTabView: View {
     @State private var viewModel: HomeViewModel
     @State private var hashtag: String?
     @State private var openPost: Post?
+    /// A tag tapped on a public card: the explainer, read from the card's
+    /// own data (contract v24 §3.7). No "See @aziz" — a profile needs an
+    /// account, and the explainer already says who.
+    @State private var vouchSelection: VouchTagSelection?
 
     public init(container: AppContainer) {
         self.container = container
@@ -75,10 +79,26 @@ public struct GuestTabView: View {
                     }
             }
             .tint(SLColor.primary)
+            .environment(\.vouchTagAction, VouchTagAction { person in
+                vouchSelection = VouchTagSelection(person: person, viewerId: nil)
+                if vouchSelection != nil {
+                    container.analytics.track(.vouchTagOpened, properties: ["source": "guest"])
+                }
+            })
 
             SLTabBar(items: tabs, selection: $selection)
         }
         .tnScreenBackground()
+        .sheet(item: $vouchSelection) { tapped in
+            VouchExplainerSheet(
+                person: tapped.person,
+                vouchedBy: tapped.vouchedBy,
+                isOwn: false,
+                onSeeVoucher: nil,
+                onVerify: nil,
+                onClose: { vouchSelection = nil }
+            )
+        }
         .onChange(of: selection) { _, tab in
             // The three tabs that need an account invite rather than pretend.
             switch tab {

@@ -22,10 +22,13 @@ struct RoomParticipantSheet: View {
     let onDemote: (@MainActor (RoomHostActions) async -> Void)?
     let onRemove: (@MainActor (RoomHostActions) async -> Void)?
     let onClose: @MainActor () -> Void
+    @Environment(\.vouchTagAction) private var vouchTagAction
 
     var body: some View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
             identity
+
+            vouchTag
 
             if let hostActions {
                 hostVerbs(hostActions)
@@ -93,6 +96,29 @@ struct RoomParticipantSheet: View {
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// The tag, on its own line under the name (contract v24 §3). Its
+    /// explainer is a sheet of the shell's, and one sheet cannot open over
+    /// another from a different presenter — so this one closes first.
+    @ViewBuilder
+    private var vouchTag: some View {
+        if !participant.user.isVerified, let vouch = participant.user.vouchedBy {
+            SLVouchTag(
+                text: VouchCopy.tag(vouch),
+                accessibilityLabel: VouchCopy.tagAccessibility(vouch),
+                action: vouchTagAction.map { action in
+                    {
+                        let person = participant.user
+                        onClose()
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(450))
+                            action.open(person)
+                        }
+                    }
+                }
+            )
+        }
     }
 
     private var roleLine: String {

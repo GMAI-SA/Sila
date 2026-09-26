@@ -24,6 +24,9 @@ public struct ProfileOwnerActions {
     public var onOpenSaved: (@MainActor () -> Void)?
     /// Opens the viewer's groups.
     public var onOpenGroups: (@MainActor () -> Void)?
+    /// "Vouch for someone you know", or "Your vouch" (contract v24) — only
+    /// while vouching is open to this account; `nil` draws nothing.
+    public var vouching: VouchingEntry?
 
     public init(
         onOpenAccount: (@MainActor () -> Void)? = nil,
@@ -32,8 +35,10 @@ public struct ProfileOwnerActions {
         onOpenSafety: (@MainActor () -> Void)? = nil,
         onSignOut: (@MainActor () -> Void)? = nil,
         onOpenSaved: (@MainActor () -> Void)? = nil,
-        onOpenGroups: (@MainActor () -> Void)? = nil
+        onOpenGroups: (@MainActor () -> Void)? = nil,
+        vouching: VouchingEntry? = nil
     ) {
+        self.vouching = vouching
         self.onOpenAccount = onOpenAccount
         self.onOpenPreferences = onOpenPreferences
         self.onOpenLanguage = onOpenLanguage
@@ -48,7 +53,25 @@ public struct ProfileOwnerActions {
         onOpenAccount == nil && onOpenPreferences == nil
             && onOpenLanguage == nil
             && onOpenSafety == nil && onSignOut == nil
-            && onOpenSaved == nil && onOpenGroups == nil
+            && onOpenSaved == nil && onOpenGroups == nil && vouching == nil
+    }
+}
+
+/// The Profile's vouching row, as the server's `GET /vouching` (or the
+/// account's own vouch) says it should read.
+public struct VouchingEntry {
+    public let title: String
+    public let detail: String
+    /// Drawn dimmed, with the reason, when the account cannot vouch right
+    /// now — never hidden for that (contract v24 §5).
+    public let isDimmed: Bool
+    public let open: @MainActor () -> Void
+
+    public init(title: String, detail: String, isDimmed: Bool = false, open: @escaping @MainActor () -> Void) {
+        self.title = title
+        self.detail = detail
+        self.isDimmed = isDimmed
+        self.open = open
     }
 }
 
@@ -486,6 +509,18 @@ public struct ProfileScreen: View {
                         }
                     }
 
+                    // The tag, where a verified account has its seal — and
+                    // the line a verified name would take, saying plainly
+                    // that this identity is not proved (contract v24 §3).
+                    if !profile.user.isVerified, let vouch = profile.user.vouchedBy {
+                        VouchTag(person: profile.user)
+                        Text(VouchCopy.profileRow(vouch))
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("profile.vouchedRow")
+                    }
+
                     if let confirmed = profile.user.verifiedName, confirmed != profile.displayName {
                         // What the identity check confirmed, beneath what the
                         // person chose. Absent when they keep it private.
@@ -616,7 +651,9 @@ public struct ProfileScreen: View {
             )
             .frame(width: 132)
 
-            if let onMessage {
+            // A vouched account cannot use messages, so nobody can message
+            // one (`403 recipient_cannot_message`): no envelope to meet it.
+            if let onMessage, profile.user.vouchedBy == nil {
                 // Writing to somebody starts here, where you are already
                 // looking at them, rather than only from an existing thread.
                 Button {
@@ -691,6 +728,19 @@ public struct ProfileScreen: View {
                         hint: L10n.t("profile.groups.hint"),
                         open: open
                     )
+                }
+
+                // Between Groups and Account (contract v24 §5).
+                if let entry = ownerActions.vouching {
+                    settingsEntry(
+                        icon: SLVouchTag.glyph,
+                        title: entry.title,
+                        detail: entry.detail,
+                        hint: L10n.t("vouch.profile.entry.hint"),
+                        open: entry.open
+                    )
+                    .opacity(entry.isDimmed ? 0.6 : 1)
+                    .accessibilityIdentifier("profile.vouching")
                 }
 
                 if let open = ownerActions.onOpenAccount {

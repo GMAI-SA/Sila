@@ -762,9 +762,17 @@ public struct LiveRoomScreen: View {
                 .lineLimit(1)
                 .frame(maxWidth: size.edge + 24)
 
+            // A listener's tile has no room for the tag's words; the mark
+            // alone, and a tap on it explains (contract v24 §3). Speakers are
+            // never vouched — a vouched account cannot take the microphone.
+            if size == .md, participant.user.vouchedBy != nil {
+                VouchTag(person: participant.user, style: .iconOnly)
+            }
+
             if size == .lg {
                 HStack(spacing: 2) {
                     SLCountryBadge(countryCode: participant.user.countryCode)
+                    VouchTag(person: participant.user, style: .iconOnly)
                     if let actions = viewModel.hostActions(for: participant) {
                         hostMenu(actions)
                     }
@@ -799,6 +807,9 @@ public struct LiveRoomScreen: View {
 
     private func tileLabel(_ participant: RoomParticipant) -> String {
         var parts = [participant.user.displayName, participant.role.badgeTitle]
+        if !participant.user.isVerified, let vouch = participant.user.vouchedBy {
+            parts.append(VouchCopy.tagAccessibility(vouch))
+        }
         if viewModel.isSpeaking(participant) { parts.append(L10n.t("rooms.live.a11y.speaking")) }
         if participant.hasHandRaised { parts.append(L10n.t("rooms.live.a11y.handRaised")) }
         if participant.role.canPublish, viewModel.isMuted(participant) { parts.append(L10n.t("rooms.live.a11y.muted")) }

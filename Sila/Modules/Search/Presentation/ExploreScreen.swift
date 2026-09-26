@@ -525,6 +525,7 @@ struct PersonResultRow: View {
                         }
 
                         SLCountryBadge(countryCode: user.countryCode)
+                        VouchTag(person: user, style: .iconOnly)
                     }
 
                     // Handles are always Latin; pinning the direction keeps the

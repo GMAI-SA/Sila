@@ -301,10 +301,14 @@ public struct PostCardView: View {
     /// not the person, and tapping it should not navigate to them.
     private var authorBlock: some View {
         HStack(alignment: .top, spacing: SLSpacing.md) {
-            Button {
-                actions.onOpenAuthor(post.author)
-            } label: {
-                HStack(alignment: .top, spacing: SLSpacing.md) {
+            HStack(alignment: .top, spacing: SLSpacing.md) {
+                // The face, the name and the handle each open the person; the
+                // vouch tag between them is a control of its own (contract
+                // v24 §3), which is why this is no longer one button — a
+                // button inside a button's label never gets its tap.
+                Button {
+                    actions.onOpenAuthor(post.author)
+                } label: {
                     SLAvatar(
                         url: post.author.avatarURL,
                         initials: post.author.initials,
@@ -312,23 +316,22 @@ public struct PostCardView: View {
                         isVerified: post.author.isVerified,
                         displayName: post.author.displayName
                     )
-
-                    VStack(alignment: .leading, spacing: SLSpacing.xs) {
-                        header
-                        // Weekly recognition, in threads: a small label below
-                        // the name, never beside the seal (contract v23).
-                        if style != .feed {
-                            BadgeLabels(badges: RecognitionBadge.parse(post.authorBadges))
-                        }
-                        scopeChip
-                    }
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                // The name speaks for both.
+                .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: SLSpacing.xs) {
+                    header
+                    // Weekly recognition, in threads: a small label below
+                    // the name, never beside the seal (contract v23).
+                    if style != .feed {
+                        BadgeLabels(badges: RecognitionBadge.parse(post.authorBadges))
+                    }
+                    scopeChip
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(Text(authorAccessibilityLabel))
-            .accessibilityHint(Text(L10n.t("post.author.openProfile.hint", post.author.displayName)))
 
             Spacer(minLength: 0)
 
@@ -379,45 +382,66 @@ public struct PostCardView: View {
         var parts = [post.author.displayName]
         if post.author.isVerified { parts.append(L10n.t("post.author.verified.accessibility")) }
         if let label = CountryCode.accessibilityLabel(post.author.countryCode) { parts.append(label) }
+        if !post.author.isVerified, let vouch = post.author.vouchedBy { parts.append(VouchCopy.tagAccessibility(vouch)) }
         parts.append(post.author.atHandle)
         parts.append(RelativeTime.accessible(post.createdAt))
         return parts.joined(separator: ". ")
     }
 
+    /// Name → tag → handle · time (contract v24 §3.4). The seal and the flag
+    /// follow the name only for a verified author; a vouched one carries the
+    /// tag instead, on its own line, and never both.
     private var header: some View {
         VStack(alignment: .leading, spacing: 1) {
-            HStack(spacing: SLSpacing.xs) {
-                Text(post.author.displayName)
-                    .font(SLFont.bodyEmphasis)
-                    .foregroundStyle(SLColor.textPrimary)
-                    .lineLimit(1)
+            Button {
+                actions.onOpenAuthor(post.author)
+            } label: {
+                HStack(spacing: SLSpacing.xs) {
+                    Text(post.author.displayName)
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .lineLimit(1)
 
-                if post.author.isVerified {
-                    SLVerifiedBadge(size: 15, isPulsing: false)
+                    if post.author.isVerified {
+                        SLVerifiedBadge(size: 15, isPulsing: false)
+                    }
+
+                    // The country-verified flag. Absent when the identity does not
+                    // carry one — never guessed.
+                    SLCountryBadge(countryCode: post.author.countryCode)
                 }
-
-                // The country-verified flag. Absent when the identity does not
-                // carry one — never guessed.
-                SLCountryBadge(countryCode: post.author.countryCode)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(authorAccessibilityLabel))
+            .accessibilityHint(Text(L10n.t("post.author.openProfile.hint", post.author.displayName)))
 
-            HStack(spacing: SLSpacing.xs) {
-                Text(post.author.atHandle)
-                    .font(SLFont.caption)
-                    .foregroundStyle(SLColor.textSecondary)
-                    .lineLimit(1)
+            VouchTag(person: post.author)
+                .padding(.vertical, 1)
 
-                Text("·")
-                    .font(SLFont.caption)
-                    .foregroundStyle(SLColor.textMuted)
+            Button {
+                actions.onOpenAuthor(post.author)
+            } label: {
+                HStack(spacing: SLSpacing.xs) {
+                    Text(post.author.atHandle)
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .lineLimit(1)
 
-                Text(RelativeTime.short(post.createdAt))
-                    .font(SLFont.caption)
-                    .foregroundStyle(SLColor.textSecondary)
-                    .accessibilityLabel(
-                        Text(L10n.t("post.time.posted.accessibility", RelativeTime.accessible(post.createdAt)))
-                    )
+                    Text("·")
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textMuted)
+
+                    Text(RelativeTime.short(post.createdAt))
+                        .font(SLFont.caption)
+                        .foregroundStyle(SLColor.textSecondary)
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            // Already in the name's label, time included.
+            .accessibilityHidden(true)
         }
     }
 
@@ -784,6 +808,7 @@ public struct PostCardView: View {
         var parts = [post.author.displayName]
         if post.author.isVerified { parts.append(L10n.t("post.author.verified.accessibility")) }
         if let label = CountryCode.accessibilityLabel(post.author.countryCode) { parts.append(label) }
+        if !post.author.isVerified, let vouch = post.author.vouchedBy { parts.append(VouchCopy.tagAccessibility(vouch)) }
         parts.append(post.author.atHandle)
         parts.append(RelativeTime.accessible(post.createdAt))
         parts.append(ScopePresentation.make(for: post).accessibilityLabel)
@@ -850,6 +875,10 @@ struct QuotedPostCard: View {
                         SLVerifiedBadge(size: 12, isPulsing: false)
                     }
                     SLCountryBadge(countryCode: post.author.countryCode)
+                    // The icon alone here, at 12 pt (contract v24 §3.4): a
+                    // quote card has no room for the words, and its label
+                    // still says all of them.
+                    VouchTag(person: post.author, style: .iconOnly)
                     Text(post.author.atHandle)
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
