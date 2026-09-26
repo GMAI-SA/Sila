@@ -52,3 +52,30 @@ public struct VouchTag: View {
         }
     }
 }
+
+/// "What this vouch means", as a VoiceOver action, on a row or card that
+/// reads as one element with the tag inside it — the search row, the quote
+/// card — so the explainer is reachable there too.
+struct VouchTagAccessibilityAction: ViewModifier {
+    let person: UserSummary
+    let action: VouchTagAction?
+
+    func body(content: Content) -> some View {
+        if let action, !person.isVerified, person.vouchedBy != nil {
+            content.accessibilityAction(named: Text(L10n.t("vouch.tag.a11yAction"))) { action.open(person) }
+        } else {
+            content
+        }
+    }
+}
+
+/// Where a tag sits inside something that is itself a button, so the tag
+/// can be drawn over it instead — a button inside another button's label
+/// never gets its own tap.
+struct VouchTagAnchorKey: PreferenceKey {
+    static let defaultValue: Anchor<CGRect>? = nil
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}

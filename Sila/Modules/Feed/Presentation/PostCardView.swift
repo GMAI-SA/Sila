@@ -851,11 +851,21 @@ struct QuotedPostCard: View {
 
     let post: Post
     let onTap: @MainActor () -> Void
+    @Environment(\.vouchTagAction) private var vouchTagAction
+
+    /// The card reads as one element; a vouched author's tag is said in it.
+    private var accessibilityLabel: String {
+        var label = L10n.t("post.quoted.accessibility", post.author.displayName)
+        if !post.author.isVerified, let vouch = post.author.vouchedBy {
+            label += ". " + VouchCopy.tagAccessibility(vouch)
+        }
+        return label
+    }
 
     var body: some View {
         SLCard(
             padding: SLSpacing.md,
-            accessibilityLabel: L10n.t("post.quoted.accessibility", post.author.displayName),
+            accessibilityLabel: accessibilityLabel,
             accessibilityHint: L10n.t("post.quoted.hint"),
             onTap: onTap
         ) {
@@ -877,13 +887,20 @@ struct QuotedPostCard: View {
                     }
                     SLCountryBadge(countryCode: post.author.countryCode)
                     // The icon alone here, at 12 pt (contract v24 §3.4): a
-                    // quote card has no room for the words, and its label
-                    // still says all of them.
-                    VouchTag(person: post.author, style: .iconOnly)
+                    // quote card has no room for the words, and the card's
+                    // label says all of them. Only its place is kept here;
+                    // the tag itself is drawn over the card, below, so its
+                    // tap is its own rather than the card's.
+                    if !post.author.isVerified, post.author.vouchedBy != nil {
+                        Color.clear
+                            .frame(width: 22, height: 22)
+                            .anchorPreference(key: VouchTagAnchorKey.self, value: .bounds) { $0 }
+                    }
                     Text(post.author.atHandle)
                         .font(SLFont.micro)
                         .foregroundStyle(SLColor.textMuted)
                         .lineLimit(1)
+                        .slContentDirection(.leftToRight)
                     Spacer(minLength: 0)
                     Text(RelativeTime.short(post.createdAt))
                         .font(SLFont.micro)
@@ -916,6 +933,21 @@ struct QuotedPostCard: View {
                 }
             }
         }
+        // The tag, over the place kept for it: outside the card's button, so
+        // a tap on the glyph opens the explainer rather than the post.
+        .overlayPreferenceValue(VouchTagAnchorKey.self) { anchor in
+            GeometryReader { proxy in
+                if let anchor {
+                    let frame = proxy[anchor]
+                    VouchTag(person: post.author, style: .iconOnly)
+                        // Said in the card's own label, with the explainer
+                        // as a named action; not a second element to swipe past.
+                        .accessibilityHidden(true)
+                        .position(x: frame.midX, y: frame.midY)
+                }
+            }
+        }
+        .modifier(VouchTagAccessibilityAction(person: post.author, action: vouchTagAction))
     }
 }
 

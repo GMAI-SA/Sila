@@ -495,58 +495,67 @@ struct PersonResultRow: View {
 
     let user: UserSummary
     let onTap: @MainActor () -> Void
+    @Environment(\.vouchTagAction) private var vouchTagAction
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: SLSpacing.md) {
-                SLAvatar(
-                    url: user.avatarURL,
-                    initials: user.initials,
-                    size: .md,
-                    isVerified: user.isVerified,
-                    displayName: user.displayName
-                )
+        HStack(spacing: SLSpacing.md) {
+            SLAvatar(
+                url: user.avatarURL,
+                initials: user.initials,
+                size: .md,
+                isVerified: user.isVerified,
+                displayName: user.displayName
+            )
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: SLSpacing.xs) {
-                        // Somebody's display name is theirs, not ours: an
-                        // Arabic name in an English result list and a Latin
-                        // name in an Arabic one each read their own way.
-                        Text(user.displayName)
-                            .font(SLFont.bodyEmphasis)
-                            .foregroundStyle(SLColor.textPrimary)
-                            .lineLimit(1)
-                            .slContentDirection(
-                                TextDirection.resolve(languageCode: nil, text: user.displayName)
-                            )
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: SLSpacing.xs) {
+                    // Somebody's display name is theirs, not ours: an
+                    // Arabic name in an English result list and a Latin
+                    // name in an Arabic one each read their own way.
+                    Text(user.displayName)
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .lineLimit(1)
+                        .slContentDirection(
+                            TextDirection.resolve(languageCode: nil, text: user.displayName)
+                        )
 
-                        if user.isVerified {
-                            SLVerifiedBadge(size: 14, isPulsing: false)
-                        }
-
-                        SLCountryBadge(countryCode: user.countryCode)
-                        VouchTag(person: user, style: .iconOnly)
+                    if user.isVerified {
+                        SLVerifiedBadge(size: 14, isPulsing: false)
                     }
 
-                    // Handles are always Latin; pinning the direction keeps the
-                    // "@" attached to the front of the name in an Arabic row.
-                    Text(user.atHandle)
-                        .font(SLFont.caption)
-                        .foregroundStyle(SLColor.textSecondary)
-                        .lineLimit(1)
-                        .slContentDirection(.leftToRight)
+                    SLCountryBadge(countryCode: user.countryCode)
                 }
 
-                Spacer(minLength: 0)
+                // The whole tag, on its own line as on a post card — "vouched
+                // by @x · Country" (contract v24 §3) — and a button of its
+                // own: the row is not one, so this tap reaches the explainer.
+                VouchTag(person: user)
+
+                // Handles are always Latin; pinning the direction keeps the
+                // "@" attached to the front of the name in an Arabic row.
+                Text(user.atHandle)
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .lineLimit(1)
+                    .slContentDirection(.leftToRight)
             }
-            .padding(.horizontal, SLSpacing.lg)
-            .padding(.vertical, SLSpacing.md)
-            .contentShape(Rectangle())
+
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, SLSpacing.lg)
+        .padding(.vertical, SLSpacing.md)
+        .contentShape(Rectangle())
+        // A tap anywhere but the tag opens the profile. A gesture rather than
+        // a `Button` around the row: a button inside another button's label
+        // never gets its own tap.
+        .onTapGesture { onTap() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(accessibilityLabel))
         .accessibilityHint(Text(L10n.t("search.person.row.a11yHint")))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onTap() }
+        .modifier(VouchTagAccessibilityAction(person: user, action: vouchTagAction))
     }
 
     private var accessibilityLabel: String {
@@ -555,6 +564,7 @@ struct PersonResultRow: View {
         if let country = CountryCode.accessibilityLabel(user.countryCode, locale: L10n.locale) {
             parts.append(country)
         }
+        if !user.isVerified, let vouch = user.vouchedBy { parts.append(VouchCopy.tagAccessibility(vouch)) }
         parts.append(user.atHandle)
         return parts.joined(separator: ". ")
     }

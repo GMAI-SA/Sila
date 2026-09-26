@@ -21,8 +21,10 @@ public struct SLVouchTag: View {
     public enum Style: Sendable {
         /// The glyph and the words — post headers, profiles, the room sheet.
         case full
-        /// The glyph alone, at 12 pt — the quote card and the room grid,
-        /// where the words do not fit. The label still says everything.
+        /// The glyph alone, at 12 pt — the quote card (contract v24 §3.4)
+        /// and a listener's 44 pt tile in the room grid, where the words
+        /// cannot fit; the participant sheet a tap opens carries them whole.
+        /// The label still says everything.
         case iconOnly
     }
 
@@ -65,22 +67,26 @@ public struct SLVouchTag: View {
     private var label: some View {
         switch style {
         case .full:
-            HStack(spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Image(systemName: Self.glyph)
                     .font(.system(size: 10, weight: .semibold))
                 Text(text)
                     .font(SLFont.micro)
-                    .lineLimit(1)
-                    // A long country name shrinks before it is cut: the
-                    // handle and the words must survive whole.
-                    .minimumScaleFactor(0.8)
+                    // A long handle wraps onto a second line rather than
+                    // cutting the country off: "vouched by @x · Country" is
+                    // said whole, or it says something else.
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundStyle(SLColor.textSecondary)
             .padding(.horizontal, SLSpacing.sm)
             .padding(.vertical, 2)
-            .background(Capsule().fill(SLColor.textSecondary.opacity(0.10)))
-            .overlay(Capsule().strokeBorder(SLColor.textSecondary.opacity(0.35), lineWidth: 0.5))
-            .contentShape(Capsule())
+            // A capsule on one line, a rounded box on two.
+            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(SLColor.textSecondary.opacity(0.10)))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(SLColor.textSecondary.opacity(0.35), lineWidth: 0.5))
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         case .iconOnly:
             Image(systemName: Self.glyph)
                 .font(.system(size: 12, weight: .semibold))

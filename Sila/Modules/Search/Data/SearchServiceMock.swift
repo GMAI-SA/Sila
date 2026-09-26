@@ -92,7 +92,9 @@ public actor SearchServiceMock: SearchServiceProtocol {
         FeedServiceMock.yuki,
         FeedServiceMock.maria,
         FeedServiceMock.noor,
-        FeedServiceMock.pending
+        FeedServiceMock.pending,
+        // Vouched for, so People results show the tag in full.
+        FeedServiceMock.vouched
     ]
 
     /// Tags counted from the fixture posts' hashtags.
