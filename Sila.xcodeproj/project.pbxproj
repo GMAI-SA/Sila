@@ -98,6 +98,7 @@
 		370FCBFFC8723093B2402495 /* VoicePostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881DC684881B4A84828CBD44 /* VoicePostView.swift */; };
 		37BFB3A17F48EEC7D4990298 /* NafathVerificationScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE6C836598767C8EC7C8D9C /* NafathVerificationScreen.swift */; };
 		37DD05BA4A6C39EAEE6500C1 /* SLFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28DB708BA0FEFFBF6ED9D389 /* SLFormat.swift */; };
+		37E6089908E70DDF9CAF7712 /* VouchingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471358C369AFF2211BCB4D7C /* VouchingScreen.swift */; };
 		389912E4F36B741E180E2074 /* PreferencesModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FA8224535BC50A6736E0067 /* PreferencesModels.swift */; };
 		3A7BF5A9EEF37460DE830698 /* PreferencesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98A43B2A6CE2F20DB2F3EBE /* PreferencesScreen.swift */; };
 		3CF75081C490FBB9F5AE5208 /* NotificationSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7916B6471B12FA9BA9646BB7 /* NotificationSettingsSheet.swift */; };
@@ -145,6 +146,7 @@
 		5624311D77390A8822D3D2B0 /* FollowRequestsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD190A751F238D9A04E16F9 /* FollowRequestsSheet.swift */; };
 		56F913869D0AB0A44907C54E /* SLVouchTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D793791D5D06B8F191DCE0 /* SLVouchTag.swift */; };
 		573D120011CF5733F326FF3B /* SuspensionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6A5C13E8B78B3969481F2 /* SuspensionScreen.swift */; };
+		585E04FC29D93905EAA193AD /* VouchDetailsForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A64AC4823E5C805B3D7669 /* VouchDetailsForm.swift */; };
 		588268FA158DF7D0E8F0F82D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3AAEA39D81FB2D898ECFB57 /* ChatViewModel.swift */; };
 		593B203DF576283334B6E9D8 /* ExploreViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA1B35F0350EC9376691BF9 /* ExploreViewModelTests.swift */; };
 		59525C781BDDAC97FAD86F0D /* DocumentImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 447FC62D70544F397E707240 /* DocumentImport.swift */; };
@@ -189,6 +191,8 @@
 		724E10311D26384779119BC5 /* DocumentCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB2420C9758F480BE408A017 /* DocumentCaptureView.swift */; };
 		747FA7D06E82D285381B93D4 /* SearchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B48A8F9B0806B1DB2DC7CD /* SearchModels.swift */; };
 		748A3846DE74D17013C5AD73 /* PeoplePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B608EAEC2B959DBA8E4D1E7 /* PeoplePickerSheet.swift */; };
+		75412598A40D4C8C32AC895C /* VouchWarningCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BDE55C08435E050D5CD466E /* VouchWarningCard.swift */; };
+		757F3DD4DF5CDF5AB2EAB9DB /* VouchInviteSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE3915D6A051FFF6D32A617 /* VouchInviteSheet.swift */; };
 		760F9AE24BCE720F94912CFE /* LocalizedFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6986603795327E901D0ADF4E /* LocalizedFormattingTests.swift */; };
 		77AA1D30BFCB4E4C374A5AE8 /* CommunitiesServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A2AEF93EC5018E9C41B056 /* CommunitiesServiceMock.swift */; };
 		788E6E44C7B9BC5BD60B6BBA /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D0C534AD3EF6C67270042 /* OnboardingViewModel.swift */; };
@@ -333,6 +337,7 @@
 		DBBE8A6A18C08AA4E4D88A67 /* RoomsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8F925D791FA50BD2399174 /* RoomsViewModel.swift */; };
 		DCD786949AA43B9F36B2AC1A /* SavedPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D25EA961685F620E3F9B51 /* SavedPostsViewModel.swift */; };
 		DD42440409DE4F3F63998AA5 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAAE3ABE9B5F271D4F181E56 /* DiscoverService.swift */; };
+		DD87DBC8210BD01251A38445 /* VouchConfirmControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC36CAA4B2B91DFFA89FC0BD /* VouchConfirmControl.swift */; };
 		DF193A13176E33065A758079 /* LiveComposerSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF14CB948FFF359FBD0CD2E /* LiveComposerSearchTests.swift */; };
 		DF42E71B683AF3B04E9E349E /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE53EE452B0B35CD745F18B /* AuthSession.swift */; };
 		E037D4B843C368AF6E78FDA0 /* LiveAccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F953E84C9ED517051B4E02A /* LiveAccountTests.swift */; };
@@ -364,6 +369,7 @@
 		F2EA8A22343D771AA7F9EFEA /* ReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0E47E8C37C57AFDC5C9BF5 /* ReportViewModel.swift */; };
 		F3B231E9AA8B2F7B19472E28 /* PollModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFB775F3ED54DB11B758473 /* PollModels.swift */; };
 		F4E8C2593BF7061D02092CAF /* ComposeScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A7F4D0BA6449C7BE6741FE /* ComposeScope.swift */; };
+		F63BDC8141C7A043434121B2 /* VouchingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0D80F037B97C3A01AA6CF0 /* VouchingViewModel.swift */; };
 		F6A6B4963E451DBD84832EF7 /* AccountServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13B0F06B042AEC695E9D869 /* AccountServiceTests.swift */; };
 		F77A889964A9C3EF404E9F42 /* FeedServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6308BD3F753412EE9CC165D8 /* FeedServiceMock.swift */; };
 		F80AD647DA01A56A54BF84F3 /* VouchCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D51364209AAD27D7AED1077C /* VouchCopy.swift */; };
@@ -456,6 +462,7 @@
 		25D25EA961685F620E3F9B51 /* SavedPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPostsViewModel.swift; sourceTree = "<group>"; };
 		26CEFF6162529F611B24F35B /* VouchingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchingService.swift; sourceTree = "<group>"; };
 		277E1BEFE86DFFAD93FDB8A3 /* MessagesServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesServiceTests.swift; sourceTree = "<group>"; };
+		27A64AC4823E5C805B3D7669 /* VouchDetailsForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchDetailsForm.swift; sourceTree = "<group>"; };
 		27D6F0070E11613377994370 /* SLEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLEmptyState.swift; sourceTree = "<group>"; };
 		27EF3243559F67B21738B290 /* SubjectCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubjectCatalog.swift; sourceTree = "<group>"; };
 		28DB708BA0FEFFBF6ED9D389 /* SLFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLFormat.swift; sourceTree = "<group>"; };
@@ -500,6 +507,7 @@
 		44E9E741167917A52FDAC8A3 /* SLSegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLSegmentedControl.swift; sourceTree = "<group>"; };
 		45DBAE9E2795F9E1A5E2C96B /* ReportDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportDraft.swift; sourceTree = "<group>"; };
 		4712EAF5AC3AD7C5A8625528 /* BiometricLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLabelTests.swift; sourceTree = "<group>"; };
+		471358C369AFF2211BCB4D7C /* VouchingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchingScreen.swift; sourceTree = "<group>"; };
 		481A032A22931DD12C3DF579 /* MessagesViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewModelTests.swift; sourceTree = "<group>"; };
 		4876B9782C0678C56FF77DC5 /* VouchInviteInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchInviteInbox.swift; sourceTree = "<group>"; };
 		4A64378E776156F50207975E /* VoiceEngineMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEngineMock.swift; sourceTree = "<group>"; };
@@ -588,9 +596,11 @@
 		88D263F0AFC51AE9DC1E3C35 /* ImpersonationReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpersonationReportTests.swift; sourceTree = "<group>"; };
 		89156472AFAD4FA1BE2272C2 /* CreateCommunityViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCommunityViewModel.swift; sourceTree = "<group>"; };
 		89D7FC777AFB0F339D7EF2C7 /* LanguageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageService.swift; sourceTree = "<group>"; };
+		8AE3915D6A051FFF6D32A617 /* VouchInviteSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchInviteSheet.swift; sourceTree = "<group>"; };
 		8B7A2802B22BEC788E11EB5F /* PreferencesServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesServiceProtocol.swift; sourceTree = "<group>"; };
 		8E9E338CEDB6B437CEE8F326 /* CancelledLoadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancelledLoadTests.swift; sourceTree = "<group>"; };
 		8EEED6F55650ACA5C31B27E2 /* ComposerSheetScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerSheetScreen.swift; sourceTree = "<group>"; };
+		8F0D80F037B97C3A01AA6CF0 /* VouchingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchingViewModel.swift; sourceTree = "<group>"; };
 		912AF14259096B99A6627E9F /* ReferenceScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceScreenshots.swift; sourceTree = "<group>"; };
 		922852BCD2B130245A6D98E0 /* VerificationRejection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationRejection.swift; sourceTree = "<group>"; };
 		9258145A5E05A7BA56608B7E /* PollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollView.swift; sourceTree = "<group>"; };
@@ -606,6 +616,7 @@
 		9B746E34EBE8793F6611B3AB /* LiveNotificationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveNotificationsTests.swift; sourceTree = "<group>"; };
 		9B7AA5503A6CF71893DA6723 /* ComposerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerViewModelTests.swift; sourceTree = "<group>"; };
 		9BB1BBDAE04B04787BBD105F /* ReplyGuidelinesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplyGuidelinesTests.swift; sourceTree = "<group>"; };
+		9BDE55C08435E050D5CD466E /* VouchWarningCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchWarningCard.swift; sourceTree = "<group>"; };
 		9CF14CB948FFF359FBD0CD2E /* LiveComposerSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveComposerSearchTests.swift; sourceTree = "<group>"; };
 		9D97188D5AD7492E38AFE90F /* RoomsJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomsJourneyUITests.swift; sourceTree = "<group>"; };
 		9E73848D5958CFB3DE3354BD /* CommunityScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityScreen.swift; sourceTree = "<group>"; };
@@ -630,6 +641,7 @@
 		AA1F9BE9BFB7B0790305D08B /* SLShimmer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLShimmer.swift; sourceTree = "<group>"; };
 		AAB2372A9D78DD3B962DB35C /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		AB2FA2505AED9BF4EBC88E88 /* DiscoverServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverServiceProtocol.swift; sourceTree = "<group>"; };
+		AC36CAA4B2B91DFFA89FC0BD /* VouchConfirmControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchConfirmControl.swift; sourceTree = "<group>"; };
 		AC91C40381A70F5C7CF0D8F7 /* RoomModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomModels.swift; sourceTree = "<group>"; };
 		ACF507A0B8046DA6CFAB259A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AD5749A087F8D919A7D89D87 /* PollEditorSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollEditorSection.swift; sourceTree = "<group>"; };
@@ -1365,8 +1377,14 @@
 		85EA28DED14E064AB738E43C /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
+				AC36CAA4B2B91DFFA89FC0BD /* VouchConfirmControl.swift */,
+				27A64AC4823E5C805B3D7669 /* VouchDetailsForm.swift */,
 				8262A1FD551822E7C5B75A92 /* VouchExplainerSheet.swift */,
+				471358C369AFF2211BCB4D7C /* VouchingScreen.swift */,
+				8F0D80F037B97C3A01AA6CF0 /* VouchingViewModel.swift */,
+				8AE3915D6A051FFF6D32A617 /* VouchInviteSheet.swift */,
 				B6929F8A260A7F600D912112 /* VouchTag.swift */,
+				9BDE55C08435E050D5CD466E /* VouchWarningCard.swift */,
 			);
 			path = Presentation;
 			sourceTree = "<group>";
@@ -2259,14 +2277,20 @@
 				05674435179D7923C3D4F06F /* VoiceService.swift in Sources */,
 				86F2A18797A75762E16C7AF7 /* VoiceServiceMock.swift in Sources */,
 				0A1D471F347584F640B964AA /* VoiceServiceProtocol.swift in Sources */,
+				DD87DBC8210BD01251A38445 /* VouchConfirmControl.swift in Sources */,
 				F80AD647DA01A56A54BF84F3 /* VouchCopy.swift in Sources */,
+				585E04FC29D93905EAA193AD /* VouchDetailsForm.swift in Sources */,
 				C904D2D242768BC2879C1A77 /* VouchExplainerSheet.swift in Sources */,
 				2CDA82A38C6CF4F169AFB731 /* VouchInviteInbox.swift in Sources */,
+				757F3DD4DF5CDF5AB2EAB9DB /* VouchInviteSheet.swift in Sources */,
 				8287D8ECECF56D8DE4C84DE4 /* VouchTag.swift in Sources */,
+				75412598A40D4C8C32AC895C /* VouchWarningCard.swift in Sources */,
 				8283E7FE67C7CE90AB50F9A5 /* VouchingModels.swift in Sources */,
+				37E6089908E70DDF9CAF7712 /* VouchingScreen.swift in Sources */,
 				1C68726A3E923FE5ACE37D17 /* VouchingService.swift in Sources */,
 				FE184138A4EFC746C7562CCC /* VouchingServiceMock.swift in Sources */,
 				6830E836926A6A9A2BCA380C /* VouchingServiceProtocol.swift in Sources */,
+				F63BDC8141C7A043434121B2 /* VouchingViewModel.swift in Sources */,
 				C05C5326723DBC970D025EAA /* WarningPickerSection.swift in Sources */,
 				925C18F185E0A7D851863913 /* WelcomeScreen.swift in Sources */,
 				D91E5380D83BF14E929A50F5 /* WithdrawSubmissionControl.swift in Sources */,

@@ -19,6 +19,7 @@ public struct NationalityPickerSheet: View {
 
     private let selected: String?
     private let isSaving: Bool
+    private let message: String?
     private let onPick: (String) -> Void
 
     @State private var query = ""
@@ -26,10 +27,13 @@ public struct NationalityPickerSheet: View {
     /// - Parameters:
     ///   - selected: The claim already on the account, if any.
     ///   - isSaving: `true` while the choice is being sent.
+    ///   - message: What the choice is for, above the list. `nil` is the
+    ///     verification claim's own explanation; a vouch says its own.
     ///   - onPick: Called with the chosen alpha-2 code.
-    public init(selected: String?, isSaving: Bool = false, onPick: @escaping (String) -> Void) {
+    public init(selected: String?, isSaving: Bool = false, message: String? = nil, onPick: @escaping (String) -> Void) {
         self.selected = selected
         self.isSaving = isSaving
+        self.message = message
         self.onPick = onPick
     }
 
@@ -57,7 +61,7 @@ public struct NationalityPickerSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Text(L10n.t("nationality.picker.message"))
+                    Text(message ?? L10n.t("nationality.picker.message"))
                         .font(SLFont.bodyLight)
                         .foregroundStyle(SLColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
