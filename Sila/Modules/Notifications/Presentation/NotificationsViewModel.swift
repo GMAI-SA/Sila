@@ -291,6 +291,27 @@ public final class NotificationsViewModel {
         }
     }
 
+    /// Where a vouching row goes: the side the server says the reader is on
+    /// (`vouch_role`, contract v24 §14) — the voucher's list or the person's
+    /// own vouch, the same place the push's link points. Without it, the kind
+    /// decides, and `vouch_ended` — which reaches either side — falls back to
+    /// the reader's standing now: vouched reads as the person, anything else
+    /// as the voucher. That guess is wrong for a person who has since
+    /// verified, which is why the server's word comes first.
+    nonisolated static func vouchDestination(
+        for notification: UserNotification,
+        viewerIsVouched: Bool
+    ) -> NotificationDestination {
+        switch notification.vouchRole {
+        case .voucher: return .vouching
+        case .person: return .ownVouch
+        case nil:
+            if notification.kind.isForVoucher { return .vouching }
+            if notification.kind == .vouchEnded { return viewerIsVouched ? .ownVouch : .vouching }
+            return .ownVouch
+        }
+    }
+
     /// Opens what a row is about, and marks that one row read.
     ///
     /// - Returns: The destination, or `nil` when there is nothing to open —
@@ -312,14 +333,10 @@ public final class NotificationsViewModel {
             return .event(id: eventId)
         }
         // A vouching row opens the side it was written for, never the actor's
-        // profile. `vouch_ended` reaches either side: a vouched reader is the
-        // person (theirs has ended before, or this one is about theirs), a
-        // verified one the voucher — the same rule the push's link follows.
+        // profile.
         if notification.kind.isVouching {
             await markRead(notification)
-            if notification.kind.isForVoucher { return .vouching }
-            if notification.kind == .vouchEnded { return viewerIsVouched() ? .ownVouch : .vouching }
-            return .ownVouch
+            return Self.vouchDestination(for: notification, viewerIsVouched: viewerIsVouched())
         }
         if notification.kind == .prompt {
             await markRead(notification)

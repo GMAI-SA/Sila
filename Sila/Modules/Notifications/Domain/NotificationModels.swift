@@ -314,6 +314,14 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
 
 // MARK: - The notification
 
+/// Which side of a vouch a notice's reader is on (contract v24 §14).
+public enum VouchRole: String, Sendable, Hashable {
+    /// The verified member who vouched: their list is where the row goes.
+    case voucher
+    /// The person vouched for: their own vouch.
+    case person
+}
+
 /// One row of `GET /notifications`.
 ///
 /// Named ``UserNotification`` rather than `Notification` so it cannot be
@@ -342,6 +350,10 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     public var eventId: UUID? = nil
     /// The vouch a `vouch_*` row is about (contract v24).
     public var vouchId: UUID? = nil
+    /// Which side of that vouch the reader is on (contract v24 §14): the
+    /// voucher, or the person vouched for. `nil` when there is no vouch, its
+    /// row is gone, or the server predates the field.
+    public var vouchRole: VouchRole? = nil
     /// The community a community notification points at, and its address.
     public let communityId: UUID?
     public let communitySlug: String?
@@ -392,6 +404,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
         case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive, roomId, detail, eventId, vouchId
+        case vouchRole
         case communityId, communitySlug, communityName
     }
 
@@ -434,6 +447,9 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         detail = (try? container.decodeIfPresent(String.self, forKey: .detail)) ?? nil
         eventId = (try? container.decodeIfPresent(UUID.self, forKey: .eventId)) ?? nil
         vouchId = (try? container.decodeIfPresent(UUID.self, forKey: .vouchId)) ?? nil
+        // An unknown word reads as no word: the row still opens, by its kind.
+        vouchRole = ((try? container.decodeIfPresent(String.self, forKey: .vouchRole)) ?? nil)
+            .flatMap(VouchRole.init(rawValue:))
     }
 
     // MARK: Derived

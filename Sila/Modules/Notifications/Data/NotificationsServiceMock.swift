@@ -31,6 +31,11 @@ public actor NotificationsServiceMock: NotificationsServiceProtocol {
         case offline
         /// Reads fine; every write is throttled with `429`.
         case markFails
+        /// The vouching notices (contract v24 §8, §14): a claim to confirm,
+        /// the person's own confirmation, and a `vouch_ended` on each side,
+        /// every one carrying `vouch_role` — plus one without it, which the
+        /// app must still route by its kind.
+        case vouching
     }
 
     /// The scenario currently being played.
@@ -62,6 +67,8 @@ public actor NotificationsServiceMock: NotificationsServiceProtocol {
             }
         case .paged:
             stored = Self.manyRows
+        case .vouching:
+            stored = Self.vouchingRows
         case .populated, .markFails:
             stored = Self.cast
         }
@@ -154,6 +161,25 @@ public actor NotificationsServiceMock: NotificationsServiceProtocol {
     static let deletedPostId = id(9_001)
 
     /// All five kinds, plus the deleted-post case.
+    /// One row of each vouching shape.
+    static let vouchingRows: [UserNotification] = {
+        func row(_ n: Int, _ kind: NotificationKind, _ actor: UserSummary, role: VouchRole?, detail: String? = nil,
+                 read: Bool, minutes: Double) -> UserNotification {
+            var row = UserNotification(id: NotificationsServiceMock.id(n), kind: kind, actor: actor, read: read,
+                                       createdAt: NotificationsServiceMock.minutesAgo(minutes))
+            row.vouchId = NotificationsServiceMock.id(n + 100)
+            row.vouchRole = role
+            row.detail = detail
+            return row
+        }
+        return [
+            row(301, .vouchClaimed, FeedServiceMock.vouched, role: .voucher, read: false, minutes: 3),
+            row(302, .vouchEnded, FeedServiceMock.noor, role: .person, detail: "expired", read: false, minutes: 40),
+            row(303, .vouchEnded, FeedServiceMock.vouched, role: .voucher, detail: "self_verified", read: true, minutes: 200),
+            row(304, .vouchConfirmed, FeedServiceMock.noor, role: nil, read: true, minutes: 60 * 24 * 20)
+        ]
+    }()
+
     static let cast: [UserNotification] = [
         UserNotification(
             id: id(201), kind: .reply, actor: FeedServiceMock.yuki,
