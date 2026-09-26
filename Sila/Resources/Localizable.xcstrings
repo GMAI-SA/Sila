@@ -13957,6 +13957,24 @@
         }
       }
     },
+    "ds.vouchTag.hint": {
+      "comment": "VoiceOver hint on a vouch tag.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يشرح معنى هذه التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explains what this vouch means"
+          }
+        }
+      }
+    },
     "error.accountDeactivated": {
       "comment": "Last-resort copy if a pending-deletion account reaches a normal screen.",
       "extractionState": "manual",
@@ -19623,13 +19641,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "الإعجابات هنا من أشخاص موثّقين، لذلك لها معنى."
+            "value": "الإعجابات هنا من أشخاص حقيقيين، لذلك لها معنى."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Likes here come from verified people, so they mean something."
+            "value": "Likes here come from real people, so they mean something."
           }
         }
       }
@@ -19725,13 +19743,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "كل من يتحدث في Sila شخص موثّق. هذه هي الفكرة كلها."
+            "value": "كل صوت هنا شخص حقيقي — موثّق، أو مُزكّى من موثّق."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Everyone who speaks on Sila is a verified person. That is the whole idea."
+            "value": "Every voice here is a real person — verified, or vouched for by one."
           }
         }
       }
@@ -19793,13 +19811,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "خلف كل رد هنا شخص حقيقي موثّق. وردّك كذلك."
+            "value": "خلف كل رد هنا شخص حقيقي — موثّق، أو مُزكّى من موثّق. وردّك كذلك."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Every reply here has a real, verified person behind it. Yours would too."
+            "value": "Every reply here has a real person behind it — verified, or vouched for by one. Yours would too."
           }
         }
       }
@@ -21901,6 +21919,244 @@
         }
       }
     },
+    "notifications.kind.vouch.moderation.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سؤال مشرف لك عن تزكية، وما قرّره. مفعّل دائمًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator asking you about a vouch, and what they decided. Always on."
+          }
+        }
+      }
+    },
+    "notifications.kind.vouch.person.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عن التزكية التي تقف خلف اسمك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About the vouch that stands behind your name."
+          }
+        }
+      }
+    },
+    "notifications.kind.vouch.voucher.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عن الأشخاص الذين تزكّيهم والروابط التي ترسلها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About people you vouch for and the links you send."
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchClaimed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبول أحدهم تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone accepts your vouch"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchConfirmed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تأكيد تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch is confirmed"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchDeclined.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عدم تأكيد تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch isn't confirmed"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchEnded.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند انتهاء تزكية منحتها أو تحملها، وسبب ذلك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a vouch you gave or carry ends, and why."
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchEnded.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهاء تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A vouch ends"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchExpiring.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقتراب انتهاء تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch is ending"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchGraduated.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توثيق من زكّيته هويته"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone you vouched for verifies"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchInviteClosed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إغلاق رابط تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A vouch link closes"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchReview.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سؤال مشرف عن تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator asks about a vouch"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchStrike.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قرار بشأن حقك في التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A decision about your right to vouch"
+          }
+        }
+      }
+    },
+    "notifications.kind.vouchVerified.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توثيقك هويتك بعد التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You verify after a vouch"
+          }
+        }
+      }
+    },
     "notifications.loading.accessibility": {
       "comment": "VoiceOver label while the list loads.",
       "extractionState": "manual",
@@ -22285,6 +22541,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opens this person's profile"
+          }
+        }
+      }
+    },
+    "notifications.row.openHint.vouch": {
+      "comment": "VoiceOver hint for a vouching row.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the vouch"
           }
         }
       }
@@ -22948,6 +23222,198 @@
         }
       }
     },
+    "notifications.sentence.vouchClaimed": {
+      "comment": "%@ is the other person's display name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل %@ تزكيتك — أكّد أنه هو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ accepted your vouch — confirm it's them"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchConfirmed": {
+      "comment": "%@ is the other person's display name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أكّد %@ تزكيتك — يمكنك النشر الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ confirmed your vouch — you can post now"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchDeclined": {
+      "comment": "%@ is the other person's display name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يؤكّد %@ التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ didn't confirm the vouch"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchEnded": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A vouch has ended"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchEnded.reason": {
+      "comment": "Why it ended (\"The 30 days ran out\").",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت تزكية: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A vouch has ended: %@"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchExpiring": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنتهي تزكيتك قريبًا — وثّق هويتك لتواصل النشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch ends soon — verify your identity to keep posting"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchGraduated": {
+      "comment": "%@ is the other person's display name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق %@ هويته — لم تعد مسؤولًا عنه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ verified their identity — you're no longer answerable for them"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchInviteClosed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُغلق رابط التزكية — ثلاث محاولات لم تطابق البيانات التي أدخلتها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch link is closed — three tries didn't match the details you gave"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchReview": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسألك أحد المشرفين عن شخص زكّيته"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator is asking about someone you vouched for"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchStrike": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قرار بشأن حقك في التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A decision about your right to vouch"
+          }
+        }
+      }
+    },
+    "notifications.sentence.vouchVerified": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّقت هويتك — اسمك الآن يحمل كلمتك أنت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You verified your identity — your name now carries your own word"
+          }
+        }
+      }
+    },
     "notifications.settings.done.hint": {
       "comment": "VoiceOver hint for the sheet's Done button.",
       "extractionState": "manual",
@@ -23153,6 +23619,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "FROM SILA"
+          }
+        }
+      }
+    },
+    "notifications.settings.group.vouching": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VOUCHING"
           }
         }
       }
@@ -23977,6 +24460,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Only verified %@ accounts can vote in this poll"
+          }
+        }
+      }
+    },
+    "poll.blocked.selfVerify": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتك لتصوّت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your identity to vote"
           }
         }
       }
@@ -26320,24 +26820,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "now"
-          }
-        }
-      }
-    },
-    "post.time.posted.accessibility": {
-      "comment": "VoiceOver reading of a post's timestamp. %@ is a relative time.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "نُشر %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Posted %@"
           }
         }
       }
@@ -30334,6 +30816,186 @@
           "stringUnit": {
             "state": "translated",
             "value": "New reply in your thread"
+          }
+        }
+      }
+    },
+    "push.vouch_claimed": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل أحدهم تزكيتك — أكّد أنه هو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone accepted your vouch — confirm it's them"
+          }
+        }
+      }
+    },
+    "push.vouch_confirmed": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تأكّدت تزكيتك — يمكنك النشر الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch is confirmed — you can post now"
+          }
+        }
+      }
+    },
+    "push.vouch_declined": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تُؤكَّد تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch wasn't confirmed"
+          }
+        }
+      }
+    },
+    "push.vouch_ended": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A vouch has ended"
+          }
+        }
+      }
+    },
+    "push.vouch_expiring": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنتهي تزكيتك قريبًا — وثّق هويتك لتواصل النشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch ends soon — verify your identity to keep posting"
+          }
+        }
+      }
+    },
+    "push.vouch_graduated": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق شخص زكّيته هويته — لم تعد مسؤولًا عنه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone you vouched for verified their identity — you're no longer answerable for them"
+          }
+        }
+      }
+    },
+    "push.vouch_invite_closed": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُغلق رابط التزكية — ثلاث محاولات لم تطابق البيانات التي أدخلتها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch link is closed — three tries didn't match the details you gave"
+          }
+        }
+      }
+    },
+    "push.vouch_review": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسألك أحد المشرفين عن شخص زكّيته"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator is asking about someone you vouched for"
+          }
+        }
+      }
+    },
+    "push.vouch_strike": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قرار بشأن حقك في التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A decision about your right to vouch"
+          }
+        }
+      }
+    },
+    "push.vouch_verified": {
+      "comment": "Push notification body, shown from the loc-key alone: it names nobody.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّقت هويتك — اسمك الآن يحمل كلمتك أنت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You verified your identity — your name now carries your own word"
           }
         }
       }
@@ -41575,6 +42237,4777 @@
           "stringUnit": {
             "state": "translated",
             "value": "Use"
+          }
+        }
+      }
+    },
+    "vouch.banner.detail": {
+      "comment": "%@ is how long is left.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — وثّق هويتك لتواصل النشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — verify your identity to keep posting"
+          }
+        }
+      }
+    },
+    "vouch.banner.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens your vouch"
+          }
+        }
+      }
+    },
+    "vouch.banner.title": {
+      "comment": "Above Home. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‏⁦@%@⁩ يزكّيك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ vouches for you"
+          }
+        }
+      }
+    },
+    "vouch.claim.accept": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقبل التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept the vouch"
+          }
+        }
+      }
+    },
+    "vouch.claim.accept.hint": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسل بياناتك لمطابقتها، ثم يؤكّد ⁦@%@⁩ أنك أنت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends your details to be matched. @%@ then confirms it's you."
+          }
+        }
+      }
+    },
+    "vouch.claim.attemptsLeft": {
+      "comment": "Tries the link has left before it closes.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "بقيت %lld محاولات"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "بقيت %lld محاولة"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "بقيت محاولة واحدة"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "بقيت %lld محاولة"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "بقيت محاولتان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لم تبقَ محاولات"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld try left"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld tries left"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "vouch.claim.attest.adult": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عمري 18 عامًا أو أكثر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I am 18 or older"
+          }
+        }
+      }
+    },
+    "vouch.claim.attest.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل القبول"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before you accept"
+          }
+        }
+      }
+    },
+    "vouch.claim.attest.realName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سأستخدم اسمي الحقيقي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I will use my real name"
+          }
+        }
+      }
+    },
+    "vouch.claim.attest.singleAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا حسابي الوحيد في صلة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is my only Sila account"
+          }
+        }
+      }
+    },
+    "vouch.claim.attest.terms": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أوافق على الشروط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I accept the terms"
+          }
+        }
+      }
+    },
+    "vouch.claim.closed.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تتطابق البيانات ثلاث مرات، فأُغلق الرابط نهائيًا. اطلب من مرسله رابطًا جديدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The details didn't match three times, so the link is closed for good. Ask the person who sent it for a new one."
+          }
+        }
+      }
+    },
+    "vouch.claim.closed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُغلق هذا الرابط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This link is closed"
+          }
+        }
+      }
+    },
+    "vouch.claim.details.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بياناتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your details"
+          }
+        }
+      }
+    },
+    "vouch.claim.details.hint": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتبها كما هي في هويتك. تُقارَن فقط بما أدخله ⁦@%@⁩."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write them as they are on your ID. They're only compared with what @%@ entered."
+          }
+        }
+      }
+    },
+    "vouch.claim.done": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم القبول. سيُطلب من ⁦@%@⁩ تأكيد أنك أنت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted. @%@ will be asked to confirm it's you."
+          }
+        }
+      }
+    },
+    "vouch.claim.expires": {
+      "comment": "%@ is a date and time.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعمل هذا الرابط حتى %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This link works until %@"
+          }
+        }
+      }
+    },
+    "vouch.claim.guest": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقبول التزكية، أنشئ حسابًا أو سجّل الدخول أولًا، ثم تعود إلى هنا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To accept, create an account or sign in first. You'll come back here."
+          }
+        }
+      }
+    },
+    "vouch.claim.loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ فتح رابط التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening the vouch link"
+          }
+        }
+      }
+    },
+    "vouch.claim.member.verified": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هويتك موثّقة بالفعل — لا تحتاج إلى تزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're already verified — you don't need a vouch."
+          }
+        }
+      }
+    },
+    "vouch.claim.message": {
+      "comment": "%1$@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إن كنت الشخص الذي يقصده ⁦@%1$@⁩، فأدخل بياناتك. يجب أن تطابق ما أدخله ⁦@%1$@⁩."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you're the person @%1$@ means, give your own details. They have to match what @%1$@ entered."
+          }
+        }
+      }
+    },
+    "vouch.claim.mismatch": {
+      "comment": "%1$@ is the voucher's handle, %2$@ the fields that differ (\"name, date of birth\") — never their values.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه لا تطابق ما أدخله ⁦@%1$@⁩: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These don't match what @%1$@ entered: %2$@"
+          }
+        }
+      }
+    },
+    "vouch.claim.nav": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouch"
+          }
+        }
+      }
+    },
+    "vouch.claim.refused.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن لهذا الحساب قبول التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account can't accept the vouch"
+          }
+        }
+      }
+    },
+    "vouch.claim.title": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‏⁦@%@⁩ يزكّيك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ is vouching for you"
+          }
+        }
+      }
+    },
+    "vouch.claim.unavailable.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ربما انتهت صلاحيته أو استُخدم أو سُحب. اطلب من مرسله رابطًا جديدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It may have expired, been used already, or been withdrawn. Ask the person who sent it for a new one."
+          }
+        }
+      }
+    },
+    "vouch.claim.unavailable.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن استخدام رابط التزكية هذا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This vouch link can't be used"
+          }
+        }
+      }
+    },
+    "vouch.daysLeft": {
+      "comment": "Whole days left on a vouch, rounded up.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld أيام متبقية"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld يومًا متبقيًا"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يوم واحد متبقٍ"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld يوم متبقٍ"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يومان متبقيان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أقل من يوم متبقٍ"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day left"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days left"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "vouch.daysLeft.lastDay": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أقل من يوم متبقٍ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Less than a day left"
+          }
+        }
+      }
+    },
+    "vouch.end.declined": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رُفضت — ليس المقصود"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declined — not who was meant"
+          }
+        }
+      }
+    },
+    "vouch.end.expired": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت الأيام الثلاثون"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 30 days ran out"
+          }
+        }
+      }
+    },
+    "vouch.end.falseAttestation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبيّن أن تعهّدًا غير صحيح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A promise was found untrue"
+          }
+        }
+      }
+    },
+    "vouch.end.impostor": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبيّن أنه ليس من قالت التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Found not to be who the vouch said"
+          }
+        }
+      }
+    },
+    "vouch.end.other": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended"
+          }
+        }
+      }
+    },
+    "vouch.end.removed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أزالها الشخص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taken off by the person"
+          }
+        }
+      }
+    },
+    "vouch.end.selfVerified": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويته بنفسه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They verified their own identity"
+          }
+        }
+      }
+    },
+    "vouch.end.soldLink": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بيع الرابط أو مُرّر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The link was sold or passed on"
+          }
+        }
+      }
+    },
+    "vouch.end.unconfirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يُؤكَّد خلال 48 ساعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not confirmed within 48 hours"
+          }
+        }
+      }
+    },
+    "vouch.end.underAge": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تبيّن أنه دون 18 عامًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Found to be under 18"
+          }
+        }
+      }
+    },
+    "vouch.end.verificationRefused": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رُفض توثيق الشخص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification refused the person"
+          }
+        }
+      }
+    },
+    "vouch.end.voucheeLeft": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غادر الشخص صلة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The person left Sila"
+          }
+        }
+      }
+    },
+    "vouch.end.voucherLeft": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غادر المزكّي صلة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The voucher left Sila"
+          }
+        }
+      }
+    },
+    "vouch.end.voucherPenalised": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فقد المزكّي حق التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The voucher lost the right to vouch"
+          }
+        }
+      }
+    },
+    "vouch.end.voucherSuspended": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عُلّق حساب المزكّي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The voucher was suspended"
+          }
+        }
+      }
+    },
+    "vouch.end.voucherUnverified": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فقد المزكّي شارته"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The voucher lost their badge"
+          }
+        }
+      }
+    },
+    "vouch.end.withdrawn": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحبها المزكّي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdrawn by the voucher"
+          }
+        }
+      }
+    },
+    "vouch.error.alreadyVouched": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هناك من يزكّيك بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone is already vouching for you."
+          }
+        }
+      }
+    },
+    "vouch.error.attestationsRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حدّد المربعات الأربعة للمتابعة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tick all four boxes to continue."
+          }
+        }
+      }
+    },
+    "vouch.error.attestationsRequired.own": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حدّد المربعات الأربعة لقبول التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tick all four boxes to accept."
+          }
+        }
+      }
+    },
+    "vouch.error.confirmWindowPassed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مرّت الساعات الـ48 المتاحة للتأكيد — أرسل رابطًا جديدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 48 hours to confirm have passed — send a new link."
+          }
+        }
+      }
+    },
+    "vouch.error.detailsMismatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه البيانات لا تطابق ما أدخله مرسل الرابط."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These details don't match what the person who sent the link entered."
+          }
+        }
+      }
+    },
+    "vouch.error.detailsRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل اسمه الكامل وجنسيته وتاريخ ميلاده."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give their full name, nationality and date of birth."
+          }
+        }
+      }
+    },
+    "vouch.error.detailsRequired.own": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل اسمك الكامل وجنسيتك وتاريخ ميلادك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give your full name, nationality and date of birth."
+          }
+        }
+      }
+    },
+    "vouch.error.invalidCountry": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر جنسية من القائمة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a nationality from the list."
+          }
+        }
+      }
+    },
+    "vouch.error.invalidDateOfBirth": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل تاريخ ميلاد صحيحًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a real date of birth."
+          }
+        }
+      }
+    },
+    "vouch.error.invalidFullName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل اسمه الكامل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter their full name."
+          }
+        }
+      }
+    },
+    "vouch.error.invalidFullName.own": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل اسمك الكامل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your full name."
+          }
+        }
+      }
+    },
+    "vouch.error.inviteClaimed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قَبِل أحدهم هذا الرابط بالفعل — ارفض التزكية أو اسحبها بدلًا من ذلك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Somebody already accepted this link — decline or withdraw the vouch instead."
+          }
+        }
+      }
+    },
+    "vouch.error.inviteClosed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تتطابق البيانات ثلاث مرات، فأُغلق هذا الرابط. اطلب رابطًا جديدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The details didn't match three times, so this link is closed. Ask for a new one."
+          }
+        }
+      }
+    },
+    "vouch.error.inviteNotFound": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يعد هذا الرابط موجودًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That link no longer exists."
+          }
+        }
+      }
+    },
+    "vouch.error.lifetimeReached": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زُكّيت مرتين — وثّق هويتك لتتابع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been vouched for twice — verify your identity to continue."
+          }
+        }
+      }
+    },
+    "vouch.error.noSummons": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا أحد ينتظر إجابة بشأن هذه التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody is waiting for an answer about this vouch."
+          }
+        }
+      }
+    },
+    "vouch.error.notEligible": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن تزكية هذا الحساب."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account can't be vouched for."
+          }
+        }
+      }
+    },
+    "vouch.error.notFound": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تعد هذه التزكية موجودة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That vouch no longer exists."
+          }
+        }
+      }
+    },
+    "vouch.error.notLive": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت هذه التزكية بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This vouch has already ended."
+          }
+        }
+      }
+    },
+    "vouch.error.notPending": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تعد هذه التزكية بانتظارك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This vouch is no longer waiting for you."
+          }
+        }
+      }
+    },
+    "vouch.error.notVerified": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يدير المجتمع إلا عضو وثّق هويته بنفسه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only a member who verified their own identity can run a community."
+          }
+        }
+      }
+    },
+    "vouch.error.recipientCannotMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يستطيع استخدام الرسائل حتى يوثّق هويته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They can't use messages until they verify their identity."
+          }
+        }
+      }
+    },
+    "vouch.error.selfVerificationRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتك لتفعل هذا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your identity to do this"
+          }
+        }
+      }
+    },
+    "vouch.error.signInRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول أولًا، ثم اقبل التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in first, then accept the vouch."
+          }
+        }
+      }
+    },
+    "vouch.error.slotsFull": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تقف الآن خلف أقصى عدد ممكن من الأشخاص."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're standing behind as many people as you can right now."
+          }
+        }
+      }
+    },
+    "vouch.error.summonsClosed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مرّت الساعات الـ48 المتاحة للإجابة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 48 hours to answer have passed."
+          }
+        }
+      }
+    },
+    "vouch.error.tooManyMentions": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستطيع الأعضاء المُزكَّون الإشارة إلى 3 أشخاص كحد أقصى في المنشور."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouched members can mention up to 3 people in a post."
+          }
+        }
+      }
+    },
+    "vouch.error.tooSoon": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك قبول تزكية أخرى بعد 14 يومًا من انتهاء آخر تزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can accept another vouch 14 days after your last one ended."
+          }
+        }
+      }
+    },
+    "vouch.error.underAge": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا تجوز تزكية من هو دون 18 عامًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only somebody 18 or older can be vouched for."
+          }
+        }
+      }
+    },
+    "vouch.error.underAge.own": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يجب أن يكون عمرك 18 عامًا أو أكثر لتُزكّى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You must be 18 or older to be vouched for."
+          }
+        }
+      }
+    },
+    "vouch.error.voucheeGone": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يعد هذا الحساب موجودًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That account is no longer here."
+          }
+        }
+      }
+    },
+    "vouch.explainer.body": {
+      "comment": "%1$@ is the voucher's handle, %2$@ the vouched member's display name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‏⁦@%1$@⁩ عضو موثّق ويزكّي %2$@ بأنه يعرفه شخصيًا. %2$@ لم يوثّق هويته بعد، لذلك لا يحمل ختمًا ولا علم دولة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%1$@ is a verified member and vouches that they know %2$@ in person. %2$@ hasn't verified their own identity yet, so there's no seal and no country flag."
+          }
+        }
+      }
+    },
+    "vouch.explainer.country": {
+      "comment": "%@ is a country's name. Given and matched, not proved.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجنسية المُعلنة: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nationality given: %@"
+          }
+        }
+      }
+    },
+    "vouch.explainer.see": {
+      "comment": "Opens the voucher's profile. %@ is their handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض ⁦@%@⁩"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See @%@"
+          }
+        }
+      }
+    },
+    "vouch.explainer.since": {
+      "comment": "%@ is a date.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مُزكّى منذ %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouched for since %@"
+          }
+        }
+      }
+    },
+    "vouch.explainer.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عضو مُزكّى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouched member"
+          }
+        }
+      }
+    },
+    "vouch.field.dateOfBirth": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تاريخ الميلاد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "date of birth"
+          }
+        }
+      }
+    },
+    "vouch.field.fullName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاسم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "name"
+          }
+        }
+      }
+    },
+    "vouch.field.nationality": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجنسية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nationality"
+          }
+        }
+      }
+    },
+    "vouch.field.separator": {
+      "comment": "Between the names of mismatched fields.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "، "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        }
+      }
+    },
+    "vouch.finding.falseAttestation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعهّد لم يكن صحيحًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A promise that wasn't true"
+          }
+        }
+      }
+    },
+    "vouch.finding.impostor": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس من قالت التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not who the vouch said"
+          }
+        }
+      }
+    },
+    "vouch.finding.soldLink": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بيع الرابط أو مُرّر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The link was sold or passed on"
+          }
+        }
+      }
+    },
+    "vouch.finding.underAge": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دون 18 عامًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under 18"
+          }
+        }
+      }
+    },
+    "vouch.form.choose": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose"
+          }
+        }
+      }
+    },
+    "vouch.form.dateOfBirth": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تاريخ الميلاد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date of birth"
+          }
+        }
+      }
+    },
+    "vouch.form.fullName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاسم الكامل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full name"
+          }
+        }
+      }
+    },
+    "vouch.form.fullName.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسمه كما في هويته"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their name as on their ID"
+          }
+        }
+      }
+    },
+    "vouch.form.fullName.placeholder.own": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسمك كما في هويتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name as on your ID"
+          }
+        }
+      }
+    },
+    "vouch.form.mismatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يطابق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doesn't match"
+          }
+        }
+      }
+    },
+    "vouch.form.nationality": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الجنسية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nationality"
+          }
+        }
+      }
+    },
+    "vouch.form.nationality.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جنسيته كما في هويته. على من يفتح الرابط أن يختار الجنسية نفسها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their nationality, as on their ID. Whoever opens the link has to give the same one."
+          }
+        }
+      }
+    },
+    "vouch.form.nationality.message.own": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جنسيتك كما في هويتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your nationality, as on your ID."
+          }
+        }
+      }
+    },
+    "vouch.hoursLeft": {
+      "comment": "Whole hours left in a 48-hour window.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ساعات"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ساعة"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ساعة واحدة"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ساعة"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ساعتان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أقل من ساعة"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld hour"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld hours"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "vouch.limited.host": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أثناء التزكية يمكنك الاستماع في الغرف. وثّق هويتك لتستضيف غرفة أو فعالية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While you're vouched for, you can listen in rooms. Verify your identity to host a room or an event."
+          }
+        }
+      }
+    },
+    "vouch.limited.messages.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أثناء التزكية لا يمكنك إرسال الرسائل أو استقبالها. وثّق هويتك لتُفتح رسائلك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While you're vouched for, you can't send or receive messages. Verify your identity and your inbox opens."
+          }
+        }
+      }
+    },
+    "vouch.limited.messages.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُفتح الرسائل عند توثيق هويتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages open when you verify"
+          }
+        }
+      }
+    },
+    "vouch.limited.rooms": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت تستمع. وثّق هويتك لتتحدث أو تدردش أو تطرح سؤالًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're listening. Verify your identity to take the microphone, chat or ask a question."
+          }
+        }
+      }
+    },
+    "vouch.list.accepted": {
+      "comment": "%@ is a relative time (\"2 hours ago\").",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قَبِل %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted %@"
+          }
+        }
+      }
+    },
+    "vouch.list.active.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سارية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        }
+      }
+    },
+    "vouch.list.confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تأكيد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm"
+          }
+        }
+      }
+    },
+    "vouch.list.confirm.message": {
+      "comment": "%1$@ is the person's handle, %2$@ a number of days.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستطيع ⁦@%1$@⁩ النشر لمدة %2$@ يومًا واسمك مقرون باسمه. إن تبيّن أنه ليس من قلت، تفقد حق التزكية — وقد يُعلَّق حسابك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%1$@ can post for %2$@ days with your name on theirs. If they turn out not to be who you said, you lose the right to vouch — and your account can be suspended."
+          }
+        }
+      }
+    },
+    "vouch.list.confirm.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل هذا من قصدته؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is this who you meant?"
+          }
+        }
+      }
+    },
+    "vouch.list.confirm.yes": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نعم، هذا من قصدت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, that's who I meant"
+          }
+        }
+      }
+    },
+    "vouch.list.confirmWithin": {
+      "comment": "%@ is hours left (\"43 hours\").",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أكّد خلال %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm within %@"
+          }
+        }
+      }
+    },
+    "vouch.list.confirmed": {
+      "comment": "%@ is the person's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم التأكيد. يستطيع ⁦@%@⁩ النشر الآن."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmed. @%@ can post now."
+          }
+        }
+      }
+    },
+    "vouch.list.create": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنشئ رابط تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a vouch link"
+          }
+        }
+      }
+    },
+    "vouch.list.create.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسألك من هو، ثم يعطيك رابطًا ترسله إليه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks who they are, then gives you a link to send them"
+          }
+        }
+      }
+    },
+    "vouch.list.decline": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس هذا من قصدت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's not who I meant"
+          }
+        }
+      }
+    },
+    "vouch.list.decline.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لن يحصل على الوسم. الرفض لا يُحتسب عليك أبدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They won't get the tag. Declining is never held against you."
+          }
+        }
+      }
+    },
+    "vouch.list.decline.title": {
+      "comment": "%@ is the person's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفض ⁦@%@⁩؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline @%@?"
+          }
+        }
+      }
+    },
+    "vouch.list.declined": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رُفضت. لا يُحتسب ذلك عليك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declined. Nothing is held against you."
+          }
+        }
+      }
+    },
+    "vouch.list.empty.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنشئ رابطًا وأرسله إلى الشخص الذي تعرفه. يقبله، ثم تؤكّد أنه هو."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a link and send it to the person you know. They accept it, and you confirm it's them."
+          }
+        }
+      }
+    },
+    "vouch.list.empty.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا أحد بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody yet"
+          }
+        }
+      }
+    },
+    "vouch.list.ended.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منتهية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended"
+          }
+        }
+      }
+    },
+    "vouch.list.ends": {
+      "comment": "%1$@ is a date, %2$@ how long is left.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنتهي %1$@ · %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "vouch.list.error.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر تحميل التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouching didn't load"
+          }
+        }
+      }
+    },
+    "vouch.list.gone": {
+      "comment": "%@ is the handle the account last had.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‏⁦@%@⁩ — لم يعد هنا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ — no longer here"
+          }
+        }
+      }
+    },
+    "vouch.list.intro.message": {
+      "comment": "A number of days.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما تزكّي شخصًا، يستطيع النشر للعالم لمدة %@ يومًا واسمك مقرون باسمه، ريثما يوثّق هويته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you vouch, the person you name can post internationally for %@ days with your name on theirs, while they verify their own identity."
+          }
+        }
+      }
+    },
+    "vouch.list.intro.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قف خلف شخص تعرفه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stand behind someone you know"
+          }
+        }
+      }
+    },
+    "vouch.list.invite.burn": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أتلف الرابط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burn link"
+          }
+        }
+      }
+    },
+    "vouch.list.invite.burn.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لن يستطيع أحد استخدامه بعد ذلك، ولا يُعيد لك رابط اليوم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody can use it after this. It doesn't give back today's link."
+          }
+        }
+      }
+    },
+    "vouch.list.invite.burn.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إتلاف هذا الرابط؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burn this link?"
+          }
+        }
+      }
+    },
+    "vouch.list.invite.burned": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُتلف الرابط."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link burned."
+          }
+        }
+      }
+    },
+    "vouch.list.invite.expires": {
+      "comment": "%@ is a date and time.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنتهي صلاحيته %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires %@"
+          }
+        }
+      }
+    },
+    "vouch.list.invite.for": {
+      "comment": "%@ is the full name the voucher wrote on the link.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لـ %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For %@"
+          }
+        }
+      }
+    },
+    "vouch.list.invite.mismatches": {
+      "comment": "Claims on this link whose details didn't match; the third closes it.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld محاولات لم تطابق"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld محاولة لم تطابق"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "محاولة واحدة لم تطابق"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld محاولة لم تطابق"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "محاولتان لم تطابقا"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا محاولات غير مطابقة"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld try didn't match"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld tries didn't match"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "vouch.list.invite.untitled": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رابط تزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouch link"
+          }
+        }
+      }
+    },
+    "vouch.list.invites.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "روابط مفتوحة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open links"
+          }
+        }
+      }
+    },
+    "vouch.list.nav": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouching"
+          }
+        }
+      }
+    },
+    "vouch.list.notOpen.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند إتاحتها، يمكنك الوقوف خلف شخص تعرفه ريثما يوثّق هويته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When it opens, you can stand behind someone you know while they verify their own identity."
+          }
+        }
+      }
+    },
+    "vouch.list.notOpen.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التزكية متاحة قريبًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouching opens soon"
+          }
+        }
+      }
+    },
+    "vouch.list.notYet": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not yet"
+          }
+        }
+      }
+    },
+    "vouch.list.note": {
+      "comment": "%@ is the voucher's private note.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملاحظتك: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your note: %@"
+          }
+        }
+      }
+    },
+    "vouch.list.pending.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بانتظارك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for you"
+          }
+        }
+      }
+    },
+    "vouch.list.rules": {
+      "comment": "Three numbers: link hours, confirm hours, vouch days.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعمل الروابط مرة واحدة، لمدة %1$@ ساعة. لديك %2$@ ساعة لتأكيد من قَبِل. تستمر التزكية %3$@ يومًا ولا تُجدَّد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Links work once, for %1$@ hours. You have %2$@ hours to confirm who accepted. A vouch lasts %3$@ days and can't be renewed."
+          }
+        }
+      }
+    },
+    "vouch.list.withdraw": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw"
+          }
+        }
+      }
+    },
+    "vouch.list.withdraw.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يُزال الوسم فورًا. السحب قبل أن ينشر أي شيء لا يُحتسب عليك أبدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The tag comes off at once. Withdrawing before they post anything is never held against you."
+          }
+        }
+      }
+    },
+    "vouch.list.withdraw.title": {
+      "comment": "%@ is the person's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحب تزكيتك لـ ⁦@%@⁩؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw your vouch for @%@?"
+          }
+        }
+      }
+    },
+    "vouch.list.withdrawn": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سُحبت التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdrawn."
+          }
+        }
+      }
+    },
+    "vouch.list.youWrote": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما كتبته"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You wrote"
+          }
+        }
+      }
+    },
+    "vouch.mine.can.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما يمكنك فعله الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you can do now"
+          }
+        }
+      }
+    },
+    "vouch.mine.cannot.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يُتاح عند توثيق هويتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens when you verify"
+          }
+        }
+      }
+    },
+    "vouch.mine.countdown.detail": {
+      "comment": "%@ is a date.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنتهي تزكيتك في %@. لا يمكن تجديدها — وثّق هويتك قبل ذلك لتواصل النشر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch ends on %@. It can't be renewed — verify your identity before then to keep posting."
+          }
+        }
+      }
+    },
+    "vouch.mine.intro": {
+      "comment": "%1$@ is the voucher's handle, %2$@ a date.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زكّاك ⁦@%1$@⁩ في %2$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%1$@ vouched for you on %2$@."
+          }
+        }
+      }
+    },
+    "vouch.mine.keep": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أبقِه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep it"
+          }
+        }
+      }
+    },
+    "vouch.mine.limits.follows": {
+      "comment": "A number.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حتى %@ متابعة في الساعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %@ follows an hour"
+          }
+        }
+      }
+    },
+    "vouch.mine.limits.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حدودك أثناء التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your limits while vouched for"
+          }
+        }
+      }
+    },
+    "vouch.mine.limits.mentions": {
+      "comment": "A number.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حتى %@ إشارات في المنشور"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %@ mentions in a post"
+          }
+        }
+      }
+    },
+    "vouch.mine.limits.posts": {
+      "comment": "Two numbers.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حتى %1$@ منشورات في الساعة و%2$@ في اليوم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %1$@ posts an hour and %2$@ a day"
+          }
+        }
+      }
+    },
+    "vouch.mine.nav": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch"
+          }
+        }
+      }
+    },
+    "vouch.mine.none.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا أحد يزكّيك حاليًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody is vouching for you right now."
+          }
+        }
+      }
+    },
+    "vouch.mine.none.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا تزكية حاليًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No vouch right now"
+          }
+        }
+      }
+    },
+    "vouch.mine.remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أزل الوسم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take the tag off"
+          }
+        }
+      }
+    },
+    "vouch.mine.remove.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعود إلى خطوة التوثيق إلى أن توثّق هويتك. يبقى كل ما كتبته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You go back to the verification step until you verify your identity. Everything you wrote stays."
+          }
+        }
+      }
+    },
+    "vouch.mine.remove.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة الوسم؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take the tag off?"
+          }
+        }
+      }
+    },
+    "vouch.mine.remove.yes": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أزله"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take it off"
+          }
+        }
+      }
+    },
+    "vouch.mine.removed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُزيل الوسم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The tag is off."
+          }
+        }
+      }
+    },
+    "vouch.mine.verified.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّقت هويتك، فلا حاجة لك إلى تزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You verified your identity, so you don't need a vouch."
+          }
+        }
+      }
+    },
+    "vouch.mine.verified.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسمك يحمل كلمتك أنت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name carries your own word"
+          }
+        }
+      }
+    },
+    "vouch.new.attest.adult": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عمره 18 عامًا أو أكثر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They are 18 or older"
+          }
+        }
+      }
+    },
+    "vouch.new.attest.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تؤكّد أنّ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You confirm"
+          }
+        }
+      }
+    },
+    "vouch.new.attest.knows": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أعرف هذا الشخص شخصيًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I know this person personally"
+          }
+        }
+      }
+    },
+    "vouch.new.attest.realName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيستخدم اسمه الحقيقي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They will use their real name"
+          }
+        }
+      }
+    },
+    "vouch.new.attest.singleAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس لديه حساب آخر في صلة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They have no other Sila account"
+          }
+        }
+      }
+    },
+    "vouch.new.copied": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نُسخ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        }
+      }
+    },
+    "vouch.new.copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انسخ الرابط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy link"
+          }
+        }
+      }
+    },
+    "vouch.new.create": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنشئ الرابط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create the link"
+          }
+        }
+      }
+    },
+    "vouch.new.note": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملاحظة خاصة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private note"
+          }
+        }
+      }
+    },
+    "vouch.new.note.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملاحظة لا يراها غيرك (لخالد)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A note only you see (for Khalid)"
+          }
+        }
+      }
+    },
+    "vouch.new.ready.message": {
+      "comment": "%1$@ is the name the voucher wrote, %2$@ a number of hours.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أرسله إلى %1$@ فقط. يعمل مرة واحدة، لمدة %2$@ ساعة، وهذه المرة الوحيدة التي تعرضه فيها صلة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it only to %1$@. It works once, for %2$@ hours, and this is the only time Sila shows it."
+          }
+        }
+      }
+    },
+    "vouch.new.ready.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رابطك جاهز"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your link is ready"
+          }
+        }
+      }
+    },
+    "vouch.new.responsibility": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت تضع اسمك الموثّق خلف اسمهم. إن تبيّن أنهم ليسوا من قلت، تفقد حق التزكية — وقد يُعلَّق حسابك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are putting your own verified name behind theirs. If they turn out not to be who you said, you lose the right to vouch — and your account can be suspended."
+          }
+        }
+      }
+    },
+    "vouch.new.share": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شارك الرابط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share link"
+          }
+        }
+      }
+    },
+    "vouch.new.shareText": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أزكّيك في صلة. افتح هذا الرابط لقبول التزكية:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm vouching for you on Sila. Open this link to accept:"
+          }
+        }
+      }
+    },
+    "vouch.new.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زكِّ شخصًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouch for someone"
+          }
+        }
+      }
+    },
+    "vouch.new.who.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من هو؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who are they?"
+          }
+        }
+      }
+    },
+    "vouch.new.who.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كما في هويته. على من يفتح الرابط أن يُدخل البيانات الثلاث نفسها، فيتوقف الرابط المُمرَّر عندها. لن يرى ما كتبته أبدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As on their ID. Whoever opens the link has to give the same three, so a forwarded link stops there. They never see what you wrote."
+          }
+        }
+      }
+    },
+    "vouch.own.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your identity"
+          }
+        }
+      }
+    },
+    "vouch.own.action.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح توثيق الهوية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens identity verification"
+          }
+        }
+      }
+    },
+    "vouch.own.body": {
+      "comment": "%1$@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الآن اسمك يحمل كلمة ⁦@%1$@⁩. وثّق هويتك ليحمل اسمك كلمتك أنت — مع علم دولتك — ولا يعود ⁦@%1$@⁩ مسؤولًا عنك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right now your name carries @%1$@'s word. Verify your identity and it carries your own — with your country's flag — and @%1$@ is no longer answerable for you."
+          }
+        }
+      }
+    },
+    "vouch.own.later": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        }
+      }
+    },
+    "vouch.own.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اجعلها كلمتك أنت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make it your own"
+          }
+        }
+      }
+    },
+    "vouch.profile.entry.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قف خلف شخص لم يوثّق هويته بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stand behind someone who hasn't verified yet"
+          }
+        }
+      }
+    },
+    "vouch.profile.entry.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens vouching"
+          }
+        }
+      }
+    },
+    "vouch.profile.entry.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زكِّ شخصًا تعرفه"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouch for someone you know"
+          }
+        }
+      }
+    },
+    "vouch.profile.own.detail": {
+      "comment": "%1$@ is the voucher's handle, %2$@ how long is left (\"23 days left\").",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‏⁦@%1$@⁩ يزكّيك · %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%1$@ vouches for you · %2$@"
+          }
+        }
+      }
+    },
+    "vouch.profile.own.detailNoDate": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ما تتيحه لك تزكيتك، وكيف توثّق هويتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What your vouch lets you do, and how to verify"
+          }
+        }
+      }
+    },
+    "vouch.profile.own.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch"
+          }
+        }
+      }
+    },
+    "vouch.profile.row": {
+      "comment": "Where a verified name would be. %1$@ is the voucher's handle, %2$@ a day and month.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يوثّق هويته · بتزكية ⁦@%1$@⁩ منذ %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not identity‑verified · vouched for by @%1$@ since %2$@"
+          }
+        }
+      }
+    },
+    "vouch.profile.row.noDate": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يوثّق هويته · بتزكية ⁦@%@⁩"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not identity‑verified · vouched for by @%@"
+          }
+        }
+      }
+    },
+    "vouch.refusal.firstSlot": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يجب أن يوثّق أول من زكّيته هويته قبل أن تزكّي مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your first vouch has to verify their identity before you can vouch again."
+          }
+        }
+      }
+    },
+    "vouch.refusal.notOpen": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التزكية متاحة قريبًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouching opens soon."
+          }
+        }
+      }
+    },
+    "vouch.refusal.paused": {
+      "comment": "%@ is a date.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حقك في التزكية موقوف حتى %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your right to vouch is paused until %@."
+          }
+        }
+      }
+    },
+    "vouch.refusal.rateLimited": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رابط تزكية واحد في اليوم، وعشرة في السنة — بلغت هذا الحد الآن."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One vouch link a day, ten a year — you've reached that for now."
+          }
+        }
+      }
+    },
+    "vouch.refusal.revoked": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سُحب حقك في التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your right to vouch has been withdrawn."
+          }
+        }
+      }
+    },
+    "vouch.refusal.selfVerify": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتك أولًا قبل أن تزكّي أحدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your own identity before vouching for anyone."
+          }
+        }
+      }
+    },
+    "vouch.refusal.slotsFull": {
+      "comment": "How many people a voucher may stand behind at once.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يمكنك الوقوف خلف %lld أشخاص في وقت واحد."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يمكنك الوقوف خلف %lld شخصًا في وقت واحد."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يمكنك الوقوف خلف شخص واحد في وقت واحد."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يمكنك الوقوف خلف %lld شخص في وقت واحد."
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "يمكنك الوقوف خلف شخصين في وقت واحد."
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا يمكنك الوقوف خلف أحد حاليًا."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You can stand behind %lld person at a time."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You can stand behind %lld people at a time."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "vouch.refusal.tooNew": {
+      "comment": "%1$@ is a number of days, %2$@ a date.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك تزكية الآخرين بعد %1$@ يومًا من توثيق هويتك — ابتداءً من %2$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can vouch for people %1$@ days after verifying — from %2$@."
+          }
+        }
+      }
+    },
+    "vouch.refusal.tooNew.plain": {
+      "comment": "A number of days.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك تزكية الآخرين بعد %@ يومًا من توثيق هويتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can vouch for people %@ days after verifying."
+          }
+        }
+      }
+    },
+    "vouch.refusal.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكنك تزكية أحد حاليًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can't vouch for anyone right now."
+          }
+        }
+      }
+    },
+    "vouch.refusal.unverified": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتك لتزكّي أحدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your identity to vouch for someone."
+          }
+        }
+      }
+    },
+    "vouch.right.bookmark": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حفظ المنشورات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save posts"
+          }
+        }
+      }
+    },
+    "vouch.right.challengeIdentities": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الطعن في هوية حساب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Question an account's identity"
+          }
+        }
+      }
+    },
+    "vouch.right.directMessages": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال الرسائل واستقبالها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send and receive messages"
+          }
+        }
+      }
+    },
+    "vouch.right.follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متابعة الأشخاص"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow people"
+          }
+        }
+      }
+    },
+    "vouch.right.hostRooms": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استضافة الغرف والفعاليات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host rooms and events"
+          }
+        }
+      }
+    },
+    "vouch.right.joinOpenCommunities": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الانضمام إلى المجتمعات المفتوحة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join open communities"
+          }
+        }
+      }
+    },
+    "vouch.right.joinVerifiedOnlyCommunities": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الانضمام إلى مجتمعات الموثّقين فقط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join communities for verified members only"
+          }
+        }
+      }
+    },
+    "vouch.right.listenInRooms": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاستماع في الغرف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen in rooms"
+          }
+        }
+      }
+    },
+    "vouch.right.moderate": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإشراف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderate"
+          }
+        }
+      }
+    },
+    "vouch.right.postCountryOrRegion": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النشر في دولتك أو منطقتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post in your country or region"
+          }
+        }
+      }
+    },
+    "vouch.right.postInternational": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النشر للعالم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post internationally"
+          }
+        }
+      }
+    },
+    "vouch.right.raiseHand": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفع اليد في غرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise your hand in a room"
+          }
+        }
+      }
+    },
+    "vouch.right.rankedAndTrending": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الظهور في القوائم المرتّبة والرائجة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appear in ranked and trending lists"
+          }
+        }
+      }
+    },
+    "vouch.right.react": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإعجاب والتفاعل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like and react"
+          }
+        }
+      }
+    },
+    "vouch.right.replyInternational": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرد على المنشورات العالمية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply to international posts"
+          }
+        }
+      }
+    },
+    "vouch.right.repost": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة النشر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repost"
+          }
+        }
+      }
+    },
+    "vouch.right.sealFlagOrVerifiedName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الختم وعلم دولتك واسمك الموثّق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The seal, your country's flag and your verified name"
+          }
+        }
+      }
+    },
+    "vouch.right.speakInRooms": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التحدث في الغرف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speak in rooms"
+          }
+        }
+      }
+    },
+    "vouch.right.vouchForOthers": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تزكية الآخرين"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouch for others"
+          }
+        }
+      }
+    },
+    "vouch.selfVerify.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا متاح لمن وثّقوا هويتهم بأنفسهم. يستغرق التوثيق دقائق، ثم يحمل اسمك كلمتك أنت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's open to members who verified their own identity. It takes a few minutes, and your name then carries your own word."
+          }
+        }
+      }
+    },
+    "vouch.slots": {
+      "comment": "%1$@ slots used, of %2$@. An open link holds one.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ من %2$@ مستخدمة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ of %2$@ in use"
+          }
+        }
+      }
+    },
+    "vouch.summons.deadline": {
+      "comment": "%@ is hours left.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أجب خلال %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answer within %@"
+          }
+        }
+      }
+    },
+    "vouch.summons.explain": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قل بكلماتك إن كنت تتمسّك بتزكيتك أو كنت مخطئًا. يقرأ المشرف إجابتك قبل أن يقرّر أي شيء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Say in your own words whether you stand by your vouch or were wrong. A moderator reads it before deciding anything."
+          }
+        }
+      }
+    },
+    "vouch.summons.finding": {
+      "comment": "What the moderator found.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النتيجة: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding: %@"
+          }
+        }
+      }
+    },
+    "vouch.summons.header": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سؤال من مشرف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator is asking"
+          }
+        }
+      }
+    },
+    "vouch.summons.placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بكلماتك، من 10 إلى 1000 حرف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In your own words, 10 to 1,000 characters"
+          }
+        }
+      }
+    },
+    "vouch.summons.reattest": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أتمسّك بتزكيتي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I stand by my vouch"
+          }
+        }
+      }
+    },
+    "vouch.summons.sent": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُرسلت إجابتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your answer was sent."
+          }
+        }
+      }
+    },
+    "vouch.summons.statement": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إجابتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your answer"
+          }
+        }
+      }
+    },
+    "vouch.summons.title": {
+      "comment": "%@ is the person's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسألك أحد المشرفين عن ⁦@%@⁩"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator is asking about @%@"
+          }
+        }
+      }
+    },
+    "vouch.summons.tooShort": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتب 10 أحرف على الأقل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write at least 10 characters."
+          }
+        }
+      }
+    },
+    "vouch.summons.withdraw": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كنت مخطئًا — اسحبها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I was wrong — withdraw it"
+          }
+        }
+      }
+    },
+    "vouch.tag": {
+      "comment": "The tag beside a vouched member's name. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بتزكية ⁦@%@⁩"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vouched by @%@"
+          }
+        }
+      }
+    },
+    "vouch.tag.a11y": {
+      "comment": "VoiceOver label for the tag. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مُزكّى من ⁦@%@⁩. لم يوثّق هويته بعد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouched for by @%@. Not identity‑verified."
+          }
+        }
+      }
+    },
+    "vouch.tag.a11y.withCountry": {
+      "comment": "VoiceOver label for the tag. %1$@ is the voucher's handle, %2$@ the country's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مُزكّى من ⁦@%1$@⁩. الجنسية المُعلنة: %2$@. لم يوثّق هويته بعد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouched for by @%1$@. Nationality given: %2$@. Not identity‑verified."
+          }
+        }
+      }
+    },
+    "vouch.tag.withCountry": {
+      "comment": "The tag with the nationality both sides gave, as text. %1$@ is the voucher's handle, %2$@ the country's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بتزكية ⁦@%1$@⁩ · %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vouched by @%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.badge": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تزكية بانتظار التأكيد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouch waiting"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.message": {
+      "comment": "%1$@ is the voucher's handle, %2$@ a date and time.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أمام ⁦@%1$@⁩ حتى %2$@ ليؤكّد. يمكنك توثيق هويتك في الأثناء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%1$@ has until %2$@ to confirm. You can verify your own identity meanwhile."
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.messageNoDate": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيُطلب من ⁦@%@⁩ تأكيد أنك أنت. يمكنك توثيق هويتك في الأثناء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ will be asked to confirm it's you. You can verify your own identity meanwhile."
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.title": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بانتظار أن يؤكّد ⁦@%@⁩ أنك أنت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for @%@ to confirm it's you"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.until": {
+      "comment": "%@ is a date and time.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أمامه حتى %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They have until %@"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.verify": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتي بدلًا من ذلك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify my identity instead"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.withdraw": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب قبولي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw my claim"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.withdraw.keep": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "واصل الانتظار"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep waiting"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.withdraw.message": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لن يُطلب من ⁦@%@⁩ التأكيد. ما زال بإمكانك توثيق هويتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ won't be asked to confirm. You can still verify your own identity."
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.withdraw.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحب قبولك؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw your claim?"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.withdraw.yes": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw"
+          }
+        }
+      }
+    },
+    "vouch.wall.pending.withdrawn": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سُحب القبول."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claim withdrawn."
+          }
+        }
+      }
+    },
+    "vouch.warning.continue": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فهمت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I understand"
+          }
+        }
+      }
+    },
+    "vouch.warning.person.one": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل اسمك الحقيقي وجنسيتك وتاريخ ميلادك كما في هويتك تمامًا. يجب أن تطابق ما أدخله ⁦@%@⁩."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your real name, nationality and date of birth, exactly as on your ID. They must match what @%@ entered."
+          }
+        }
+      }
+    },
+    "vouch.warning.person.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل أن تقبل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before you accept"
+          }
+        }
+      }
+    },
+    "vouch.warning.person.two": {
+      "comment": "%@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البيانات غير الصحيحة تُنهي وصولك، ويفقد ⁦@%@⁩ حق التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "False details end your access, and @%@ loses the right to vouch."
+          }
+        }
+      }
+    },
+    "vouch.warning.voucher.one": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زكِّ فقط شخصًا تعرفه شخصيًا. سيظهر اسمك بجانب اسمه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only vouch for someone you know in person. Your name will show next to theirs."
+          }
+        }
+      }
+    },
+    "vouch.warning.voucher.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل أن تزكّي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before you vouch"
+          }
+        }
+      }
+    },
+    "vouch.warning.voucher.two": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إن تبيّن أنه مزيّف، تفقد حق التزكية نهائيًا، وقد يُعلَّق حسابك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If they turn out to be fake, you lose the right to vouch for good, and your account can be suspended."
           }
         }
       }
