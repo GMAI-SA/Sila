@@ -25,8 +25,15 @@ public final class VouchInviteViewModel {
     /// The two plain warnings were read and accepted (contract v24 §12).
     /// Every time the sheet opens: never remembered.
     public var hasAcknowledgedWarnings = false
+    /// The minted link has left the sheet — shared, or copied. Until then the
+    /// sheet does not close without asking: the server gives the link in the
+    /// mint's one response and never again, and the day's link is spent.
+    public private(set) var hasSavedLink = false
+    /// "Close without sharing it?", asked in place.
+    public var isConfirmingClose = false
 
-    /// The note's limit on the server.
+    /// The note's limit on the server, in code points (see
+    /// ``Swift/String/serverLength``).
     public static let labelLimit = 60
 
     private let service: VouchingServiceProtocol
@@ -65,7 +72,7 @@ public final class VouchInviteViewModel {
         isMinting = true
         defer { isMinting = false }
         do {
-            minted = try await service.mintInvite(label: String(label.prefix(Self.labelLimit)), details: details)
+            minted = try await service.mintInvite(label: label.clamped(toServerLength: Self.labelLimit), details: details)
             await onMinted()
         } catch let error as APIError {
             guard !error.isCancellation else { return }
@@ -81,8 +88,29 @@ public final class VouchInviteViewModel {
         }
     }
 
+    /// The share sheet finished with the link sent somewhere.
     public func didShare() {
+        hasSavedLink = true
+        isConfirmingClose = false
         analytics.track(.vouchLinkShared)
+    }
+
+    /// The link went to the clipboard.
+    public func didCopy() {
+        hasSavedLink = true
+        isConfirmingClose = false
+    }
+
+    /// Whether the sheet may close without a word: nothing minted, or the
+    /// link already taken somewhere.
+    public var mayCloseFreely: Bool { minted == nil || hasSavedLink }
+
+    /// Done, or Cancel: closes when nothing would be lost, and otherwise asks
+    /// first. - Returns: whether to close now.
+    public func requestClose() -> Bool {
+        if mayCloseFreely || isConfirmingClose { return true }
+        isConfirmingClose = true
+        return false
     }
 }
 
@@ -129,13 +157,17 @@ public struct VouchInviteSheet: View {
             .tnNavigationBar(title: L10n.t("vouch.new.title"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(viewModel.minted == nil ? L10n.t("common.cancel") : L10n.t("common.done"), action: onClose)
-                        .accessibilityIdentifier("vouching.new.close")
+                    Button(viewModel.minted == nil ? L10n.t("common.cancel") : L10n.t("common.done")) {
+                        if viewModel.requestClose() { onClose() }
+                    }
+                    .accessibilityIdentifier("vouching.new.close")
                 }
             }
         }
         .tint(SLColor.primary)
-        .interactiveDismissDisabled(viewModel.isMinting)
+        // No swipe away while the link is being made, nor once it is made and
+        // has gone nowhere yet: it is shown this once.
+        .interactiveDismissDisabled(viewModel.isMinting || !viewModel.mayCloseFreely)
     }
 
     private var form: some View {
@@ -152,13 +184,16 @@ public struct VouchInviteSheet: View {
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
                 SLTextField(
                     L10n.t("vouch.new.note"),
-                    text: Binding(
-                        get: { viewModel.label },
-                        set: { viewModel.label = String($0.prefix(VouchInviteViewModel.labelLimit)) }
-                    ),
+                    text: $viewModel.label,
                     placeholder: L10n.t("vouch.new.note.placeholder"),
                     autocapitalization: .sentences
                 )
+                .onChange(of: viewModel.label) { _, value in
+                    // Counted the way the server counts (code points), so a
+                    // note with harakat is not refused as too long.
+                    let clamped = value.clamped(toServerLength: VouchInviteViewModel.labelLimit)
+                    if clamped != value { viewModel.label = clamped }
+                }
             }
 
             VStack(alignment: .leading, spacing: SLSpacing.md) {
@@ -217,28 +252,84 @@ public struct VouchInviteSheet: View {
                 .padding(SLSpacing.md)
                 .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.surface1))
                 .environment(\.layoutDirection, .leftToRight)
-            ShareLink(item: minted.url, message: Text(L10n.t("vouch.new.shareText"))) {
+            // The system share sheet, opened by UIKit so its completion says
+            // whether the link actually went somewhere. A `ShareLink` with a
+            // tap gesture beside it never opened at all: the gesture took
+            // the tap.
+            Button {
+                ActivitySharing.present(items: [L10n.t("vouch.new.shareText"), minted.url]) { completed in
+                    if completed { viewModel.didShare() }
+                }
+            } label: {
                 Label(L10n.t("vouch.new.share"), systemImage: "square.and.arrow.up")
                     .font(SLFont.bodyEmphasis)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .foregroundStyle(Color(tnHex: 0x02121C))
                     .background(SLColor.brandGradient)
                     .clipShape(RoundedRectangle(cornerRadius: SLRadius.md))
+                    .contentShape(RoundedRectangle(cornerRadius: SLRadius.md))
             }
-            .simultaneousGesture(TapGesture().onEnded { viewModel.didShare() })
+            .buttonStyle(.plain)
             .accessibilityIdentifier("vouching.new.share")
             SLButton(copied ? L10n.t("vouch.new.copied") : L10n.t("vouch.new.copy"), variant: .secondary, icon: "doc.on.doc") {
                 UIPasteboard.general.url = minted.url
                 copied = true
+                viewModel.didCopy()
+            }
+            .accessibilityIdentifier("vouching.new.copy")
+            if viewModel.isConfirmingClose {
+                closeWarning
             }
         }
+    }
+
+    /// Asked in place before a link that went nowhere is closed away.
+    private var closeWarning: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.sm) {
+            Text(L10n.t("vouch.new.closeWarning"))
+                .font(SLFont.body)
+                .foregroundStyle(SLColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            SLButton(L10n.t("vouch.new.closeWarning.close"), variant: .destructive, size: .compact, action: onClose)
+                .accessibilityIdentifier("vouching.new.closeAnyway")
+            SLButton(L10n.t("vouch.new.closeWarning.keep"), variant: .ghost, size: .compact) {
+                viewModel.isConfirmingClose = false
+            }
+        }
+        .padding(SLSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.warning.opacity(0.10)))
+        .overlay(RoundedRectangle(cornerRadius: SLRadius.md).strokeBorder(SLColor.warning.opacity(0.4), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("vouching.new.closeWarning")
     }
 
     private func header(_ text: String) -> some View {
         Text(text.uppercased())
             .font(SLFont.micro)
-            .tracking(0.8)
+            .slTracking(0.8)
             .foregroundStyle(SLColor.textSecondary)
             .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// The system share sheet, over whatever is on top, with its answer.
+@MainActor
+enum ActivitySharing {
+
+    /// - Parameter completion: `true` when the items were sent somewhere,
+    ///   `false` when the sheet was closed without.
+    static func present(items: [Any], completion: @escaping @MainActor (Bool) -> Void) {
+        guard let top = SelfVerificationPresenter.topViewController() else { return }
+        let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        sheet.completionWithItemsHandler = { _, completed, _, _ in
+            Task { @MainActor in completion(completed) }
+        }
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = top.view
+            popover.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        top.present(sheet, animated: true)
     }
 }

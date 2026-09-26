@@ -45412,6 +45412,60 @@
         }
       }
     },
+    "vouch.new.closeWarning": {
+      "comment": "Asked in place when the voucher tries to close the sheet before sharing or copying a link they just made. The server shows the link only once, and the day's link is spent.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يظهر هذا الرابط هذه المرة فقط. شاركه أو انسخه قبل الإغلاق — بعدها لا يمكن عرضه مرة أخرى، ويكون رابط اليوم قد استُخدم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This link is shown only this once. Share or copy it before you close — afterwards it can't be shown again, and today's link is used."
+          }
+        }
+      }
+    },
+    "vouch.new.closeWarning.close": {
+      "comment": "Closes the link sheet without sharing the link.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أغلق على أي حال"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close anyway"
+          }
+        }
+      }
+    },
+    "vouch.new.closeWarning.keep": {
+      "comment": "Keeps the link sheet open so the link can be shared or copied.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أبقِه مفتوحًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep it open"
+          }
+        }
+      }
+    },
     "vouch.new.copied": {
       "extractionState": "manual",
       "localizations": {
@@ -45486,13 +45540,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "ملاحظة لا يراها غيرك (لخالد)"
+            "value": "ملاحظة لا يراها غيرك"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A note only you see (for Khalid)"
+            "value": "A note only you see"
           }
         }
       }
