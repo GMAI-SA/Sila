@@ -46,6 +46,11 @@ public enum NotificationDestination: Equatable, Sendable {
     case home
     /// An event (contract v23).
     case event(id: UUID)
+    /// The voucher's list (contract v24): who claimed a link, who verified,
+    /// what a moderator is asking.
+    case vouching
+    /// The person's own vouch and the way to verify.
+    case ownVouch
 }
 
 /// Drives ``NotificationsScreen``.
@@ -104,6 +109,7 @@ public final class NotificationsViewModel {
     private let feed: FeedServiceProtocol
     private let analytics: AnalyticsClient
     private let suspension: SuspensionMonitor?
+    private let viewerIsVouched: @MainActor () -> Bool
 
     /// - Parameters:
     ///   - service: Notifications backend.
@@ -112,16 +118,20 @@ public final class NotificationsViewModel {
     ///     only its id.
     ///   - analytics: Event sink.
     ///   - suspension: Where `403 account_suspended` goes.
+    /// - Parameter viewerIsVouched: Whether the reader carries a vouch right
+    ///   now — which side of a `vouch_ended` row they are on.
     public init(
         service: NotificationsServiceProtocol,
         feed: FeedServiceProtocol,
         analytics: AnalyticsClient,
-        suspension: SuspensionMonitor? = nil
+        suspension: SuspensionMonitor? = nil,
+        viewerIsVouched: @escaping @MainActor () -> Bool = { false }
     ) {
         self.service = service
         self.feed = feed
         self.analytics = analytics
         self.suspension = suspension
+        self.viewerIsVouched = viewerIsVouched
     }
 
     // MARK: - Derived state
@@ -300,6 +310,16 @@ public final class NotificationsViewModel {
         if let eventId = notification.eventId {
             await markRead(notification)
             return .event(id: eventId)
+        }
+        // A vouching row opens the side it was written for, never the actor's
+        // profile. `vouch_ended` reaches either side: a vouched reader is the
+        // person (theirs has ended before, or this one is about theirs), a
+        // verified one the voucher — the same rule the push's link follows.
+        if notification.kind.isVouching {
+            await markRead(notification)
+            if notification.kind.isForVoucher { return .vouching }
+            if notification.kind == .vouchEnded { return viewerIsVouched() ? .ownVouch : .vouching }
+            return .ownVouch
         }
         if notification.kind == .prompt {
             await markRead(notification)

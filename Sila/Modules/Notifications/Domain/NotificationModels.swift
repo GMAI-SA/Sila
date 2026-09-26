@@ -61,6 +61,21 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case eventLive = "event_live"
     case eventChanged = "event_changed"
     case eventCancelled = "event_cancelled"
+    /// Vouching (contract v24). To the voucher: somebody accepted your link
+    /// (confirm it is them), your person verified, a moderator is asking,
+    /// a decision about your right to vouch, a link closed after three
+    /// mismatches. To the person: confirmed, not confirmed, ending soon,
+    /// verified. To either: a vouch ended (`detail` = why).
+    case vouchClaimed = "vouch_claimed"
+    case vouchConfirmed = "vouch_confirmed"
+    case vouchDeclined = "vouch_declined"
+    case vouchExpiring = "vouch_expiring"
+    case vouchEnded = "vouch_ended"
+    case vouchGraduated = "vouch_graduated"
+    case vouchVerified = "vouch_verified"
+    case vouchReview = "vouch_review"
+    case vouchStrike = "vouch_strike"
+    case vouchInviteClosed = "vouch_invite_closed"
     /// A kind this build does not recognise.
     case unknown
 
@@ -86,7 +101,9 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .follow, .followRequest, .followAccepted, .roomInvite, .unknown,
              .communityInvite, .communityJoinRequest, .communityAccepted,
              .roomLike, .prompt, .identityImpostor, .roomTomorrow, .roomSoon, .roomLive, .roomCancelled,
-             .eventInvite, .eventTomorrow, .eventSoon, .eventLive, .eventChanged, .eventCancelled:
+             .eventInvite, .eventTomorrow, .eventSoon, .eventLive, .eventChanged, .eventCancelled,
+             .vouchClaimed, .vouchConfirmed, .vouchDeclined, .vouchExpiring, .vouchEnded, .vouchGraduated,
+             .vouchVerified, .vouchReview, .vouchStrike, .vouchInviteClosed:
             return false
         case .like, .repost, .reply, .mention, .roomShared, .pollClosed, .reaction, .threadReply: return true
         }
@@ -122,6 +139,14 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .eventLive: return "calendar.badge.clock"
         case .eventChanged: return "calendar.badge.exclamationmark"
         case .eventCancelled: return "calendar.badge.minus"
+        case .vouchClaimed, .vouchConfirmed: return SLVouchTag.glyph
+        case .vouchDeclined: return "person.crop.circle.badge.xmark"
+        case .vouchExpiring: return "hourglass"
+        case .vouchEnded: return "clock.arrow.circlepath"
+        case .vouchGraduated, .vouchVerified: return "checkmark.seal"
+        case .vouchReview: return "questionmark.bubble"
+        case .vouchStrike: return "hand.raised.slash"
+        case .vouchInviteClosed: return "lock"
         case .unknown: return "bell"
         }
     }
@@ -153,9 +178,27 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .eventInvite, .eventTomorrow, .eventSoon, .eventChanged: return SLColor.primary
         case .eventLive: return SLColor.danger
         case .eventCancelled: return SLColor.textSecondary
+        case .vouchClaimed, .vouchExpiring, .vouchReview: return SLColor.warning
+        case .vouchConfirmed, .vouchGraduated, .vouchVerified: return SLColor.secondary
+        case .vouchDeclined, .vouchEnded, .vouchInviteClosed: return SLColor.textSecondary
+        case .vouchStrike: return SLColor.danger
         case .unknown: return SLColor.textSecondary
         }
     }
+
+    /// A vouching notice that belongs to the voucher's side — it opens their
+    /// list rather than the person's own vouch. `vouch_ended` reaches both
+    /// sides and is decided by who is reading it (see
+    /// ``NotificationsViewModel/open(_:)``).
+    public var isForVoucher: Bool {
+        switch self {
+        case .vouchClaimed, .vouchGraduated, .vouchReview, .vouchStrike, .vouchInviteClosed: return true
+        default: return false
+        }
+    }
+
+    /// Any vouching notice.
+    public var isVouching: Bool { rawValue.hasPrefix("vouch_") }
 
     /// Plural label for the settings list.
     public var settingTitle: String {
@@ -188,6 +231,16 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .eventLive: return L10n.t("notifications.kind.eventLive.title")
         case .eventChanged: return L10n.t("notifications.kind.eventChanged.title")
         case .eventCancelled: return L10n.t("notifications.kind.eventCancelled.title")
+        case .vouchClaimed: return L10n.t("notifications.kind.vouchClaimed.title")
+        case .vouchConfirmed: return L10n.t("notifications.kind.vouchConfirmed.title")
+        case .vouchDeclined: return L10n.t("notifications.kind.vouchDeclined.title")
+        case .vouchExpiring: return L10n.t("notifications.kind.vouchExpiring.title")
+        case .vouchEnded: return L10n.t("notifications.kind.vouchEnded.title")
+        case .vouchGraduated: return L10n.t("notifications.kind.vouchGraduated.title")
+        case .vouchVerified: return L10n.t("notifications.kind.vouchVerified.title")
+        case .vouchReview: return L10n.t("notifications.kind.vouchReview.title")
+        case .vouchStrike: return L10n.t("notifications.kind.vouchStrike.title")
+        case .vouchInviteClosed: return L10n.t("notifications.kind.vouchInviteClosed.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -245,6 +298,14 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.threadReply.detail")
         case .eventInvite, .eventTomorrow, .eventSoon, .eventLive, .eventChanged, .eventCancelled:
             return L10n.t("notifications.kind.event.detail")
+        case .vouchClaimed, .vouchGraduated, .vouchInviteClosed:
+            return L10n.t("notifications.kind.vouch.voucher.detail")
+        case .vouchConfirmed, .vouchDeclined, .vouchExpiring, .vouchVerified:
+            return L10n.t("notifications.kind.vouch.person.detail")
+        case .vouchEnded:
+            return L10n.t("notifications.kind.vouchEnded.detail")
+        case .vouchReview, .vouchStrike:
+            return L10n.t("notifications.kind.vouch.moderation.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -279,6 +340,8 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     public var detail: String? = nil
     /// The event a row is about (contract v23).
     public var eventId: UUID? = nil
+    /// The vouch a `vouch_*` row is about (contract v24).
+    public var vouchId: UUID? = nil
     /// The community a community notification points at, and its address.
     public let communityId: UUID?
     public let communitySlug: String?
@@ -328,7 +391,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
     /// Explicit keys are required because ``init(from:)`` is custom, and the
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
-        case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive, roomId, detail, eventId
+        case id, kind, actor, postId, postExcerpt, read, createdAt, postSensitive, roomId, detail, eventId, vouchId
         case communityId, communitySlug, communityName
     }
 
@@ -370,6 +433,7 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         createdAt = (try? container.decode(Date.self, forKey: .createdAt)) ?? Date()
         detail = (try? container.decodeIfPresent(String.self, forKey: .detail)) ?? nil
         eventId = (try? container.decodeIfPresent(UUID.self, forKey: .eventId)) ?? nil
+        vouchId = (try? container.decodeIfPresent(UUID.self, forKey: .vouchId)) ?? nil
     }
 
     // MARK: Derived
@@ -626,6 +690,7 @@ public struct NotificationGroup: Identifiable, Equatable, Sendable {
         case "sila": return L10n.t("notifications.settings.group.sila")
         case "more": return L10n.t("notifications.settings.group.more")
         case "events": return L10n.t("notifications.settings.group.events")
+        case "vouching": return L10n.t("notifications.settings.group.vouching")
         default: return NotificationGroup.humanised(id)
         }
     }
@@ -711,6 +776,20 @@ public enum NotificationCopy {
         case .eventLive: return L10n.t("notifications.sentence.eventLive", name)
         case .eventChanged: return L10n.t("notifications.sentence.eventChanged", name)
         case .eventCancelled: return L10n.t("notifications.sentence.eventCancelled", name)
+        // The server's words for the push (contract v24 §7); `vouch_ended`
+        // says why, from `detail`, where it can.
+        case .vouchClaimed: return L10n.t("notifications.sentence.vouchClaimed", name)
+        case .vouchConfirmed: return L10n.t("notifications.sentence.vouchConfirmed", name)
+        case .vouchDeclined: return L10n.t("notifications.sentence.vouchDeclined", name)
+        case .vouchExpiring: return L10n.t("notifications.sentence.vouchExpiring")
+        case .vouchEnded:
+            guard let detail, !detail.isEmpty else { return L10n.t("notifications.sentence.vouchEnded") }
+            return L10n.t("notifications.sentence.vouchEnded.reason", VouchCopy.endReason(detail))
+        case .vouchGraduated: return L10n.t("notifications.sentence.vouchGraduated", name)
+        case .vouchVerified: return L10n.t("notifications.sentence.vouchVerified")
+        case .vouchReview: return L10n.t("notifications.sentence.vouchReview")
+        case .vouchStrike: return L10n.t("notifications.sentence.vouchStrike")
+        case .vouchInviteClosed: return L10n.t("notifications.sentence.vouchInviteClosed")
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.
@@ -736,7 +815,8 @@ public enum NotificationCopy {
 
     /// What tapping a row does.
     public static func openHint(_ kind: NotificationKind) -> String {
-        L10n.t(kind.isAboutAPost ? "notifications.row.openHint.post" : "notifications.row.openHint.profile")
+        if kind.isVouching { return L10n.t("notifications.row.openHint.vouch") }
+        return L10n.t(kind.isAboutAPost ? "notifications.row.openHint.post" : "notifications.row.openHint.profile")
     }
 
     /// The empty list.

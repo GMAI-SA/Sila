@@ -28,6 +28,10 @@ public struct NotificationsScreen: View {
     private let onOpenCommunity: (@MainActor (String) -> Void)?
     private let onOpenHome: (@MainActor () -> Void)?
     private let onOpenEvent: (@MainActor (UUID) -> Void)?
+    /// A vouching row (contract v24): the voucher's list, or the person's
+    /// own vouch.
+    private let onOpenVouching: (@MainActor () -> Void)?
+    private let onOpenOwnVouch: (@MainActor () -> Void)?
     private let onOpenSettings: (@MainActor () -> Void)?
 
     /// The kind marker is nudged outwards from the avatar by hand, and a raw
@@ -48,6 +52,8 @@ public struct NotificationsScreen: View {
         onOpenCommunity: (@MainActor (String) -> Void)? = nil,
         onOpenHome: (@MainActor () -> Void)? = nil,
         onOpenEvent: (@MainActor (UUID) -> Void)? = nil,
+        onOpenVouching: (@MainActor () -> Void)? = nil,
+        onOpenOwnVouch: (@MainActor () -> Void)? = nil,
         onOpenSettings: (@MainActor () -> Void)? = nil
     ) {
         self.viewModel = viewModel
@@ -57,6 +63,8 @@ public struct NotificationsScreen: View {
         self.onOpenCommunity = onOpenCommunity
         self.onOpenHome = onOpenHome
         self.onOpenEvent = onOpenEvent
+        self.onOpenVouching = onOpenVouching
+        self.onOpenOwnVouch = onOpenOwnVouch
         self.onOpenSettings = onOpenSettings
     }
 
@@ -275,6 +283,7 @@ public struct NotificationsScreen: View {
                             SLVerifiedBadge(size: 12, isPulsing: false)
                         }
                         SLCountryBadge(countryCode: notification.actor.countryCode)
+                        VouchTag(person: notification.actor, style: .iconOnly)
                     }
 
                     excerpt(notification)
@@ -392,6 +401,8 @@ public struct NotificationsScreen: View {
             case let .community(slug): onOpenCommunity?(slug)
             case .home: onOpenHome?()
             case let .event(id): onOpenEvent?(id)
+            case .vouching: onOpenVouching?()
+            case .ownVouch: onOpenOwnVouch?()
             }
         }
     }
