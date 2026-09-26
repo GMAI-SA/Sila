@@ -187,7 +187,8 @@ public final class AppContainer {
         // Before any service resolves and long before anything renders: the
         // stored language choice must be live for the very first string.
         self.language = LanguagePreference(storage: storage)
-        self.vouchInbox = VouchInviteInbox(storage: storage)
+        let vouchInbox = VouchInviteInbox(storage: storage)
+        self.vouchInbox = vouchInbox
 
         let store = AuthTokenStore(keychain: keychain, storage: storage)
 
@@ -327,8 +328,13 @@ public final class AppContainer {
         self.eventsService = events
         self.recognitionService = events
         // Before the access token goes: this phone stops getting this
-        // account's pushes.
-        session.willSignOut = { [weak registrar] in await registrar?.willSignOut() }
+        // account's pushes, and a vouch link still waiting on it is let go —
+        // kept, it would come back for whoever signs in next, and each of
+        // their tries would spend one of the link's three.
+        session.willSignOut = { [weak registrar, weak vouchInbox] in
+            await registrar?.willSignOut()
+            vouchInbox?.forget()
+        }
 
         if let preferencesService {
             self.preferencesService = preferencesService
