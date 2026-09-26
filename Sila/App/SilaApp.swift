@@ -34,6 +34,14 @@ struct SilaApp: App {
                         )
                         appDelegate.registrar = container.pushRegistrar
                         container.pushRegistrar.openLink = { link in container.open(link) }
+                        // "@noura confirmed your vouch", arriving while the
+                        // person waits at the wall with the app open: the
+                        // account is re-read now, not only if the banner is
+                        // tapped (contract v24 §8).
+                        container.pushRegistrar.onForegroundPush = { info in
+                            guard PushRegistrar.isVouching(info), container.session.user != nil else { return }
+                            Task { await container.session.refreshUser() }
+                        }
                         // `-openLink URL`: a UI journey's way to tap a link.
                         let arguments = ProcessInfo.processInfo.arguments
                         if let index = arguments.firstIndex(of: "-openLink"), arguments.indices.contains(index + 1),

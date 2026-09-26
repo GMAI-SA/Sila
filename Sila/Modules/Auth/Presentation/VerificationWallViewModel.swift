@@ -138,6 +138,10 @@ public final class VerificationWallViewModel {
     /// The in-place "are you sure" before a pending claim is withdrawn.
     public var isConfirmingClaimWithdrawal = false
     public private(set) var isWithdrawingClaim = false
+    /// Re-reads `/auth/me`, where the answer to a pending claim arrives
+    /// (contract v24 §8): `/verification/status` says nothing about a vouch,
+    /// so while one waits every check reads both. Set by the screen.
+    public var refreshSession: (@MainActor () async -> Void)?
 
     private let service: AuthServiceProtocol
     private let verification: VerificationServiceProtocol?
@@ -257,6 +261,13 @@ public final class VerificationWallViewModel {
         } catch {
             if !quietly { toast = .error(L10n.t("auth.wall.error.statusCheckFailed")) }
         }
+        // A claim waiting for its voucher: the answer — confirmed, declined,
+        // or the 48 hours gone — is on the account, not in the status. The
+        // session re-routes a confirmed claim to the feed, and hands the wall
+        // back an empty vouch for the others.
+        if pendingVouch != nil, let refreshSession {
+            await refreshSession()
+        }
         isRefreshing = false
         if decided, let onDecision {
             analytics.track(.verificationWallShown, properties: ["status": "decided_while_waiting"])
@@ -275,6 +286,20 @@ public final class VerificationWallViewModel {
             do { try await pause(interval) } catch { return }
             guard !Task.isCancelled, status == .pendingReview else { return }
             await refresh(quietly: true)
+        }
+    }
+
+    /// Re-reads the account every `interval` while a claim waits for its
+    /// voucher, at most `attempts` times, and stops when the claim has an
+    /// answer or the screen goes. A voucher asked in person often answers in
+    /// the next minute or two; after that, "Check status", the pull, a push
+    /// and coming back to the app all read it again.
+    public func watchForVouchAnswer(every interval: Duration = .seconds(20), attempts: Int = 15) async {
+        for _ in 0..<attempts {
+            guard pendingVouch != nil, refreshSession != nil else { return }
+            do { try await pause(interval) } catch { return }
+            guard !Task.isCancelled, pendingVouch != nil, let refreshSession else { return }
+            await refreshSession()
         }
     }
 

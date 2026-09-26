@@ -26,6 +26,21 @@ public final class PushRegistrar {
     private let center: UNUserNotificationCenter?
     /// Opens a universal link inside the app.
     var openLink: (@MainActor (DeepLink) -> Void)?
+    /// Told about a push that arrived while the app was open, before its
+    /// banner shows — so what it announces can be read at once rather than
+    /// only if the banner is tapped.
+    var onForegroundPush: (@MainActor ([AnyHashable: Any]) -> Void)?
+
+    /// A push arrived while the app was open.
+    public func receivedInForeground(userInfo: [AnyHashable: Any]) {
+        onForegroundPush?(userInfo)
+    }
+
+    /// Whether a push is about a vouch — the account's own answer, or a
+    /// voucher's news — so the session should re-read `/auth/me`.
+    public nonisolated static func isVouching(_ userInfo: [AnyHashable: Any]) -> Bool {
+        (userInfo["kind"] as? String)?.hasPrefix("vouch_") == true
+    }
 
     static let askedKey = StorageKey("com.socialsa.sila.pushAsked")
     static let tokenKey = StorageKey("com.socialsa.sila.pushToken")
@@ -159,7 +174,12 @@ final class SilaAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound, .badge]
+        let info = notification.request.content.userInfo
+        await MainActor.run { [weak self] in
+            guard let registrar = self?.registrar else { return }
+            registrar.receivedInForeground(userInfo: info)
+        }
+        return [.banner, .list, .sound, .badge]
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {

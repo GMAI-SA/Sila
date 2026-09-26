@@ -75,6 +75,7 @@ public struct PendingVerificationWallScreen: View {
             onDecision: onVerified
         )
         model.pendingVouch = vouch?.isPending == true ? vouch : nil
+        model.refreshSession = onVerified
         _viewModel = State(initialValue: model)
         _pendingRetake = State(initialValue: verification == nil ? nil : retake)
         self.verification = verification
@@ -172,6 +173,9 @@ public struct PendingVerificationWallScreen: View {
         // Restarted whenever the status changes, so a submission sent from
         // this wall is watched as closely as one the wall opened on.
         .task(id: viewModel.status) { await viewModel.watchForDecision() }
+        // A claim waiting for its voucher is watched too, a little while: the
+        // answer moves the person to the feed without their having to ask.
+        .task(id: viewModel.pendingVouch?.id) { await viewModel.watchForVouchAnswer() }
         // A claim made — or answered — while the wall is up.
         .onChange(of: vouch) { _, current in
             viewModel.pendingVouch = current?.isPending == true ? current : nil
