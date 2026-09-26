@@ -45,6 +45,11 @@ public struct RootView: View {
         .onChange(of: isSignedIn) { _, signedIn in
             if signedIn { container.vouchInbox.unpark() }
         }
+        // The offer to verify and its flow are raised over the tabs by UIKit;
+        // when the tabs go, so do they.
+        .onChange(of: container.session.route) { _, route in
+            if route != .feed { SelfVerificationPresenter.dismissAll() }
+        }
     }
 
     // MARK: - Vouch links

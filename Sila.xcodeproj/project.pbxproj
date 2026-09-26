@@ -312,6 +312,7 @@
 		C45C5E996454CD1DE5D1F906 /* ResetPasswordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87049179E9FA4F5130D3B24A /* ResetPasswordTests.swift */; };
 		C547B70CF5B8F855BDE05F5C /* NotificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23DF23F9A7F7396A9149F670 /* NotificationModels.swift */; };
 		C712B0F7FD7747BAFB5D79D5 /* SuspensionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC2A336B2D9F182F17ECE05 /* SuspensionMonitor.swift */; };
+		C8BFA23A963A20EA30DDC4A2 /* SelfVerificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D47F84AD800D23A687E4725 /* SelfVerificationPresenter.swift */; };
 		C904D2D242768BC2879C1A77 /* VouchExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8262A1FD551822E7C5B75A92 /* VouchExplainerSheet.swift */; };
 		CA4AFDF2D02E7B74CFFC6526 /* NotificationModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 570A55BB802ADD07DE815942 /* NotificationModelsTests.swift */; };
 		CBC7020D4C4108325648CDCD /* NotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74933824CBB6EB2014F6463 /* NotificationsViewModel.swift */; };
@@ -433,6 +434,7 @@
 		0BA56DC558BE3DE3C42C6697 /* CommunitiesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunitiesViewModel.swift; sourceTree = "<group>"; };
 		0BB9AC7534915E08C783B0DE /* DepthViewModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthViewModels.swift; sourceTree = "<group>"; };
 		0D13F0DA6EF65D3228A3393E /* ResetPasswordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordViewModel.swift; sourceTree = "<group>"; };
+		0D47F84AD800D23A687E4725 /* SelfVerificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfVerificationPresenter.swift; sourceTree = "<group>"; };
 		0D7D27766CC416AF335B9091 /* SensitiveContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensitiveContentTests.swift; sourceTree = "<group>"; };
 		0D8BC93D99D47871758F6A60 /* LiveAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAPITests.swift; sourceTree = "<group>"; };
 		0F728DF564723893D2D975EE /* CreateCommunitySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCommunitySheet.swift; sourceTree = "<group>"; };
@@ -1398,6 +1400,7 @@
 			isa = PBXGroup;
 			children = (
 				925896D38B92C44DD77D4EA8 /* OwnVouchScreen.swift */,
+				0D47F84AD800D23A687E4725 /* SelfVerificationPresenter.swift */,
 				123D187E4950FA89A714D18B /* VouchClaimScreen.swift */,
 				3D7A02CBB577A08582D81D56 /* VouchClaimViewModel.swift */,
 				AC36CAA4B2B91DFFA89FC0BD /* VouchConfirmControl.swift */,
@@ -2266,6 +2269,7 @@
 				041FADFE46619256817A495D /* SearchService.swift in Sources */,
 				9ABA32C0164A8A2C4ED4DB51 /* SearchServiceMock.swift in Sources */,
 				A1294D12F45789D787D9EFAF /* SearchServiceProtocol.swift in Sources */,
+				C8BFA23A963A20EA30DDC4A2 /* SelfVerificationPresenter.swift in Sources */,
 				4B5B58462ABFB7C637416436 /* SensitiveCoverView.swift in Sources */,
 				F40C850549AA2C8AA39F56E0 /* ServerTextLength.swift in Sources */,
 				FE320CD3A7227C8582721F50 /* SessionAccessTokenProvider.swift in Sources */,

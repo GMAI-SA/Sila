@@ -72,11 +72,12 @@ public struct MainTabView: View {
     /// A vouch tag tapped anywhere below (contract v24 §3): the explainer,
     /// or — on your own — "Make it your own".
     @State private var vouchSelection: VouchTagSelection?
-    /// The verification flow, over the app, for a vouched account making
-    /// the vouch its own. Never the wall: they keep the app behind it.
-    @State private var isVerifyingSelf = false
-    /// Opens ``isVerifyingSelf`` once the sheet that asked has gone — a
-    /// cover cannot rise while a sheet is still leaving.
+    /// "Verify your identity to do this" and the verification flow, over
+    /// whatever is on top — a room's chat sheet included. Never the wall:
+    /// the account keeps the app behind both.
+    @State private var selfVerification = SelfVerificationPresenter()
+    /// Opens the verification flow once the explainer that asked has gone —
+    /// a cover cannot rise while a sheet is still leaving.
     @State private var verifyAfterSheet = false
     /// `GET /vouching` — the voucher's list, and the Profile entry drawn from
     /// it: whether it is there at all, and dimmed with the reason when the
@@ -344,7 +345,7 @@ public struct MainTabView: View {
         .sheet(item: $vouchSelection, onDismiss: {
             if verifyAfterSheet {
                 verifyAfterSheet = false
-                isVerifyingSelf = true
+                openSelfVerification()
             }
         }) { selection in
             VouchExplainerSheet(
@@ -363,24 +364,15 @@ public struct MainTabView: View {
                 onClose: { vouchSelection = nil }
             )
         }
-        .sheet(item: Binding(
-            get: { container.verificationGate.selfVerificationPrompt },
-            set: { container.verificationGate.selfVerificationPrompt = $0 }
-        ), onDismiss: {
-            if verifyAfterSheet {
-                verifyAfterSheet = false
-                isVerifyingSelf = true
-            }
-        }) { prompt in
-            SelfVerificationPromptSheet(
-                prompt: prompt,
-                onVerify: {
-                    verifyAfterSheet = container.flags.verification
-                    container.verificationGate.selfVerificationPrompt = nil
-                },
-                onClose: { container.verificationGate.selfVerificationPrompt = nil }
-            )
+        // Any `403 self_verification_required`, from wherever it came — or
+        // an offer made before the request — answered where it happened.
+        .onChange(of: container.verificationGate.selfVerificationPrompt?.id) { _, id in
+            guard id != nil, let prompt = container.verificationGate.selfVerificationPrompt else { return }
+            presentSelfVerificationPrompt(prompt)
         }
+        // One left over from before the tabs existed (the first-run steps)
+        // has nothing left to answer, and would hold back every later one.
+        .task { container.verificationGate.selfVerificationPrompt = nil }
         .sheet(isPresented: $isMintingLink) {
             Owned({
                 VouchInviteViewModel(
@@ -395,22 +387,6 @@ public struct MainTabView: View {
                     onClose: { isMintingLink = false }
                 )
             }
-        }
-        // A vouched account's own verification, over the app (contract v24
-        // §3.6): the same flow as the wall's, closed with "Not now".
-        .fullScreenCover(isPresented: $isVerifyingSelf) {
-            PendingVerificationWallScreen(
-                status: container.session.user?.verificationStatus ?? .unstarted,
-                service: container.authService,
-                verification: container.flags.verification ? container.verificationService : nil,
-                analytics: container.analytics,
-                onSignOut: { isVerifyingSelf = false },
-                onVerified: {
-                    await container.session.refreshUser()
-                    if container.session.user?.standing == .verified { isVerifyingSelf = false }
-                },
-                onClose: { isVerifyingSelf = false }
-            )
         }
         .sheet(isPresented: $isShowingSafety) {
             Owned({ safetyListsViewModel() }) { viewModel in
@@ -1054,7 +1030,7 @@ public struct MainTabView: View {
                         Task { await container.session.signOut() }
                     },
                     onOpenSaved: openSavedPosts,
-                    onOpenGroups: openGroups,
+                    onOpenGroups: groupsHandler,
                     vouching: vouchingEntry
                 ),
                 safetyMenu: safetyMenu(for:),
@@ -1219,6 +1195,55 @@ public struct MainTabView: View {
     private func offerSelfVerification(_ reason: String) {
         container.analytics.track(.selfVerificationOffered, properties: ["source": "client"])
         container.verificationGate.selfVerificationPrompt = SelfVerificationPrompt(message: nil, reason: reason)
+    }
+
+    /// Puts the offer over whatever is on top; "Verify your identity" in it
+    /// opens the flow once the offer has gone.
+    private func presentSelfVerificationPrompt(_ prompt: SelfVerificationPrompt) {
+        let presenter = selfVerification
+        let gate = container.verificationGate
+        let canVerify = container.flags.verification
+        presenter.showPrompt(
+            SelfVerificationPromptSheet(
+                prompt: prompt,
+                onVerify: {
+                    presenter.dismissPrompt {
+                        if canVerify { openSelfVerification() }
+                    }
+                },
+                onClose: { presenter.dismissPrompt() }
+            )
+            .environment(\.layoutDirection, container.language.layoutDirection)
+            .tint(SLColor.primary),
+            onGone: {
+                // Only the one this offer answered: a newer refusal keeps its own.
+                if gate.selfVerificationPrompt?.id == prompt.id { gate.selfVerificationPrompt = nil }
+            }
+        )
+    }
+
+    /// A vouched account's own verification, over the app (contract v24
+    /// §3.6): the same flow as the wall's, closed with "Not now", and gone by
+    /// itself once the seal replaces the tag.
+    private func openSelfVerification() {
+        guard container.flags.verification else { return }
+        let presenter = selfVerification
+        presenter.showFlow(
+            PendingVerificationWallScreen(
+                status: container.session.user?.verificationStatus ?? .unstarted,
+                service: container.authService,
+                verification: container.verificationService,
+                analytics: container.analytics,
+                onSignOut: { presenter.dismissFlow() },
+                onVerified: {
+                    await container.session.refreshUser()
+                    if container.session.user?.standing == .verified { presenter.dismissFlow() }
+                },
+                onClose: { presenter.dismissFlow() }
+            )
+            .environment(\.layoutDirection, container.language.layoutDirection)
+            .tint(SLColor.primary)
+        )
     }
 
     /// Opens a thread with somebody, from wherever they were tapped.
@@ -1474,7 +1499,7 @@ public struct MainTabView: View {
                     onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler,
                     onOpenSaved: openSavedPosts,
-                    onOpenGroups: openGroups,
+                    onOpenGroups: groupsHandler,
                     vouching: vouchingEntry
                 ),
                 safetyMenu: safetyMenu(for:),
@@ -1635,7 +1660,7 @@ public struct MainTabView: View {
                     onOpenLanguage: languageHandler,
                     onOpenSafety: safetyHandler,
                     onOpenSaved: openSavedPosts,
-                    onOpenGroups: openGroups,
+                    onOpenGroups: groupsHandler,
                     vouching: vouchingEntry
                 ),
                 safetyMenu: safetyMenu(for:),
@@ -1654,7 +1679,14 @@ public struct MainTabView: View {
     /// `nil` when the phase is off.
     private var selfVerifyHandler: (@MainActor () -> Void)? {
         guard container.flags.verification else { return nil }
-        return { isVerifyingSelf = true }
+        return { openSelfVerification() }
+    }
+
+    /// The groups sheet, or `nil` for a vouched account: keeping groups is a
+    /// verified member's (contract v24 §4), and the sheet would only end in
+    /// a refusal it could not answer from inside itself.
+    private var groupsHandler: (@MainActor () -> Void)? {
+        isVouched ? nil : openGroups
     }
 
     /// The voucher's list — the shared model, so the mint sheet's new link

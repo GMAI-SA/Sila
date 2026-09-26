@@ -103,7 +103,11 @@ struct SelfVerificationPromptSheet: View {
             SLButton(L10n.t("vouch.own.later"), variant: .ghost, size: .compact, action: onClose)
         }
         .padding(SLSpacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, SLSpacing.md)
+        // From the top of the sheet, under its grabber, rather than floating
+        // in the middle of it: UIKit presents this (see
+        // ``SelfVerificationPresenter``), and sizes the sheet itself.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .tnScreenBackground()
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
