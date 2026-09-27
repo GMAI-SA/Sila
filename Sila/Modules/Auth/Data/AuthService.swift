@@ -12,6 +12,8 @@ public final class AuthService: AuthServiceProtocol {
     private let store: AuthTokenStore
     private let biometrics: BiometricAuthenticating
     private let analytics: AnalyticsClient
+    /// Every refresh, from every caller, goes through this one.
+    private let refresher = TokenRefresher()
 
     public init(
         network: NetworkClient,
@@ -123,22 +125,57 @@ public final class AuthService: AuthServiceProtocol {
         return pair
     }
 
+    /// Rotates the pair, single-flight: callers that arrive while a refresh is
+    /// running share its result, and a caller holding a token that has already
+    /// been rotated gets the stored pair without another round trip.
     public func refreshToken(_ token: AuthToken) async throws -> TokenPair {
+        try await refresher.run { [network, store] in
+            try await Self.rotate(from: token, network: network, store: store)
+        }
+    }
+
+    /// One refresh. Only ever runs inside ``refresher``.
+    ///
+    /// - Parameter seen: The token the caller read. It may be stale by now:
+    ///   the store is re-read first, and the stored refresh token is the one
+    ///   sent, because the one the caller saw may already have been used.
+    private static func rotate(
+        from seen: AuthToken,
+        network: NetworkClient,
+        store: AuthTokenStore
+    ) async throws -> TokenPair {
+        guard let current = await store.token() else { throw APIError.unauthenticated }
+        // A refresh finished just before this caller arrived. Its pair is the
+        // session now, and while it is fresh there is nothing to do.
+        if current.refreshToken != seen.refreshToken, !current.expiresSoon(), let user = await store.user() {
+            return TokenPair(token: current, user: user)
+        }
+
         let request = try APIRequest.json(
             "/auth/refresh",
-            body: RefreshRequestBody(refreshToken: token.refreshToken)
+            body: RefreshRequestBody(refreshToken: current.refreshToken)
         )
+        let pair: TokenPair
         do {
-            let pair = try await network.send(request, as: TokenPair.self)
-            await store.store(pair)
-            return pair
+            pair = try await network.send(request, as: TokenPair.self)
         } catch {
-            // A rejected refresh token means the session is unrecoverable.
-            if let apiError = error as? APIError, Self.isUnrecoverable(apiError) {
-                await store.clear()
+            // A refused refresh token means that session is over, but only
+            // that one: if the store has moved on meanwhile, it is kept.
+            if let apiError = error as? APIError, isUnrecoverable(apiError) {
+                await store.clear(ifRefreshTokenIs: current.refreshToken)
             }
             throw error
         }
+
+        if await store.store(pair, replacing: current.refreshToken) {
+            return pair
+        }
+        // Signed out, or signed in afresh, while the refresh was out: what is
+        // stored now is the session, and the rotated pair is not brought back.
+        guard let now = await store.token(), let user = await store.user() else {
+            throw APIError.unauthenticated
+        }
+        return TokenPair(token: now, user: user)
     }
 
     public func signOut() async throws {
@@ -153,12 +190,17 @@ public final class AuthService: AuthServiceProtocol {
     }
 
     /// `true` when the server has told us the credentials can never work again.
+    ///
+    /// That is a `401`, and nothing else. A `403` from the API always carries
+    /// a code (suspended, deletion pending, unverified), none of which means
+    /// the token is dead; a bare `403` with no code is a proxy or a firewall
+    /// page, which says nothing about the session at all.
     static func isUnrecoverable(_ error: APIError) -> Bool {
         switch error {
         case .unauthenticated:
             return true
         case let .http(status, _):
-            return status == 401 || status == 403
+            return status == 401
         case let .api(_, _, status):
             return status == 401
         default:

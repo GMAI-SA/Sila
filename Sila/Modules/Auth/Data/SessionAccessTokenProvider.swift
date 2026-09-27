@@ -6,6 +6,11 @@ import Foundation
 /// ``AuthService`` applies to its own authenticated calls, so a feed request
 /// made minutes after the last auth call still goes out with a live token.
 ///
+/// Around 150 call sites ask for a token, and many of them at once. The
+/// refresh itself is single-flight inside ``AuthService/refreshToken(_:)``,
+/// so however many of them find the token expiring, one refresh goes out and
+/// they all get its pair.
+///
 /// This type is deliberately the *only* thing later phases receive from
 /// `Modules/Auth/Data/` — they get a token, never the store.
 public struct SessionAccessTokenProvider: AccessTokenProviding {

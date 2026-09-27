@@ -42,6 +42,11 @@ public protocol AuthServiceProtocol: Sendable {
     func signInBiometric() async throws -> TokenPair
 
     /// Rotates a token pair. The old refresh token is invalid afterwards.
+    ///
+    /// Single-flight: callers that arrive while a rotation is running share
+    /// it, and a caller whose token has already been rotated is handed the
+    /// stored pair, because sending a used refresh token is refused and a
+    /// refusal ends the session.
     func refreshToken(_ token: AuthToken) async throws -> TokenPair
 
     /// Revokes the session server-side and clears every local secret.

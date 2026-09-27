@@ -56,6 +56,20 @@ public actor AuthTokenStore {
         storage.set(pair.user.email, for: .lastSignedInEmail)
     }
 
+    /// Persists a pair rotated from `refreshToken`, but only while that is
+    /// still the session on this device.
+    ///
+    /// A refresh takes a network round trip. If the person signed out, or
+    /// signed in again, while it was out, the pair it brings back belongs to a
+    /// session that has ended, and storing it would bring that session back.
+    /// - Returns: `false` when the store holds something else now.
+    public func store(_ pair: TokenPair, replacing refreshToken: String) -> Bool {
+        hydrateIfNeeded()
+        guard cachedToken?.refreshToken == refreshToken else { return false }
+        store(pair)
+        return true
+    }
+
     /// Updates only the cached user (e.g. after `/auth/me` or a status poll).
     public func updateUser(_ user: AuthUser) {
         hydrateIfNeeded()
@@ -112,6 +126,22 @@ public actor AuthTokenStore {
         try? keychain.delete(.biometricLabel)
         storage.setFlag(false, for: .biometricEnabled)
         leftovers.sweep()
+    }
+
+    /// Wipes the session only if it is still the one whose refresh token the
+    /// server just refused.
+    ///
+    /// A refusal is a fact about the token that was sent. If the store has
+    /// moved on since — a new sign-in, or a pair another caller rotated — the
+    /// refusal says nothing about what is stored now, and wiping it would sign
+    /// somebody out of a perfectly good session.
+    /// - Returns: `true` when the session was wiped.
+    @discardableResult
+    public func clear(ifRefreshTokenIs refreshToken: String) -> Bool {
+        hydrateIfNeeded()
+        guard cachedToken?.refreshToken == refreshToken else { return false }
+        clear()
+        return true
     }
 
     private func hydrateIfNeeded() {
