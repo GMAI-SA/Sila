@@ -126,7 +126,9 @@ struct VouchDetailsForm: View {
         .sheet(isPresented: $isPickingNationality) {
             NationalityPickerSheet(
                 selected: draft.nationality,
-                message: isOwn ? L10n.t("vouch.form.nationality.message.own") : L10n.t("vouch.form.nationality.message")
+                message: isOwn ? L10n.t("vouch.form.nationality.message.own") : L10n.t("vouch.form.nationality.message"),
+                // The voucher is choosing somebody else's: not "Your nationality".
+                title: isOwn ? nil : L10n.t("vouch.form.nationality")
             ) { code in
                 draft.nationality = code
                 isPickingNationality = false

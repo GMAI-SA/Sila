@@ -20,6 +20,7 @@ public struct NationalityPickerSheet: View {
     private let selected: String?
     private let isSaving: Bool
     private let message: String?
+    private let title: String?
     private let onPick: (String) -> Void
 
     @State private var query = ""
@@ -29,11 +30,20 @@ public struct NationalityPickerSheet: View {
     ///   - isSaving: `true` while the choice is being sent.
     ///   - message: What the choice is for, above the list. `nil` is the
     ///     verification claim's own explanation; a vouch says its own.
+    ///   - title: The sheet's title. `nil` is "Your nationality"; a voucher
+    ///     choosing somebody else's says so.
     ///   - onPick: Called with the chosen alpha-2 code.
-    public init(selected: String?, isSaving: Bool = false, message: String? = nil, onPick: @escaping (String) -> Void) {
+    public init(
+        selected: String?,
+        isSaving: Bool = false,
+        message: String? = nil,
+        title: String? = nil,
+        onPick: @escaping (String) -> Void
+    ) {
         self.selected = selected
         self.isSaving = isSaving
         self.message = message
+        self.title = title
         self.onPick = onPick
     }
 
@@ -97,8 +107,12 @@ public struct NationalityPickerSheet: View {
             }
             .scrollContentBackground(.hidden)
             .tnScreenBackground()
-            .searchable(text: $query, prompt: L10n.t("nationality.picker.search"))
-            .navigationTitle(L10n.t("nationality.picker.title"))
+            // Always drawn: inside another sheet an inline bar folds the
+            // field away until the list is pulled down, and a list of 250
+            // countries with no visible search reads as scroll-only.
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: L10n.t("nationality.picker.search"))
+            .navigationTitle(title ?? L10n.t("nationality.picker.title"))
             .navigationBarTitleDisplayMode(.inline)
             .overlay {
                 if isSaving {
