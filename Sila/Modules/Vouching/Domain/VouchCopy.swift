@@ -112,6 +112,49 @@ public enum VouchCopy {
         }
     }
 
+    /// What the wall says about a vouch that ended (contract v24 §15): that
+    /// the vouch from @aziz ended, one plain sentence why, and what is left.
+    public struct LastEndedCopy: Equatable, Sendable {
+        public let title: String
+        public let reason: String
+        public let next: String
+    }
+
+    /// Endings about the voucher, not the person: they can no longer vouch
+    /// for anyone.
+    private static let voucherEndings: Set<String> = [
+        "voucher_left", "voucher_penalised", "voucher_unverified", "voucher_suspended",
+    ]
+    /// What a moderator may find — said as that and no more.
+    private static let findings: Set<String> = ["impostor", "under_age", "false_attestation", "sold_link"]
+
+    /// The card's three lines, in the reader's language only, with the same
+    /// words as the web. A sentence that names the voucher needs their
+    /// handle; without one it is only an ending. `vouch_again` null means
+    /// another voucher may vouch today; any refusal (the fortnight's wait,
+    /// the lifetime two, a finding) leaves verification as the way on.
+    public static func lastEnded(_ ended: LastEndedVouch) -> LastEndedCopy {
+        let handle = ended.handle ?? ""
+        let named = !handle.isEmpty
+        let reason: String
+        switch ended.endReason ?? "" {
+        case "declined": reason = named ? L10n.t("vouch.ended.reason.declined", handle) : L10n.t("vouch.ended.reason.other")
+        case "unconfirmed": reason = named ? L10n.t("vouch.ended.reason.unconfirmed", handle) : L10n.t("vouch.ended.reason.other")
+        case "expired": reason = L10n.t("vouch.ended.reason.expired")
+        case "withdrawn": reason = named ? L10n.t("vouch.ended.reason.withdrawn", handle) : L10n.t("vouch.ended.reason.other")
+        case "removed": reason = L10n.t("vouch.ended.reason.removed")
+        case let code where voucherEndings.contains(code):
+            reason = named ? L10n.t("vouch.ended.reason.voucher", handle) : L10n.t("vouch.ended.reason.other")
+        case let code where findings.contains(code): reason = L10n.t("vouch.ended.reason.moderator")
+        default: reason = L10n.t("vouch.ended.reason.other")
+        }
+        return LastEndedCopy(
+            title: named ? L10n.t("vouch.ended.title", handle) : L10n.t("vouch.ended.title.plain"),
+            reason: reason,
+            next: ended.vouchAgain == nil ? L10n.t("vouch.ended.next.again") : L10n.t("vouch.ended.next.verify")
+        )
+    }
+
     /// What a moderator found, for the summons.
     public static func finding(_ reason: String?) -> String {
         switch reason ?? "" {

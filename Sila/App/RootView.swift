@@ -195,7 +195,9 @@ public struct RootView: View {
                     onVerified: { await container.session.refreshUser() },
                     retake: container.session.documentRetake,
                     vouch: container.session.user?.vouch,
-                    onWithdrawClaim: { try await container.vouchingService.removeMyVouch() }
+                    onWithdrawClaim: { try await container.vouchingService.removeMyVouch() },
+                    // Why the last vouch ended, while none waits (§15).
+                    loadMyVouch: { try await container.vouchingService.myVouch() }
                 )
                 .transition(.opacity)
 

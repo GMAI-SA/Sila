@@ -40,6 +40,9 @@ public actor AuthServiceMock: AuthServiceProtocol {
         case vouched
         /// Claimed @noura's link; waiting for her to confirm it is them.
         case vouchPending
+        /// Back at the wall: @noura declined the claim three days ago, and
+        /// `GET /me/vouch` says so in `last_ended` (contract v24 §15).
+        case vouchEnded
 
         /// The verification status the mocked user carries.
         var verificationStatus: VerificationStatus {
@@ -311,6 +314,19 @@ public actor AuthServiceMock: AuthServiceProtocol {
                     return user
                 }
             }()
+        )
+    }
+
+    /// @noura's claim, declined three days ago — `last_ended` for the
+    /// `vouchEnded` scenario. Another voucher may vouch today.
+    static func mockLastEnded(reason: String = "declined", vouchAgain: String? = nil) -> LastEndedVouch {
+        LastEndedVouch(
+            id: UUID(uuidString: "66666666-0000-4000-8000-0000000000ab")!,
+            endReason: reason,
+            endedAt: Date().addingTimeInterval(-86_400 * 3),
+            voucher: VouchingServiceMock.voucher,
+            voucherHandle: VouchingServiceMock.voucher.handle,
+            vouchAgain: vouchAgain
         )
     }
 

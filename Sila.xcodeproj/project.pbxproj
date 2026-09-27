@@ -131,6 +131,7 @@
 		4B5B58462ABFB7C637416436 /* SensitiveCoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B48EF2E88CE5AD3F128FEA4 /* SensitiveCoverView.swift */; };
 		4BAAC9D02A21C76ACA5E8C24 /* VerificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121CD151E83E4C99F0B98149 /* VerificationService.swift */; };
 		4C2D605CAFAF667EEA1A3DBA /* JoinPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A4CE9131538A73E686A094 /* JoinPrompt.swift */; };
+		4CB974724A193979D0F1A2D4 /* VouchEndedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536E0D72C87EEE246C9C511A /* VouchEndedCard.swift */; };
 		4D46FD2D17C9F6D6CB3D8D62 /* CreateRoomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1CAAC9916416509C4139B2 /* CreateRoomViewModel.swift */; };
 		4EFB47FD9439061CB4F157F2 /* LiveVouchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF347559F8FE26B45BB45335 /* LiveVouchingTests.swift */; };
 		4F4981FCDE0B6C9AE6F17953 /* SLBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2F14F54EEC81790BD56E1D /* SLBadge.swift */; };
@@ -537,6 +538,7 @@
 		51FF92B637B8CECC2E627C67 /* CommunitiesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunitiesTests.swift; sourceTree = "<group>"; };
 		5282229F6C0859B028ADA5C8 /* GifMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GifMediaView.swift; sourceTree = "<group>"; };
 		52FF318FFF9AC39FFB9ED53C /* SignInViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInViewModel.swift; sourceTree = "<group>"; };
+		536E0D72C87EEE246C9C511A /* VouchEndedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchEndedCard.swift; sourceTree = "<group>"; };
 		5391F471229070A6DF0D668A /* FeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedService.swift; sourceTree = "<group>"; };
 		5474A614A8BB4DF10F650FF4 /* AccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountService.swift; sourceTree = "<group>"; };
 		564AECF667793CEB504BFF58 /* NafathVerificationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NafathVerificationViewModel.swift; sourceTree = "<group>"; };
@@ -1406,6 +1408,7 @@
 				AC36CAA4B2B91DFFA89FC0BD /* VouchConfirmControl.swift */,
 				27A64AC4823E5C805B3D7669 /* VouchDetailsForm.swift */,
 				8A0E8C6ECBFDD7A04074CA7E /* VouchedTier.swift */,
+				536E0D72C87EEE246C9C511A /* VouchEndedCard.swift */,
 				8262A1FD551822E7C5B75A92 /* VouchExplainerSheet.swift */,
 				471358C369AFF2211BCB4D7C /* VouchingScreen.swift */,
 				8F0D80F037B97C3A01AA6CF0 /* VouchingViewModel.swift */,
@@ -2312,6 +2315,7 @@
 				DD87DBC8210BD01251A38445 /* VouchConfirmControl.swift in Sources */,
 				F80AD647DA01A56A54BF84F3 /* VouchCopy.swift in Sources */,
 				585E04FC29D93905EAA193AD /* VouchDetailsForm.swift in Sources */,
+				4CB974724A193979D0F1A2D4 /* VouchEndedCard.swift in Sources */,
 				C904D2D242768BC2879C1A77 /* VouchExplainerSheet.swift in Sources */,
 				2CDA82A38C6CF4F169AFB731 /* VouchInviteInbox.swift in Sources */,
 				757F3DD4DF5CDF5AB2EAB9DB /* VouchInviteSheet.swift in Sources */,

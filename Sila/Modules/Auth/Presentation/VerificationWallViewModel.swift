@@ -142,6 +142,12 @@ public final class VerificationWallViewModel {
     /// (contract v24 §8): `/verification/status` says nothing about a vouch,
     /// so while one waits every check reads both. Set by the screen.
     public var refreshSession: (@MainActor () async -> Void)?
+    /// Why the account's last vouch ended (contract v24 §15), while it has
+    /// none waiting or live: `/auth/me` does not say, so this is read from
+    /// `GET /me/vouch`.
+    public private(set) var lastEnded: LastEndedVouch?
+    /// Reads `GET /me/vouch`. Set by the screen; `nil` never reads it.
+    public var loadMyVouch: (@MainActor () async throws -> MyVouch)?
 
     private let service: AuthServiceProtocol
     private let verification: VerificationServiceProtocol?
@@ -198,6 +204,31 @@ public final class VerificationWallViewModel {
         } catch {
             toast = .error(L10n.t("common.somethingWentWrong"))
         }
+    }
+
+    /// Reads why the last vouch ended — on arriving at the wall with no
+    /// vouch, and again once a waiting claim is gone (declined, lapsed or
+    /// withdrawn). Says nothing when the server has nothing or cannot be
+    /// reached: the wall stands without it.
+    public func refreshLastEnded() async {
+        guard pendingVouch == nil, let loadMyVouch else {
+            lastEnded = nil
+            return
+        }
+        do {
+            let mine = try await loadMyVouch()
+            // A vouch live again by now (claimed on another device) has no
+            // "last ended" to show.
+            lastEnded = mine.vouch == nil && mine.standing != .verified ? mine.lastEnded : nil
+        } catch {
+            // Nothing to add to the wall.
+        }
+    }
+
+    /// Whether the wall says why the last vouch ended: back at the start,
+    /// with nothing waiting — neither a claim nor a submission under review.
+    public var showsLastEnded: Bool {
+        lastEnded != nil && pendingVouch == nil && (status == .unstarted || status == .inProgress)
     }
 
     /// Human-readable submission timestamp, when known.

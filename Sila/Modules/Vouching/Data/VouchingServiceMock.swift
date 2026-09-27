@@ -56,6 +56,11 @@ public actor VouchingServiceMock: VouchingServiceProtocol {
     /// What reading a link's landing fails with, when set.
     private var landingFailure: APIError?
 
+    /// Why the person's last vouch ended (`last_ended`, contract v24 §15),
+    /// served while they have no live vouch and are not verified.
+    private var lastEnded: LastEndedVouch?
+
+    public func setLastEnded(_ ended: LastEndedVouch?) { lastEnded = ended }
     public func setAnswerFailure(_ error: APIError?) { answerFailure = error }
     public func setLandingFailure(_ error: APIError?) { landingFailure = error }
 
@@ -196,16 +201,23 @@ public actor VouchingServiceMock: VouchingServiceProtocol {
         try await delay()
         if let claimed { return MyVouch(standing: .noStanding, vouch: claimed) }
         let vouched = own.standing == .vouched
-        return MyVouch(standing: own.standing, vouch: own.vouch,
+        let ended = own.vouch == nil && own.standing != .verified ? lastEnded : nil
+        return MyVouch(standing: own.standing, vouch: own.vouch, lastEnded: ended,
                        rights: vouched ? .vouchedDefault : nil, limits: vouched ? VouchLimits() : nil)
     }
 
     public func removeMyVouch() async throws {
         record("removeMyVouch")
         try await delay()
-        guard claimed != nil || own.vouch != nil else {
+        guard let removed = claimed ?? own.vouch else {
             throw APIError.api(code: .vouchNotFound, message: "You have no vouch", status: 404)
         }
+        // The server's own record of it (§15): taken off by the person; a
+        // vouch that had been confirmed starts the fortnight's wait.
+        lastEnded = LastEndedVouch(
+            id: removed.id, endReason: "removed", endedAt: Date(), voucher: removed.voucher,
+            voucherHandle: removed.voucherHandle, vouchAgain: removed.isActive ? "vouch_too_soon" : nil
+        )
         claimed = nil
         own = (nil, .noStanding)
         await onOwnVouchChange?(nil, .noStanding)

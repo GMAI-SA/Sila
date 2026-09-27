@@ -43220,6 +43220,240 @@
         }
       }
     },
+    "vouch.ended.badge": {
+      "comment": "Badge on the card that says why the person's last vouch ended.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت التزكية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vouch ended"
+          }
+        }
+      }
+    },
+    "vouch.ended.next.again": {
+      "comment": "What is left after a vouch ended, when another voucher may vouch today.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن أن يزكّيك شخص آخر تعرفه، أو أن توثّق هويتك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone else you know can vouch for you, or verify your identity."
+          }
+        }
+      }
+    },
+    "vouch.ended.next.verify": {
+      "comment": "What is left after a vouch ended, when no new vouch is possible now.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وثّق هويتك للمتابعة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your identity to continue."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.declined": {
+      "comment": "Why the vouch ended. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يؤكّد ⁦@%@⁩ أنك أنت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ didn't confirm it was you."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.expired": {
+      "comment": "Why the vouch ended: its 30 days ran out.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت الأيام الثلاثون."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 30 days ended."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.moderator": {
+      "comment": "Why the vouch ended: a moderator's finding. Never say which.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنهى أحد المشرفين هذه التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator ended this vouch."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.other": {
+      "comment": "Why the vouch ended, when there is nothing more to say.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت هذه التزكية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This vouch has ended."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.removed": {
+      "comment": "Why the vouch ended: the person removed it themselves.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أزلت التزكية بنفسك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You took the vouch off."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.unconfirmed": {
+      "comment": "Why the vouch ended: the 48 hours ran out. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يؤكّد ⁦@%@⁩ في الوقت المحدد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ didn't confirm in time."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.voucher": {
+      "comment": "Why the vouch ended: the voucher lost the right. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يعد بإمكان ⁦@%@⁩ أن يزكّي أحدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ can no longer vouch for anyone."
+          }
+        }
+      }
+    },
+    "vouch.ended.reason.withdrawn": {
+      "comment": "Why the vouch ended. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سحب ⁦@%@⁩ تزكيته."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "@%@ withdrew their vouch."
+          }
+        }
+      }
+    },
+    "vouch.ended.title": {
+      "comment": "Title of the card on the wall after a vouch ended. %@ is the voucher's handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت تزكية ⁦@%@⁩ لك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The vouch from @%@ has ended"
+          }
+        }
+      }
+    },
+    "vouch.ended.title.plain": {
+      "comment": "Title of the card on the wall after a vouch ended, when the voucher is unknown.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت تزكيتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your vouch has ended"
+          }
+        }
+      }
+    },
     "vouch.error.alreadyVouched": {
       "extractionState": "manual",
       "localizations": {

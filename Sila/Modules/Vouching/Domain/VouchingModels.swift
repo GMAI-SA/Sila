@@ -243,27 +243,96 @@ public struct VouchLimits: Equatable, Sendable, Decodable {
 public struct MyVouch: Equatable, Sendable, Decodable {
     public let standing: Standing
     public let vouch: VouchState?
+    /// Why the last vouch ended (contract v24 §15) — only while there is no
+    /// live vouch, the account is not verified, and one ended in the last 30
+    /// days without graduating.
+    public let lastEnded: LastEndedVouch?
     /// Only while vouched.
     public let rights: VouchRights?
     public let limits: VouchLimits?
 
-    public init(standing: Standing, vouch: VouchState? = nil, rights: VouchRights? = nil, limits: VouchLimits? = nil) {
+    public init(
+        standing: Standing,
+        vouch: VouchState? = nil,
+        lastEnded: LastEndedVouch? = nil,
+        rights: VouchRights? = nil,
+        limits: VouchLimits? = nil
+    ) {
         self.standing = standing
         self.vouch = vouch
+        self.lastEnded = lastEnded
         self.rights = rights
         self.limits = limits
     }
 
     private enum CodingKeys: String, CodingKey {
-        case standing, vouch, rights, limits
+        case standing, vouch, lastEnded, rights, limits
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         standing = (try? container.decode(Standing.self, forKey: .standing)) ?? .noStanding
         vouch = (try? container.decodeIfPresent(VouchState.self, forKey: .vouch)) ?? nil
+        lastEnded = (try? container.decodeIfPresent(LastEndedVouch.self, forKey: .lastEnded)) ?? nil
         rights = (try? container.decodeIfPresent(VouchRights.self, forKey: .rights)) ?? nil
         limits = (try? container.decodeIfPresent(VouchLimits.self, forKey: .limits)) ?? nil
+    }
+}
+
+/// `last_ended` on `GET /me/vouch` (contract v24 §15): the person's newest
+/// vouch that ended without graduating, while they are back at the wall.
+///
+/// Says why, who vouched, and whether somebody else may vouch today — never
+/// anything the voucher wrote about them.
+public struct LastEndedVouch: Equatable, Sendable, Decodable, Hashable {
+    public let id: UUID
+    /// One of §5's end reasons (`declined`, `expired`, a finding such as
+    /// `impostor`, …), or `nil`.
+    public let endReason: String?
+    public let endedAt: Date?
+    /// The voucher, or `nil` once that account is gone.
+    public let voucher: UserSummary?
+    /// The voucher's handle as it was — survives the account.
+    public let voucherHandle: String?
+    /// The refusal a new claim would meet right now (`vouch_too_soon`,
+    /// `vouch_lifetime_reached`, `vouch_not_eligible`, or newer), or `nil`
+    /// when another voucher may vouch for them today.
+    public let vouchAgain: String?
+
+    public init(
+        id: UUID,
+        endReason: String?,
+        endedAt: Date? = nil,
+        voucher: UserSummary? = nil,
+        voucherHandle: String? = nil,
+        vouchAgain: String? = nil
+    ) {
+        self.id = id
+        self.endReason = endReason
+        self.endedAt = endedAt
+        self.voucher = voucher
+        self.voucherHandle = voucherHandle
+        self.vouchAgain = vouchAgain
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, endReason, endedAt, voucher, voucherHandle, vouchAgain
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try VouchWire.uuid(container, .id)
+        endReason = VouchWire.text(container, .endReason)
+        endedAt = (try? container.decodeIfPresent(Date.self, forKey: .endedAt)) ?? nil
+        voucher = (try? container.decodeIfPresent(UserSummary.self, forKey: .voucher)) ?? nil
+        voucherHandle = VouchWire.text(container, .voucherHandle)
+        vouchAgain = VouchWire.text(container, .vouchAgain)
+    }
+
+    /// The voucher's handle — from the live account when there is one.
+    public var handle: String? {
+        if let live = voucher?.handle, !live.isEmpty { return live }
+        return voucherHandle
     }
 }
 

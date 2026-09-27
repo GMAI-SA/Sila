@@ -473,6 +473,7 @@ public final class AppContainer {
                     switch scenario {
                     case .vouched: await mock.setOwnVouch(AuthServiceMock.mockVouch(pending: false), standing: .vouched)
                     case .vouchPending: await mock.setOwnVouch(AuthServiceMock.mockVouch(pending: true), standing: .noStanding)
+                    case .vouchEnded: await mock.setLastEnded(AuthServiceMock.mockLastEnded())
                     default: break
                     }
                 }

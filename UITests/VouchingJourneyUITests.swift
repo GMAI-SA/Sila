@@ -314,6 +314,37 @@ final class VouchingJourneyUITests: XCTestCase {
         byId(app, "signIn.submit").tap()
     }
 
+    /// Back at the wall after @noura declined the claim (contract v24 §15):
+    /// the wall says whose vouch ended, why, and what is left — in the one
+    /// language the app is in.
+    func testTheWallSaysWhyTheLastVouchEnded() {
+        let app = launch(["-mockScenario", "vouchEnded"])
+        signInFromWelcome(app)
+        let card = byId(app, "vouching.wall.ended")
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "the wall does not say the last vouch ended")
+        XCTAssertTrue(card.label.contains(L("vouch.ended.title", "noura")), card.label)
+        XCTAssertTrue(card.label.contains(L("vouch.ended.reason.declined", "noura")), card.label)
+        XCTAssertTrue(card.label.contains(L("vouch.ended.next.again")), card.label)
+        // The wall's own way on stays: verification.
+        XCTAssertTrue(byLabel(app, L("auth.wall.unstarted.action")).exists, "the wall lost its verify button")
+        screenshot(app, named: "The vouch from @noura has ended")
+    }
+
+    func testTheWallSaysWhyTheLastVouchEndedInArabicOnly() {
+        let app = launch(["-mockScenario", "vouchEnded"], lang: "ar")
+        signInFromWelcome(app)
+        let card = byId(app, "vouching.wall.ended")
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "the wall does not say the last vouch ended")
+        // The handle sits in its own isolate; the Arabic around it is matched.
+        let title = L("vouch.ended.title", "noura", "ar")
+        XCTAssertTrue(card.label.contains(String(title.prefix(10))), card.label)
+        XCTAssertTrue(card.label.contains("noura"), card.label)
+        XCTAssertTrue(card.label.contains(L("vouch.ended.next.again", nil, "ar")), card.label)
+        XCTAssertFalse(card.label.contains("vouch"), "English beside the Arabic: \(card.label)")
+        XCTAssertFalse(card.label.contains(L("vouch.ended.next.again")), "English beside the Arabic: \(card.label)")
+        screenshot(app, named: "انتهت تزكية @noura لك")
+    }
+
     /// A vouched listener (contract v24 §4): no reactions, no share, and a
     /// chat that says why it takes no line — to the room or privately to the
     /// host — with the door to verification opening over the chat sheet.

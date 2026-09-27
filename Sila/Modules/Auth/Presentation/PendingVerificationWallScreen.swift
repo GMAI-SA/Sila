@@ -55,6 +55,8 @@ public struct PendingVerificationWallScreen: View {
     ///     that arrives while the wall watches reaches the rejected screen.
     ///   - retake: Opens the document flow at once, at the camera, instead of
     ///     offering the routes — the pre-screen turned the last pictures away.
+    ///   - loadMyVouch: Reads `GET /me/vouch`, for why the last vouch ended
+    ///     (contract v24 §15). `nil` never says.
     public init(
         status: VerificationStatus,
         service: AuthServiceProtocol,
@@ -65,6 +67,7 @@ public struct PendingVerificationWallScreen: View {
         retake: DocumentRetake? = nil,
         vouch: VouchState? = nil,
         onWithdrawClaim: (() async throws -> Void)? = nil,
+        loadMyVouch: (@MainActor () async throws -> MyVouch)? = nil,
         onClose: (() -> Void)? = nil
     ) {
         let model = VerificationWallViewModel(
@@ -76,6 +79,7 @@ public struct PendingVerificationWallScreen: View {
         )
         model.pendingVouch = vouch?.isPending == true ? vouch : nil
         model.refreshSession = onVerified
+        model.loadMyVouch = loadMyVouch
         _viewModel = State(initialValue: model)
         _pendingRetake = State(initialValue: verification == nil ? nil : retake)
         self.verification = verification
@@ -139,6 +143,13 @@ public struct PendingVerificationWallScreen: View {
                         .padding(.horizontal, SLSpacing.lg)
                 }
 
+                // Back at the wall after a vouch ended (contract v24 §15):
+                // why, and what is left.
+                if viewModel.showsLastEnded, let ended = viewModel.lastEnded {
+                    VouchEndedCard(ended: ended, identifier: "vouching.wall.ended")
+                        .padding(.horizontal, SLSpacing.lg)
+                }
+
                 if let submitted = viewModel.submittedText {
                     SLCard(padding: SLSpacing.md) {
                         HStack(spacing: SLSpacing.sm) {
@@ -179,6 +190,12 @@ public struct PendingVerificationWallScreen: View {
         // A claim made — or answered — while the wall is up.
         .onChange(of: vouch) { _, current in
             viewModel.pendingVouch = current?.isPending == true ? current : nil
+        }
+        // Why the last vouch ended: read on arriving with no vouch, and again
+        // whenever a waiting claim goes — declined, lapsed or withdrawn.
+        .task(id: vouch?.id) {
+            viewModel.pendingVouch = vouch?.isPending == true ? vouch : nil
+            await viewModel.refreshLastEnded()
         }
         // The claim comes first. Once it is saved the chooser opens — after
         // this sheet has gone, for the same reason as below.

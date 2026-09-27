@@ -1065,6 +1065,236 @@ final class VouchCopyReviewTests: XCTestCase {
     }
 }
 
+// MARK: - Why the last vouch ended (contract v24 §15)
+
+@MainActor
+final class LastEndedVouchTests: XCTestCase {
+
+    override func tearDown() {
+        L10n.use(nil)
+        super.tearDown()
+    }
+
+    private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
+        try JSONCoding.decoder.decode(T.self, from: Data(json.utf8))
+    }
+
+    private static let voucher = """
+    {"id": "44444444-0000-4000-8000-000000000001", "handle": "aziz", "display_name": "Aziz", "is_verified": true}
+    """
+
+    private func ended(_ reason: String?, handle: String? = "aziz", vouchAgain: String? = nil) -> LastEndedVouch {
+        LastEndedVouch(id: UUID(), endReason: reason, endedAt: Date(), voucher: nil,
+                       voucherHandle: handle, vouchAgain: vouchAgain)
+    }
+
+    // MARK: The wire
+
+    func testMyVouchReadsLastEnded() throws {
+        let mine = try decode(MyVouch.self, """
+        {"standing": "none", "vouch": null, "rights": null, "limits": null,
+         "last_ended": {"id": "66666666-0000-4000-8000-000000000009", "end_reason": "declined",
+                        "ended_at": "2026-09-24T10:00:00+00:00", "voucher": \(Self.voucher),
+                        "voucher_handle": "aziz_old", "vouch_again": null}}
+        """)
+        let ended = try XCTUnwrap(mine.lastEnded)
+        XCTAssertEqual(ended.endReason, "declined")
+        XCTAssertNotNil(ended.endedAt)
+        XCTAssertEqual(ended.handle, "aziz", "the live account's handle, when there is one")
+        XCTAssertNil(ended.vouchAgain)
+        XCTAssertNil(mine.vouch)
+    }
+
+    func testAGoneVoucherIsNamedByTheHandleKeptOnTheVouch() throws {
+        let mine = try decode(MyVouch.self, """
+        {"standing": "none", "vouch": null,
+         "last_ended": {"id": "66666666-0000-4000-8000-000000000009", "end_reason": "voucher_left",
+                        "ended_at": null, "voucher": null, "voucher_handle": "aziz",
+                        "vouch_again": "vouch_too_soon"}}
+        """)
+        XCTAssertEqual(mine.lastEnded?.handle, "aziz")
+        XCTAssertEqual(mine.lastEnded?.vouchAgain, "vouch_too_soon")
+    }
+
+    func testAnOlderServerOrABrokenFieldIsNoLastEnded() throws {
+        XCTAssertNil(try decode(MyVouch.self, #"{"standing": "none", "vouch": null}"#).lastEnded)
+        XCTAssertNil(try decode(MyVouch.self, #"{"standing": "none", "last_ended": null}"#).lastEnded)
+        XCTAssertNil(try decode(MyVouch.self, #"{"standing": "none", "last_ended": {"end_reason": "declined"}}"#).lastEnded,
+                     "no id: nothing to say")
+        XCTAssertEqual(try decode(MyVouch.self, #"{"standing": "none", "last_ended": {"id": "x"}}"#).standing, .noStanding)
+    }
+
+    // MARK: The words (the web's, in each language)
+
+    func testEachEndingSaysWhyInEnglish() {
+        L10n.use("en")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("declined")),
+                       VouchCopy.LastEndedCopy(title: "The vouch from @aziz has ended",
+                                               reason: "@aziz didn't confirm it was you.",
+                                               next: "Someone else you know can vouch for you, or verify your identity."))
+        XCTAssertEqual(VouchCopy.lastEnded(ended("unconfirmed")).reason, "@aziz didn't confirm in time.")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("expired")).reason, "The 30 days ended.")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("withdrawn")).reason, "@aziz withdrew their vouch.")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("removed")).reason, "You took the vouch off.")
+        for code in ["voucher_left", "voucher_penalised", "voucher_unverified", "voucher_suspended"] {
+            XCTAssertEqual(VouchCopy.lastEnded(ended(code)).reason, "@aziz can no longer vouch for anyone.", code)
+        }
+        for code in ["impostor", "under_age", "false_attestation", "sold_link"] {
+            XCTAssertEqual(VouchCopy.lastEnded(ended(code, vouchAgain: "vouch_not_eligible")).reason,
+                           "A moderator ended this vouch.", "a finding is said as that and no more: \(code)")
+        }
+        XCTAssertEqual(VouchCopy.lastEnded(ended("something_newer")).reason, "This vouch has ended.")
+        XCTAssertEqual(VouchCopy.lastEnded(ended(nil)).reason, "This vouch has ended.")
+    }
+
+    func testWhatIsLeftFollowsVouchAgain() {
+        L10n.use("en")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("expired")).next,
+                       "Someone else you know can vouch for you, or verify your identity.")
+        for refusal in ["vouch_too_soon", "vouch_lifetime_reached", "vouch_not_eligible", "anything_newer"] {
+            XCTAssertEqual(VouchCopy.lastEnded(ended("expired", vouchAgain: refusal)).next,
+                           "Verify your identity to continue.", refusal)
+        }
+    }
+
+    func testWithoutAHandleNothingNamesAVoucher() {
+        L10n.use("en")
+        let unnamed = VouchCopy.lastEnded(ended("declined", handle: nil))
+        XCTAssertEqual(unnamed.title, "Your vouch has ended")
+        XCTAssertEqual(unnamed.reason, "This vouch has ended.", "a sentence that names the voucher needs the handle")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("expired", handle: "")).title, "Your vouch has ended")
+    }
+
+    func testArabicIsArabicOnlyAndTheHandleIsOnePiece() {
+        L10n.use("ar")
+        let copy = VouchCopy.lastEnded(ended("declined"))
+        // The catalogue wraps "@%@" in LRI … PDI; Foundation adds its own
+        // FSI … PDI around the argument inside it. Compared without them,
+        // and the "@" checked to sit inside the left-to-right isolate.
+        let isolates: Set<UInt32> = [0x2066, 0x2068, 0x2069]
+        func plain(_ text: String) -> String {
+            String(String.UnicodeScalarView(text.unicodeScalars.filter { !isolates.contains($0.value) }))
+        }
+        XCTAssertEqual(plain(copy.title), "انتهت تزكية @aziz لك")
+        XCTAssertEqual(plain(copy.reason), "لم يؤكّد @aziz أنك أنت.")
+        for line in [copy.title, copy.reason] {
+            XCTAssertTrue(line.contains("\u{2066}@"), "the \"@\" drifts away from the handle: \(line)")
+        }
+        XCTAssertEqual(copy.next, "يمكن أن يزكّيك شخص آخر تعرفه، أو أن توثّق هويتك.")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("expired", vouchAgain: "vouch_too_soon")).next, "وثّق هويتك للمتابعة.")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("impostor")).reason, "أنهى أحد المشرفين هذه التزكية.")
+        XCTAssertEqual(VouchCopy.lastEnded(ended("expired", handle: nil)).title, "انتهت تزكيتك")
+        for line in [copy.title, copy.reason, copy.next] {
+            let latin = plain(line).replacingOccurrences(of: "@aziz", with: "").unicodeScalars
+                .filter { CharacterSet.letters.contains($0) && $0.value < 0x0250 }
+            XCTAssertTrue(latin.isEmpty, "English beside the Arabic: \(line)")
+        }
+    }
+
+    // MARK: The wall
+
+    private func wall(_ status: VerificationStatus = .unstarted) -> VerificationWallViewModel {
+        VerificationWallViewModel(status: status, service: AuthServiceMock(scenario: .unstarted),
+                                  analytics: RecordingAnalyticsClient())
+    }
+
+    func testTheWallReadsWhyTheLastVouchEndedWhenNothingWaits() async {
+        let model = wall()
+        var reads = 0
+        model.loadMyVouch = {
+            reads += 1
+            return MyVouch(standing: .noStanding, lastEnded: AuthServiceMock.mockLastEnded())
+        }
+        await model.refreshLastEnded()
+        XCTAssertEqual(reads, 1)
+        XCTAssertEqual(model.lastEnded?.endReason, "declined")
+        XCTAssertTrue(model.showsLastEnded)
+    }
+
+    func testAClaimStillWaitingIsNotAnEnding() async {
+        let model = wall()
+        var reads = 0
+        model.loadMyVouch = { reads += 1; return MyVouch(standing: .noStanding, lastEnded: AuthServiceMock.mockLastEnded()) }
+        model.pendingVouch = AuthServiceMock.mockVouch(pending: true)
+        await model.refreshLastEnded()
+        XCTAssertEqual(reads, 0, "a claim waits: nothing ended")
+        XCTAssertNil(model.lastEnded)
+        XCTAssertFalse(model.showsLastEnded)
+    }
+
+    func testOnceTheClaimGoesTheWallAsksAgain() async {
+        let model = wall()
+        model.pendingVouch = AuthServiceMock.mockVouch(pending: true)
+        model.loadMyVouch = { MyVouch(standing: .noStanding, lastEnded: AuthServiceMock.mockLastEnded(reason: "unconfirmed")) }
+        await model.refreshLastEnded()
+        XCTAssertNil(model.lastEnded)
+        model.pendingVouch = nil        // the 48 hours ran out
+        await model.refreshLastEnded()
+        XCTAssertEqual(model.lastEnded?.endReason, "unconfirmed")
+    }
+
+    func testTheCardIsOnlyForTheStartOfTheWall() async {
+        for (status, shows) in [(VerificationStatus.unstarted, true), (.inProgress, true),
+                                (.pendingReview, false), (.rejected, false)] {
+            let model = wall(status)
+            model.loadMyVouch = { MyVouch(standing: .noStanding, lastEnded: AuthServiceMock.mockLastEnded()) }
+            await model.refreshLastEnded()
+            XCTAssertEqual(model.showsLastEnded, shows, "\(status)")
+        }
+    }
+
+    func testAFailedReadLeavesTheWallAsItWas() async {
+        let model = wall()
+        model.loadMyVouch = { MyVouch(standing: .noStanding, lastEnded: AuthServiceMock.mockLastEnded()) }
+        await model.refreshLastEnded()
+        model.loadMyVouch = { throw APIError.transport("offline") }
+        await model.refreshLastEnded()
+        XCTAssertNotNil(model.lastEnded, "no toast, no change: the wall stands without it")
+        XCTAssertNil(model.toast)
+    }
+
+    func testALiveVouchOrAVerifiedAccountHasNoEndingToShow() async {
+        let model = wall()
+        model.loadMyVouch = {
+            MyVouch(standing: .vouched, vouch: AuthServiceMock.mockVouch(pending: false),
+                    lastEnded: AuthServiceMock.mockLastEnded())
+        }
+        await model.refreshLastEnded()
+        XCTAssertNil(model.lastEnded)
+        model.loadMyVouch = { MyVouch(standing: .verified, lastEnded: AuthServiceMock.mockLastEnded()) }
+        await model.refreshLastEnded()
+        XCTAssertNil(model.lastEnded)
+    }
+
+    // MARK: The mock plays the server
+
+    func testWithdrawingAClaimLeavesARecordOfIt() async throws {
+        let mock = VouchingServiceMock()
+        await mock.setOwnVouch(AuthServiceMock.mockVouch(pending: true), standing: .noStanding)
+        try await mock.removeMyVouch()
+        let mine = try await mock.myVouch()
+        XCTAssertNil(mine.vouch)
+        XCTAssertEqual(mine.lastEnded?.endReason, "removed")
+        XCTAssertEqual(mine.lastEnded?.handle, "noura")
+        XCTAssertNil(mine.lastEnded?.vouchAgain, "an unconfirmed claim starts no wait")
+
+        let vouched = VouchingServiceMock()
+        await vouched.setOwnVouch(AuthServiceMock.mockVouch(pending: false), standing: .vouched)
+        try await vouched.removeMyVouch()
+        let after = try await vouched.myVouch()
+        XCTAssertEqual(after.lastEnded?.vouchAgain, "vouch_too_soon", "a confirmed vouch starts the fortnight")
+    }
+
+    func testTheOwnVouchScreenReadsIt() async {
+        let mock = VouchingServiceMock()
+        await mock.setLastEnded(AuthServiceMock.mockLastEnded(reason: "expired"))
+        let model = OwnVouchViewModel(service: mock, onChanged: {})
+        await model.load()
+        XCTAssertNil(model.vouch)
+        XCTAssertEqual(model.mine?.lastEnded?.endReason, "expired")
+    }
+}
+
 private extension VouchClaimViewModel.Phase {
     var isOpen: Bool {
         if case .open = self { return true }

@@ -103,6 +103,10 @@ public struct OwnVouchScreen: View {
                     case .noStanding:
                         if let vouch = mine.vouch, vouch.isPending {
                             pending(vouch)
+                        } else if mine.vouch == nil, let ended = mine.lastEnded {
+                            // Landed here with no live vouch (contract v24
+                            // §15): why the last one ended, and the way on.
+                            endedVouch(ended)
                         } else {
                             SLEmptyState(
                                 icon: SLVouchTag.glyph,
@@ -237,6 +241,19 @@ public struct OwnVouchScreen: View {
             ),
             identifier: "vouching.mine.remove"
         ) { await viewModel.remove() }
+    }
+
+    // MARK: - Ended
+
+    private func endedVouch(_ ended: LastEndedVouch) -> some View {
+        VStack(alignment: .leading, spacing: SLSpacing.md) {
+            VouchEndedCard(ended: ended, identifier: "vouching.mine.ended")
+            if let onVerify {
+                SLButton(L10n.t("vouch.own.action"), variant: .primary, icon: "checkmark.seal",
+                         accessibilityHint: L10n.t("vouch.own.action.hint"), action: onVerify)
+                    .accessibilityIdentifier("vouching.mine.ended.verify")
+            }
+        }
     }
 
     // MARK: - Pending

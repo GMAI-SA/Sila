@@ -313,6 +313,17 @@ Around those two:
   as `/verification/status` (the answer is on the account), the wall re-reads
   it every 20 seconds for five minutes, and a `vouch_*` push arriving in the
   foreground re-reads it at once.
+* **Back at the wall, the wall says why.** `/auth/me` does not say why a vouch
+  ended, so the wall reads `GET /me/vouch`'s `last_ended` (§15) on arriving with
+  no vouch and again whenever a waiting claim goes (declined, lapsed,
+  withdrawn). While nothing waits and nothing is under review, a calm card says
+  "The vouch from @x has ended" (or "Your vouch has ended"), one reason — declined,
+  not confirmed in time, the 30 days, withdrawn, taken off, the voucher can no
+  longer vouch, a moderator (never which finding), or simply ended — and what is
+  left: another voucher, or only verification when `vouch_again` names a
+  refusal. The web's words, in the app's language only; the handle is one
+  left-to-right piece. "Your vouch" with no live vouch shows the same card and
+  "Verify your identity".
 * **The limited tier is said where it bites.** A countdown above Home, a
   Messages tab that explains itself, "Verify your identity to host" before the
   room or event sheet, no voice recorder, no Groups row, "Verify your identity
@@ -402,7 +413,8 @@ moderator's question, one ended, one open link), `notOpen` (the flag is off: no
 entry points), `struck` (one strike: the right to vouch is gone) and `empty`. Its
 link `mock-khalid-2026-link` was written by @noura for Khalid Al-Harbi, Saudi,
 born 12 April 1995: the claim plays the server's matching, mismatches and the
-third that closes it. `AuthServiceMock` adds `vouched` and `vouchPending`;
+third that closes it. `AuthServiceMock` adds `vouched`, `vouchPending` and
+`vouchEnded` (back at the wall: @noura declined the claim, said by `last_ended`);
 `NotificationsServiceMock` adds `vouching` (each vouching notice, with and
 without `vouch_role`); `FeedServiceMock.vouched` (@khalid, vouched for by
 @noor · Saudi Arabia) is in the mocked People search.
@@ -427,7 +439,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-1,516 total: 1,458 unit (78 opt-in, see below) and 58 XCUITests (41 journeys, 16
+1,533 total: 1,473 unit (78 opt-in, see below) and 60 XCUITests (43 journeys, 16
 reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a
