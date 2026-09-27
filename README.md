@@ -309,13 +309,23 @@ Around those two:
   `verification_status` says (a refused document included); `none` with a
   pending claim is the wall, with "Waiting for @x to confirm it's you" and a way
   to withdraw the claim; the person's own verification stays one tap away.
+  While a claim waits, "Check status" and the pull re-read `/auth/me` as well
+  as `/verification/status` (the answer is on the account), the wall re-reads
+  it every 20 seconds for five minutes, and a `vouch_*` push arriving in the
+  foreground re-reads it at once.
 * **The limited tier is said where it bites.** A countdown above Home, a
   Messages tab that explains itself, "Verify your identity to host" before the
-  room or event sheet, no voice recorder, a localized listener line in rooms,
-  "Verify your identity to vote" on polls, no Message button on a vouched
-  profile. Anything the server still refuses with `403
-  self_verification_required` opens one sheet offering verification — never
-  the wall.
+  room or event sheet, no voice recorder, no Groups row, "Verify your identity
+  to vote" on polls, no Message button on a vouched profile. In a room a
+  vouched listener listens, likes and sets reminders only: no hand, no
+  reactions, no share, and a chat and question queue they read with the reason
+  where the composer would be — the private line to the host included, which
+  rides the media server's data channel past the server, so the model refuses
+  to send it too (the server's grant now refuses it as well). Anything the
+  server still refuses with `403 self_verification_required` offers
+  verification — never the wall — through `SelfVerificationPresenter`, which
+  presents over the top-most controller so the offer rises over whatever sheet
+  the refusal came from.
 * **The entry points appear only while vouching is open to the account.** The
   Profile row "Vouch for someone you know" (between Groups and Account) is drawn
   from `GET /vouching`: hidden on `vouching_not_open`, dimmed with the reason
@@ -374,11 +384,14 @@ a second device followed too. That last one is the entire reason the client
 reconciles instead of counting. Its people and posts are `FeedServiceMock`'s,
 so an author tapped in the mocked feed opens the same person.
 
-`RoomsServiceMock` ships 7: `populated` (three live rooms and two scheduled),
+`RoomsServiceMock` ships 8: `populated` (three live rooms and two scheduled),
 `empty`, `listenerOnly` (every room refuses the mic with a scope reason — the
 state the whole feature turns on), `hosting` (the viewer hosts the first room,
 so the host controls are reachable), `removed` (a join refused with
-`removed_from_room`), `offline` and `writesFail`. `-mockRooms` implies
+`removed_from_room`), `offline`, `writesFail` and `vouched` (a vouched
+listener everywhere, beside another vouched listener whose tile carries the
+tag — what `-mockScenario vouched` serves unless `-mockRoomsScenario` says
+otherwise). `-mockRooms` implies
 `-mockVoiceEngine`, because a mocked join hands back a token no real media
 server would accept. `VoiceEngineMock` **enforces** the rule rather than
 recording it: a connection made with `canPublish: false` refuses to open the
@@ -389,7 +402,10 @@ moderator's question, one ended, one open link), `notOpen` (the flag is off: no
 entry points), `struck` (one strike: the right to vouch is gone) and `empty`. Its
 link `mock-khalid-2026-link` was written by @noura for Khalid Al-Harbi, Saudi,
 born 12 April 1995: the claim plays the server's matching, mismatches and the
-third that closes it. `AuthServiceMock` adds `vouched` and `vouchPending`.
+third that closes it. `AuthServiceMock` adds `vouched` and `vouchPending`;
+`NotificationsServiceMock` adds `vouching` (each vouching notice, with and
+without `vouch_role`); `FeedServiceMock.vouched` (@khalid, vouched for by
+@noor · Saudi Arabia) is in the mocked People search.
 `-openLink URL` opens a sila.gmai.sa link on launch, as a tap would:
 
 ```bash
@@ -411,7 +427,8 @@ To see the whole app without a backend:
 
 ## Tests
 
-869 total: 845 unit (74 opt-in, see below) and 24 XCUITests. The UI tests drive
+1,516 total: 1,458 unit (78 opt-in, see below) and 58 XCUITests (41 journeys, 16
+reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a
 broken route, an unpresented sheet or an untappable button, since every view

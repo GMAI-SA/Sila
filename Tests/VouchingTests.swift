@@ -725,6 +725,346 @@ final class VouchingTests: XCTestCase {
     }
 }
 
+// MARK: - After the review (the fixer's pass)
+
+/// What the code review and the simulator run found, each held by a test:
+/// the answer to a finding survives a failed send, limits count the way the
+/// server counts, the link sheet does not lose its one link, a claim already
+/// waiting is refused at once, a dropped connection is not "this link can't
+/// be used", `vouch_role` decides where a row goes, the waiting wall reads
+/// the voucher's answer, and a link does not outlive a sign-out.
+@MainActor
+final class VouchingReviewTests: XCTestCase {
+
+    override func tearDown() {
+        L10n.use(nil)
+        super.tearDown()
+    }
+
+    private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
+        try JSONCoding.decoder.decode(T.self, from: Data(json.utf8))
+    }
+
+    // MARK: The written answer (§5)
+
+    func testAnAnswerThatFailsToSendIsKeptAndOneThatSendsIsCleared() async throws {
+        let mock = VouchingServiceMock(scenario: .voucher)
+        let model = VouchingViewModel(service: mock)
+        await model.load()
+        let summoned = try XCTUnwrap(model.overview?.active.first { $0.awaitsAnswer })
+        let written = "I have known him since school and I stand by what I said."
+        model.statements[summoned.id] = written
+
+        await mock.setAnswerFailure(.transport("The network connection was lost."))
+        await model.answer(summoned, .reattest)
+        XCTAssertEqual(model.statements[summoned.id], written, "a failed send must not wipe the answer")
+        XCTAssertNotNil(model.toast)
+
+        await mock.setAnswerFailure(nil)
+        await model.answer(summoned, .reattest)
+        XCTAssertNil(model.statements[summoned.id], "sent: the box empties")
+    }
+
+    func testTheAnswersBoundsAreCountedAsTheServerCountsThem() async throws {
+        let mock = VouchingServiceMock(scenario: .voucher)
+        let model = VouchingViewModel(service: mock)
+        await model.load()
+        let summoned = try XCTUnwrap(model.overview?.active.first { $0.awaitsAnswer })
+        // Five letters with a shadda and harakat: five characters on screen,
+        // ten code points on the wire — the server's ten.
+        model.statements[summoned.id] = "عَلِيّ نَعَم"
+        XCTAssertLessThan(("عَلِيّ نَعَم" as String).count, 10)
+        await model.answer(summoned, .reattest)
+        let calls = await mock.recordedCalls
+        XCTAssertTrue(calls.contains("answer:reattest"), "ten code points is ten to the server")
+    }
+
+    func testClampingCutsByCodePointsAndNeverThroughACharacter() {
+        let tashkeel = "خَالِد"                                   // 3 letters + 3 marks = 6 code points
+        XCTAssertEqual(tashkeel.serverLength, 6)
+        XCTAssertEqual(tashkeel.clamped(toServerLength: 6), tashkeel)
+        XCTAssertEqual(tashkeel.clamped(toServerLength: 3).serverLength, 3)
+        let family = "👨‍👩‍👧" + "a"                                // one character, five code points
+        XCTAssertEqual(family.clamped(toServerLength: 4), "", "a character is never split")
+        XCTAssertEqual(family.clamped(toServerLength: 5), "👨‍👩‍👧")
+        let note = String(repeating: "مَ", count: 40)              // 40 characters, 80 code points
+        XCTAssertEqual(note.clamped(toServerLength: VouchInviteViewModel.labelLimit).serverLength, 60)
+    }
+
+    // MARK: The link sheet (§5)
+
+    private func mintedSheet() async -> VouchInviteViewModel {
+        let model = VouchInviteViewModel(service: VouchingServiceMock(scenario: .empty),
+                                         analytics: RecordingAnalyticsClient(), onMinted: {})
+        model.hasAcknowledgedWarnings = true
+        model.draft = VouchDetailsDraft(fullName: "Khalid Al-Harbi", nationality: "SA", dateOfBirth: ISODay.date("1995-04-12"))
+        model.knowsPersonally = true; model.adult = true; model.realName = true; model.singleAccount = true
+        await model.mint()
+        return model
+    }
+
+    func testAMintedLinkThatWentNowhereAsksBeforeTheSheetCloses() async {
+        let model = await mintedSheet()
+        XCTAssertNotNil(model.minted)
+        XCTAssertFalse(model.mayCloseFreely, "no swipe away: the link is shown this once")
+        XCTAssertFalse(model.requestClose(), "Done asks first")
+        XCTAssertTrue(model.isConfirmingClose)
+        XCTAssertTrue(model.requestClose(), "and closes when asked again")
+
+        let copied = await mintedSheet()
+        copied.didCopy()
+        XCTAssertTrue(copied.mayCloseFreely)
+        XCTAssertTrue(copied.requestClose())
+
+        let shared = await mintedSheet()
+        shared.didShare()
+        XCTAssertTrue(shared.mayCloseFreely)
+
+        let empty = VouchInviteViewModel(service: VouchingServiceMock(scenario: .empty),
+                                         analytics: RecordingAnalyticsClient(), onMinted: {})
+        XCTAssertTrue(empty.requestClose(), "nothing minted, nothing to lose")
+    }
+
+    // MARK: The claim (§5, §11)
+
+    func testAClaimAlreadyWaitingIsRefusedBeforeTheWarningsAndTheForm() async {
+        L10n.use("en")
+        let mock = VouchingServiceMock()
+        let model = VouchClaimViewModel(token: VouchingServiceMock.openToken, isSignedIn: true,
+                                        pendingClaim: AuthServiceMock.mockVouch(pending: true),
+                                        service: mock, onClaimed: { _ in })
+        await model.load()
+        guard case let .refused(message) = model.phase else { return XCTFail("offered the form: \(model.phase)") }
+        XCTAssertTrue(message.contains("@noura"), message)
+        let calls = await mock.recordedCalls
+        XCTAssertTrue(calls.isEmpty, "the landing is not even read")
+    }
+
+    func testADroppedConnectionIsNotALinkThatCannotBeUsed() async {
+        let mock = VouchingServiceMock()
+        await mock.setLandingFailure(.transport("The request timed out."))
+        let model = VouchClaimViewModel(token: VouchingServiceMock.openToken, isSignedIn: true,
+                                        service: mock, onClaimed: { _ in })
+        await model.load()
+        guard case .failed = model.phase else { return XCTFail("a timeout read as \(model.phase)") }
+
+        await mock.setLandingFailure(nil)
+        await model.load()
+        guard case .open = model.phase else { return XCTFail("the retry did not open the link") }
+
+        await mock.setLandingFailure(.http(status: 500, message: "Internal Server Error"))
+        await model.load()
+        guard case .failed = model.phase else { return XCTFail("a server error read as \(model.phase)") }
+
+        XCTAssertTrue(VouchClaimViewModel.isUnusableLink(APIError.api(code: .inviteUnavailable, message: "", status: 404)))
+        XCTAssertTrue(VouchClaimViewModel.isUnusableLink(APIError.http(status: 404, message: "")))
+        XCTAssertFalse(VouchClaimViewModel.isUnusableLink(APIError.transport("offline")))
+    }
+
+    func testEachMismatchIsCountedSoItCanBeAnnounced() async {
+        let model = VouchClaimViewModel(token: VouchingServiceMock.openToken, isSignedIn: true,
+                                        service: VouchingServiceMock(), onClaimed: { _ in })
+        await model.load()
+        model.hasAcknowledgedWarnings = true
+        model.draft = VouchDetailsDraft(fullName: "Somebody Else", nationality: "SA", dateOfBirth: ISODay.date("1995-04-12"))
+        model.adult = true; model.realName = true; model.singleAccount = true; model.terms = true
+        await model.submit()
+        XCTAssertEqual(model.mismatchSerial, 1)
+        await model.submit()
+        XCTAssertEqual(model.mismatchSerial, 2, "every try that failed is said, even with the same fields")
+    }
+
+    // MARK: Which side a notice is for (§14)
+
+    private func notice(_ kind: String, role: String?) throws -> UserNotification {
+        try decode(UserNotification.self, """
+        {"id": "99999999-0000-4000-8000-000000000002", "kind": "\(kind)",
+         "actor": {"id": "11111111-0000-4000-8000-000000000001", "handle": "noura", "display_name": "Noura", "is_verified": true},
+         "vouch_id": "66666666-0000-4000-8000-000000000002",
+         "vouch_role": \(role.map { "\"\($0)\"" } ?? "null"),
+         "detail": "expired", "read": false, "created_at": "2026-09-26T00:00:00+00:00"}
+        """)
+    }
+
+    func testVouchRoleIsReadAndAnUnknownWordIsNone() throws {
+        XCTAssertEqual(try notice("vouch_ended", role: "person").vouchRole, .person)
+        XCTAssertEqual(try notice("vouch_ended", role: "voucher").vouchRole, .voucher)
+        XCTAssertNil(try notice("vouch_ended", role: nil).vouchRole)
+        XCTAssertNil(try notice("vouch_ended", role: "bystander").vouchRole, "an unknown side is no side")
+    }
+
+    func testAnEndedVouchOpensTheSideTheServerNamesNotAGuess() async throws {
+        // The person whose vouch lapsed has since verified: not vouched now.
+        let person = try notice("vouch_ended", role: "person")
+        XCTAssertEqual(NotificationsViewModel.vouchDestination(for: person, viewerIsVouched: false), .ownVouch,
+                       "a person who verified since still opens their own vouch")
+        let voucher = try notice("vouch_ended", role: "voucher")
+        XCTAssertEqual(NotificationsViewModel.vouchDestination(for: voucher, viewerIsVouched: true), .vouching)
+
+        // Without the word, the old guess.
+        let unnamed = try notice("vouch_ended", role: nil)
+        XCTAssertEqual(NotificationsViewModel.vouchDestination(for: unnamed, viewerIsVouched: true), .ownVouch)
+        XCTAssertEqual(NotificationsViewModel.vouchDestination(for: unnamed, viewerIsVouched: false), .vouching)
+        XCTAssertEqual(NotificationsViewModel.vouchDestination(for: try notice("vouch_claimed", role: nil),
+                                                               viewerIsVouched: false), .vouching)
+
+        let model = NotificationsViewModel(service: NotificationsServiceMock(scenario: .empty), feed: FeedServiceMock(),
+                                           analytics: RecordingAnalyticsClient(), viewerIsVouched: { false })
+        let opened = await model.open(person)
+        XCTAssertEqual(opened, .ownVouch)
+    }
+
+    func testTheMockServesEveryVouchingShape() async throws {
+        let mock = NotificationsServiceMock(scenario: .vouching)
+        let page = try await mock.fetchNotifications(cursor: nil, limit: 20, unreadOnly: false)
+        XCTAssertTrue(page.notifications.allSatisfy { $0.kind.isVouching })
+        XCTAssertTrue(page.notifications.contains { $0.vouchRole == .person })
+        XCTAssertTrue(page.notifications.contains { $0.vouchRole == .voucher })
+        XCTAssertTrue(page.notifications.contains { $0.vouchRole == nil }, "one without the word, routed by its kind")
+    }
+
+    // MARK: The waiting wall (§2, §8)
+
+    func testCheckingStatusWhileAClaimWaitsReadsTheAccountToo() async {
+        var reads = 0
+        let wall = VerificationWallViewModel(status: .unstarted, service: AuthServiceMock(scenario: .unstarted),
+                                             analytics: RecordingAnalyticsClient())
+        wall.refreshSession = { reads += 1 }
+        await wall.refresh()
+        XCTAssertEqual(reads, 0, "no claim: /verification/status is the whole answer")
+
+        wall.pendingVouch = AuthServiceMock.mockVouch(pending: true)
+        await wall.refresh()
+        XCTAssertEqual(reads, 1, "a claim's answer is on the account, not in the status")
+    }
+
+    func testTheWallWatchesAClaimForAWhileAndStopsAtTheAnswer() async {
+        var reads = 0
+        let wall = VerificationWallViewModel(status: .unstarted, service: AuthServiceMock(scenario: .unstarted),
+                                             analytics: RecordingAnalyticsClient())
+        wall.pause = { _ in }
+        wall.pendingVouch = AuthServiceMock.mockVouch(pending: true)
+        wall.refreshSession = {
+            reads += 1
+            if reads == 3 { wall.pendingVouch = nil }   // the voucher answered
+        }
+        await wall.watchForVouchAnswer(attempts: 10)
+        XCTAssertEqual(reads, 3, "stops once the claim has its answer")
+
+        reads = 0
+        wall.pendingVouch = AuthServiceMock.mockVouch(pending: true)
+        wall.refreshSession = { reads += 1 }
+        await wall.watchForVouchAnswer(attempts: 4)
+        XCTAssertEqual(reads, 4, "and gives up after its few reads")
+    }
+
+    func testAVouchingPushIsKnownByItsKind() {
+        XCTAssertTrue(PushRegistrar.isVouching(["kind": "vouch_confirmed", "vouch_id": "x"]))
+        XCTAssertFalse(PushRegistrar.isVouching(["kind": "reply"]))
+        XCTAssertFalse(PushRegistrar.isVouching([:]))
+    }
+
+    // MARK: Signing out
+
+    func testSigningOutLetsAWaitingLinkGo() async {
+        let container = AppContainer.preview(scenario: .unstarted)
+        container.vouchInbox.receive(token: "abcdefghijklmnopqrstuvwxyz012345")
+        await container.session.signOut()
+        XCTAssertNil(container.vouchInbox.pending, "the next account on this phone does not inherit it")
+    }
+}
+
+// MARK: - Copy and direction
+
+@MainActor
+final class VouchCopyReviewTests: XCTestCase {
+
+    override func tearDown() {
+        L10n.use(nil)
+        super.tearDown()
+    }
+
+    private static let catalogue: [String: Any] = {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Sila/Resources/Localizable.xcstrings")
+        let json = (try? JSONSerialization.jsonObject(with: Data(contentsOf: url))) as? [String: Any]
+        return json?["strings"] as? [String: Any] ?? [:]
+    }()
+
+    private func values(_ node: Any) -> [String] {
+        guard let dict = node as? [String: Any] else { return [] }
+        if let unit = dict["stringUnit"] as? [String: Any], let value = unit["value"] as? String { return [value] }
+        return dict.values.flatMap(values)
+    }
+
+    /// Every Arabic sentence that puts "@" before a handle keeps the two one
+    /// left-to-right piece — otherwise the "@" drifts to the far end
+    /// ("أُزيل aziz@").
+    func testEveryArabicHandleIsOneLeftToRightPiece() throws {
+        XCTAssertFalse(Self.catalogue.isEmpty)
+        var loose: [String] = []
+        for (key, raw) in Self.catalogue {
+            guard let entry = raw as? [String: Any], let locs = entry["localizations"] as? [String: Any],
+                  let arabic = locs["ar"] else { continue }
+            for value in values(arabic) {
+                let scalars = Array(value.unicodeScalars)
+                for (index, scalar) in scalars.enumerated() where scalar == "@" && index + 1 < scalars.count
+                    && (scalars[index + 1] == "%" || scalars[index + 1] == "{") {
+                    if index == 0 || scalars[index - 1].value != 0x2066 { loose.append(key) }
+                }
+            }
+        }
+        XCTAssertEqual(loose.sorted(), [], "these put a handle in Arabic without isolating it")
+        L10n.use("ar")
+        XCTAssertTrue(L10n.t("groups.member.removed", "aziz").unicodeScalars.contains { $0.value == 0x2066 })
+        XCTAssertTrue(L10n.t("rooms.invites.revoked", "aziz").unicodeScalars.contains { $0.value == 0x2066 })
+    }
+
+    func testTheWelcomeNoLongerSaysEveryAccountIsVerified() {
+        L10n.use("en")
+        XCTAssertEqual(L10n.t("auth.wall.verified.message"),
+                       "Welcome to Sila. Every account you'll see here belongs to a real person — verified, or vouched for by one.")
+        L10n.use("ar")
+        XCTAssertTrue(L10n.t("auth.wall.verified.message").contains("مُزكّى"))
+    }
+
+    func testTheRejectionHintSaysWhoDecided() {
+        L10n.use("en")
+        XCTAssertEqual(VerificationRejection.reasonHint("not_a_document"), "Why the automatic check turned the photos away")
+        XCTAssertEqual(VerificationRejection.reasonHint("document_expired"), "Why the decision was made")
+        XCTAssertEqual(VerificationRejection.reasonHint("The photo was too dark to read."),
+                       "The reviewer's explanation for the decision")
+    }
+
+    func testTheSubmittedMessageAllowsForTheMinuteAndTheDay() {
+        L10n.use("en")
+        let message = L10n.t("document.submitted.message")
+        XCTAssertTrue(message.contains("within a day"))
+        XCTAssertTrue(message.contains("within minutes"), "the pre-screen can answer within a minute")
+    }
+
+    func testTheNotePlaceholderNamesNobody() {
+        for language in ["en", "ar"] {
+            L10n.use(language)
+            let placeholder = L10n.t("vouch.new.note.placeholder")
+            XCTAssertFalse(placeholder.contains("Khalid") || placeholder.contains("خالد"), placeholder)
+        }
+    }
+
+    /// A Saudi phone's calendar is Umm al-Qura; the app's dates are Gregorian
+    /// everywhere, beside a date of birth that always is.
+    func testDatesAreGregorianInArabicToo() {
+        let date = ISODay.date("2026-09-03")!.addingTimeInterval(12 * 3_600)
+        let saudi = L10n.westernDigits(Locale(identifier: "ar_SA"))
+        let since = SLFormat.dayAndMonth(date, locale: saudi)
+        XCTAssertTrue(since.contains("سبتمبر"), since)
+        XCTAssertTrue(SLFormat.date(date, locale: saudi).contains("2026"), SLFormat.date(date, locale: saudi))
+        XCTAssertFalse(SLFormat.dateTime(date, locale: saudi).contains("هـ"))
+        // Even a bare Saudi locale, whose own calendar is Umm al-Qura.
+        XCTAssertTrue(SLFormat.monthAndYear(date, locale: Locale(identifier: "ar_SA")).contains("سبتمبر"))
+    }
+}
+
 private extension VouchClaimViewModel.Phase {
     var isOpen: Bool {
         if case .open = self { return true }

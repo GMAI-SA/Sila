@@ -283,7 +283,80 @@ final class VouchingJourneyUITests: XCTestCase {
         // words around it are what is matched.
         let two = L("vouch.warning.person.two", "noura", "ar")
         XCTAssertTrue(byLabelContaining(app, String(two.prefix(20))).exists, "the second warning is not in Arabic")
+        // One language only (§12): no English beside the Arabic.
+        XCTAssertFalse(byLabel(app, L("vouch.warning.person.title")).exists, "the English title is drawn too")
+        XCTAssertFalse(byLabel(app, L("vouch.warning.continue")).exists, "the English button is drawn too")
+        // Both warnings and both buttons on screen without scrolling — on an
+        // iPhone SE too.
+        let window = app.windows.firstMatch.frame
+        for id in ["vouching.warning.person.1", "vouching.warning.person.2", "vouching.warning.person.continue",
+                   "vouching.warning.person.cancel"] {
+            let element = byId(app, id)
+            XCTAssertTrue(element.exists, "\(id) is missing")
+            XCTAssertTrue(window.contains(element.frame), "\(id) is off screen: \(element.frame) in \(window)")
+        }
         screenshot(app, named: "قبل أن تقبل")
+    }
+
+    /// Signs in from the welcome screen, as Khalid.
+    private func signInFromWelcome(_ app: XCUIApplication) {
+        let start = byId(app, "welcome.signIn")
+        XCTAssertTrue(start.waitForExistence(timeout: 20), "never reached the welcome screen")
+        start.tap()
+        let email = app.textFields.firstMatch
+        XCTAssertTrue(email.waitForExistence(timeout: 10))
+        email.tap()
+        email.typeText("khalid@example.com")
+        let password = app.secureTextFields.firstMatch
+        XCTAssertTrue(password.waitForExistence(timeout: 5))
+        password.tap()
+        password.typeText("Passw0rd!234")
+        byId(app, "signIn.submit").tap()
+    }
+
+    /// A vouched listener (contract v24 §4): no reactions, no share, and a
+    /// chat that says why it takes no line — to the room or privately to the
+    /// host — with the door to verification opening over the chat sheet.
+    func testAVouchedListenerIsOfferedNoChatNoReactionsAndNoShare() {
+        let app = launch(["-mockScenario", "vouched"])
+        signInFromWelcome(app)
+        XCTAssertTrue(byId(app, "vouching.banner").waitForExistence(timeout: 20), "never reached the feed")
+
+        app.buttons["Rooms"].tap()
+        XCTAssertTrue(app.staticTexts["LIVE NOW"].waitForExistence(timeout: 15), "no live rooms")
+        app.staticTexts["LIVE"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts[L("rooms.listening.title")].waitForExistence(timeout: 15), "not in the room")
+
+        XCTAssertTrue(byLabelContaining(app, String(L("vouch.limited.rooms").prefix(40))).exists,
+                      "the room does not say what waits for verification")
+        XCTAssertFalse(byId(app, "rooms.reaction.👏").exists, "a vouched listener was offered reactions")
+        XCTAssertFalse(app.buttons[L("rooms.share.a11yLabel")].exists, "a vouched listener was offered the share")
+        XCTAssertFalse(app.buttons[L("rooms.hand.raise")].exists, "a vouched listener was offered the hand")
+
+        // Nothing past the screen's edges: the reactions row used to push
+        // the whole room 412pt wide.
+        let width = app.windows.firstMatch.frame.width
+        let header = app.staticTexts[L("rooms.live.stage.header").uppercased()]
+        XCTAssertTrue(header.exists)
+        XCTAssertGreaterThanOrEqual(header.frame.minX, 12, "the room runs off the left edge")
+        XCTAssertLessThanOrEqual(app.buttons["Leave room"].firstMatch.frame.maxX, width, "the room runs off the right edge")
+        screenshot(app, named: "A vouched listener's room")
+
+        byId(app, "rooms.chat.open").tap()
+        XCTAssertTrue(byId(app, "rooms.chat.vouched").waitForExistence(timeout: 10), "the chat does not say why it is closed")
+        XCTAssertFalse(app.textFields[L("rooms.chat.placeholder")].exists, "a composer was drawn")
+        XCTAssertFalse(app.buttons[L("rooms.chat.audience.host")].exists, "the private line to the host was offered")
+        screenshot(app, named: "A vouched listener's chat")
+
+        let verify = byId(app, "rooms.chat.vouched.verify")
+        XCTAssertTrue(verify.exists, "no way to verify from the chat")
+        verify.tap()
+        let notNow = byId(app, "verification.selfCover.close")
+        XCTAssertTrue(notNow.waitForExistence(timeout: 10), "the verification flow did not open over the chat sheet")
+        screenshot(app, named: "Verification over the room's chat")
+        notNow.tap()
+        XCTAssertTrue(gone(notNow, timeout: 10))
+        XCTAssertTrue(byId(app, "rooms.chat.vouched").exists, "closing the flow did not return to the chat")
     }
 }
 
@@ -405,6 +478,99 @@ final class VoucherJourneyUITests: XCTestCase {
         understand.tap()
         XCTAssertTrue(app.textFields["Full name"].waitForExistence(timeout: 5), "no details form after the warnings")
         screenshot(app, named: "Who are they?")
+    }
+
+    /// Scrolls the sheet until `element` sits clear of the bottom edge.
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+        let window = app.windows.firstMatch
+        var tries = 0
+        while (!element.isHittable || element.frame.maxY > window.frame.maxY - 80) && tries < 8 {
+            let before = element.frame
+            let from = window.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.7))
+            from.press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.45)))
+            usleep(800_000)
+            if element.frame == before { break }
+            tries += 1
+        }
+    }
+
+    /// The one moment the link exists (contract v24 §5): Share opens the
+    /// system share sheet, and a link that went nowhere does not close away
+    /// without a word.
+    func testAMintedLinkOpensTheShareSheetAndIsNotClosedAwayUnshared() {
+        let app = launch("empty")
+        signIn(app)
+        openVouching(app).tap()
+        let create = byId(app, "vouching.list.create")
+        XCTAssertTrue(create.waitForExistence(timeout: 10))
+        create.tap()
+        let understand = byId(app, "vouching.warning.voucher.continue")
+        XCTAssertTrue(understand.waitForExistence(timeout: 10))
+        understand.tap()
+
+        let name = app.textFields["Full name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Khalid Al-Harbi\n")
+        // A tap while the keyboard is still going down lands on the row as
+        // it moves, and opens nothing.
+        XCTAssertTrue(gone(app.keyboards.firstMatch, timeout: 5))
+        byId(app, "vouching.form.nationality").tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 10), "no search on the nationality list")
+        // Somebody else's nationality: not "Your nationality".
+        XCTAssertTrue(app.navigationBars["Nationality"].exists, "the voucher's list is not titled for them")
+        XCTAssertFalse(app.navigationBars["Your nationality"].exists)
+        search.tap()
+        search.typeText("Saudi")
+        let saudi = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Saudi")).firstMatch
+        XCTAssertTrue(saudi.waitForExistence(timeout: 10))
+        saudi.tap()
+        let birth = byId(app, "vouching.form.dateOfBirth")
+        XCTAssertTrue(birth.waitForExistence(timeout: 10))
+        reveal(birth, in: app)
+        birth.tap()          // opens the wheel on a date 25 years back: an adult
+        birth.tap()          // and closes it again
+        for promise in ["knows", "adult", "realName", "singleAccount"] {
+            let box = byId(app, "vouching.new.attest.\(promise)")
+            reveal(box, in: app)
+            box.tap()
+        }
+        let mint = byId(app, "vouching.new.create")
+        reveal(mint, in: app)
+        mint.tap()
+
+        let share = byId(app, "vouching.new.share")
+        XCTAssertTrue(share.waitForExistence(timeout: 10), "the link was not made")
+        screenshot(app, named: "Your link is ready")
+        share.tap()
+        let sheet = app.otherElements["ActivityListView"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10), "Share link opened no share sheet")
+        screenshot(app, named: "The share sheet")
+        // Closed without sending it anywhere.
+        let closeShare = app.buttons["Close"].firstMatch
+        if closeShare.waitForExistence(timeout: 3) {
+            closeShare.tap()
+        } else {
+            sheet.swipeDown()
+        }
+        XCTAssertTrue(share.waitForExistence(timeout: 10))
+
+        byId(app, "vouching.new.close").tap()
+        let warning = byId(app, "vouching.new.closeWarning")
+        XCTAssertTrue(warning.waitForExistence(timeout: 5), "a link that went nowhere closed without a word")
+        screenshot(app, named: "Close without sharing it?")
+
+        byId(app, "vouching.new.copy").tap()
+        XCTAssertTrue(gone(warning, timeout: 5), "copying the link settles the question")
+        byId(app, "vouching.new.close").tap()
+        XCTAssertTrue(gone(share, timeout: 10), "the sheet did not close once the link was copied")
+    }
+
+    /// Waits for `element` to leave the screen.
+    private func gone(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: element)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 
     func testAStruckVoucherIsToldTheRightIsGone() {
