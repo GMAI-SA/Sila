@@ -48,6 +48,10 @@ public final class AuthSession {
     public private(set) var documentRetake: DocumentRetake?
     /// `true` while a session-level network call is in flight.
     public private(set) var isBusy = false
+    /// `true` when the app opened on this device's copy of the account because
+    /// the server could not be reached. Cleared once `/auth/me` answers, which
+    /// the session keeps trying by itself.
+    public private(set) var isOffline = false
     /// What a guest was reaching for when they were invited to join, so the
     /// invitation can name it: "Join Sila to reply" rather than a generic
     /// prompt. Cleared when the sheet closes.
@@ -68,19 +72,41 @@ public final class AuthSession {
     private let service: AuthServiceProtocol
     private let store: AuthTokenStore
     private let analytics: AnalyticsClient
+    /// How long to wait before the `attempt`th try to reach `/auth/me` again
+    /// after an offline launch.
+    private let reconnectDelay: @Sendable (Int) async -> Void
+    private var reconnectTask: Task<Void, Never>?
 
-    public init(service: AuthServiceProtocol, store: AuthTokenStore, analytics: AnalyticsClient) {
+    /// - Parameter reconnectDelay: The wait between tries to reach the server
+    ///   after an offline launch. Defaults to 2, 4, 8… seconds, capped at a
+    ///   minute; each try itself waits for the network to come back.
+    public init(
+        service: AuthServiceProtocol,
+        store: AuthTokenStore,
+        analytics: AnalyticsClient,
+        reconnectDelay: @escaping @Sendable (Int) async -> Void = { await AuthSession.backoff($0) }
+    ) {
         self.service = service
         self.store = store
         self.analytics = analytics
+        self.reconnectDelay = reconnectDelay
+    }
+
+    /// 2, 4, 8, 16, 32, then 60 seconds between tries.
+    nonisolated public static func backoff(_ attempt: Int) async {
+        let seconds = min(60, 2 << min(attempt, 5))
+        try? await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
     }
 
     // MARK: - Boot
 
     /// Decides the launch destination from what is in the keychain.
     ///
-    /// A stored-but-expired token is refreshed once; if that fails the local
-    /// secrets are wiped and the user lands on the welcome screen.
+    /// A stored-but-expired token is refreshed once, then `/auth/me` confirms
+    /// the account. Only the server saying the credentials are dead signs the
+    /// person out. A phone that is offline, in a lift, or opening the app
+    /// while a deploy answers `502` keeps its session: the app opens on the
+    /// account cached in the keychain, says it is offline, and keeps trying.
     public func restore() async {
         isBusy = true
         defer { isBusy = false }
@@ -97,19 +123,114 @@ public final class AuthSession {
             }
             let fresh = try await service.currentUser()
             user = fresh
+            isOffline = false
             await applyRouteForCurrentUser()
         } catch {
-            // Any failure to prove the session is real means: sign in again.
-            await store.clear()
-            user = nil
-            route = .unauthenticated
+            await restoreFailed(error)
         }
+    }
+
+    /// What a launch that could not confirm the session does next.
+    private func restoreFailed(_ error: Error) async {
+        let failure = SessionCheckFailure(error)
+        if failure == .refused {
+            await endRefusedSession()
+            return
+        }
+        guard let cached = await store.user() else {
+            // Nothing to route on. The keychain is kept, so the next launch
+            // tries again; the person can sign in meanwhile.
+            route = .unauthenticated
+            return
+        }
+        user = cached
+        applyCachedRoute()
+        if failure == .unreachable {
+            isOffline = true
+            scheduleReconnect()
+        }
+    }
+
+    /// The server said these credentials will never work again.
+    private func endRefusedSession() async {
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        await store.clear()
+        user = nil
+        isOffline = false
+        verificationReport = nil
+        documentRetake = nil
+        route = .unauthenticated
+    }
+
+    /// Keeps trying `/auth/me` after an offline launch, until it answers or
+    /// the session ends some other way.
+    ///
+    /// - Parameter immediately: Try once before the first wait.
+    private func scheduleReconnect(immediately: Bool = false) {
+        reconnectTask?.cancel()
+        let delay = reconnectDelay
+        reconnectTask = Task { [weak self] in
+            var attempt = 0
+            var wait = !immediately
+            while !Task.isCancelled {
+                if wait { await delay(attempt) }
+                wait = true
+                guard !Task.isCancelled, let self else { return }
+                if await self.reconnect() { return }
+                attempt += 1
+            }
+        }
+    }
+
+    /// The app came back to the foreground: if it is still running on the
+    /// cached account, try the server now rather than at the end of the
+    /// current wait, which can be a minute long.
+    public func retryIfOffline() {
+        guard isOffline else { return }
+        scheduleReconnect(immediately: true)
+    }
+
+    /// One more try. `true` when there is nothing left to try for.
+    private func reconnect() async -> Bool {
+        guard isOffline, user != nil else { return true }
+        do {
+            let fresh = try await service.currentUser()
+            guard isOffline, user != nil else { return true }
+            user = fresh
+            isOffline = false
+            await applyRouteForCurrentUser()
+            return true
+        } catch {
+            guard isOffline, user != nil else { return true }
+            switch SessionCheckFailure(error) {
+            case .refused:
+                await endRefusedSession()
+                return true
+            case .declined:
+                // The server answered; whatever it said, the screens that
+                // make the next call will hear it too.
+                isOffline = false
+                return true
+            case .unreachable:
+                return false
+            }
+        }
+    }
+
+    /// Stops trying to reach the server for an offline launch — the session
+    /// was replaced, confirmed another way, or ended.
+    private func stopReconnecting() {
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        isOffline = false
     }
 
     // MARK: - Transitions
 
     /// Adopts a freshly issued session and routes accordingly.
     public func adopt(_ pair: TokenPair) async {
+        stopReconnecting()
         user = pair.user
         await applyRouteForCurrentUser()
     }
@@ -167,6 +288,7 @@ public final class AuthSession {
         isBusy = true
         defer { isBusy = false }
         if let fresh = try? await service.currentUser() {
+            stopReconnecting()
             user = fresh
             await applyRouteForCurrentUser()
         } else {
@@ -225,6 +347,7 @@ public final class AuthSession {
     public func signOut() async {
         isBusy = true
         defer { isBusy = false }
+        stopReconnecting()
         await willSignOut?()
         try? await service.signOut()
         // The local wipe is what ends the session, whichever service is
@@ -270,6 +393,22 @@ public final class AuthSession {
                 applyRoute(for: report.status, reason: report.rejectionReason)
                 return
             }
+        }
+        applyRoute(for: user.verificationStatus, reason: verificationReport?.rejectionReason)
+    }
+
+    /// Routes on the account as this device last knew it, with no network:
+    /// the offline launch, where every call would only wait for a connection
+    /// that is not there. The wall's reason and timestamps follow once the
+    /// server answers.
+    private func applyCachedRoute() {
+        guard let user else {
+            route = .unauthenticated
+            return
+        }
+        guard user.emailVerified else {
+            route = .awaitingEmailVerification(email: user.email)
+            return
         }
         applyRoute(for: user.verificationStatus, reason: verificationReport?.rejectionReason)
     }

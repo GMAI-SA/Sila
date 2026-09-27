@@ -54,6 +54,9 @@ struct SilaApp: App {
                     .onChange(of: scenePhase, initial: true) { _, phase in
                         guard phase == .active else { return }
                         container.analytics.track(.appOpened)
+                        // Opened on the cached account because the server
+                        // could not be reached: try it again now.
+                        container.session.retryIfOffline()
                         // A claim waiting at the wall: the voucher may have
                         // answered while the app was away.
                         if container.session.user?.vouch?.isPending == true {

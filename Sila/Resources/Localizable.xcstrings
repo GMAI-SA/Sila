@@ -3837,6 +3837,24 @@
         }
       }
     },
+    "app.offline.banner": {
+      "comment": "Strip across the top when the app opened on this device's copy of the account because the server could not be reached (no connection, or the server failing). It goes by itself once the server answers.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر الوصول إلى صلة الآن، لذا قد لا يكون ما تراه محدّثًا. ستعيد الاتصال تلقائيًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't reach Sila right now, so this may be out of date. It will reconnect by itself."
+          }
+        }
+      }
+    },
     "app.placeholder.signedInAs": {
       "comment": "VoiceOver label for the email address shown on the pre-feed screen. The %@ is the address itself.",
       "extractionState": "manual",

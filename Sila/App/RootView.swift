@@ -130,8 +130,18 @@ public struct RootView: View {
                 sessionContent
             }
         }
+        // Opened on the keychain's copy of the account because the server
+        // could not be reached; the session keeps trying and this goes by
+        // itself when it answers.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if container.session.isOffline, isSignedIn {
+                OfflineSessionBanner()
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         .animation(.easeInOut(duration: 0.28), value: container.session.route)
         .animation(.easeInOut(duration: 0.28), value: container.suspension.isSuspended)
+        .animation(.easeInOut(duration: 0.28), value: container.session.isOffline)
         .tnToast(Binding(
             get: { container.router.toast },
             set: { container.router.toast = $0 }
