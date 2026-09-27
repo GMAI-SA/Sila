@@ -352,6 +352,45 @@ Around those two:
   carries no name); a tap lands on the voucher's list or the person's own vouch,
   by the push's link, or by its kind when the link is missing.
 
+## The session, and what it leaves on the phone
+
+The token pair and the cached account live in the Keychain
+(`WhenUnlockedThisDeviceOnly`). Six rules keep the session from ending when it
+should not, and from outliving itself when it should, each asserted in tests:
+
+* **One refresh at a time** (`TokenRefreshTests`). The server revokes a refresh
+  token on first use, and after half an hour in the background the feed, the
+  badges, push and telemetry all find the access token expiring together.
+  `AuthService.refreshToken` is single-flight (`TokenRefresher`): callers that
+  arrive while a refresh runs share it, a caller holding an already-rotated
+  token gets the stored pair, a refusal only wipes the store if the refused
+  token is still the stored one, and a refresh that lands after sign-out does
+  not bring the session back.
+* **Only a refusal signs out** (`OfflineRestoreTests`). A cold launch that
+  cannot reach the server — offline, a lift, a deploy answering `502`, a
+  captive portal, a proxy's or firewall's error page — keeps the session,
+  opens on the cached account with an offline strip, and keeps retrying
+  `/auth/me` (with a backoff, and at once when the app returns to the
+  foreground) until it answers. A `401` is the only answer that ends the
+  session; a `403` in the API's own words (suspended, deletion pending) keeps
+  it and lets the screens route.
+* **Nothing the API answers is cached** (`SessionLeftoversTests`). The API
+  client's session has no `URLCache`, so `/auth/me` (email, verified name),
+  messages and notifications never reach `Cache.db`.
+* **Sign-out sweeps** — the shared URL cache (images, GIFs) and the account
+  export go with the Keychain items, whether the person signed out or the
+  server ended the session (`SessionLeftovers`, called from
+  `AuthTokenStore.clear()`).
+* **The export does not linger.** It is written with complete file protection
+  and removed once the share sheet reports it went somewhere, when Account
+  closes, when deletion is requested, and at sign-out.
+* **A reinstall starts signed out** (`ReinstallTests`). iOS keeps Keychain
+  items when the app is deleted; the store keeps an install marker in
+  UserDefaults and, on the first read of an install without one, wipes the
+  Keychain first. An update from a build before the marker is recognised by
+  the last-email entry every sign-in writes, and a locked phone decides
+  nothing.
+
 ## Running without a backend
 
 ```bash

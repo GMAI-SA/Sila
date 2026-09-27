@@ -22,7 +22,7 @@ public actor AuthTokenStore {
 
     /// - Parameters:
     ///   - keychain: Where the secrets live.
-    ///   - storage: Flags and the last email.
+    ///   - storage: Flags and the last email; also where the install marker is kept.
     ///   - leftovers: What ``clear()`` sweeps besides the keychain.
     public init(
         keychain: KeychainClient,
@@ -147,7 +147,39 @@ public actor AuthTokenStore {
     private func hydrateIfNeeded() {
         guard !didHydrate else { return }
         didHydrate = true
+        forgetAPreviousInstallIfNeeded()
         cachedToken = (try? keychain.load(.authToken, as: AuthToken.self)) ?? nil
         cachedUser = (try? keychain.load(.cachedUser, as: AuthUser.self)) ?? nil
+    }
+
+    /// Wipes a session left over from an earlier install of the app, before
+    /// anything reads it.
+    ///
+    /// iOS deletes an app's UserDefaults along with the app but keeps its
+    /// Keychain items. Somebody who deletes Sila to sign out of a shared or
+    /// handed-down phone would otherwise be signed straight back in by
+    /// reinstalling it within the refresh token's thirty days, with their
+    /// cached account — verified name included — still there.
+    private func forgetAPreviousInstallIfNeeded() {
+        guard !storage.flag(.installed) else { return }
+        // Builds from before the marker write the last email at every
+        // sign-in. It surviving means UserDefaults survived: an update, not a
+        // reinstall, and the session is the person's own.
+        if storage.value(for: .lastSignedInEmail, as: String.self) != nil {
+            storage.setFlag(true, for: .installed)
+            return
+        }
+        do {
+            // Read before deleting. An item kept `WhenUnlocked` cannot be read
+            // while the phone is locked, and before the first unlock after a
+            // restart UserDefaults reads back empty as well, which would look
+            // exactly like a reinstall. A read that throws decides nothing: the
+            // marker stays unset and the next launch asks again.
+            _ = try keychain.load(.authToken)
+            try keychain.deleteAll()
+            storage.setFlag(true, for: .installed)
+        } catch {
+            return
+        }
     }
 }

@@ -40,6 +40,10 @@ public struct StorageKey: RawRepresentable, Hashable, Sendable {
     public static let appLanguage = StorageKey("com.socialsa.sila.appLanguage")
     /// For You's order: `ranked` or `newest`.
     public static let forYouOrder = StorageKey("com.socialsa.sila.forYouOrder")
+    /// Set on the first launch of this install. iOS deletes UserDefaults with
+    /// the app but keeps its Keychain items, so a missing marker next to a
+    /// surviving session means the app was deleted and installed again.
+    public static let installed = StorageKey("com.socialsa.sila.installed")
 }
 
 /// `UserDefaults`-backed ``StorageClient``.
