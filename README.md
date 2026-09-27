@@ -416,7 +416,8 @@ born 12 April 1995: the claim plays the server's matching, mismatches and the
 third that closes it. `AuthServiceMock` adds `vouched`, `vouchPending` and
 `vouchEnded` (back at the wall: @noura declined the claim, said by `last_ended`);
 `NotificationsServiceMock` adds `vouching` (each vouching notice, with and
-without `vouch_role`); `FeedServiceMock.vouched` (@khalid, vouched for by
+without `vouch_role` — what `-mockScenario vouched` serves unless
+`-mockNotificationsScenario` says otherwise); `FeedServiceMock.vouched` (@khalid, vouched for by
 @noor · Saudi Arabia) is in the mocked People search.
 `-openLink URL` opens a sila.gmai.sa link on launch, as a tap would:
 

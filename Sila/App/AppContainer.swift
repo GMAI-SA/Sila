@@ -412,7 +412,10 @@ public final class AppContainer {
             self.notificationsService = notificationsService
         } else if flags.useMockNotifications {
             self.notificationsService = NotificationsServiceMock(
-                scenario: flags.mockNotificationsScenario,
+                // A vouched session's alerts are its vouching notices, unless
+                // a test asked for another world.
+                scenario: flags.mockScenario == .vouched && flags.mockNotificationsScenario == .populated
+                    ? .vouching : flags.mockNotificationsScenario,
                 latency: 0.25
             )
         } else {

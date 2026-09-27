@@ -260,6 +260,12 @@ final class VouchingJourneyUITests: XCTestCase {
         XCTAssertTrue(byId(app, "vouching.notice.verify").exists, "no way to verify from the closed tab")
         screenshot(app, named: "Messages, vouched")
 
+        // The mocked alerts are the vouching notices a vouched account gets.
+        app.buttons["Alerts"].tap()
+        XCTAssertTrue(byLabelContaining(app, "confirmed your vouch").waitForExistence(timeout: 10),
+                      "the vouched session's alerts carry no vouching notice")
+        screenshot(app, named: "Alerts, vouched")
+
         // The countdown opens the person's own vouch.
         app.buttons["Home"].tap()
         XCTAssertTrue(banner.waitForExistence(timeout: 10))
