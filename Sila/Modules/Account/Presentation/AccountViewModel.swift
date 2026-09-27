@@ -175,6 +175,8 @@ public final class AccountViewModel {
     private let service: AccountServiceProtocol
     private let analytics: AnalyticsClient
     private let onSignOut: (@MainActor () -> Void)?
+    /// Where the export is written, and removed from.
+    private let leftovers: SessionLeftovers
 
     /// - Parameters:
     ///   - service: Account backend.
@@ -186,11 +188,13 @@ public final class AccountViewModel {
     public init(
         service: AccountServiceProtocol,
         analytics: AnalyticsClient,
-        onSignOut: (@MainActor () -> Void)? = nil
+        onSignOut: (@MainActor () -> Void)? = nil,
+        leftovers: SessionLeftovers = SessionLeftovers()
     ) {
         self.service = service
         self.analytics = analytics
         self.onSignOut = onSignOut
+        self.leftovers = leftovers
     }
 
     // MARK: - Derived state
@@ -538,7 +542,7 @@ public final class AccountViewModel {
 
         do {
             let data = try await service.exportData()
-            exportFile = try Self.writeExport(data)
+            exportFile = try leftovers.writeAccountExport(data)
         } catch {
             guard !handledDeactivation(error) else { return }
             exportError = APIError.wrapping(error).presentableMessage
@@ -546,21 +550,27 @@ public final class AccountViewModel {
         }
     }
 
-    /// Writes the export where `ShareLink` can reach it.
-    ///
-    /// A fixed filename, overwritten each time: an export is a snapshot of an
-    /// account, and leaving a pile of stale copies of somebody's whole account
-    /// in the caches directory is the opposite of what this feature is for.
-    static func writeExport(_ data: Data) throws -> URL {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("sila-account-export.json")
-        try data.write(to: url, options: .atomic)
-        return url
+    // The export is written under one fixed name, overwritten each time, and
+    // removed as soon as it has done its job: once it has been shared, when
+    // the screen closes, when deletion is requested, and at sign-out. It is
+    // the whole account, and a copy left in `tmp` stays until iOS happens to
+    // purge it, whoever is signed in by then.
+
+    /// The share sheet sent the export somewhere: the copy on this phone has
+    /// done its job.
+    public func exportShared() {
+        clearExport()
     }
 
-    /// Forgets the downloaded copy.
+    /// Account closed: nothing downloaded here outlives the screen.
+    public func screenClosed() {
+        clearExport()
+    }
+
+    /// Forgets the downloaded copy, and removes it from disk.
     public func clearExport() {
         if let exportFile { try? FileManager.default.removeItem(at: exportFile) }
+        leftovers.removeAccountExport()
         exportFile = nil
     }
 
@@ -578,6 +588,8 @@ public final class AccountViewModel {
             deletionSchedule = schedule
             deletion = DeletionConfirmation()
             presentedSheet = nil
+            // An account on its way out leaves no copy of itself behind.
+            clearExport()
             // The account is deactivated from this moment, so the only screen
             // that can still do anything is the one that undoes it.
             route = .recovery

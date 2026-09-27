@@ -14,14 +14,24 @@ public actor AuthTokenStore {
 
     private let keychain: KeychainClient
     private let storage: StorageClient
+    private let leftovers: SessionLeftovers
 
     private var cachedToken: AuthToken?
     private var cachedUser: AuthUser?
     private var didHydrate = false
 
-    public init(keychain: KeychainClient, storage: StorageClient) {
+    /// - Parameters:
+    ///   - keychain: Where the secrets live.
+    ///   - storage: Flags and the last email.
+    ///   - leftovers: What ``clear()`` sweeps besides the keychain.
+    public init(
+        keychain: KeychainClient,
+        storage: StorageClient,
+        leftovers: SessionLeftovers = SessionLeftovers()
+    ) {
         self.keychain = keychain
         self.storage = storage
+        self.leftovers = leftovers
     }
 
     /// The stored token, loading it from the keychain on first access.
@@ -90,7 +100,8 @@ public actor AuthTokenStore {
         return try? keychain.loadString(.biometricEmail)
     }
 
-    /// Wipes token, cached user and biometric credential.
+    /// Wipes token, cached user and biometric credential, and sweeps what the
+    /// session left on disk: the account export and the shared URL cache.
     public func clear() {
         cachedToken = nil
         cachedUser = nil
@@ -100,6 +111,7 @@ public actor AuthTokenStore {
         try? keychain.delete(.biometricEmail)
         try? keychain.delete(.biometricLabel)
         storage.setFlag(false, for: .biometricEnabled)
+        leftovers.sweep()
     }
 
     private func hydrateIfNeeded() {

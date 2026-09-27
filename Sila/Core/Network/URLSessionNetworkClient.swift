@@ -8,7 +8,8 @@ import Foundation
 public final class URLSessionNetworkClient: NetworkClient {
 
     private let baseURL: URL
-    private let session: URLSession
+    /// The transport. Internal so a test can assert how it is configured.
+    let session: URLSession
 
     /// Told whenever a request comes back `403 account_suspended`.
     ///
@@ -30,7 +31,8 @@ public final class URLSessionNetworkClient: NetworkClient {
     /// Creates a client.
     /// - Parameters:
     ///   - baseURL: Defaults to ``AppConfig/apiBaseURL``.
-    ///   - session: Injectable for tests. Defaults to an ephemeral-friendly default session.
+    ///   - session: Injectable for tests. Defaults to a session built from
+    ///     ``makeConfiguration()``, which caches nothing.
     ///   - suspension: Told about `403 account_suspended`. `nil` in tests and
     ///     previews, where there is no app shell to route.
     ///   - verification: Told about `403 unverified`. `nil` for the same reason.
@@ -43,22 +45,33 @@ public final class URLSessionNetworkClient: NetworkClient {
         self.baseURL = baseURL
         self.suspension = suspension
         self.verification = verification
-        if let session {
-            self.session = session
-        } else {
-            let configuration = URLSessionConfiguration.default
-            configuration.timeoutIntervalForRequest = AppConfig.requestTimeout
-            // A phone changes networks constantly — leaving Wi-Fi for cellular,
-            // walking out of a lift. Failing the instant there is no route
-            // turned every one of those moments into an error somebody had to
-            // dismiss; waiting for the route to come back, briefly, turns them
-            // into a pause nobody notices. The resource timeout is the cap on
-            // that wait, so an offline phone still hears "no connection"
-            // rather than nothing.
-            configuration.waitsForConnectivity = true
-            configuration.timeoutIntervalForResource = AppConfig.connectivityWait
-            self.session = URLSession(configuration: configuration)
-        }
+        self.session = session ?? URLSession(configuration: Self.makeConfiguration())
+    }
+
+    /// How every default client's session is configured.
+    static func makeConfiguration() -> URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.default
+        // Nothing the API answers is written to disk. With the default
+        // configuration every small authenticated GET went into the shared
+        // `Cache.db` — `/auth/me` with the email and the verified legal name
+        // (hidden or not), conversations, messages, notifications — because
+        // the backend sends no `Cache-Control` and URLCache keeps a response
+        // that does not say `no-store`. That file has only default data
+        // protection and outlives a sign-out, so the next person on the phone
+        // could read the last one's messages out of it.
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.timeoutIntervalForRequest = AppConfig.requestTimeout
+        // A phone changes networks constantly — leaving Wi-Fi for cellular,
+        // walking out of a lift. Failing the instant there is no route
+        // turned every one of those moments into an error somebody had to
+        // dismiss; waiting for the route to come back, briefly, turns them
+        // into a pause nobody notices. The resource timeout is the cap on
+        // that wait, so an offline phone still hears "no connection"
+        // rather than nothing.
+        configuration.waitsForConnectivity = true
+        configuration.timeoutIntervalForResource = AppConfig.connectivityWait
+        return configuration
     }
 
     public func send<Response: Decodable>(

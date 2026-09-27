@@ -168,6 +168,43 @@ final class AccountJourneyUITests: XCTestCase {
         )
     }
 
+    /// The export downloads and its button opens the system share sheet —
+    /// the one UIKit opens, whose completion is what removes the file from
+    /// the phone once it has gone somewhere.
+    func testTheExportOpensTheShareSheet() throws {
+        let app = launchApp()
+        signIn(app)
+        openAccount(app)
+
+        // Near the bottom of a lazy list: it exists before it is on screen,
+        // so scroll until it sits well inside the screen, with room beside it
+        // for the share button.
+        let download = app.buttons["Download"]
+        let visible = app.windows.firstMatch.frame.insetBy(dx: 0, dy: 120)
+        for _ in 0..<6 where !(download.exists && visible.contains(download.frame)) { app.swipeUp() }
+        XCTAssertTrue(download.waitForExistence(timeout: 10), "no way to download the export")
+        XCTAssertTrue(visible.contains(download.frame), "the download button never came on screen")
+        download.tap()
+
+        let share = app.buttons["account.export.share"]
+        XCTAssertTrue(share.waitForExistence(timeout: 15), "the export downloaded but offers no way to share it")
+        share.tap()
+
+        let sheet = app.otherElements["ActivityListView"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 15), "the share sheet never opened")
+        add(screenshot(app, named: "Account — export share sheet"))
+
+        // Closed without sending anything: the copy stays, so it can still be
+        // shared, until the screen closes.
+        let close = app.buttons["Close"]
+        if close.waitForExistence(timeout: 5) {
+            close.tap()
+        } else {
+            sheet.swipeDown(velocity: .fast)
+        }
+        XCTAssertTrue(share.waitForExistence(timeout: 10), "an unshared export vanished with the share sheet")
+    }
+
     private func screenshot(_ app: XCUIApplication, named name: String) -> XCTAttachment {
         let attachment = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
         attachment.name = name

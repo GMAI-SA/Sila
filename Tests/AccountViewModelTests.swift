@@ -13,13 +13,15 @@ final class AccountViewModelTests: XCTestCase {
     private func makeViewModel(
         _ scenario: AccountServiceMock.MockScenario = .populated,
         analytics: RecordingAnalyticsClient = RecordingAnalyticsClient(),
-        onSignOut: (@MainActor () -> Void)? = nil
+        onSignOut: (@MainActor () -> Void)? = nil,
+        leftovers: SessionLeftovers = SessionLeftovers()
     ) -> (AccountViewModel, AccountServiceMock) {
         let service = AccountServiceMock(scenario: scenario)
         let viewModel = AccountViewModel(
             service: service,
             analytics: analytics,
-            onSignOut: onSignOut
+            onSignOut: onSignOut,
+            leftovers: leftovers
         )
         return (viewModel, service)
     }
@@ -706,6 +708,66 @@ final class AccountViewModelTests: XCTestCase {
         viewModel.clearExport()
         XCTAssertNil(viewModel.exportFile)
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    // The export is the whole account. It is removed as soon as it has done
+    // its job, not left in `tmp` for whoever signs in next.
+
+    private func exported(_ leftovers: SessionLeftovers) async throws -> (AccountViewModel, URL) {
+        let (viewModel, _) = makeViewModel(leftovers: leftovers)
+        await viewModel.load()
+        await viewModel.exportAccount()
+        let file = try XCTUnwrap(viewModel.exportFile)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path), "precondition: the export was written")
+        return (viewModel, file)
+    }
+
+    func testSharingTheExportRemovesItFromThePhone() async throws {
+        let (viewModel, file) = try await exported(.isolated())
+
+        viewModel.exportShared()
+
+        XCTAssertNil(viewModel.exportFile)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    func testClosingAccountRemovesTheExport() async throws {
+        let (viewModel, file) = try await exported(.isolated())
+
+        viewModel.screenClosed()
+
+        XCTAssertNil(viewModel.exportFile)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    func testRequestingDeletionRemovesTheExport() async throws {
+        let (viewModel, file) = try await exported(.isolated())
+
+        viewModel.deletion = DeletionConfirmation(currentPassword: password, typedWord: "DELETE")
+        await viewModel.requestDeletion()
+
+        XCTAssertEqual(viewModel.route, .recovery)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    /// Exported, then signed out: the store's sweep finds the file where the
+    /// view model wrote it.
+    func testSigningOutAfterAnExportRemovesIt() async throws {
+        let leftovers = SessionLeftovers.isolated()
+        let (_, file) = try await exported(leftovers)
+        let store = AuthTokenStore(keychain: InMemoryKeychainClient(), storage: InMemoryStorageClient(), leftovers: leftovers)
+        await store.store(AuthFixtures.pair())
+
+        await store.clear()
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    func testTheExportIsWrittenWhereSignOutLooks() {
+        XCTAssertEqual(
+            SessionLeftovers().accountExportURL,
+            FileManager.default.temporaryDirectory.appendingPathComponent("sila-account-export.json")
+        )
     }
 
     // MARK: - Form hygiene

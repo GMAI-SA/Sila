@@ -58,6 +58,8 @@ public struct AccountScreen: View {
                 }
             }
             .task { await viewModel.load() }
+            // A downloaded export does not outlive the screen.
+            .onDisappear { viewModel.screenClosed() }
             .tnToast($viewModel.toast)
             .sheet(item: $viewModel.presentedSheet, onDismiss: dismissedSheet) { sheet in
                 NavigationStack {
@@ -535,14 +537,24 @@ public struct AccountScreen: View {
                         )
 
                         if let file = viewModel.exportFile {
-                            ShareLink(item: file) {
+                            // The system share sheet, opened by UIKit so its
+                            // completion says whether the file went
+                            // somewhere; a `ShareLink` never says, and the
+                            // copy on this phone is removed once it has.
+                            Button {
+                                ActivitySharing.present(items: [file]) { completed in
+                                    if completed { viewModel.exportShared() }
+                                }
+                            } label: {
                                 Text(L10n.t("account.export.share"))
                                     .font(SLFont.caption)
                                     .foregroundStyle(SLColor.primary)
                                     .frame(height: 40)
                             }
+                            .buttonStyle(.plain)
                             .accessibilityLabel(Text(L10n.t("account.export.share.a11yLabel")))
                             .accessibilityHint(Text(L10n.t("account.export.share.hint")))
+                            .accessibilityIdentifier("account.export.share")
                         }
                     }
                 }

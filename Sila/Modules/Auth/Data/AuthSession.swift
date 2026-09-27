@@ -227,6 +227,9 @@ public final class AuthSession {
         defer { isBusy = false }
         await willSignOut?()
         try? await service.signOut()
+        // The local wipe is what ends the session, whichever service is
+        // plugged in, and it takes the export and the cached responses with it.
+        await store.clear()
         user = nil
         verificationReport = nil
         documentRetake = nil
