@@ -391,6 +391,12 @@ should not, and from outliving itself when it should, each asserted in tests:
   the last-email entry every sign-in writes, and a locked phone decides
   nothing.
 
+The Terms and Privacy sheets (`LegalDocumentSheet`) load only their own page,
+with page scripts off and nothing stored, and show it only once it is
+confirmed to be a document; the web app (what the host answers for a path it
+does not know), an error, or nothing at all is shown as "Document unavailable"
+(`LegalDocumentTests`, `LegalSheetJourneyUITests`).
+
 ## Running without a backend
 
 ```bash
