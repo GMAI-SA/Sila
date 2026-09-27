@@ -210,6 +210,24 @@ final class LiveVouchingTests: XCTestCase {
         let ended = try await voucher.vouching.overview()
         XCTAssertTrue(ended.vouches.isEmpty, "a vouch is still live after the tag came off")
         XCTAssertEqual(ended.ended.first { $0.id == claimed?.id }?.endReason, "removed")
+
+        // Back at the wall, the wall can say why (§15): taken off by the
+        // person, and — a confirmed vouch having ended — the fortnight's wait
+        // before anybody may vouch again, so verification is the way on.
+        let why = try await person.vouching.myVouch()
+        XCTAssertNil(why.vouch)
+        let lastEnded = try XCTUnwrap(why.lastEnded, "GET /me/vouch says nothing about the vouch that just ended")
+        XCTAssertEqual(lastEnded.id, claimed?.id)
+        XCTAssertEqual(lastEnded.endReason, "removed")
+        XCTAssertEqual(lastEnded.handle, voucher.handle)
+        XCTAssertNotNil(lastEnded.endedAt)
+        XCTAssertEqual(lastEnded.vouchAgain, "vouch_too_soon")
+        L10n.use("en")
+        defer { L10n.use(nil) }
+        let card = VouchCopy.lastEnded(lastEnded)
+        XCTAssertEqual(card.title, "The vouch from @\(voucher.handle) has ended")
+        XCTAssertEqual(card.reason, "You took the vouch off.")
+        XCTAssertEqual(card.next, "Verify your identity to continue.")
     }
 
     // MARK: - Three mismatches
