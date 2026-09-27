@@ -17,9 +17,11 @@ import UIKit
 ///
 /// Anything it does change is put back in `tearDown`.
 ///
+/// Runs against the staging API, through the tunnel in ``LiveTarget``, with
+/// an account on staging — never production:
 /// ```
-/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_LIVE_EMAIL=… \
-/// TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
+/// TEST_RUNNER_SILA_LIVE_EMAIL=… TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
 /// ```
 final class LiveAccountTests: XCTestCase {
 
@@ -29,16 +31,11 @@ final class LiveAccountTests: XCTestCase {
     private var hadAvatarAtStart = false
 
     override func setUp() async throws {
-        let env = ProcessInfo.processInfo.environment
-        guard env["SILA_LIVE_API"] == "1" else {
-            throw XCTSkip("Live API tests are opt-in — set SILA_LIVE_API=1")
-        }
-        guard let email = env["SILA_LIVE_EMAIL"], let pw = env["SILA_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
-        }
+        _ = try LiveTarget.api()
+        let (email, pw) = try LiveTarget.credentials()
         password = pw
         let auth = AuthService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             store: AuthTokenStore(keychain: InMemoryKeychainClient(), storage: InMemoryStorageClient()),
             biometrics: StubBiometricAuthenticator(),
             analytics: RecordingAnalyticsClient()
@@ -53,7 +50,7 @@ final class LiveAccountTests: XCTestCase {
     override func tearDown() async throws {
         guard let token, !token.isEmpty else { return }
         let service = AccountService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: token),
             analytics: RecordingAnalyticsClient()
         )
@@ -70,7 +67,7 @@ final class LiveAccountTests: XCTestCase {
 
     private func service() throws -> AccountService {
         AccountService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: try XCTUnwrap(token)),
             analytics: RecordingAnalyticsClient()
         )

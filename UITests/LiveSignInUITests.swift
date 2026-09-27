@@ -1,6 +1,6 @@
 import XCTest
 
-/// Signs in with a real account against the **deployed** backend and walks the
+/// Signs in with a real account against the **staging** backend and walks the
 /// app — no mocks anywhere in the process.
 ///
 /// Every other UI test runs on `AuthServiceMock` and `FeedServiceMock`, which
@@ -8,26 +8,41 @@ import XCTest
 /// the server. This is the only test where a tap travels all the way to
 /// Postgres and back, so it is what "the app works" actually means.
 ///
-/// Opt-in, because it needs the network and a real account:
+/// Opt-in, because it needs the network and an account **on staging**. The
+/// app is launched with `-apiOrigin`, which a debug build honours, so every
+/// request it makes goes to the staging API through the tunnel — production
+/// is never called:
 /// ```
-/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_LIVE_EMAIL=… \
-/// TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … \
+/// ssh -N -L 8101:127.0.0.1:8101 -i ~/.ssh/geniusai_new ubuntu@185.216.21.10 &
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
+/// TEST_RUNNER_SILA_LIVE_EMAIL=… TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … \
 ///   test -only-testing:SilaUITests/LiveSignInUITests
 /// ```
 final class LiveSignInUITests: XCTestCase {
 
     private var email = ""
     private var password = ""
+    private var origin = ""
 
     override func setUpWithError() throws {
         continueAfterFailure = false
         let env = ProcessInfo.processInfo.environment
         guard env["SILA_LIVE_API"] == "1" else {
-            throw XCTSkip("Live sign-in is opt-in — set SILA_LIVE_API=1")
+            throw XCTSkip("Live sign-in is opt-in — set SILA_LIVE_API=1 and SILA_API_ORIGIN")
+        }
+        guard let o = env["SILA_API_ORIGIN"], !o.isEmpty else {
+            XCTFail("Live tests run against the staging API: open the tunnel and set "
+                    + "TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101")
+            return
+        }
+        guard URL(string: o)?.host?.lowercased().hasSuffix("gmai.sa") != true else {
+            XCTFail("Live tests never run against production (SILA_API_ORIGIN=\(o))")
+            return
         }
         guard let e = env["SILA_LIVE_EMAIL"], let p = env["SILA_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
+            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD for an account on staging")
         }
+        origin = o
         email = e
         password = p
     }
@@ -41,8 +56,8 @@ final class LiveSignInUITests: XCTestCase {
 
     func testSignInAgainstTheLiveServerAndBrowse() throws {
         let app = XCUIApplication()
-        // No -mockAuth: this talks to https://sila.gmai.sa for real.
-        app.launchArguments = ["-noBiometrics"]
+        // No -mockAuth: this talks to the staging API for real.
+        app.launchArguments = ["-noBiometrics", "-apiOrigin", origin]
         app.launch()
 
         attach(app, "1 — Welcome")

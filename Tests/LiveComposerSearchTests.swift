@@ -10,10 +10,12 @@ import XCTest
 /// `POST /posts` surfaces the first time a real person tries to speak.
 ///
 /// Opt-in, same as the other live suites. Anything created here is deleted
-/// again, so the account is left as it was found:
+/// again, so the account is left as it was found. It runs against the staging
+/// API through the tunnel in ``LiveTarget``, with an account on staging —
+/// never production:
 /// ```
-/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_LIVE_EMAIL=… \
-/// TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
+/// TEST_RUNNER_SILA_LIVE_EMAIL=… TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
 /// ```
 final class LiveComposerSearchTests: XCTestCase {
 
@@ -21,16 +23,10 @@ final class LiveComposerSearchTests: XCTestCase {
     private var me: AuthUser?
 
     override func setUp() async throws {
-        let env = ProcessInfo.processInfo.environment
-        guard env["SILA_LIVE_API"] == "1" else {
-            throw XCTSkip("Live API tests are opt-in — set SILA_LIVE_API=1")
-        }
-        guard let email = env["SILA_LIVE_EMAIL"],
-              let password = env["SILA_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
-        }
+        _ = try LiveTarget.api()
+        let (email, password) = try LiveTarget.credentials()
         let auth = AuthService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             store: AuthTokenStore(keychain: InMemoryKeychainClient(), storage: InMemoryStorageClient()),
             biometrics: StubBiometricAuthenticator(),
             analytics: RecordingAnalyticsClient()
@@ -42,7 +38,7 @@ final class LiveComposerSearchTests: XCTestCase {
 
     private func composer() throws -> ComposerService {
         ComposerService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: try XCTUnwrap(token)),
             analytics: RecordingAnalyticsClient()
         )
@@ -50,7 +46,7 @@ final class LiveComposerSearchTests: XCTestCase {
 
     private func search() throws -> SearchService {
         SearchService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: try XCTUnwrap(token)),
             analytics: RecordingAnalyticsClient()
         )
@@ -58,7 +54,7 @@ final class LiveComposerSearchTests: XCTestCase {
 
     private func feed() throws -> FeedService {
         FeedService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: try XCTUnwrap(token)),
             analytics: RecordingAnalyticsClient()
         )

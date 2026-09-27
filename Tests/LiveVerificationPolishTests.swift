@@ -2,36 +2,32 @@ import UIKit
 import XCTest
 @testable import Sila
 
-/// Contract v25 against the deployed backend, through the app's own services:
+/// Contract v25 against the staging backend, through the app's own services:
 /// a submission taken back and sent again, and the pre-screen turning a flat
 /// colour away with a reason the app can put into words.
 ///
-/// **Disposable accounts only.** Each run registers its own
-/// `itest-ios-…@example.com` account through the dev routes the backend's
-/// integration suite uses (`/dev/otp/peek`, `/dev/user/set`), and that suite's
-/// purge removes it. It never signs in to, reads or changes anybody else's
-/// account, and the pictures it sends are single colours — nothing of a
-/// person, and nothing that leaves the host (the pre-screen's model is on it).
+/// **Disposable accounts only, on staging only.** Each run registers its own
+/// `itest-ios-…@example.com` account through the staging API's dev routes
+/// (`/dev/otp/peek`, `/dev/user/set`). Production runs with dev mode off and
+/// is never called. It never signs in to, reads or changes anybody else's
+/// account, never runs the shared test-user purge, and the pictures it sends
+/// are single colours — nothing of a person, and nothing that leaves the host
+/// (the pre-screen's model is on it).
 ///
-/// The dev routes answer only on the host's loopback, so they are reached
-/// through a tunnel; everything the app itself calls goes to the public API.
+/// Everything — the app's own calls and the dev routes — goes to the staging
+/// API through the tunnel described in ``LiveTarget``:
 ///
 /// ```
-/// ssh -N -L 18100:127.0.0.1:8100 ubuntu@<host> &
-/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_DEV_API=http://127.0.0.1:18100/api/v1 \
+/// ssh -N -L 8101:127.0.0.1:8101 -i ~/.ssh/geniusai_new ubuntu@185.216.21.10 &
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
 ///   xcodebuild … test -only-testing:SilaTests/LiveVerificationPolishTests
 /// ```
 final class LiveVerificationPolishTests: XCTestCase {
 
     private let password = "Passw0rd!234"
-    private var devBase: URL!
 
     override func setUpWithError() throws {
-        let env = ProcessInfo.processInfo.environment
-        guard env["SILA_LIVE_API"] == "1", let dev = env["SILA_DEV_API"].flatMap(URL.init(string:)) else {
-            throw XCTSkip("Live dev-route tests are opt-in — set SILA_LIVE_API=1 and SILA_DEV_API")
-        }
-        devBase = dev
+        _ = try LiveTarget.api()
     }
 
     // MARK: - A disposable account
@@ -43,18 +39,7 @@ final class LiveVerificationPolishTests: XCTestCase {
     }
 
     private func dev(_ path: String, query: [URLQueryItem] = [], body: [String: Any]? = nil) async throws -> [String: Any] {
-        var components = URLComponents(url: devBase.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
-        if !query.isEmpty { components.queryItems = query }
-        var request = URLRequest(url: components.url!)
-        if let body {
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        }
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        XCTAssertEqual(status, 200, "\(path): \(String(decoding: data, as: UTF8.self))")
-        return (try JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        try await LiveTarget.dev(path, query: query, body: body)
     }
 
     /// Registers, confirms the address with the code the dev route shows, and
@@ -62,17 +47,17 @@ final class LiveVerificationPolishTests: XCTestCase {
     private func disposable() async throws -> Disposable {
         let email = "itest-ios-\(UUID().uuidString.prefix(12).lowercased())@example.com"
         let auth = AuthService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             store: AuthTokenStore(keychain: InMemoryKeychainClient(), storage: InMemoryStorageClient()),
             biometrics: StubBiometricAuthenticator(),
             analytics: RecordingAnalyticsClient()
         )
         _ = try await auth.register(email: email, password: password)
-        let peek = try await dev("dev/otp/peek", query: [URLQueryItem(name: "email", value: email)])
+        let peek = try await dev("otp/peek", query: [URLQueryItem(name: "email", value: email)])
         let code = try XCTUnwrap(peek["code"] as? String, "no code recorded for \(email)")
         let pair = try await auth.verifyOTP(email: email, code: code, purpose: .register)
         let verification = VerificationService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: pair.token.accessToken),
             analytics: RecordingAnalyticsClient()
         )
@@ -147,7 +132,7 @@ final class LiveVerificationPolishTests: XCTestCase {
     func testThePreScreenTurnsAFlatColourAwayWithAReasonTheAppCanSay() async throws {
         let person = try await disposable()
         // Test accounts are only screened when they opt in.
-        _ = try await dev("dev/user/set", body: ["email": person.email, "doc_screening": true])
+        _ = try await dev("user/set", body: ["email": person.email, "doc_screening": true])
 
         _ = try await person.verification.submitDocument(submission())
         var status = try await person.auth.verificationStatus()

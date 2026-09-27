@@ -202,6 +202,45 @@ final class APIContractTests: XCTestCase {
         XCTAssertEqual(AppConfig.apiBaseURL.absoluteString, "https://sila.gmai.sa/api/v1")
         XCTAssertEqual(AppConfig.apiBaseURL.scheme, "https", "No ATS exception is declared, so HTTPS is mandatory")
     }
+
+    /// `-apiOrigin` points a debug build at the staging API through an SSH
+    /// tunnel — the live UI journey's way in. It is a bare origin, HTTPS, or
+    /// plain HTTP to this machine's loopback where the tunnel ends.
+    func testAStagingOriginBecomesThatAPIsBase() {
+        XCTAssertEqual(AppConfig.apiBaseURL(origin: "http://127.0.0.1:8101")?.absoluteString, "http://127.0.0.1:8101/api/v1")
+        XCTAssertEqual(AppConfig.apiBaseURL(origin: "http://localhost:8101/")?.absoluteString, "http://localhost:8101/api/v1")
+        XCTAssertEqual(AppConfig.apiBaseURL(origin: " HTTPS://staging.example.com ")?.absoluteString, "https://staging.example.com/api/v1")
+    }
+
+    func testAnOriginThatWouldSendCredentialsInTheClearIsRefused() {
+        XCTAssertNil(AppConfig.apiBaseURL(origin: "http://192.168.1.20:8101"), "plain HTTP off this machine")
+        XCTAssertNil(AppConfig.apiBaseURL(origin: "http://staging.example.com"))
+        XCTAssertNil(AppConfig.apiBaseURL(origin: "http://127.0.0.1:8101/api/v1"), "an origin, not a path")
+        XCTAssertNil(AppConfig.apiBaseURL(origin: "http://user:pass@127.0.0.1:8101"))
+        XCTAssertNil(AppConfig.apiBaseURL(origin: "ftp://127.0.0.1"))
+        XCTAssertNil(AppConfig.apiBaseURL(origin: ""))
+    }
+
+    func testTheLaunchArgumentSelectsTheOriginAndABadOneFailsRatherThanFallingBack() {
+        XCTAssertEqual(AppConfig.apiBaseURL(arguments: ["Sila"]).absoluteString, "https://sila.gmai.sa/api/v1")
+        #if DEBUG
+        XCTAssertEqual(
+            AppConfig.apiBaseURL(arguments: ["Sila", "-apiOrigin", "http://127.0.0.1:8101"]).absoluteString,
+            "http://127.0.0.1:8101/api/v1"
+        )
+        // A mistyped tunnel must never quietly become production.
+        let refused = AppConfig.apiBaseURL(arguments: ["Sila", "-apiOrigin", "http://10.0.0.5:8101"])
+        XCTAssertNotEqual(refused.host, "sila.gmai.sa")
+        XCTAssertTrue(refused.isFileURL, "every request fails instead")
+        XCTAssertTrue(AppConfig.apiBaseURL(arguments: ["Sila", "-apiOrigin"]).isFileURL)
+        #else
+        // A release build — TestFlight, the store — never reads it.
+        XCTAssertEqual(
+            AppConfig.apiBaseURL(arguments: ["Sila", "-apiOrigin", "http://127.0.0.1:8101"]).absoluteString,
+            "https://sila.gmai.sa/api/v1"
+        )
+        #endif
+    }
 }
 
 /// The launch-argument overrides that select the mock stack.

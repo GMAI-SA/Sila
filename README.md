@@ -485,7 +485,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-1,533 total: 1,473 unit (78 opt-in, see below) and 60 XCUITests (43 journeys, 16
+1,590 total: 1,527 unit (78 opt-in, see below) and 63 XCUITests (46 journeys, 16
 reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a
@@ -507,18 +507,35 @@ xcrun xcresulttool export --path out.xcresult --id <payloadRef> --output-path sh
 
 `LiveAPITests`, `LiveFeedTests`, `LiveComposerSearchTests`,
 `LivePreferencesTests`, `LiveAccountTests`, `LiveProfileTests`,
-`LiveNotificationsTests`, `LiveSafetyTests` and `LiveRoomsTests` hit
-the real deployed backend and skip unless you opt in — they are the only guard against the *server's* wire format
-drifting away from the app's decoders:
+`LiveNotificationsTests`, `LiveSafetyTests` and `LiveRoomsTests` hit a real
+backend and skip unless you opt in — they are the only guard against the
+*server's* wire format drifting away from the app's decoders.
+
+**They run against the staging API, never production.** Production runs with
+dev mode off, so `/api/v1/dev/*` does not exist there, and nothing a test does
+belongs on it. Staging answers on `127.0.0.1:8101` on the server and is reached
+through an SSH tunnel; `Tests/LiveTarget.swift` reads its origin from
+`SILA_API_ORIGIN` (the same name the web repo's live specs read), points every
+service at it, and fails the run — loudly, not as a skip — when live tests are
+opted into without it or with a `gmai.sa` origin:
 
 ```bash
+ssh -N -L 8101:127.0.0.1:8101 -i ~/.ssh/geniusai_new ubuntu@185.216.21.10 &
 TEST_RUNNER_SILA_LIVE_API=1 \
+TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
 TEST_RUNNER_SILA_LIVE_EMAIL=you@example.com \
 TEST_RUNNER_SILA_LIVE_PASSWORD='...' \
 xcodebuild ... test -only-testing:SilaTests/LiveAPITests
 ```
 The `TEST_RUNNER_` prefix is required — plain environment variables do not reach
-the test process on the simulator.
+the test process on the simulator. The account must exist **on staging**.
+Plain HTTP to `127.0.0.1` needs no ATS exception.
+
+`LiveSignInUITests` does the same through the real UI: it launches the app with
+`-apiOrigin <origin>`, which only a **debug** build reads
+(`AppConfig.apiBaseURL(arguments:)`); release builds always talk to
+`apiBaseURLString`, and an origin that is not HTTPS or loopback HTTP makes every
+request fail rather than fall back to production.
 
 They are all **non-destructive**. `LiveAccountTests` never changes a password
 (which revokes every session, this one included), never sends real mail and
@@ -534,31 +551,29 @@ cheap and end-able. Every room it opens is registered for cleanup *before* the
 assertion that might fail, `tearDown` leaves every room it joined and ends every
 room it created, and it then re-reads each one to assert it is no longer live —
 so a silent failure to clean up is a failed test rather than a live room on a
-production list with nobody in it. It does not remove anybody from a room: a
-removal needs a second real account and leaves a per-room ban this contract has
-no endpoint to lift.
+list with nobody in it. It does not remove anybody from a room: a removal needs
+a second real account and leaves a per-room ban this contract has no endpoint
+to lift.
 
-`LiveVerificationPolishTests` (contract v25) needs no live account: each run
-registers a disposable `itest-ios-…@example.com` account through the dev routes
-the backend's integration suite uses, whose purge removes it. The dev routes
-answer only on the host's loopback, so they go through a tunnel while the app's
-own calls go to the public API. It submits flat colour swatches — nothing of a
-person — withdraws them (so nothing waits in the moderators' queue), and opts
-one account into the pre-screen to watch it turn a swatch away:
+`LiveVerificationPolishTests` (contract v25) needs no account: each run
+registers a disposable `itest-ios-…@example.com` account through staging's dev
+routes (`LiveTarget.dev`, which refuses to call the shared test-user purge). It
+submits flat colour swatches — nothing of a person — withdraws them (so nothing
+waits in the moderators' queue), and opts one account into the pre-screen to
+watch it turn a swatch away:
 
 ```bash
-ssh -N -L 18100:127.0.0.1:8100 ubuntu@<host> &
-TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_DEV_API=http://127.0.0.1:18100/api/v1 \
+TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
 xcodebuild ... test -only-testing:SilaTests/LiveVerificationPolishTests
 ```
 
 `LiveVouchingTests` (contract v24) works the same way, with disposable accounts
 only: two made vouchers through the dev hook (verified forty days ago — the
-thirty-day rule), two people. Vouching is closed in production except for
-exactly these dev-mode `@example.com` accounts. It mints a link, reads it
-through the app's own link parser, claims it after a mismatch, confirms,
-checks the tag, the thirty days and the limited tier, and takes the tag off
-again; the second link is closed by three mismatches. Nothing is left live.
+thirty-day rule), two people. It mints a link, reads it through the app's own
+link parser (staging's link is mapped onto the app's web origin first, since
+staging mints on its own), claims it after a mismatch, confirms, checks the
+tag, the thirty days and the limited tier, and takes the tag off again; the
+second link is closed by three mismatches. Nothing is left live.
 
 ## Layout
 

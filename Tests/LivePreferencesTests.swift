@@ -8,10 +8,12 @@ import XCTest
 /// than elsewhere: these settings decide what a person is shown, so a mismatch
 /// doesn't produce an error, it quietly changes someone's feed.
 ///
-/// Opt-in, and restores the account's original settings afterwards:
+/// Opt-in, and restores the account's original settings afterwards. It runs
+/// against the staging API through the tunnel in ``LiveTarget``, with an
+/// account on staging — never production:
 /// ```
-/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_LIVE_EMAIL=… \
-/// TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
+/// TEST_RUNNER_SILA_LIVE_EMAIL=… TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
 /// ```
 final class LivePreferencesTests: XCTestCase {
 
@@ -19,16 +21,10 @@ final class LivePreferencesTests: XCTestCase {
     private var original: FeedPreferences?
 
     override func setUp() async throws {
-        let env = ProcessInfo.processInfo.environment
-        guard env["SILA_LIVE_API"] == "1" else {
-            throw XCTSkip("Live API tests are opt-in — set SILA_LIVE_API=1")
-        }
-        guard let email = env["SILA_LIVE_EMAIL"],
-              let password = env["SILA_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
-        }
+        _ = try LiveTarget.api()
+        let (email, password) = try LiveTarget.credentials()
         let auth = AuthService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             store: AuthTokenStore(keychain: InMemoryKeychainClient(), storage: InMemoryStorageClient()),
             biometrics: StubBiometricAuthenticator(),
             analytics: RecordingAnalyticsClient()
@@ -52,7 +48,7 @@ final class LivePreferencesTests: XCTestCase {
 
     private func service() throws -> PreferencesService {
         PreferencesService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: try XCTUnwrap(token)),
             analytics: RecordingAnalyticsClient()
         )
@@ -60,7 +56,7 @@ final class LivePreferencesTests: XCTestCase {
 
     private func feed() throws -> FeedService {
         FeedService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: try XCTUnwrap(token)),
             analytics: RecordingAnalyticsClient()
         )

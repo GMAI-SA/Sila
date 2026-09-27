@@ -10,7 +10,7 @@ import XCTest
 /// and are unverifiable from a fixture.
 ///
 /// **Cleanup is mandatory, not best-effort.** These tests may create rooms, and
-/// a room left live is a live conversation on a production list with nobody in
+/// a room left live is a live conversation on a shared list with nobody in
 /// it. ``tearDown()`` ends every room this suite opened and leaves every room it
 /// joined, and it does both even when the test that created one failed.
 ///
@@ -19,9 +19,11 @@ import XCTest
 /// account leaves a per-room ban that no endpoint in this contract can lift.
 /// The refusals are covered instead, because they create nothing.
 ///
+/// Runs against the staging API, through the tunnel in ``LiveTarget``, with
+/// an account on staging — never production:
 /// ```
-/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_LIVE_EMAIL=… \
-/// TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
+/// TEST_RUNNER_SILA_LIVE_EMAIL=… TEST_RUNNER_SILA_LIVE_PASSWORD=… xcodebuild … test
 /// ```
 final class LiveRoomsTests: XCTestCase {
 
@@ -37,15 +39,10 @@ final class LiveRoomsTests: XCTestCase {
     private var joinedRoomIds: Set<UUID> = []
 
     override func setUp() async throws {
-        let env = ProcessInfo.processInfo.environment
-        guard env["SILA_LIVE_API"] == "1" else {
-            throw XCTSkip("Live API tests are opt-in — set SILA_LIVE_API=1")
-        }
-        guard let email = env["SILA_LIVE_EMAIL"], let password = env["SILA_LIVE_PASSWORD"] else {
-            throw XCTSkip("Set SILA_LIVE_EMAIL and SILA_LIVE_PASSWORD")
-        }
+        _ = try LiveTarget.api()
+        let (email, password) = try LiveTarget.credentials()
         let auth = AuthService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             store: AuthTokenStore(keychain: InMemoryKeychainClient(), storage: InMemoryStorageClient()),
             biometrics: StubBiometricAuthenticator(),
             analytics: RecordingAnalyticsClient()
@@ -68,7 +65,7 @@ final class LiveRoomsTests: XCTestCase {
         }
         guard let token, !token.isEmpty else { return }
         let service = RoomsService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: token),
             analytics: RecordingAnalyticsClient()
         )
@@ -94,7 +91,7 @@ final class LiveRoomsTests: XCTestCase {
 
     private func service() throws -> RoomsService {
         RoomsService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: try XCTUnwrap(token)),
             analytics: RecordingAnalyticsClient()
         )

@@ -57,6 +57,7 @@
 		1C68726A3E923FE5ACE37D17 /* VouchingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26CEFF6162529F611B24F35B /* VouchingService.swift */; };
 		1D703D575DE3AD5DF76712B5 /* ComposerServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC72187B14DF20C322B073F /* ComposerServiceProtocol.swift */; };
 		1F7B1021E74AC0C02547950F /* DepthMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10EAADEBE7A6194B6CD6C7AF /* DepthMocks.swift */; };
+		23F110BD55419FA094D6A14C /* LiveTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97039A13859C8F3CC6DFFE1 /* LiveTarget.swift */; };
 		243955FE1A9CF8695D23C983 /* VoicePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4519F00A24E9CCA9EF68674 /* VoicePlayer.swift */; };
 		24DDBF412A5FA03BE8D61363 /* VerificationWallTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103C7F823AD9B71B8F17F433 /* VerificationWallTests.swift */; };
 		2584DB877982B95443AF4329 /* DeletePostJourneyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3704D0C1ED87DF81015A70B /* DeletePostJourneyUITests.swift */; };
@@ -677,6 +678,7 @@
 		A5A2AEF93EC5018E9C41B056 /* CommunitiesServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunitiesServiceMock.swift; sourceTree = "<group>"; };
 		A8B204472383AA0961250F71 /* SLDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLDivider.swift; sourceTree = "<group>"; };
 		A94B6BB51EE682465FB4E7EC /* ValidationErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationErrorTests.swift; sourceTree = "<group>"; };
+		A97039A13859C8F3CC6DFFE1 /* LiveTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTarget.swift; sourceTree = "<group>"; };
 		AA1F9BE9BFB7B0790305D08B /* SLShimmer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLShimmer.swift; sourceTree = "<group>"; };
 		AAB2372A9D78DD3B962DB35C /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		AB2FA2505AED9BF4EBC88E88 /* DiscoverServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverServiceProtocol.swift; sourceTree = "<group>"; };
@@ -1170,6 +1172,7 @@
 				D9449E0F8F70C04B0BB8E7BE /* LiveRoomsTests.swift */,
 				360C56BDBA9F48E850A347D7 /* LiveRoomViewModelTests.swift */,
 				B88C66FE719CBE1A4202F73D /* LiveSafetyTests.swift */,
+				A97039A13859C8F3CC6DFFE1 /* LiveTarget.swift */,
 				242A3E4E0F74A58F961F575A /* LiveVerificationPolishTests.swift */,
 				FF347559F8FE26B45BB45335 /* LiveVouchingTests.swift */,
 				5BA3014ADF7D8CCFEBDB1975 /* LocalizationCatalogTests.swift */,
@@ -2440,6 +2443,7 @@
 				A2501FF1FE1F652C38C87910 /* LiveRoomViewModelTests.swift in Sources */,
 				650B3B9F01E6DD81AE1F4957 /* LiveRoomsTests.swift in Sources */,
 				5162CE78BA33E621DAB6A710 /* LiveSafetyTests.swift in Sources */,
+				23F110BD55419FA094D6A14C /* LiveTarget.swift in Sources */,
 				3D94B14348E8B5FB1D1F47F5 /* LiveVerificationPolishTests.swift in Sources */,
 				4EFB47FD9439061CB4F157F2 /* LiveVouchingTests.swift in Sources */,
 				09AACA2260178589C2C8AF97 /* LocalizationCatalogTests.swift in Sources */,

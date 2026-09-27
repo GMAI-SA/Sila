@@ -1,39 +1,33 @@
 import XCTest
 @testable import Sila
 
-/// Contract v24 (§11 included) against the deployed backend, through the
+/// Contract v24 (§11 included) against the staging backend, through the
 /// app's own services and decoders: a link minted with who the person is, a
 /// claim that names the field that did not match, a confirmation, the tag
 /// and the limited tier, the tag taken off, and a link closed by three
 /// mismatches.
 ///
-/// **Disposable accounts only.** Every account here is registered by the
-/// test itself as `itest-ios-…@example.com` through the dev routes the
-/// backend's integration suite uses, and that suite's purge removes them.
-/// Vouching is closed in production except for exactly these accounts in dev
-/// mode. The test never reads or changes anybody else's account or vouch,
+/// **Disposable accounts only, on staging only.** Every account here is
+/// registered by the test itself as `itest-ios-…@example.com` through the
+/// staging API's dev routes. Production runs with dev mode off and is never
+/// called. The test never reads or changes anybody else's account or vouch,
 /// and it leaves nothing live: the vouch it confirms is taken off again, and
-/// the other link ends closed.
+/// the other link ends closed. It never runs the shared test-user purge.
 ///
-/// The dev routes answer only on the host's loopback, so they are reached
-/// through a tunnel; everything the app itself calls goes to the public API.
+/// Everything — the app's own calls and the dev routes — goes to the staging
+/// API through the tunnel described in ``LiveTarget``:
 ///
 /// ```
-/// ssh -N -L 18100:127.0.0.1:8100 ubuntu@<host> &
-/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_DEV_API=http://127.0.0.1:18100/api/v1 \
+/// ssh -N -L 8101:127.0.0.1:8101 -i ~/.ssh/geniusai_new ubuntu@185.216.21.10 &
+/// TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
 ///   xcodebuild … test -only-testing:SilaTests/LiveVouchingTests
 /// ```
 final class LiveVouchingTests: XCTestCase {
 
     private let password = "Passw0rd!234"
-    private var devBase: URL!
 
     override func setUpWithError() throws {
-        let env = ProcessInfo.processInfo.environment
-        guard env["SILA_LIVE_API"] == "1", let dev = env["SILA_DEV_API"].flatMap(URL.init(string:)) else {
-            throw XCTSkip("Live dev-route tests are opt-in — set SILA_LIVE_API=1 and SILA_DEV_API")
-        }
-        devBase = dev
+        _ = try LiveTarget.api()
     }
 
     // MARK: - Disposable accounts
@@ -48,18 +42,7 @@ final class LiveVouchingTests: XCTestCase {
     }
 
     private func dev(_ path: String, query: [URLQueryItem] = [], body: [String: Any]? = nil) async throws -> [String: Any] {
-        var components = URLComponents(url: devBase.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
-        if !query.isEmpty { components.queryItems = query }
-        var request = URLRequest(url: components.url!)
-        if let body {
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        }
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        XCTAssertEqual(status, 200, "\(path): \(String(decoding: data, as: UTF8.self))")
-        return (try JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        try await LiveTarget.dev(path, query: query, body: body)
     }
 
     /// Registers and confirms the address with the code the dev route shows.
@@ -70,18 +53,18 @@ final class LiveVouchingTests: XCTestCase {
         let tag = UUID().uuidString.prefix(10).lowercased()
         let email = "itest-ios-\(voucher ? "v" : "p")\(tag)@example.com"
         let auth = AuthService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             store: AuthTokenStore(keychain: InMemoryKeychainClient(), storage: InMemoryStorageClient()),
             biometrics: StubBiometricAuthenticator(),
             analytics: RecordingAnalyticsClient()
         )
         _ = try await auth.register(email: email, password: password)
-        let peek = try await dev("dev/otp/peek", query: [URLQueryItem(name: "email", value: email)])
+        let peek = try await dev("otp/peek", query: [URLQueryItem(name: "email", value: email)])
         let code = try XCTUnwrap(peek["code"] as? String, "no code recorded for \(email)")
         let pair = try await auth.verifyOTP(email: email, code: code, purpose: .register)
         var handle = try await auth.currentUser().handle ?? pair.user.handle ?? ""
         if voucher {
-            let set = try await dev("dev/user/set", body: [
+            let set = try await dev("user/set", body: [
                 "email": email, "verification_status": "verified", "country_code": "SA", "verified_days_ago": 40,
             ])
             handle = (set["handle"] as? String) ?? handle
@@ -92,15 +75,17 @@ final class LiveVouchingTests: XCTestCase {
             handle: handle,
             token: pair.token.accessToken,
             auth: auth,
-            vouching: VouchingService(network: URLSessionNetworkClient(), tokens: tokens, analytics: RecordingAnalyticsClient()),
-            notifications: NotificationsService(network: URLSessionNetworkClient(), tokens: tokens, analytics: RecordingAnalyticsClient())
+            vouching: VouchingService(network: LiveTarget.network(), tokens: tokens, analytics: RecordingAnalyticsClient()),
+            notifications: NotificationsService(network: LiveTarget.network(), tokens: tokens, analytics: RecordingAnalyticsClient())
         )
     }
 
     /// The token at the end of a minted link, read by the app's own parser —
     /// the one a tap on the link goes through.
     private func token(of minted: MintedInvite) throws -> String {
-        guard case let .vouchInvite(token) = try XCTUnwrap(DeepLink.parse(minted.url), "the app cannot read \(minted.url)") else {
+        // Staging mints on its own web origin; the path is what the app reads.
+        let link = LiveTarget.onApp(minted.url)
+        guard case let .vouchInvite(token) = try XCTUnwrap(DeepLink.parse(link), "the app cannot read \(minted.url)") else {
             XCTFail("\(minted.url) is not a vouch link to the app")
             return ""
         }
@@ -132,7 +117,7 @@ final class LiveVouchingTests: XCTestCase {
 
         // The landing is public and names the voucher, and nothing they wrote.
         let landing = try await VouchingService(
-            network: URLSessionNetworkClient(), tokens: StaticAccessTokenProvider(token: nil), analytics: RecordingAnalyticsClient()
+            network: LiveTarget.network(), tokens: StaticAccessTokenProvider(token: nil), analytics: RecordingAnalyticsClient()
         ).landing(token: link)
         XCTAssertEqual(landing.voucher.handle, voucher.handle)
         XCTAssertTrue(landing.voucher.isVerified)
@@ -192,7 +177,7 @@ final class LiveVouchingTests: XCTestCase {
         let tagged = try XCTUnwrap(personRows.first { $0.kind == .vouchConfirmed })
         XCTAssertEqual(tagged.actor.handle, voucher.handle)
         let onProfile = try await ProfileService(
-            network: URLSessionNetworkClient(),
+            network: LiveTarget.network(),
             tokens: StaticAccessTokenProvider(token: voucher.token),
             analytics: RecordingAnalyticsClient()
         ).fetchProfile(handle: person.handle)

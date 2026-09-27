@@ -18,9 +18,57 @@ public enum AppConfig {
     /// deliberately avoids a force-unwrap: if someone mistypes the string the
     /// app falls back to a well-formed placeholder and every request fails
     /// loudly with a transport error instead of trapping at launch.
-    public static var apiBaseURL: URL {
-        URL(string: apiBaseURLString) ?? URL(fileURLWithPath: "/invalid-api-base-url")
+    ///
+    /// A **debug** build launched with `-apiOrigin <origin>` talks to the API
+    /// at that origin instead — the staging API through an SSH tunnel, which
+    /// is where the live UI journey signs in. See ``apiBaseURL(arguments:)``.
+    public static var apiBaseURL: URL { resolvedAPIBaseURL }
+
+    private static let resolvedAPIBaseURL = apiBaseURL(arguments: ProcessInfo.processInfo.arguments)
+
+    /// The API base for a launch with these arguments.
+    ///
+    /// `-apiOrigin` is read by debug builds only; a release build — TestFlight
+    /// and the store — always talks to ``apiBaseURLString``. An origin that
+    /// ``apiBaseURL(origin:)`` refuses does not fall back to production: every
+    /// request fails instead, so a mistyped tunnel address can never quietly
+    /// send a test to real accounts.
+    static func apiBaseURL(arguments: [String]) -> URL {
+        #if DEBUG
+        if let index = arguments.firstIndex(of: "-apiOrigin") {
+            guard arguments.indices.contains(index + 1),
+                  let url = apiBaseURL(origin: arguments[index + 1]) else {
+                return invalidAPIBaseURL
+            }
+            return url
+        }
+        #endif
+        return URL(string: apiBaseURLString) ?? invalidAPIBaseURL
     }
+
+    /// `http://127.0.0.1:8101` → `http://127.0.0.1:8101/api/v1`.
+    ///
+    /// HTTPS to any host, or plain HTTP to this machine's own loopback only —
+    /// where an SSH tunnel ends — and a bare origin, with no path or query.
+    /// Anything else is `nil`.
+    static func apiBaseURL(origin raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var components = URLComponents(string: trimmed),
+              let scheme = components.scheme?.lowercased(),
+              let host = components.host?.lowercased(), !host.isEmpty,
+              components.user == nil, components.password == nil,
+              components.query == nil, components.fragment == nil,
+              components.path.isEmpty || components.path == "/" else {
+            return nil
+        }
+        let loopback = host == "127.0.0.1" || host == "localhost" || host == "::1"
+        guard scheme == "https" || (scheme == "http" && loopback) else { return nil }
+        components.scheme = scheme
+        components.path = "/api/v1"
+        return components.url
+    }
+
+    private static let invalidAPIBaseURL = URL(fileURLWithPath: "/invalid-api-base-url")
 
     /// The API's origin — scheme and host, with no path.
     ///
