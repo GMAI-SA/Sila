@@ -100,8 +100,12 @@ final class LiveAccountTests: XCTestCase {
         XCTAssertNotNil(url.host, "a hostless URL is what AsyncImage cannot load")
 
         // Unauthenticated on purpose: avatars sit beside posts in a feed that
-        // is public to read, so fetch it with no token at all.
-        let (data, response) = try await URLSession.shared.data(from: url)
+        // is public to read, so fetch it with no token at all. From staging,
+        // where it was uploaded: the app resolves media against its own
+        // origin, which in the test process is production's.
+        let staged = try XCTUnwrap(URL(string: path, relativeTo: try LiveTarget.api())?.absoluteURL)
+        XCTAssertEqual(staged.path, url.path, "the app and the test resolve the same path")
+        let (data, response) = try await URLSession.shared.data(from: staged)
         XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
         XCTAssertFalse(data.isEmpty)
 

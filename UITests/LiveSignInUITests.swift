@@ -56,8 +56,10 @@ final class LiveSignInUITests: XCTestCase {
 
     func testSignInAgainstTheLiveServerAndBrowse() throws {
         let app = XCUIApplication()
-        // No -mockAuth: this talks to the staging API for real.
-        app.launchArguments = ["-noBiometrics", "-apiOrigin", origin]
+        // No -mockAuth: this talks to the staging API for real. Nothing kept
+        // from an earlier run: the last address signed in with would be in
+        // the email field already, and the typed one would follow it.
+        app.launchArguments = ["-noBiometrics", "-freshStorage", "-apiOrigin", origin]
         app.launch()
 
         attach(app, "1 — Welcome")
