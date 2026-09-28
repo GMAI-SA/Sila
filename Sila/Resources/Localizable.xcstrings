@@ -14298,6 +14298,24 @@
         }
       }
     },
+    "error.emailChangeRefused": {
+      "comment": "403 email_change_refused (contract v26): the change would move an admin's address, away from the account or onto it. Admin rights follow the address, so it cannot be changed from the app. Deliberately does not say why.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن إجراء تغيير البريد هذا من هنا. لم يتغيّر بريدك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That email change can't be made here. Your address hasn't changed."
+          }
+        }
+      }
+    },
     "error.emailTaken": {
       "comment": "Registration with an address that already has an account.",
       "extractionState": "manual",

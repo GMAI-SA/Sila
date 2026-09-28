@@ -26,6 +26,7 @@ final class ServerCodesV26ToV28Tests: XCTestCase {
         Refusal(raw: "has_password", code: .hasPassword, key: "error.hasPassword", status: 409),
         Refusal(raw: "phone_unavailable", code: .phoneUnavailable, key: "error.phoneUnavailable", status: 409),
         Refusal(raw: "phone_is_sign_in", code: .phoneIsSignIn, key: "error.phoneIsSignIn", status: 409),
+        Refusal(raw: "email_change_refused", code: .emailChangeRefused, key: "error.emailChangeRefused", status: 403),
         Refusal(raw: "invalid_image_url", code: .invalidImageURL, key: "error.invalidImageUrl", status: 400),
         Refusal(raw: "image_unavailable", code: .imageUnavailable, key: "error.imageUnavailable", status: 400),
         Refusal(raw: "request_too_large", code: .requestTooLarge, key: "error.requestTooLarge", status: 413),

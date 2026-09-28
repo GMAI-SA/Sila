@@ -165,6 +165,10 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// The number this account signs in with, which it cannot give up while
     /// it has no other way in (HTTP 409).
     case phoneIsSignIn = "phone_is_sign_in"
+    /// An email change that would leave or take an admin's address (HTTP 403),
+    /// at `/me/email/request` or `/me/email/confirm`. Admin rights follow the
+    /// address, so it is never moved from the app. Nothing changed.
+    case emailChangeRefused = "email_change_refused"
 
     // MARK: Contract v28 — production without dev mode
 
@@ -584,6 +588,8 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.phoneUnavailable")
             case .phoneIsSignIn:
                 return L10n.t("error.phoneIsSignIn")
+            case .emailChangeRefused:
+                return L10n.t("error.emailChangeRefused")
             case .smsUnavailable:
                 return L10n.t("error.smsUnavailable")
             case .invalidImageURL:
