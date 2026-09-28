@@ -27,16 +27,22 @@ public struct SessionLeftovers: @unchecked Sendable {
     public let directory: URL
     /// The cache swept at sign-out.
     public let responseCache: URLCache
+    /// Videos on their way up (contract v28): the picked file, the
+    /// compressed one, its pieces and its plan. `nil` sweeps none.
+    public let videoUploads: URL?
 
     /// - Parameters:
     ///   - directory: Defaults to the app's temporary directory.
     ///   - responseCache: Defaults to `URLCache.shared`.
+    ///   - videoUploads: Defaults to where ``VideoUploadStore`` keeps them.
     public init(
         directory: URL = FileManager.default.temporaryDirectory,
-        responseCache: URLCache = .shared
+        responseCache: URLCache = .shared,
+        videoUploads: URL? = VideoUploadStore().directory
     ) {
         self.directory = directory
         self.responseCache = responseCache
+        self.videoUploads = videoUploads
     }
 
     /// The export's path.
@@ -60,10 +66,14 @@ public struct SessionLeftovers: @unchecked Sendable {
         try? FileManager.default.removeItem(at: accountExportURL)
     }
 
-    /// Everything a session leaves behind: the export and every cached
-    /// response.
+    /// Everything a session leaves behind: the export, every cached
+    /// response, and any video that had not finished going up — whether the
+    /// person signed out or the server ended the session.
     public func sweep() {
         removeAccountExport()
         responseCache.removeAllCachedResponses()
+        if let videoUploads {
+            try? FileManager.default.removeItem(at: videoUploads)
+        }
     }
 }

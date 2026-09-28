@@ -182,6 +182,20 @@ final class SilaAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {}
 
+    /// The system woke the app because a video's pieces finished going up
+    /// while it was suspended or gone (contract v28 §3.2). The upload session
+    /// is reconnected so it can say so; the uploader then carries on from
+    /// where the server says it stands.
+    func application(
+        _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        if !BackgroundVideoUploadTransport.shared.handleEvents(forSession: identifier, completion: completionHandler) {
+            completionHandler()
+        }
+    }
+
     /// In the foreground: show it as a banner, like anywhere else.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,

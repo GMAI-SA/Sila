@@ -356,6 +356,79 @@ Around those two:
   carries no name); a tap lands on the voucher's list or the person's own vouch,
   by the push's link, or by its kind when the link is missing.
 
+## Video posts, and the upload that outlives the composer
+
+Contract v28 (`docs/api-contract-v28-video.md` in the backend). Everything
+lives in `Modules/Video/`; the composer, the post card and the feed only call
+into it.
+
+**Offered only where the server says so.** The composer's "Add a video"
+appears only while `/auth/me` says `features.video_upload` — video on, the
+account verified, posting not paused — and never in the reply bar. A cached
+account from before v28 carries no flags and is offered nothing until the
+server answers. Players need no flag: a post that carries a video plays.
+
+**Refused on the phone, with the way out beside it.** A picked video over
+185 seconds (three minutes and the server's five seconds of grace) is said to
+be too long before a byte leaves the phone, with "Trim video" (the system's
+`UIVideoEditorController`, held to three minutes) and "Use the first 3
+minutes" next to it. Everything else is compressed on the phone
+(`AVVideoPreparer`): `AVAssetExportSession` at 1280×720 or below, H.264, HDR
+mapped to ordinary colour, location and device metadata dropped; a small
+H.264 file goes up as it is.
+
+**The upload outlives the sheet.** `VideoUploadCenter` holds every video on
+its way, app-wide, and keeps each job on disk with its plan
+(`Application Support/VideoUploads`, not backed up, readable after first
+unlock so pieces go while the phone is locked). Uploading starts the moment
+a video is picked, so it is usually there by the time the words are. Post
+pressed before it is there hands the post to the center and closes the
+composer: a strip above the feed says "Uploading… 42%", and the post is
+written — once — when the video is complete, after a relaunch too. A job with
+no post waiting belonged to a composer that is gone, and a relaunch lets it
+go, here and on the server.
+
+**Both plan types, resumed silently.** `VideoUploader` asks where the upload
+stands first (`GET status_url`, which lists every gap) and sends only what is
+missing, every piece at once through a **background** `URLSession`
+(`BackgroundVideoUploadTransport`, two on the wire), each from its own file,
+so pieces keep going while the app is suspended; the app delegate reconnects
+the session when the system wakes it. `chunked` sends 5 MiB chunks to the API
+with `Content-Range`; `parts` asks `parts_url` for signed URLs twenty at a
+time and sends 8 MiB parts straight to storage with no Authorization, asking
+again when storage answers 403. A dropped connection, a timeout, a 5xx or
+`503 video_upload_unavailable` waits 1, 2, 4 … 60 seconds with jitter (the
+line says "Waiting for a connection"); `409 upload_incomplete` sends what is
+missing at once; `410 upload_expired` starts a new plan with the same file
+without a word. Only a refusal stops an upload, and says why in the app's
+words.
+
+**Visible to its author until it is ready.** The author's own post shows
+"Preparing your video. Only you can see this post until it's ready.", "being
+reviewed" for a held video (never why), the failure's words, or the
+moderator's removal; `VideoStatusBoard` polls `GET /videos/{id}` every 2.5 s
+for two minutes, then every 10 s, every 30 s while held, once per video
+however many cards show it, and stops when it settles. Nobody else is ever
+sent such a post.
+
+**Playing.** Poster first, tap to play with sound; the master playlist
+through `AVPlayer`, never a rendition. Muted autoplay only for the card most
+in view (60%), and only on Wi-Fi that is neither expensive nor in Low Data
+Mode, with the system's "Auto-Play Video Previews" on and Low Power Mode off
+(`VideoAutoplayPolicy`); a muted video never interrupts somebody's music
+(`.ambient`), and one playing with sound takes the playback session through
+`AudioSessionArbiter`, which a room or a voice post takes back. One video
+plays at a time. Full screen is the same player with a scrubber. Captions are
+drawn by the app from the WebVTT tracks — the stream's own subtitles are
+switched off — so they are named "Arabic (automatic)" / «العربية (تلقائية)»
+wherever they are named, and an Arabic caption runs right to left on an
+English phone.
+
+**Words.** Every refusal of §10 and every state of §11 in English and Arabic,
+in the app's language only, with Western digits like every number in the app.
+Camera recording is not offered: the composer has no capture, and the
+camera's privacy string promises the camera is used only for verification.
+
 ## The session, and what it leaves on the phone
 
 The token pair and the cached account live in the Keychain
@@ -517,6 +590,18 @@ without `vouch_role` — what `-mockScenario vouched` serves unless
 -mockScenario unstarted -openLink https://sila.gmai.sa/vouch/mock-khalid-2026-link
 ```
 
+`VideoServiceMock` ships 9, picked with `-mockVideoScenario` (`-mockAuth` and
+`-mockComposer` imply `-mockVideo`): `success`, `parts` (signed targets, then
+parts), `dropsOnce` (the connection drops half way through the second piece),
+`expiresOnce` (the first complete answers `410`), `held`, `failed`,
+`notAllowed`, `offline` and `slow` (small pieces three seconds apart, to switch away
+or quit mid-upload). It assembles the pieces it is sent into one file, which
+is what plays once "ready", and keeps its state on disk so a relaunched app
+finds it. In debug builds `-mockVideoPick short|long|big` makes "Add a video"
+pick a sample made on the simulator instead of opening Photos,
+`-resetVideoUploads` starts with no upload kept, and `-videoAutoplay on|off`
+decides autoplay instead of the Mac's network.
+
 `-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch`,
 `-mockPreferences`, `-mockAccount`, `-mockProfile`, `-mockNotifications`,
 `-mockSafety`, `-mockRooms` and `-mockVouching` unless the matching
@@ -532,7 +617,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-1,642 total: 1,576 unit (81 opt-in, see below) and 66 XCUITests (49 journeys, 16
+1,739 total: 1,668 unit (85 opt-in, see below) and 71 XCUITests (54 journeys, 16
 reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a
@@ -622,6 +707,15 @@ does the same through a sign-in that answers `email_unverified`; and signs out
 with an access token the server cannot read, then checks the refresh token no
 longer works.
 
+`LiveVideoTests` (contract v28) needs no account either: a verified disposable
+account uploads a three-second test pattern made on the simulator, compressed
+by the app's preparer and sent through a background session of its own name;
+the screen's verdict is set to "ok" through staging's dev route; the post is
+written before the video is ready, watched to ready, and its stream, poster
+and captions checked, then deleted (which deletes every file of the video).
+A twelve-megabyte sample is resumed after its first chunk, and the refusals
+are read in the app's words.
+
 `LiveVouchingTests` (contract v24) works the same way, with disposable accounts
 only: two made vouchers through the dev hook (verified forty days ago — the
 thirty-day rule), two people. It mints a link, reads it through the app's own
@@ -670,6 +764,14 @@ Sila/
 │                         Data (VouchingService, mock, VouchInviteInbox)
 │                         Presentation (the voucher's list, the link sheet, the
 │                         claim, the person's own vouch, the tag, the tier)
+├── Modules/Video/        Domain (PostVideo, the upload plan and its arithmetic,
+│                         VideoCopy, WebVTT, VideoAutoplayPolicy)
+│                         Data (VideoService, BackgroundVideoUploadTransport,
+│                         VideoUploader, AVVideoPreparer, VideoUploadStore, mock,
+│                         SampleVideoFactory in debug builds)
+│                         Presentation (VideoUploadCenter, VideoStatusBoard, the
+│                         player and full screen, the composer's card, the strip
+│                         of posts waiting above the feed)
 └── Modules/Notifications/ Domain (UserNotification/NotificationKind/Page,
                            NotificationPreferences, NotificationCopy)
                            Data (NotificationsService, mock)

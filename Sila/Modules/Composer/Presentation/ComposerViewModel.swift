@@ -71,6 +71,17 @@ public final class ComposerViewModel {
     public private(set) var voiceClip: VoiceClip?
     /// `true` while the recorder is up.
     public var isShowingRecorder = false
+    /// Where videos go up (contract v28). `nil` — the server has video off,
+    /// or this account may not upload one — offers no video at all.
+    public let videoUploads: VideoUploadCenter?
+    /// The upload of the video on this draft, when there is one.
+    public private(set) var videoJobId: UUID?
+    /// A picked video the server would refuse, held so it can be trimmed.
+    public private(set) var videoRefusal: VideoRefusal?
+    /// `true` while a picked video is being fetched and measured.
+    public private(set) var isLoadingVideo = false
+    /// The file the system's trimming screen is open on.
+    public var trimSource: URL?
     /// The voice backend. `nil` hides the microphone.
     public let voice: VoiceServiceProtocol?
     /// The community guidelines, shown before a first post (contract v22).
@@ -137,12 +148,16 @@ public final class ComposerViewModel {
         openGifPicker: Bool = false,
         starters: DiscoverServiceProtocol? = nil,
         voice: VoiceServiceProtocol? = nil,
+        videoUploads: VideoUploadCenter? = nil,
         guidelines: GuidelinesGate? = nil,
         onPosted: @escaping @MainActor ([Post]) -> Void = { _ in },
         onClose: @escaping @MainActor () -> Void = {}
     ) {
         self.starterSource = starters
         self.voice = voice
+        // A reply comes from a bar with no room for a picture, let alone a
+        // player; a video post is a post of its own.
+        self.videoUploads = context.replyTarget == nil ? videoUploads : nil
         self.guidelines = guidelines
         self.context = context
         self.author = author
@@ -174,7 +189,7 @@ public final class ComposerViewModel {
 
     /// Whether the thread affordance is offered. Replies stay single.
     public var allowsThread: Bool {
-        context.replyTarget == nil && poll == nil && voiceClip == nil
+        context.replyTarget == nil && poll == nil && voiceClip == nil && !holdsVideo
             && segments.count < ComposerConstants.maximumThreadSegments
     }
 
@@ -192,6 +207,7 @@ public final class ComposerViewModel {
     public var hasContent: Bool {
         segments.contains { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
             || gif != nil || !attachments.isEmpty || poll != nil || voiceClip != nil
+            || hasVideo || videoRefusal != nil
     }
 
     /// `true` when the Post button should be live.
@@ -209,6 +225,13 @@ public final class ComposerViewModel {
                 && poll.isValid
         }
         let filled = segments.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        if hasVideo {
+            // The video is the post; words beside it are optional. A video
+            // still going up can be posted — it is written when it is there
+            // — but one the server refused cannot.
+            if case .failed? = videoPhase { return false }
+            return filled.allSatisfy { ComposerTextMetrics.make($0.text).canPost }
+        }
         if voiceClip != nil {
             // The recording is the post; words beside it are a title.
             return filled.allSatisfy { ComposerTextMetrics.make($0.text).canPost }
@@ -249,11 +272,12 @@ public final class ComposerViewModel {
     /// never a reply or a quote, and not beside pictures or a GIF.
     public var canAddPoll: Bool {
         context.replyTarget == nil && context.quotedPost == nil && poll == nil && voiceClip == nil
-            && gif == nil && attachments.isEmpty && segments.count == 1
+            && gif == nil && attachments.isEmpty && segments.count == 1 && !holdsVideo
     }
 
-    /// Whether pictures and GIFs are offered. Not while a poll is on.
-    public var allowsMedia: Bool { poll == nil && voiceClip == nil }
+    /// Whether pictures and GIFs are offered. Not while a poll, a recording
+    /// or a video is on.
+    public var allowsMedia: Bool { poll == nil && voiceClip == nil && !holdsVideo }
 
     // MARK: - Voice
 
@@ -261,7 +285,117 @@ public final class ComposerViewModel {
     /// reply (a voice reply is a question), and nothing else attached.
     public var canRecordVoice: Bool {
         voice != nil && voiceClip == nil && poll == nil && gif == nil && attachments.isEmpty
-            && context.quotedPost == nil && segments.count == 1
+            && context.quotedPost == nil && segments.count == 1 && !holdsVideo
+    }
+
+    // MARK: - Video
+
+    /// Whether a video is on the draft, or on its way to being.
+    public var hasVideo: Bool { videoJobId != nil }
+
+    /// A video on the draft, being fetched, or refused and waiting to be
+    /// trimmed: whatever else travels alone waits too, so trimming it never
+    /// finds pictures or a thread beside it.
+    private var holdsVideo: Bool { hasVideo || videoRefusal != nil || isLoadingVideo }
+
+    /// Where the draft's video is.
+    public var videoPhase: VideoUploadPhase? {
+        guard let videoJobId else { return nil }
+        return videoUploads?.phase(videoJobId)
+    }
+
+    /// Whether "Video" is offered: the server lets this account upload one,
+    /// and nothing else that travels alone is on the draft. A video post
+    /// carries no pictures, GIF, poll or recording, and is one post, not a
+    /// thread.
+    public var canAddVideo: Bool {
+        videoUploads != nil && !hasVideo && videoRefusal == nil && !isLoadingVideo
+            && poll == nil && voiceClip == nil && gif == nil && attachments.isEmpty && segments.count == 1
+    }
+
+    /// A picked video: measured, then refused with a way to trim it if it is
+    /// over three minutes, or started up at once.
+    public func attachVideo(from source: URL) async {
+        guard let videoUploads, !hasVideo else { return }
+        isLoadingVideo = true
+        defer { isLoadingVideo = false }
+        await videoUploads.loadConfig()
+        let info: VideoSourceInfo
+        do {
+            info = try await videoUploads.inspect(source)
+        } catch {
+            analytics.track(.videoPicked, properties: ["result": "unreadable"])
+            toast = .error(L10n.t("video.error.unreadable"))
+            return
+        }
+        if info.durationSeconds > videoUploads.maximumDuration {
+            // Said before a byte is sent, with the way out beside it.
+            analytics.track(.videoPicked, properties: ["result": "too_long"])
+            videoRefusal = VideoRefusal(source: source, durationSeconds: info.durationSeconds)
+            return
+        }
+        videoRefusal = nil
+        guard let id = videoUploads.begin(source: source, info: info) else {
+            toast = .error(L10n.t("video.error.uploadFailed"))
+            return
+        }
+        videoJobId = id
+    }
+
+    /// Opens the system's trimming screen on the refused video.
+    public func trimRefusedVideo() {
+        guard let refusal = videoRefusal else { return }
+        trimSource = refusal.source
+    }
+
+    /// The trimming screen handed back three minutes or less.
+    public func trimmed(_ file: URL) async {
+        trimSource = nil
+        letGoOfRefusal()
+        await attachVideo(from: file)
+    }
+
+    /// Keeps the first three minutes, for when the trimming screen is not
+    /// there to choose which.
+    public func useFirstMinutes() async {
+        guard let refusal = videoRefusal, let videoUploads else { return }
+        isLoadingVideo = true
+        let trimmed: URL
+        do {
+            trimmed = try await videoUploads.firstMinutes(of: refusal.source)
+        } catch {
+            isLoadingVideo = false
+            toast = .error(L10n.t("video.error.unreadable"))
+            return
+        }
+        isLoadingVideo = false
+        letGoOfRefusal()
+        await attachVideo(from: trimmed)
+    }
+
+    /// The refused video's copy goes with the refusal: it is the whole of a
+    /// long video, and nothing will read it again.
+    private func letGoOfRefusal() {
+        if let source = videoRefusal?.source,
+           source.path.hasPrefix(FileManager.default.temporaryDirectory.path) {
+            try? FileManager.default.removeItem(at: source)
+        }
+        videoRefusal = nil
+    }
+
+    /// Takes the video off the draft. Its upload stops and every file of it
+    /// goes, here and on the server.
+    public func removeVideo() {
+        if let videoJobId { videoUploads?.discard(videoJobId) }
+        videoJobId = nil
+        letGoOfRefusal()
+        trimSource = nil
+    }
+
+    /// "Try again" after a refusal that trying again can help.
+    public func retryVideo() {
+        guard let videoJobId else { return }
+        videoUploads?.retry(videoJobId)
     }
 
     /// The kind the recorder opens in: a reply is a question.
@@ -528,9 +662,28 @@ public final class ComposerViewModel {
             isShowingGuidelines = true
             return
         }
+        if let videoJobId, let videoUploads, !isVideoUploaded {
+            // Still going up: the post is written the moment it is there,
+            // whether or not this sheet is. The feed shows how far it is.
+            videoUploads.post(videoJobId, PendingVideoPost(
+                text: text(at: 0),
+                scope: scope,
+                quotedPostId: context.quotedPost?.id,
+                communityId: context.community?.id,
+                sensitive: sensitive,
+                sensitiveNote: sensitiveNote
+            ))
+            self.videoJobId = nil
+            analytics.track(.postPublished, properties: ["scope": scope.wireValue, "segments": "1", "kind": "video"])
+            onClose()
+            return
+        }
         isPosting = true
         partialFailureMessage = nil
         defer { isPosting = false }
+        // Read before posting: the job is let go once the post is written.
+        let video = uploadedVideo
+        let kind = analyticsKind
 
         let texts = segments
             .map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -556,17 +709,28 @@ public final class ComposerViewModel {
             // Same again for the GIF.
             gif: continuationId == nil ? gif : nil,
             poll: continuationId == nil ? poll : nil,
-            voiceClipId: continuationId == nil ? voiceClip?.id : nil
+            voiceClipId: continuationId == nil ? voiceClip?.id : nil,
+            videoId: video?.id
         )
 
         if !report.posted.isEmpty {
-            onPosted(report.posted)
+            var posted = report.posted
+            if let video, posted[0].video == nil {
+                // The server's post carries its video; a copy that does not
+                // is given the one just uploaded, so the author sees it.
+                posted[0].video = video
+            }
+            if let videoJobId, video != nil {
+                videoUploads?.didPost(videoJobId)
+                self.videoJobId = nil
+            }
+            onPosted(posted)
             if voiceClip != nil { analytics.track(.voicePosted, properties: ["kind": voiceClip?.kind.rawValue ?? "thought"]) }
             if poll != nil { analytics.track(.pollCreated, properties: ["count": String(poll?.options.count ?? 0)]) }
             analytics.track(.postPublished, properties: [
                 "scope": scope.wireValue,
                 "segments": String(report.posted.count),
-                "kind": analyticsKind
+                "kind": kind
             ])
         }
 
@@ -606,6 +770,8 @@ public final class ComposerViewModel {
     /// Confirms the discard.
     public func confirmDiscard() {
         isConfirmingDiscard = false
+        // A draft given up takes its video with it, here and on the server.
+        removeVideo()
         analytics.track(.composerDiscarded)
         onClose()
     }
@@ -617,7 +783,16 @@ public final class ComposerViewModel {
 
     // MARK: - Helpers
 
+    /// The draft's video, once the server has all of it.
+    private var uploadedVideo: PostVideo? {
+        if case let .uploaded(video)? = videoPhase { return video }
+        return nil
+    }
+
+    private var isVideoUploaded: Bool { uploadedVideo != nil }
+
     private var analyticsKind: String {
+        if hasVideo { return "video" }
         if context.replyTarget != nil { return "reply" }
         if context.quotedPost != nil { return "quote" }
         return segments.count > 1 ? "thread" : "post"

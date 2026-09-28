@@ -388,6 +388,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public let mentions: [PostMention]?
     /// A recording, when the post is a voice post (contract v20).
     public var voice: VoiceClip?
+    /// A video, when the post carries one (contract v28). Anybody but its
+    /// author only ever sees it `ready`; the author sees where it stands.
+    /// `var`: the author's copy is replaced as the video becomes ready.
+    public var video: PostVideo?
     /// A shared event (contract v23).
     public var event: EventCard?
     /// The author's weekly recognition, raw (contract v23).
@@ -443,9 +447,11 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         poll: Poll? = nil,
         hiddenByAuthor: Bool = false,
         mentions: [PostMention]? = nil,
-        voice: VoiceClip? = nil
+        voice: VoiceClip? = nil,
+        video: PostVideo? = nil
     ) {
         self.voice = voice
+        self.video = video
         self.poll = poll
         self.hiddenByAuthor = hiddenByAuthor
         self.mentions = mentions
@@ -479,7 +485,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
         case communityId, communitySlug, communityName, gif, room
-        case poll, hiddenByAuthor, mentions, voice, event, authorBadges
+        case poll, hiddenByAuthor, mentions, voice, video, event, authorBadges
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -555,6 +561,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         mentions = (try? container.decodeIfPresent([PostMention].self, forKey: .mentions)) ?? nil
         // A recording that cannot be decoded costs the recording, never the post.
         voice = (try? container.decodeIfPresent(VoiceClip.self, forKey: .voice)) ?? nil
+        // A video that cannot be decoded costs the video, never the post.
+        video = (try? container.decodeIfPresent(PostVideo.self, forKey: .video)) ?? nil
         event = (try? container.decodeIfPresent(EventCard.self, forKey: .event)) ?? nil
         authorBadges = (try? container.decode([String].self, forKey: .authorBadges)) ?? []
     }
@@ -587,7 +595,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             poll: poll,
             hiddenByAuthor: hiddenByAuthor,
             mentions: mentions,
-            voice: voice
+            voice: voice,
+            video: video
         )
     }
 }

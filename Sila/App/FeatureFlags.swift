@@ -37,6 +37,12 @@ import Foundation
 /// -mockVoiceEngine     run against VoiceEngineMock instead of LiveKit
 /// -mockVouching        run against VouchingServiceMock instead of the live API
 /// -mockVouchingScenario X  pick a VouchingServiceMock.MockScenario
+/// -mockVideo           run against VideoServiceMock instead of the live API
+/// -mockVideoScenario X pick a VideoServiceMock.MockScenario
+/// -mockVideoPick X     (debug) "Video" picks a made sample: short, long, big
+/// -resetVideoUploads   (debug) start with no uploads kept on the phone
+/// -videoAutoplay on|off (debug) decide autoplay instead of the network
+/// -noVideoPosts        take video out of the composer
 /// -openLink URL        open a sila.gmai.sa link on launch, as a tap would
 /// ```
 public struct FeatureFlags: Sendable {
@@ -90,6 +96,11 @@ public struct FeatureFlags: Sendable {
     /// microphone leaves the composer and the reply bar; voice posts already
     /// on the server still play.
     public var voicePosts = true
+    /// v28 — uploading and playing video posts. Off, the composer offers no
+    /// video; posts that carry one still play. On, the composer still offers
+    /// it only when the server says this account may upload one
+    /// (`features.video_upload`).
+    public var videoPosts = true
     /// Shows the first-run step even when the account has been asked —
     /// `-forceOnboarding`, for UI journeys and demos.
     public var forceOnboarding = false
@@ -219,6 +230,13 @@ public struct FeatureFlags: Sendable {
     public var useMockVouching = false
     /// Which voucher world to serve when ``useMockVouching`` is on.
     public var mockVouchingScenario: VouchingServiceMock.MockScenario = .voucher
+
+    // MARK: Contract v28 — video
+
+    /// Use ``VideoServiceMock`` instead of the live backend.
+    public var useMockVideo = false
+    /// Which world the mocked video server plays.
+    public var mockVideoScenario: VideoServiceMock.MockScenario = .success
 
     public init() {}
 
@@ -415,6 +433,23 @@ public struct FeatureFlags: Sendable {
         }
         if arguments.contains("-noVoicePosts") {
             flags.voicePosts = false
+        }
+        if arguments.contains("-mockVideo") {
+            flags.useMockVideo = true
+        }
+        if let index = arguments.firstIndex(of: "-mockVideoScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = VideoServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockVideo = true
+            flags.mockVideoScenario = scenario
+        }
+        // Once more: a mocked session's token would 401 against the real
+        // `/videos/uploads`, and a mocked post's video could never be read.
+        if flags.useMockAuth || flags.useMockComposer {
+            flags.useMockVideo = true
+        }
+        if arguments.contains("-noVideoPosts") {
+            flags.videoPosts = false
         }
         if arguments.contains("-noOnboarding") {
             flags.onboarding = false

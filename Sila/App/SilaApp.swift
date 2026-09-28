@@ -67,6 +67,11 @@ struct SilaApp: App {
                         guard id != nil else { return }
                         Task { await container.pushRegistrar.refreshRegistration() }
                     }
+                    // Videos still going up resume for this account, and only
+                    // this one's; with nobody signed in, none run.
+                    .onChange(of: container.session.user?.id, initial: true) { _, id in
+                        container.videoUploads.restore(accountId: id)
+                    }
             }
         }
     }

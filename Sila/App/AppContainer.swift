@@ -53,6 +53,13 @@ public final class AppContainer {
     public let discoverService: DiscoverServiceProtocol
     /// Recording, uploading and captioning voice posts (contract v20).
     public let voiceService: VoiceServiceProtocol
+    /// Uploading and reading video posts (contract v28).
+    public let videoService: VideoServiceProtocol
+    /// Every video on its way from a composer to a post, kept across
+    /// relaunches.
+    public let videoUploads: VideoUploadCenter
+    /// Watches the author's own videos until they are ready.
+    public let videoStatusBoard: VideoStatusBoard
     /// Room reminders and weekly series (contract v21).
     public let roomEngagement: RoomEngagementServiceProtocol
     /// Device registration and push opens.
@@ -166,6 +173,9 @@ public final class AppContainer {
         languageService: LanguageServiceProtocol? = nil,
         discoverService: DiscoverServiceProtocol? = nil,
         voiceService: VoiceServiceProtocol? = nil,
+        videoService: VideoServiceProtocol? = nil,
+        videoPreparer: VideoPreparing? = nil,
+        videoStore: VideoUploadStore? = nil,
         roomEngagement: RoomEngagementServiceProtocol? = nil,
         pushService: PushServiceProtocol? = nil,
         roomDepth: RoomDepthServiceProtocol? = nil,
@@ -328,6 +338,34 @@ public final class AppContainer {
             self.voiceService = VoiceService(network: network, tokens: tokens, analytics: analytics)
         }
 
+        #if DEBUG
+        // A journey that starts from nothing: no upload kept from the last
+        // one, and a mocked server that has never seen a video.
+        if ProcessInfo.processInfo.arguments.contains("-resetVideoUploads") {
+            (videoStore ?? VideoUploadStore()).removeAll()
+            VideoServiceMock.reset()
+        }
+        #endif
+        let transport = BackgroundVideoUploadTransport.shared
+        let resolvedVideo: VideoServiceProtocol
+        if let videoService {
+            resolvedVideo = videoService
+        } else if flags.useMockVideo {
+            resolvedVideo = VideoServiceMock(scenario: flags.mockVideoScenario, directory: VideoServiceMock.launchDirectory)
+        } else {
+            resolvedVideo = VideoService(network: network, tokens: tokens, transport: transport, analytics: analytics)
+        }
+        self.videoService = resolvedVideo
+        self.videoUploads = VideoUploadCenter(
+            service: resolvedVideo,
+            preparer: videoPreparer ?? AVVideoPreparer(),
+            composer: self.composerService,
+            store: videoStore ?? VideoUploadStore(),
+            analytics: analytics,
+            stopTransfers: { await transport.cancelAll() }
+        )
+        self.videoStatusBoard = VideoStatusBoard(service: resolvedVideo)
+
         if let roomEngagement {
             self.roomEngagement = roomEngagement
         } else if flags.useMockRooms {
@@ -357,9 +395,15 @@ public final class AppContainer {
         // account's pushes, and a vouch link still waiting on it is let go —
         // kept, it would come back for whoever signs in next, and each of
         // their tries would spend one of the link's three.
-        session.willSignOut = { [weak registrar, weak vouchInbox] in
+        let videoUploads = self.videoUploads
+        let videoStatusBoard = self.videoStatusBoard
+        session.willSignOut = { [weak registrar, weak vouchInbox, weak videoUploads, weak videoStatusBoard] in
             await registrar?.willSignOut()
             vouchInbox?.forget()
+            // An upload of this account's goes no further, and nothing of it
+            // stays on the phone for whoever signs in next.
+            videoUploads?.forgetAll()
+            videoStatusBoard?.reset()
         }
 
         if let preferencesService {

@@ -456,6 +456,23 @@ public enum AnalyticsEvent: String, Sendable {
     /// A post carrying a recording was published. Carries `kind`.
     case voicePosted = "voice_posted"
 
+    // MARK: Video posts (contract v28)
+    //
+    // Sizes and lengths only: never a file name, which on a phone can carry
+    // a date and a place.
+
+    /// A video was picked for the composer. Carries `result`: `ok`,
+    /// `too_long`, `unreadable`.
+    case videoPicked = "video_picked"
+    /// The server handed out an upload plan. Carries `type` and `bytes`.
+    case videoUploadStarted = "video_upload_started"
+    /// The last byte arrived and the upload was completed. Carries `bytes`.
+    case videoUploadCompleted = "video_upload_completed"
+    /// An upload stopped for good. Carries `code`.
+    case videoUploadFailed = "video_upload_failed"
+    /// A post carrying a video was written.
+    case videoPosted = "video_posted"
+
     // MARK: Reach (contract v21)
 
     /// The app came to the foreground. The retention metrics are built on it.

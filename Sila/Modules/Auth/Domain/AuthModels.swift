@@ -121,6 +121,11 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     /// what the voucher wrote about it.
     public var vouch: VouchState? = nil
 
+    /// What the server offers this account right now (contract v28).
+    /// Absent — an older server, or a session cached before it — reads as
+    /// nothing offered, so no entry point appears until the server says so.
+    public var features: AccountFeatures = AccountFeatures()
+
     /// Carries a live vouch — the tag, the limited tier, the feed.
     public var isVouched: Bool { standing == .vouched }
 
@@ -161,7 +166,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
         case handle, countryCode, phone, verifiedName, hideVerifiedName
         case needsInterestPrompt, experimentBucket, guidelinesVersion, currentGuidelinesVersion
-        case standing, vouch
+        case standing, vouch, features
         case avatarURL = "avatarUrl"
     }
 
@@ -201,6 +206,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         guidelinesVersion = AuthUser.version(container, .guidelinesVersion)
         currentGuidelinesVersion = AuthUser.version(container, .currentGuidelinesVersion)
         vouch = (try? container.decodeIfPresent(VouchState.self, forKey: .vouch)) ?? nil
+        features = ((try? container.decodeIfPresent(AccountFeatures.self, forKey: .features)) ?? nil) ?? AccountFeatures()
         // Identity always wins; a server that predates `standing` is read
         // from the status, which is all it knew.
         let sent = (try? container.decodeIfPresent(Standing.self, forKey: .standing)) ?? nil
@@ -233,6 +239,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         copy.currentGuidelinesVersion = currentGuidelinesVersion
         copy.standing = standing
         copy.vouch = vouch
+        copy.features = features
         return copy
     }
 
@@ -273,6 +280,32 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
             if !letters.isEmpty { return String(letters) }
         }
         return String(email.prefix(2))
+    }
+}
+
+/// What the server offers the signed-in account (`AuthUserOut.features`,
+/// contract v28).
+public struct AccountFeatures: Codable, Equatable, Sendable {
+    /// Video posts are open on this server (`VIDEO_ENABLED`). While false no
+    /// video entry point is shown, and posts never carry a video.
+    public var video: Bool
+    /// This account may upload one now: video is open, the account is
+    /// verified, and posting is not paused. The picker is shown only then.
+    public var videoUpload: Bool
+
+    public init(video: Bool = false, videoUpload: Bool = false) {
+        self.video = video
+        self.videoUpload = videoUpload
+    }
+
+    private enum CodingKeys: String, CodingKey { case video, videoUpload }
+
+    /// A missing or malformed flag is `false`: an entry point the server did
+    /// not offer is never shown.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        video = ((try? c.decodeIfPresent(Bool.self, forKey: .video)) ?? nil) ?? false
+        videoUpload = ((try? c.decodeIfPresent(Bool.self, forKey: .videoUpload)) ?? nil) ?? false
     }
 }
 

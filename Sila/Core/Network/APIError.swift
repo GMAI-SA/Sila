@@ -431,6 +431,47 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// The third mismatch closed the link for good (HTTP 409).
     case inviteClosed = "invite_closed"
 
+    // MARK: Contract v28 — video
+
+    /// Video is off on this server (`reason: not_available`) or the account
+    /// is not verified (`reason: not_verified`) (HTTP 403). The reason decides
+    /// the words; see ``URLSessionNetworkClient/makeError(status:data:)``.
+    case videoNotAllowed = "video_not_allowed"
+    /// Longer than three minutes, declared or measured (HTTP 400).
+    case videoTooLong = "video_too_long"
+    /// Over 300 MB (HTTP 413).
+    case videoTooLarge = "video_too_large"
+    /// Twenty finished (or forty started) uploads in a day (HTTP 429).
+    case videoRateLimited = "video_rate_limited"
+    /// The upload has gone: a day old, or superseded (HTTP 410). The client
+    /// starts a new plan with the same file without saying anything.
+    case uploadExpired = "upload_expired"
+    /// Complete called with something missing (HTTP 409). The client sends
+    /// what is missing and completes again.
+    case uploadIncomplete = "upload_incomplete"
+    /// A chunk that does not fit the plan — a client bug (HTTP 400).
+    case uploadChunkInvalid = "upload_chunk_invalid"
+    /// A chunk for a `parts` plan, or the reverse, or the upload is complete
+    /// (HTTP 409).
+    case uploadTypeMismatch = "upload_type_mismatch"
+    /// Storage failed for a moment (HTTP 503). Retried with a backoff.
+    case videoUploadUnavailable = "video_upload_unavailable"
+    /// Not yours, or no such video (HTTP 404).
+    case videoNotFound = "video_not_found"
+    /// Posting somebody else's video (HTTP 400).
+    case invalidVideo = "invalid_video"
+    /// The video is on a post already (HTTP 409).
+    case videoUsed = "video_used"
+    /// Posting before the upload completed (HTTP 409).
+    case videoNotUploaded = "video_not_uploaded"
+    /// Posting a video that failed (HTTP 409); `failure_code` says why, and
+    /// the words are the failure's.
+    case videoProcessingFailed = "video_processing_failed"
+    /// Posting a removed video (HTTP 409).
+    case videoRemoved = "video_removed"
+    /// A video beside pictures, a GIF, a poll or a voice clip (HTTP 400).
+    case videoWithMedia = "video_with_media"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -782,6 +823,26 @@ public enum APIError: Error, Equatable, Sendable {
             case .vouchUnderAge: return L10n.t("vouch.error.underAge")
             case .detailsMismatch: return L10n.t("vouch.error.detailsMismatch")
             case .inviteClosed: return L10n.t("vouch.error.inviteClosed")
+            case .videoNotAllowed, .videoProcessingFailed:
+                // Worded from `reason` / `failure_code` as the error was read
+                // off the wire; the fallback is the likelier of the two.
+                if code == .videoNotAllowed {
+                    return message.isEmpty ? L10n.t("video.error.notVerified") : message
+                }
+                return message.isEmpty ? L10n.t("video.error.processingFailed") : message
+            case .videoTooLong: return L10n.t("video.error.tooLong")
+            case .videoTooLarge: return L10n.t("video.error.tooLarge")
+            case .videoRateLimited: return L10n.t("video.error.rateLimited")
+            case .uploadExpired: return L10n.t("video.error.uploadExpired")
+            case .uploadIncomplete: return L10n.t("video.error.uploadIncomplete")
+            case .uploadChunkInvalid, .uploadTypeMismatch: return L10n.t("video.error.uploadFailed")
+            case .videoUploadUnavailable: return L10n.t("video.error.unavailable")
+            case .videoNotFound: return L10n.t("video.error.notFound")
+            case .invalidVideo: return L10n.t("video.error.notYours")
+            case .videoUsed: return L10n.t("video.error.used")
+            case .videoNotUploaded: return L10n.t("video.error.notUploaded")
+            case .videoRemoved: return L10n.t("video.error.removed")
+            case .videoWithMedia: return L10n.t("video.error.withMedia")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }
@@ -820,12 +881,18 @@ struct APIErrorEnvelope: Decodable {
         let mismatchedFields: [String]?
         /// Present on `details_mismatch`: tries the link has left.
         let attemptsLeft: Int?
+        /// Present on `video_not_allowed` (contract v28): `not_available` or
+        /// `not_verified`.
+        let reason: String?
+        /// Present on `video_processing_failed`: why the video failed.
+        let failureCode: String?
 
         /// Decoded with a plain decoder (see `makeError`), so the wire's
         /// snake case is spelled out.
         private enum CodingKeys: String, CodingKey {
-            case code, message, fields
+            case code, message, fields, reason
             case attemptsLeft = "attempts_left"
+            case failureCode = "failure_code"
         }
 
         /// `fields` is objects on a validation error and strings on a
@@ -839,6 +906,8 @@ struct APIErrorEnvelope: Decodable {
             fields = (try? container.decodeIfPresent([ValidationField].self, forKey: .fields)) ?? nil
             mismatchedFields = (try? container.decodeIfPresent([String].self, forKey: .fields)) ?? nil
             attemptsLeft = (try? container.decodeIfPresent(Int.self, forKey: .attemptsLeft)) ?? nil
+            reason = (try? container.decodeIfPresent(String.self, forKey: .reason)) ?? nil
+            failureCode = (try? container.decodeIfPresent(String.self, forKey: .failureCode)) ?? nil
         }
     }
 }

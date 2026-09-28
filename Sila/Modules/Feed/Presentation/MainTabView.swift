@@ -181,6 +181,10 @@ public struct MainTabView: View {
                         try await container.feedService.setReaction(kind, on: on, postId: postId)
                     }))
                     .environment(\.guidelinesGate, container.guidelinesGate)
+                    // The author's own videos, watched until they are ready,
+                    // and the posts still waiting for theirs.
+                    .environment(\.videoStatusBoard, container.videoStatusBoard)
+                    .environment(\.videoUploadCenter, container.videoUploads)
                     // Every tag below opens its explainer up here, where the
                     // sheet can outlive the card it came from.
                     .environment(\.vouchTagAction, VouchTagAction { person in openVouchTag(person) })
@@ -489,6 +493,16 @@ public struct MainTabView: View {
             guard container.flags.composer else { return }
             await container.gifAvailability.check(country: container.session.user?.countryCode)
         }
+        // A post that waited for its video — pressed Post while it was still
+        // going up, perhaps before a relaunch — lands where one written from
+        // the composer would.
+        .task {
+            container.videoUploads.onPosted = { posted in
+                viewModel.insert(newPosts: posted)
+                exploreViewModel.insert(posted)
+            }
+            await container.videoUploads.loadConfig()
+        }
         // A link into the app: one waiting from before sign-in, or one that
         // arrives while the tabs are up.
         .task { await openPendingLink() }
@@ -702,6 +716,7 @@ public struct MainTabView: View {
             // A recorded voice is a microphone in front of strangers: verified
             // members only (contract v24 §4), so a vouched account types.
             voice: container.flags.voicePosts && !isVouched ? container.voiceService : nil,
+            videoUploads: videoUploadsForComposer,
             guidelines: guidelinesGateForComposer(),
             onPosted: { posted in
                 viewModel.insert(newPosts: posted)
@@ -713,6 +728,14 @@ public struct MainTabView: View {
         )
         if let prefill { composer.apply(prefill) }
         return composer
+    }
+
+    /// Where the composer's videos go, or `nil` — no video offered — unless
+    /// the server says this account may upload one now: video open, the
+    /// account verified, posting not paused (contract v28 §1).
+    private var videoUploadsForComposer: VideoUploadCenter? {
+        guard container.flags.videoPosts, container.session.user?.features.videoUpload == true else { return nil }
+        return container.videoUploads
     }
 
     /// The guidelines gate, told the account's versions first.

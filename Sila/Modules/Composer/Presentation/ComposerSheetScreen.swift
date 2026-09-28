@@ -8,10 +8,10 @@ import SwiftUI
 /// ``ReplyComposerBar`` — a reply.
 ///
 /// > Note: The Phase-4 spec's toolbar listed Photo, Video, Poll and Schedule.
-/// > Photo now exists — the server grew `POST /media/posts`. Video, Poll and
-/// > Schedule still have no endpoint behind them, so those buttons stay absent
-/// > rather than present-and-dead. The **scope picker** keeps the centre of the
-/// > screen, because on Sila the audience is the product, not a setting.
+/// > Photo, Poll and Video (contract v28) now exist. Schedule still has no
+/// > endpoint behind it, so that button stays absent rather than
+/// > present-and-dead. The **scope picker** keeps the centre of the screen,
+/// > because on Sila the audience is the product, not a setting.
 @MainActor
 public struct ComposerSheetScreen: View {
 
@@ -107,6 +107,19 @@ public struct ComposerSheetScreen: View {
                     }, onClose: { viewModel.isShowingGuidelines = false })
                 }
             }
+            .fullScreenCover(isPresented: Binding(
+                get: { viewModel.trimSource != nil },
+                set: { if !$0 { viewModel.trimSource = nil } }
+            )) {
+                if let source = viewModel.trimSource {
+                    VideoTrimmerView(
+                        source: source,
+                        onTrimmed: { file in Task { await viewModel.trimmed(file) } },
+                        onCancel: { viewModel.trimSource = nil }
+                    )
+                    .ignoresSafeArea()
+                }
+            }
             .sheet(isPresented: $viewModel.isShowingRecorder) {
                 if let voice = viewModel.voice {
                     Owned({
@@ -180,6 +193,8 @@ public struct ComposerSheetScreen: View {
                 }
             }
 
+            ComposerVideoCard(viewModel: viewModel)
+
             if let gif = viewModel.gif {
                 ZStack(alignment: .topTrailing) {
                     GifMediaView(gif, maxHeight: 180)
@@ -197,7 +212,10 @@ public struct ComposerSheetScreen: View {
                 }
             }
 
-            HStack(spacing: SLSpacing.md) {
+            // Wraps onto a second line rather than squeezing the labels: with
+            // a video beside a photo, a GIF, a recording and a poll, one line
+            // is not enough on a phone.
+            SLFlowLayout(spacing: SLSpacing.md) {
                 if viewModel.allowsMedia {
                 PhotosPicker(
                     selection: $picked,
@@ -223,6 +241,12 @@ public struct ComposerSheetScreen: View {
                     .accessibilityIdentifier("composer.addGif")
                     .accessibilityHint(Text(L10n.t("composer.gif.add.a11yHint")))
                 }
+                }
+
+                // Only for an account the server lets upload one, and only
+                // while the draft has room for it.
+                if viewModel.canAddVideo {
+                    ComposerVideoButton(viewModel: viewModel)
                 }
 
                 if viewModel.canRecordVoice {

@@ -191,6 +191,9 @@ public struct HomeScreen: View {
         let state = viewModel.state(for: tab)
 
         ScrollView {
+            // The author's posts still waiting for their video: how far each
+            // upload is. Nobody else sees them, on any tab.
+            PendingVideoPostsStrip()
             if tab == .forYou {
                 forYouHeader
             }

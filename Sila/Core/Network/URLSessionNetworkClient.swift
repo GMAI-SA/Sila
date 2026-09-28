@@ -184,15 +184,25 @@ public final class URLSessionNetworkClient: NetworkClient {
                     message: envelope.detail.message
                 )
             }
-            return .api(
-                code: code,
+            let message: String
+            switch code {
+            case .validationError:
                 // A validation reply's wording is rebuilt here from the field
                 // that failed; the server's sentence is for developers.
-                message: code == .validationError
-                    ? Self.validationMessage(envelope.detail.fields ?? [])
-                    : envelope.detail.message,
-                status: status
-            )
+                message = Self.validationMessage(envelope.detail.fields ?? [])
+            case .videoNotAllowed:
+                // One code, two situations: the server has no video yet, or
+                // this account is not verified. The words follow the reason.
+                message = envelope.detail.reason == "not_available"
+                    ? L10n.t("video.error.notAvailable")
+                    : L10n.t("video.error.notVerified")
+            case .videoProcessingFailed:
+                // Posting a failed video: the failure's own words.
+                message = VideoCopy.failure(code: envelope.detail.failureCode)
+            default:
+                message = envelope.detail.message
+            }
+            return .api(code: code, message: message, status: status)
         }
         if let envelope = try? JSONDecoder().decode(APIValidationListEnvelope.self, from: data) {
             return .api(code: .validationError, message: Self.validationMessage(envelope.detail), status: status)

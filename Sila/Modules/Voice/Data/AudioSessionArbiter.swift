@@ -16,7 +16,7 @@ import Foundation
 @MainActor
 public final class AudioSessionArbiter {
 
-    public enum Owner: Equatable, Sendable { case none, recorder, player, room }
+    public enum Owner: Equatable, Sendable { case none, recorder, player, room, video }
 
     public static let shared = AudioSessionArbiter()
 
@@ -50,6 +50,24 @@ public final class AudioSessionArbiter {
         take(.player)
         try session.setCategory(.playback, mode: .spokenAudio)
         try session.setActive(true)
+    }
+
+    /// For a video playing with its sound on (contract v28). Like a voice
+    /// post, `.playback` only while it plays; a room keeps the session.
+    public func acquireForVideo() throws {
+        guard owner != .room else { throw AudioSessionError.roomActive }
+        take(.video)
+        try session.setCategory(.playback, mode: .moviePlayback)
+        try session.setActive(true)
+    }
+
+    /// Before a video starts **muted**, by itself, in the feed: nobody's
+    /// music or podcast stops for a picture that makes no sound. Only when
+    /// nothing else holds the session — a room, a recorder or a voice post
+    /// keep theirs, and a muted video changes nothing about them.
+    public func prepareForMutedVideo() {
+        guard owner == .none else { return }
+        try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
     }
 
     /// Before a room connects: everyone else stops and the session is released,

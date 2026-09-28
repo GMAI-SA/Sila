@@ -41664,6 +41664,957 @@
         }
       }
     },
+    "video.a11y.label": {
+      "comment": "What VoiceOver says for a video in a post. %@ is its length, like 1:34.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فيديو، %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video, %@"
+          }
+        }
+      }
+    },
+    "video.add": {
+      "comment": "The composer's button beside Add a photo (contract v28).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أضف فيديو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a video"
+          }
+        }
+      }
+    },
+    "video.add.a11yHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر من مكتبتك فيديو مدته 3 دقائق أو أقل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a video of up to 3 minutes from your library"
+          }
+        }
+      }
+    },
+    "video.captions.ar": {
+      "comment": "A caption track. Captions are machine-made and always labelled so (contract v28 §11).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "العربية (تلقائية)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arabic (automatic)"
+          }
+        }
+      }
+    },
+    "video.captions.en": {
+      "comment": "A caption track. Captions are machine-made and always labelled so (contract v28 §11).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإنجليزية (تلقائية)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English (automatic)"
+          }
+        }
+      }
+    },
+    "video.captions.menu": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التسميات التوضيحية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captions"
+          }
+        }
+      }
+    },
+    "video.captions.off": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دون تسميات توضيحية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captions off"
+          }
+        }
+      }
+    },
+    "video.captions.other": {
+      "comment": "A caption track in another language. %@ is the language's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (تلقائية)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (automatic)"
+          }
+        }
+      }
+    },
+    "video.error.notAvailable": {
+      "comment": "403 video_not_allowed, reason not_available (contract v28 §10).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نشر الفيديو غير متاح بعد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video posts aren't available yet."
+          }
+        }
+      }
+    },
+    "video.error.notFound": {
+      "comment": "404 video_not_found.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الفيديو غير متاح."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That video isn't available."
+          }
+        }
+      }
+    },
+    "video.error.notUploaded": {
+      "comment": "409 video_not_uploaded.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أكمل رفع الفيديو أولًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish uploading the video first."
+          }
+        }
+      }
+    },
+    "video.error.notVerified": {
+      "comment": "403 video_not_allowed, reason not_verified (contract v28 §10).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نشر الفيديو متاح للأعضاء الموثَّقين فقط."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only verified members can post videos."
+          }
+        }
+      }
+    },
+    "video.error.notYours": {
+      "comment": "400 invalid_video.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكنك نشر هذا الفيديو."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That video isn't yours to post."
+          }
+        }
+      }
+    },
+    "video.error.processingFailed": {
+      "comment": "failure video_processing_failed.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر تجهيز هذا الفيديو. ارفعه مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't prepare this video. Upload it again."
+          }
+        }
+      }
+    },
+    "video.error.rateLimited": {
+      "comment": "429 video_rate_limited (contract v28 §10).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفعتَ عددًا كبيرًا من الفيديوهات اليوم. حاول مرة أخرى غدًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've uploaded a lot of videos today. Try again tomorrow."
+          }
+        }
+      }
+    },
+    "video.error.removed": {
+      "comment": "409 video_removed.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُزيل هذا الفيديو."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That video was removed."
+          }
+        }
+      }
+    },
+    "video.error.roomActive": {
+      "comment": "A voice room holds the sound; the video keeps playing muted.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غادر الغرفة لتسمع صوت هذا الفيديو."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave the room to hear this video."
+          }
+        }
+      }
+    },
+    "video.error.tooLarge": {
+      "comment": "413 video_too_large (contract v28 §10).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حجم هذا الفيديو أكبر من 300 ميغابايت. اختر فيديو أقصر أو أصغر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This video is larger than 300 MB. Choose a shorter or smaller video."
+          }
+        }
+      }
+    },
+    "video.error.tooLong": {
+      "comment": "video_too_long, and the phone's own check before uploading (contract v28 §10). Western digits, like every number in the app.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الفيديو أطول من 3 دقائق. قُصَّه ثم حاول مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This video is longer than 3 minutes. Trim it and try again."
+          }
+        }
+      }
+    },
+    "video.error.unavailable": {
+      "comment": "503 video_upload_unavailable. Retried with a backoff.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرفع متوقف مؤقتًا، وسيُستأنف تلقائيًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploading is paused for a moment. It will carry on by itself."
+          }
+        }
+      }
+    },
+    "video.error.unreadable": {
+      "comment": "failure video_unreadable, and a picked file the phone cannot read.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّرت قراءة هذا الفيديو. صدِّره مرة أخرى أو اختر فيديو آخر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't read this video. Export it again or choose another one."
+          }
+        }
+      }
+    },
+    "video.error.uploadExpired": {
+      "comment": "410 upload_expired. The app starts again silently; this is only ever shown if that fails.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توقّف رفع هذا الفيديو قبل اكتماله. ارفعه مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This upload stopped before it finished. Upload the video again."
+          }
+        }
+      }
+    },
+    "video.error.uploadFailed": {
+      "comment": "upload_chunk_invalid, upload_type_mismatch, request_too_large during an upload (contract v28 §10).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حدث خطأ أثناء الرفع. حاول مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong while uploading. Try again."
+          }
+        }
+      }
+    },
+    "video.error.uploadIncomplete": {
+      "comment": "409 upload_incomplete. The app sends what is missing; this is only ever shown if that fails.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يصل جزء من الفيديو بعد. أبقِ التطبيق مفتوحًا حتى يكتمل الرفع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Part of this video hasn't arrived yet. Keep the app open to finish uploading."
+          }
+        }
+      }
+    },
+    "video.error.used": {
+      "comment": "409 video_used.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا الفيديو مرفق بمنشور بالفعل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That video is already on a post."
+          }
+        }
+      }
+    },
+    "video.error.withMedia": {
+      "comment": "400 video_with_media.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن أن يتضمن منشور الفيديو صورًا أو صورة متحركة أو استطلاعًا أو تسجيلًا صوتيًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A video post can't also have pictures, a GIF, a poll or a voice recording."
+          }
+        }
+      }
+    },
+    "video.fullscreen": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملء الشاشة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full screen"
+          }
+        }
+      }
+    },
+    "video.fullscreen.close": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إغلاق ملء الشاشة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close full screen"
+          }
+        }
+      }
+    },
+    "video.mute": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كتم الصوت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn sound off"
+          }
+        }
+      }
+    },
+    "video.pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إيقاف الفيديو مؤقتًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause video"
+          }
+        }
+      }
+    },
+    "video.pending.a11yLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منشورك بانتظار اكتمال الفيديو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your post, waiting for its video"
+          }
+        }
+      }
+    },
+    "video.pending.discard": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجاهل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard"
+          }
+        }
+      }
+    },
+    "video.pending.discard.confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجاهل المنشور والفيديو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard post and video"
+          }
+        }
+      }
+    },
+    "video.pending.discard.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل تريد تجاهل هذا المنشور؟ سيتوقف رفع الفيديو ويُحذف."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard this post? Its video stops uploading and is deleted."
+          }
+        }
+      }
+    },
+    "video.play": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تشغيل الفيديو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play video"
+          }
+        }
+      }
+    },
+    "video.quoted": {
+      "comment": "On a quoted post that carries a video. %@ is its length.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فيديو · %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video · %@"
+          }
+        }
+      }
+    },
+    "video.refusal.length": {
+      "comment": "Under the too-long refusal. %@ is the picked video's length, like 4:12.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مدة هذا الفيديو %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This one is %@."
+          }
+        }
+      }
+    },
+    "video.remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة الفيديو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove video"
+          }
+        }
+      }
+    },
+    "video.retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حاول مرة أخرى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "video.scrubber": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "موضع التشغيل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Position in video"
+          }
+        }
+      }
+    },
+    "video.scrubber.value": {
+      "comment": "The scrubber's value. %1$@ is the time played, %2$@ the length.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ من %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "video.status.finishing": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ إنهاء الرفع…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finishing the upload…"
+          }
+        }
+      }
+    },
+    "video.status.held": {
+      "comment": "The author's own post, video held for a moderator (contract v28 §11). Never says why.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يُراجَع الفيديو قبل أن يراه الآخرون."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your video is being reviewed before others can see it."
+          }
+        }
+      }
+    },
+    "video.status.loading": {
+      "comment": "While a picked video is copied from Photos and measured.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ جلب الفيديو…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting your video…"
+          }
+        }
+      }
+    },
+    "video.status.posting": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ النشر…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posting…"
+          }
+        }
+      }
+    },
+    "video.status.preparing": {
+      "comment": "Compressing on the phone before uploading. %@ is a percentage.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ تجهيز الفيديو للرفع… %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting your video ready… %@"
+          }
+        }
+      }
+    },
+    "video.status.processing": {
+      "comment": "The author's own post while the server converts and screens its video (contract v28 §11).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ تجهيز الفيديو. لن يرى هذا المنشور أحد غيرك حتى يصبح جاهزًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing your video. Only you can see this post until it's ready."
+          }
+        }
+      }
+    },
+    "video.status.removedByModerator": {
+      "comment": "The author's own post after a moderator removed its video (contract v28 §11).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أزال أحد المشرفين هذا الفيديو لمخالفته إرشادات المجتمع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A moderator removed this video because it breaks the community guidelines."
+          }
+        }
+      }
+    },
+    "video.status.uploaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتمل الرفع. انشره متى شئت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploaded. Post it when you're ready."
+          }
+        }
+      }
+    },
+    "video.status.uploading": {
+      "comment": "%@ is a percentage, from the bytes the server has plus those in flight (contract v28 §11).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الرفع… %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploading… %@"
+          }
+        }
+      }
+    },
+    "video.status.waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بانتظار الاتصال. سيُستأنف الرفع تلقائيًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for a connection. The upload will carry on by itself."
+          }
+        }
+      }
+    },
+    "video.trim": {
+      "comment": "Opens the system's trimming screen, held to 3 minutes.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قصّ الفيديو"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trim video"
+          }
+        }
+      }
+    },
+    "video.trim.firstMinutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم أول 3 دقائق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the first 3 minutes"
+          }
+        }
+      }
+    },
+    "video.unmute": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تشغيل الصوت"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn sound on"
+          }
+        }
+      }
+    },
     "voice.add": {
       "extractionState": "manual",
       "localizations": {

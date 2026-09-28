@@ -303,7 +303,7 @@ public actor AuthServiceMock: AuthServiceProtocol {
         scenario: MockScenario,
         emailVerified: Bool = false
     ) -> TokenPair {
-        let user = AuthUser(
+        var user = AuthUser(
             id: UUID(uuidString: "11111111-2222-3333-4444-555555555555") ?? UUID(),
             email: email,
             displayName: nil,
@@ -316,6 +316,9 @@ public actor AuthServiceMock: AuthServiceProtocol {
             // in a mocked run.
             countryCode: scenario.verificationStatus == .verified ? "SA" : nil
         )
+        // Video is open on the mocked server, and a verified account may
+        // upload one; a vouched one may not (contract v28 §1).
+        user.features = AccountFeatures(video: true, videoUpload: scenario.verificationStatus == .verified)
         return TokenPair(
             token: AuthToken(
                 accessToken: "mock-access-token",

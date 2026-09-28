@@ -108,7 +108,8 @@ extension SessionLeftovers {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return SessionLeftovers(
             directory: directory,
-            responseCache: URLCache(memoryCapacity: 1 << 20, diskCapacity: 0, diskPath: nil)
+            responseCache: URLCache(memoryCapacity: 1 << 20, diskCapacity: 0, diskPath: nil),
+            videoUploads: directory.appendingPathComponent("VideoUploads", isDirectory: true)
         )
     }
 }

@@ -274,6 +274,17 @@ public struct PostCardView: View {
                         .padding(.leading, style == .detail ? 0 : 56)
                 }
 
+                if let video = post.video {
+                    // Its author sees where a video that is not ready stands;
+                    // nobody else is ever sent one (contract v28 §5).
+                    PostVideoView(
+                        video: video,
+                        isAuthor: post.viewer.isAuthor || actions.ownPost?(post) != nil,
+                        isDetail: style == .detail
+                    )
+                    .padding(.leading, style == .detail ? 0 : 56)
+                }
+
                 if let card = post.event {
                     PostEventCard(card: card, onOpen: openEvent.map { open in { id in open(id) } })
                         .padding(.leading, style == .detail ? 0 : 56)
@@ -814,6 +825,9 @@ public struct PostCardView: View {
         parts.append(RelativeTime.accessible(post.createdAt))
         parts.append(ScopePresentation.make(for: post).accessibilityLabel)
         parts.append(post.text)
+        if let video = post.video {
+            parts.append(L10n.t("video.a11y.label", VideoCopy.duration(video.durationSeconds)))
+        }
         return parts.joined(separator: ". ")
     }
 
@@ -930,6 +944,9 @@ struct QuotedPostCard: View {
                         // own language, which is routinely not the language of the
                         // post quoting it.
                         .slContentDirection(of: post)
+                    if let video = post.video, video.isPlayable {
+                        QuotedVideoLabel(video: video)
+                    }
                 }
             }
         }
