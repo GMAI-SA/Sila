@@ -132,6 +132,9 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
     public var messageId: String?
     /// The co-hosts after a `cohosts_changed` event, when the server says.
     public var cohosts: [UserSummary]?
+    /// `guests_changed` (contract v31): whether people with no account may
+    /// listen now. A guest hearing `false` is being taken out.
+    public var allowGuests: Bool?
 
     /// A server event that asks the room to refresh one of its panels.
     public var isDepthEvent: Bool {
@@ -212,7 +215,7 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
     public var isChat: Bool { type == "chat" && !(text ?? "").isEmpty }
 
     private enum CodingKeys: String, CodingKey {
-        case type, userId, raised, emoji, text, handle, name, toHost, big, message, messageId, cohosts
+        case type, userId, raised, emoji, text, handle, name, toHost, big, message, messageId, cohosts, allowGuests
     }
 
     /// Tolerant: a build that has never heard of a type still decodes the
@@ -231,14 +234,75 @@ public struct RoomDataMessage: Codable, Equatable, Sendable {
         message = (try? container.decodeIfPresent(RoomMessage.self, forKey: .message)) ?? nil
         messageId = (try? container.decodeIfPresent(String.self, forKey: .messageId)) ?? nil
         cohosts = (try? container.decodeIfPresent([UserSummary].self, forKey: .cohosts)) ?? nil
+        allowGuests = (try? container.decodeIfPresent(Bool.self, forKey: .allowGuests)) ?? nil
     }
 
     public func encoded() -> Data {
         (try? JSONEncoder().encode(self)) ?? Data()
     }
 
+    /// Read with the API's decoder: the server's own events are snake-cased
+    /// (`message_id`, `allow_guests`, a kept line's `display_name` and
+    /// `created_at`), and the phones' camel-cased keys have no underscore
+    /// for it to change. A plain decoder left a hidden line on screen and
+    /// every kept line's author nameless.
     public static func decode(_ data: Data) -> RoomDataMessage? {
-        try? JSONDecoder().decode(RoomDataMessage.self, from: data)
+        try? JSONCoding.decoder.decode(RoomDataMessage.self, from: data)
+    }
+}
+
+/// Somebody the media server shows this connection (contract v31).
+///
+/// Built from what the API put on their token — the account id as the
+/// identity, their name, and `{"role", "handle", "user_id"}` as metadata —
+/// for a guest, who cannot read the API's roster. A guest's own connection
+/// is hidden, so no guest is ever one of these.
+public struct VoiceParticipant: Identifiable, Equatable, Hashable, Sendable {
+    /// The media server's identity: the account id, lower-cased.
+    public let identity: String
+    /// The name on their token.
+    public let name: String
+    /// `host`, `speaker` or `listener`, when the metadata says.
+    public let role: String?
+    /// Their handle, without the `@`, when the metadata says.
+    public let handle: String?
+
+    public var id: String { identity }
+
+    public init(identity: String, name: String, role: String? = nil, handle: String? = nil) {
+        self.identity = identity.lowercased()
+        self.name = name
+        self.role = role
+        self.handle = handle.map(Handle.normalised).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    /// From a participant's name and metadata JSON. Unreadable metadata is
+    /// no role and no handle — somebody in the audience.
+    public init(identity: String, name: String?, metadata: String?) {
+        struct Metadata: Decodable {
+            let role: String?
+            let handle: String?
+        }
+        let parsed = metadata.flatMap { try? JSONDecoder().decode(Metadata.self, from: Data($0.utf8)) }
+        self.init(identity: identity, name: name ?? "", role: parsed?.role, handle: parsed?.handle)
+    }
+
+    /// On the stage: the host or a speaker.
+    public var isOnStage: Bool { role == "host" || role == "speaker" }
+    public var isHost: Bool { role == "host" }
+
+    /// What a tile says: the name, else the handle.
+    public var displayName: String {
+        if !name.trimmingCharacters(in: .whitespaces).isEmpty { return name }
+        if let handle { return "@\(handle)" }
+        return L10n.t("rooms.chat.someone")
+    }
+
+    /// A monogram for the avatar.
+    public var initials: String {
+        let letters = displayName.split(separator: " ").prefix(2).compactMap(\.first).filter { $0 != "@" }
+        if !letters.isEmpty { return String(letters) }
+        return String((handle ?? "?").prefix(2))
     }
 }
 
@@ -272,6 +336,10 @@ public protocol VoiceEngineProtocol: AnyObject {
     /// What the live connection may do right now. Starts as what the token
     /// said; changes when the server applies a promotion or demotion live.
     var canPublish: Bool { get }
+    /// Everybody else the media server shows this connection, as their
+    /// tokens describe them. What a guest's room draws, having no roster to
+    /// read (contract v31); a member's room reads the API's instead.
+    var participants: [VoiceParticipant] { get }
     /// Called on the main actor whenever anything above changed.
     var onChange: (@MainActor () -> Void)? { get set }
     /// Called on the main actor with every room event the media server reports.
@@ -317,6 +385,16 @@ public protocol MicrophonePermissionRequesting: Sendable {
     /// Asks iOS, or returns the standing answer if there already is one.
     /// - Returns: `true` when recording is permitted.
     func requestPermission() async -> Bool
+}
+
+/// The answer for a connection that never publishes: no, without asking.
+///
+/// A guest's engine is built with this (contract v31). Its token cannot
+/// publish and its screen has no microphone, so nothing should ever reach
+/// the prompt — and if something did, iOS would still never be asked.
+public struct NoMicrophonePermission: MicrophonePermissionRequesting {
+    public init() {}
+    public func requestPermission() async -> Bool { false }
 }
 
 /// A ``MicrophonePermissionRequesting`` with a fixed answer, for tests.

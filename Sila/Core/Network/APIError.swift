@@ -472,6 +472,20 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// A video beside pictures, a GIF, a poll or a voice clip (HTTP 400).
     case videoWithMedia = "video_with_media"
 
+    // MARK: Contract v31 — guest listening
+
+    /// A guest reached a room whose door is not open to everybody —
+    /// invite-only, following-only, a group's or a community's (HTTP 403);
+    /// or a host tried to let guests into such a room (HTTP 409).
+    case roomClosed = "room_closed"
+    /// The host turned guests off, the host is a private account, or guest
+    /// listening is off for the whole platform (HTTP 403).
+    case guestsNotAllowed = "guests_not_allowed"
+    /// Every guest seat in the room is taken (HTTP 409).
+    case guestsFull = "guests_full"
+    /// Turning guests on in a private host's room (HTTP 409).
+    case privateHost = "private_host"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -843,6 +857,10 @@ public enum APIError: Error, Equatable, Sendable {
             case .videoNotUploaded: return L10n.t("video.error.notUploaded")
             case .videoRemoved: return L10n.t("video.error.removed")
             case .videoWithMedia: return L10n.t("video.error.withMedia")
+            case .roomClosed: return L10n.t("rooms.guests.allow.closed")
+            case .guestsNotAllowed: return L10n.t("guest.room.refusal.guestsNotAllowed.title")
+            case .guestsFull: return L10n.t("guest.room.refusal.guestsFull.title")
+            case .privateHost: return L10n.t("rooms.guests.allow.private")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }

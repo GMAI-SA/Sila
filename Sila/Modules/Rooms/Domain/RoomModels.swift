@@ -118,18 +118,29 @@ public struct RoomExtras: Equatable, Hashable, Sendable, Decodable {
     public var cohosts: [UserSummary] = []
     public var isCohost: Bool = false
     public var pinnedQuestion: PinnedQuestion?
+    /// Somebody with no account can listen (contract v31): the host's
+    /// switch, an open door, a public host and the platform's switch
+    /// together. `false` from a server before v31.
+    public var allowGuests: Bool = false
+    /// Guests listening now (0 unless live). Guests are in no other count,
+    /// no roster and no chat, so this is the only place they show.
+    public var guestCount: Int = 0
 
     public init(starterQuestion: String? = nil, kind: String = "room", seriesId: UUID? = nil,
-                reminderSet: Bool = false, reminderCount: Int = 0) {
+                reminderSet: Bool = false, reminderCount: Int = 0,
+                allowGuests: Bool = false, guestCount: Int = 0) {
         self.starterQuestion = starterQuestion
         self.kind = kind
         self.seriesId = seriesId
         self.reminderSet = reminderSet
         self.reminderCount = reminderCount
+        self.allowGuests = allowGuests
+        self.guestCount = max(0, guestCount)
     }
 
     private enum CodingKeys: String, CodingKey {
         case starterQuestion, kind, seriesId, reminderSet, reminderCount, cohosts, isCohost, pinnedQuestion
+        case allowGuests, guestCount
     }
 
     public init(from decoder: Decoder) throws {
@@ -143,6 +154,8 @@ public struct RoomExtras: Equatable, Hashable, Sendable, Decodable {
         cohosts = (try? c.decode([UserSummary].self, forKey: .cohosts)) ?? []
         isCohost = (try? c.decode(Bool.self, forKey: .isCohost)) ?? false
         pinnedQuestion = (try? c.decodeIfPresent(PinnedQuestion.self, forKey: .pinnedQuestion)) ?? nil
+        allowGuests = (try? c.decode(Bool.self, forKey: .allowGuests)) ?? false
+        guestCount = max(0, (try? c.decode(Int.self, forKey: .guestCount)) ?? 0)
     }
 }
 
@@ -229,6 +242,10 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
     public var cohosts: [UserSummary] { extras.cohosts }
     public var isCohost: Bool { extras.isCohost }
     public var pinnedQuestion: PinnedQuestion? { extras.pinnedQuestion }
+    /// Somebody with no account can listen (contract v31).
+    public var allowGuests: Bool { extras.allowGuests }
+    /// Guests listening now; 0 unless live.
+    public var guestCount: Int { status == .live ? extras.guestCount : 0 }
 
     /// A copy with the reminder as the server now holds it.
     public func with(reminder: RoomReminder) -> VoiceRoom {
@@ -525,6 +542,7 @@ public struct VoiceRoom: Identifiable, Equatable, Sendable, Decodable, Hashable 
             parts.append(L10n.t("rooms.card.a11y.ended"))
         }
         if isRemoved { parts.append(RoomCopy.removedFromRoom) }
+        if let guests = RoomCopy.guestsLine(self) { parts.append(guests) }
         return parts.joined(separator: ". ")
     }
 }
@@ -784,6 +802,10 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
     public var kind: String? = nil
     /// A room inside one of the host's communities — the fourth door.
     public var communityId: UUID? = nil
+    /// Whether somebody with no account may listen (contract v31). `nil`
+    /// sends nothing, and the server's default — on — applies; a closed
+    /// room answers `false` whatever is sent.
+    public var allowGuests: Bool? = nil
 
     /// - Parameters:
     ///   - title: What to call it. Trimmed.
@@ -865,12 +887,17 @@ public struct CreateRoomRequest: Encodable, Equatable, Sendable {
         if (isInviteOnly || isFollowingOnly || groupId != nil) && !inviteHandles.isEmpty {
             try container.encode(inviteHandles, forKey: .inviteHandles)
         }
+        try container.encodeIfPresent(starterQuestion, forKey: .starterQuestion)
+        try container.encodeIfPresent(kind, forKey: .kind)
+        try container.encodeIfPresent(communityId, forKey: .communityId)
+        try container.encodeIfPresent(allowGuests, forKey: .allowGuests)
     }
 
     /// The keys are camel-cased; the encoder converts them to `snake_case`.
     private enum CodingKeys: String, CodingKey {
         case title, topic, scope, scopeCountry, scopeRegion, scheduledFor, maxSpeakers
         case isInviteOnly, isFollowingOnly, inviteHandles, groupId
+        case starterQuestion, kind, communityId, allowGuests
     }
 }
 
@@ -1385,6 +1412,32 @@ public struct RoomChatMessage: Identifiable, Equatable, Sendable {
 }
 
 extension RoomCopy {
+
+    // MARK: Guests (contract v31)
+
+    /// "Guests can listen · 3 guests listening", from the room's two guest
+    /// fields — or `nil` when there is nothing to say. Guests are in no
+    /// other count, so this line is the only place they show.
+    ///
+    /// The count is a plural, not a ternary: Arabic has six forms.
+    public static func guestsLine(allowGuests: Bool, guestCount: Int, isLive: Bool) -> String? {
+        let listening = isLive && guestCount > 0
+        var parts: [String] = []
+        if allowGuests { parts.append(L10n.t("rooms.guests.canListen")) }
+        if listening { parts.append(guestsListening(guestCount)) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// "3 guests listening".
+    public static func guestsListening(_ count: Int) -> String {
+        L10n.plural("rooms.guests.listening", max(0, count))
+    }
+
+    /// The guests line for a room as a member sees it.
+    public static func guestsLine(_ room: VoiceRoom) -> String? {
+        guestsLine(allowGuests: room.allowGuests, guestCount: room.guestCount, isLive: room.status == .live)
+    }
+
     /// The chat panel.
     public static var chatTitle: String { L10n.t("rooms.chat.title") }
     public static var chatPlaceholder: String { L10n.t("rooms.chat.placeholder") }

@@ -17,6 +17,10 @@ public enum JoinPrompt: String, Identifiable, CaseIterable, Sendable {
     case room
     case notifications
     case profile
+    /// A guest listening in a room (contract v31) reached for anything but
+    /// listening: the microphone, a hand, a reaction, the chat, a question
+    /// or a poll.
+    case takePart
 
     public var id: String { rawValue }
 
@@ -37,6 +41,7 @@ public enum JoinPrompt: String, Identifiable, CaseIterable, Sendable {
         case .room: return L10n.t("guest.join.room.title")
         case .notifications: return L10n.t("guest.join.notifications.title")
         case .profile: return L10n.t("guest.join.profile.title")
+        case .takePart: return L10n.t("guest.join.takePart.title")
         }
     }
 
@@ -54,6 +59,7 @@ public enum JoinPrompt: String, Identifiable, CaseIterable, Sendable {
         case .room: return L10n.t("guest.join.room.detail")
         case .notifications: return L10n.t("guest.join.notifications.detail")
         case .profile: return L10n.t("guest.join.profile.detail")
+        case .takePart: return L10n.t("guest.join.takePart.detail")
         }
     }
 
@@ -70,6 +76,7 @@ public enum JoinPrompt: String, Identifiable, CaseIterable, Sendable {
         case .room: return "waveform"
         case .notifications: return "bell"
         case .profile: return "person"
+        case .takePart: return "hand.raised"
         }
     }
 }

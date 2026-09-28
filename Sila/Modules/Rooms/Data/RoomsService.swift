@@ -149,6 +149,29 @@ public final class RoomsService: RoomsServiceProtocol {
         return room
     }
 
+    // MARK: - Guests (contract v31)
+
+    public func setAllowGuests(_ allow: Bool, roomId: UUID) async throws -> VoiceRoom {
+        let token = try await tokens.accessToken()
+        let room = try await network.send(
+            try APIRequest.json(
+                "/rooms/\(path(roomId))",
+                method: .patch,
+                body: RoomGuestsBody(allowGuests: allow),
+                accessToken: token
+            ),
+            as: VoiceRoom.self
+        )
+        analytics.track(.roomGuestsSwitched, properties: [
+            "room_id": path(roomId), "result": room.allowGuests ? "on" : "off"
+        ])
+        return room
+    }
+
+    private struct RoomGuestsBody: Encodable {
+        let allowGuests: Bool
+    }
+
     // MARK: - Liking and sharing
 
     public func setRoomLiked(_ liked: Bool, roomId: UUID) async throws -> VoiceRoom {

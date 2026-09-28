@@ -89,6 +89,12 @@ public final class AppContainer {
     public let notificationsService: NotificationsServiceProtocol
     /// Live voice rooms — listing, joining, hosting.
     public let roomsService: RoomsServiceProtocol
+    /// The rooms somebody without an account may open, and their seats
+    /// (contract v31). No token, ever.
+    public let guestRoomsService: GuestRoomsServiceProtocol
+    /// The pass each guest seat was given, for the app's life: coming back to
+    /// a room renews the same seat. In memory only.
+    public let guestPasses = GuestPassBook()
     public let communitiesService: CommunitiesServiceProtocol
     /// Vouching (contract v24): the voucher's list, the links, the claim.
     public let vouchingService: VouchingServiceProtocol
@@ -532,6 +538,12 @@ public final class AppContainer {
             )
         }
 
+        if flags.useMockGuestRooms {
+            self.guestRoomsService = GuestRoomsServiceMock(scenario: flags.mockGuestRoomsScenario, latency: 0.25)
+        } else {
+            self.guestRoomsService = GuestRoomsService(network: network, analytics: analytics)
+        }
+
         if let communitiesService {
             self.communitiesService = communitiesService
         } else if flags.useMockRooms {
@@ -723,6 +735,46 @@ public final class AppContainer {
         flags.useMockVoiceEngine ? VoiceEngineMock() : LiveKitVoiceEngine()
     }
 
+    /// A media transport for a guest (contract v31): listen-only, and built
+    /// so that nothing could ever reach the microphone prompt — its token
+    /// cannot publish, its screen has no microphone, and its permission seam
+    /// answers no without asking iOS.
+    ///
+    /// Mocked, it shows a room's worth of people and says a line and a
+    /// reaction, so a mocked guest has something to hear; the
+    /// `connect_failed` world gets an engine whose connection fails.
+    @MainActor
+    public func makeGuestVoiceEngine() -> VoiceEngineProtocol {
+        guard flags.useMockVoiceEngine else { return LiveKitVoiceEngine(permission: NoMicrophonePermission(), listenOnly: true) }
+        let engine = VoiceEngineMock(isPermissionGranted: false)
+        if flags.useMockGuestRooms, flags.mockGuestRoomsScenario == .connectFailed {
+            engine.connectError = .transport("Could not reach the media server.")
+            return engine
+        }
+        engine.participantsOnConnect = Self.mockGuestStage
+        var line = RoomDataMessage(type: "chat", userId: FeedServiceMock.noor.id.uuidString.lowercased())
+        line.message = RoomMessage(text: "Welcome, everyone — questions after the break.", author: FeedServiceMock.noor)
+        engine.messagesOnConnect = [
+            line,
+            .reaction("👏", userId: FeedServiceMock.yuki.id, handle: FeedServiceMock.yuki.handle, name: FeedServiceMock.yuki.displayName)
+        ]
+        return engine
+    }
+
+    /// Who a mocked guest hears: a host, a speaker and two listeners.
+    private static var mockGuestStage: [VoiceParticipant] {
+        [
+            VoiceParticipant(identity: FeedServiceMock.noor.id.uuidString, name: FeedServiceMock.noor.displayName,
+                             role: "host", handle: FeedServiceMock.noor.handle),
+            VoiceParticipant(identity: FeedServiceMock.yuki.id.uuidString, name: FeedServiceMock.yuki.displayName,
+                             role: "speaker", handle: FeedServiceMock.yuki.handle),
+            VoiceParticipant(identity: FeedServiceMock.maria.id.uuidString, name: FeedServiceMock.maria.displayName,
+                             role: "listener", handle: FeedServiceMock.maria.handle),
+            VoiceParticipant(identity: FeedServiceMock.aziz.id.uuidString, name: FeedServiceMock.aziz.displayName,
+                             role: "listener", handle: FeedServiceMock.aziz.handle),
+        ]
+    }
+
     /// A container wired entirely to mocks, for previews.
     public static func preview(
         scenario: AuthServiceMock.MockScenario = .pendingReview,
@@ -761,6 +813,7 @@ public final class AppContainer {
         flags.useMockRooms = true
         flags.mockRoomsScenario = roomsScenario
         flags.useMockVoiceEngine = true
+        flags.useMockGuestRooms = true
         flags.useMockVouching = true
         return AppContainer(
             flags: flags,

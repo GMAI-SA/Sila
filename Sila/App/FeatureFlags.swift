@@ -35,6 +35,8 @@ import Foundation
 /// -mockRooms           run against RoomsServiceMock instead of the live API
 /// -mockRoomsScenario X pick a RoomsServiceMock.MockScenario
 /// -mockVoiceEngine     run against VoiceEngineMock instead of LiveKit
+/// -mockGuestRooms      a guest's rooms from GuestRoomsServiceMock (implied by -mockRooms)
+/// -mockGuestRoomsScenario X  pick a GuestRoomsServiceMock.MockScenario (a refusal code, say)
 /// -mockVouching        run against VouchingServiceMock instead of the live API
 /// -mockVouchingScenario X  pick a VouchingServiceMock.MockScenario
 /// -mockVideo           run against VideoServiceMock instead of the live API
@@ -231,6 +233,11 @@ public struct FeatureFlags: Sendable {
     /// occasionally useful — real rooms, no audio, on a machine with no
     /// microphone.
     public var useMockVoiceEngine = false
+    /// Use ``GuestRoomsServiceMock`` for the rooms a guest lists and the
+    /// seats they are given (contract v31). Implied by ``useMockRooms``.
+    public var useMockGuestRooms = false
+    /// Which world the mocked guest rooms play — a refusal code, for one.
+    public var mockGuestRoomsScenario: GuestRoomsServiceMock.MockScenario = .populated
 
     // MARK: Contract v24 — vouching
 
@@ -416,9 +423,18 @@ public struct FeatureFlags: Sendable {
         if flags.useMockAuth && !arguments.contains("-mockRoomsScenario") {
             flags.useMockRooms = true
         }
+        if arguments.contains("-mockGuestRooms") || flags.useMockRooms {
+            flags.useMockGuestRooms = true
+        }
+        if let index = arguments.firstIndex(of: "-mockGuestRoomsScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = GuestRoomsServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.useMockGuestRooms = true
+            flags.mockGuestRoomsScenario = scenario
+        }
         // A mocked join hands back a token no media server would accept, so a
         // real engine behind a mocked room could only ever fail to connect.
-        if flags.useMockRooms {
+        if flags.useMockRooms || flags.useMockGuestRooms {
             flags.useMockVoiceEngine = true
         }
         if arguments.contains("-mockVoiceEngine") {

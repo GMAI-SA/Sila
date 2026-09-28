@@ -97,9 +97,24 @@ public final class URLSessionNetworkClient: NetworkClient {
         try await perform(request)
     }
 
+    public func sendNotingRetryAfter<Response: Decodable>(
+        _ request: APIRequest,
+        as type: Response.Type
+    ) async throws -> Response {
+        let data = try await perform(request, notingRetryAfter: true)
+        if data.isEmpty {
+            throw APIError.decoding("Expected \(Response.self) but the response body was empty.")
+        }
+        do {
+            return try JSONCoding.decoder.decode(Response.self, from: data)
+        } catch {
+            throw APIError.decoding("Could not decode \(Response.self): \(error)")
+        }
+    }
+
     // MARK: - Plumbing
 
-    private func perform(_ request: APIRequest) async throws -> Data {
+    private func perform(_ request: APIRequest, notingRetryAfter: Bool = false) async throws -> Data {
         let urlRequest = try makeURLRequest(request)
 
         let data: Data
@@ -134,6 +149,10 @@ public final class URLSessionNetworkClient: NetworkClient {
             // may do: an offer to verify, never the wall (contract v24 §4).
             if case let .api(.selfVerificationRequired, message, _) = error {
                 verification?.selfVerificationRequired(message: message)
+            }
+            if notingRetryAfter,
+               let seconds = RetryAfterRefusal.seconds(fromHeader: http.value(forHTTPHeaderField: "Retry-After")) {
+                throw RetryAfterRefusal(error: error, seconds: seconds)
             }
             throw error
         }

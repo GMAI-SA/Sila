@@ -235,4 +235,50 @@ public protocol NetworkClient: Sendable {
     /// decoding it into client types and re-serialising would hand the user a
     /// document this app invented rather than the one the server sent.
     func sendData(_ request: APIRequest) async throws -> Data
+    /// Sends a request and decodes the answer exactly as ``send(_:as:)``
+    /// does — except that a refusal which said how long to wait
+    /// (`Retry-After`) arrives as ``RetryAfterRefusal``, carrying the wait.
+    ///
+    /// For the few callers that can do something with the number: a guest
+    /// in a room is told "try again in 40 seconds" (contract v31) rather
+    /// than "wait a moment". Every other caller keeps the plain
+    /// ``APIError`` it has always caught.
+    func sendNotingRetryAfter<Response: Decodable>(_ request: APIRequest, as type: Response.Type) async throws -> Response
+}
+
+extension NetworkClient {
+    /// A transport that cannot read headers — a test's scripted one — answers
+    /// as ``send(_:as:)`` does, and its refusals carry no wait.
+    public func sendNotingRetryAfter<Response: Decodable>(
+        _ request: APIRequest,
+        as type: Response.Type
+    ) async throws -> Response {
+        try await send(request, as: type)
+    }
+}
+
+/// A refusal that said how long to wait before asking again (`Retry-After`).
+///
+/// Thrown only by ``NetworkClient/sendNotingRetryAfter(_:as:)``; the
+/// ``error`` inside is the one ``NetworkClient/send(_:as:)`` would have
+/// thrown, so a caller that does not care reads it as always.
+public struct RetryAfterRefusal: Error, Equatable, Sendable {
+    /// What the server refused, as every other call reports it.
+    public let error: APIError
+    /// Whole seconds to wait, at least one.
+    public let seconds: Int
+
+    public init(error: APIError, seconds: Int) {
+        self.error = error
+        self.seconds = max(1, seconds)
+    }
+
+    /// `Retry-After` as delta-seconds, or `nil` for anything else (an
+    /// HTTP-date, garbage, nothing). The server sends seconds.
+    public static func seconds(fromHeader value: String?) -> Int? {
+        guard let raw = value?.trimmingCharacters(in: .whitespaces), let seconds = Int(raw), seconds > 0 else {
+            return nil
+        }
+        return seconds
+    }
 }

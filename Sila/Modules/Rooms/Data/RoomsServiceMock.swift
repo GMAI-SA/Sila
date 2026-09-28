@@ -73,25 +73,32 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         self.scenario = scenario
         self.latency = latency
         self.viewerHandle = viewerHandle
+        let rooms: [VoiceRoom]
         switch scenario {
         case .empty, .offline:
-            stored = []
+            rooms = []
         case .listenerOnly:
-            stored = Self.cast.map { Self.asListener($0) }
+            rooms = Self.cast.map { Self.asListener($0) }
         case .vouched:
-            stored = Self.cast.map { Self.asVouchedListener($0) }
+            rooms = Self.cast.map { Self.asVouchedListener($0) }
         case .hosting:
-            stored = Self.cast.enumerated().map { index, room in
+            rooms = Self.cast.enumerated().map { index, room in
                 index == 0 ? Self.asHost(room) : room
             }
         case .removed:
-            stored = Self.cast.enumerated().map { index, room in
+            rooms = Self.cast.enumerated().map { index, room in
                 index == 0 ? Self.asRemoved(room) : room
             }
         case .populated, .writesFail:
-            stored = Self.cast
+            rooms = Self.cast
         }
-        var built = Dictionary(uniqueKeysWithValues: stored.map { ($0.id, Self.roster(for: $0)) })
+        // Guests on the open rooms (contract v31): the host's switch is on,
+        // and the first two live rooms have guests listening.
+        let opened = rooms.enumerated().map { index, room in
+            Self.withGuests(room, allow: !room.isClosed, count: room.status == .live ? [12, 3][safe: index] ?? 0 : 0)
+        }
+        stored = opened
+        var built = Dictionary(uniqueKeysWithValues: opened.map { ($0.id, Self.roster(for: $0)) })
         if scenario == .vouched {
             for id in built.keys {
                 built[id]?.append(RoomParticipant(role: .listener, user: FeedServiceMock.vouched, joinedAt: Date()))
@@ -247,9 +254,43 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             isFollowingOnly: request.isFollowingOnly,
             viewerRole: .host
         )
-        stored.insert(room, at: 0)
+        // The server's default is on; a closed room answers off whatever was sent.
+        let opened = Self.withGuests(
+            room, allow: (request.allowGuests ?? true) && !room.isClosed && request.communityId == nil, count: 0
+        )
+        stored.insert(opened, at: 0)
         rosters[room.id] = [RoomParticipant(role: .host, user: FeedServiceMock.aziz, joinedAt: Date())]
-        return room
+        return opened
+    }
+
+    // MARK: - Guests (contract v31)
+
+    public func setAllowGuests(_ allow: Bool, roomId: UUID) async throws -> VoiceRoom {
+        recordedCalls.append("allowGuests:\(allow)")
+        try await delay()
+        try failIfOffline()
+        try failIfWritesFail()
+        let room = try await fetchRoom(id: roomId)
+        guard room.isHost || room.isCohost else {
+            throw APIError.api(code: .notRoomHost, message: "Not the host", status: 403)
+        }
+        guard room.status != .ended else {
+            throw APIError.api(code: .roomEnded, message: "Room ended", status: 409)
+        }
+        if allow, room.isClosed {
+            throw APIError.api(code: .roomClosed, message: "Only an open room can have guests", status: 409)
+        }
+        // Off takes the guests out at once.
+        let updated = Self.withGuests(room, allow: allow, count: allow ? room.extras.guestCount : 0)
+        replace(updated)
+        return updated
+    }
+
+    static func withGuests(_ room: VoiceRoom, allow: Bool, count: Int) -> VoiceRoom {
+        var copy = room
+        copy.extras.allowGuests = allow
+        copy.extras.guestCount = max(0, count)
+        return copy
     }
 
     // MARK: - Joining and leaving
@@ -759,7 +800,7 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         handRaised: Bool? = nil,
         handsCount: Int? = nil
     ) -> VoiceRoom {
-        VoiceRoom(
+        var copy = VoiceRoom(
             id: room.id,
             title: room.title,
             topic: room.topic,
@@ -786,6 +827,10 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             handRaised: handRaised ?? room.handRaised,
             handsCount: handsCount ?? room.handsCount
         )
+        // What the room carries beyond joining it (reminders, co-hosts,
+        // guests) goes with every copy.
+        copy.extras = room.extras
+        return copy
     }
 
     private static func asListener(_ room: VoiceRoom) -> VoiceRoom {
@@ -805,7 +850,7 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
     }
 
     private static func asHost(_ room: VoiceRoom) -> VoiceRoom {
-        VoiceRoom(
+        var hosted = VoiceRoom(
             id: room.id,
             title: room.title,
             topic: room.topic,
@@ -824,6 +869,8 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             isHost: true,
             isRemoved: false
         )
+        hosted.extras = room.extras
+        return hosted
     }
 
     private static func asRemoved(_ room: VoiceRoom) -> VoiceRoom {

@@ -20214,6 +20214,633 @@
         }
       }
     },
+    "guest.join.takePart.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الزوار يستمعون فقط. التحدث ورفع اليد والتفاعل والدردشة وطرح الأسئلة والتصويت للأعضاء — وكلهم أشخاص حقيقيون."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guests can listen. Speaking, raising a hand, reacting, chatting, asking questions and voting are for members — every one of them a real person."
+          }
+        }
+      }
+    },
+    "guest.join.takePart.title": {
+      "comment": "What a guest listening in a room meets when they reach for the microphone, a hand, a reaction, the chat, a question or a poll.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم إلى صلة لتشارك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join Sila to take part"
+          }
+        }
+      }
+    },
+    "guest.room.back": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "العودة إلى الغرف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to rooms"
+          }
+        }
+      }
+    },
+    "guest.room.chat.note": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بصفتك زائرًا، ترى ما يُقال أثناء وجودك هنا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As a guest you see what's said while you're here."
+          }
+        }
+      }
+    },
+    "guest.room.listening.join": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "للتحدث أو رفع اليد أو التفاعل أو الدردشة، انضم إلى صلة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To speak, raise a hand, react or chat, join Sila."
+          }
+        }
+      }
+    },
+    "guest.room.listening.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يراك أحد في الغرفة، ولم تطلب صلة الميكروفون."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody in the room can see you, and Sila hasn't asked for your microphone."
+          }
+        }
+      }
+    },
+    "guest.room.listening.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت تستمع كزائر"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're listening as a guest"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.connectFailed.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحقق من اتصالك ثم أعد المحاولة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection and try again."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.connectFailed.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر الاتصال بالغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't connect to the room"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.guestsFull.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كل مقاعد الزوار مشغولة. أعد المحاولة بعد قليل — أو انضم إلى صلة أو سجّل الدخول، فلن تحتاج إلى مقعد زائر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every guest seat is taken. Try again in a little while — or join Sila or sign in, and you won't need a guest seat."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.guestsFull.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يبقَ مقعد للزوار في هذه الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room has no guest seats left"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.guestsNotAllowed.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاستماع إلى هذه الغرفة للأعضاء فقط حاليًا. انضم إلى صلة أو سجّل الدخول لتستمع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only members can listen to this room right now. Join Sila or sign in to listen."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.guestsNotAllowed.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن للزوار الاستماع إلى هذه الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guests can't listen to this room"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.notFound.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ربما انتهت، أو لم يعد مضيفها على صلة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It may have ended, or its host is no longer on Sila."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.notFound.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الغرفة غير متاحة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room isn't available"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.rateLimited.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتح اتصالك الغرف مرات كثيرة. انتظر قليلًا ثم أعد المحاولة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your connection has opened rooms too often. Wait a little, then try again."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.rateLimited.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محاولات كثيرة من اتصالك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many tries from your connection"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.roomClosed.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فتحها مضيفها للمدعوين أو المتابعين أو لمجموعة أو مجتمع — لا للزوار. انضم إلى صلة أو سجّل الدخول لترى إن كان بإمكانك الاستماع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its host opened it to invited people, followers, a group or a community — not to guests. Join Sila or sign in to see whether you can listen."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.roomClosed.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الغرفة للأعضاء فقط"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room is for members only"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.roomEnded.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الغرف لا تُسجَّل أبدًا، فلا يوجد ما يُعاد تشغيله. انضم إلى صلة لتسمع الغرفة القادمة مباشرة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rooms are never recorded, so there's nothing to play back. Join Sila so you can hear the next one live."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.roomEnded.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت هذه الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room has ended"
+          }
+        }
+      }
+    },
+    "guest.room.refusal.roomNotLive.detail": {
+      "comment": "What that means, and what the guest can do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عُد عندما تبدأ — الغرف لا تُسجَّل أبدًا. ويستطيع الأعضاء طلب تذكير."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come back when it's live — rooms are never recorded. Members can ask for a reminder."
+          }
+        }
+      }
+    },
+    "guest.room.refusal.roomNotLive.title": {
+      "comment": "Why a guest is not listening to a room (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تبدأ هذه الغرفة بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room hasn't started yet"
+          }
+        }
+      }
+    },
+    "guest.room.tryAgainIn.minutes": {
+      "comment": "The retry button while the server asks a guest to wait two minutes or more. %lld is minutes, rounded up.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد %lld دقائق"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد %lld دقيقة"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد دقيقة واحدة"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد %lld دقيقة"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد دقيقتين"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة الآن"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Try again in %lld minute"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Try again in %lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "guest.room.tryAgainIn.seconds": {
+      "comment": "The retry button while the server asks a guest to wait. %lld is seconds.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد %lld ثوانٍ"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد %lld ثانية"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد ثانية واحدة"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد %lld ثانية"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة بعد ثانيتين"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "أعد المحاولة الآن"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Try again in %lld second"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Try again in %lld seconds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "guest.rooms.banner": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استمع إلى أي غرفة هنا دون حساب. التحدث والتفاعل والدردشة للأعضاء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen to any room here without an account. Speaking, reacting and chatting are for members."
+          }
+        }
+      }
+    },
+    "guest.rooms.card.a11yHint": {
+      "comment": "VoiceOver hint on a room card in a guest's Rooms tab.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح الغرفة للاستماع. لا تحتاج إلى حساب."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listens to the room. You don't need an account."
+          }
+        }
+      }
+    },
+    "guest.rooms.empty.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما يفتح مضيفٌ غرفته للزوار تظهر هنا. الغرف لا تُسجَّل أبدًا، فعُد أثناء بثها المباشر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a host opens a room to guests, it shows up here. Rooms are never recorded, so come back while one is live."
+          }
+        }
+      }
+    },
+    "guest.rooms.empty.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد غرف مفتوحة للزوار الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rooms open to guests right now"
+          }
+        }
+      }
+    },
+    "guest.rooms.tab.hint": {
+      "comment": "VoiceOver hint on a guest's Rooms tab.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غرف صوتية مباشرة. استمع دون حساب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live voice rooms. Listen without an account"
+          }
+        }
+      }
+    },
     "guest.tab.locked.hint": {
       "extractionState": "manual",
       "localizations": {
@@ -33883,6 +34510,227 @@
         }
       }
     },
+    "rooms.guests.allow": {
+      "comment": "The host's switch, in room settings and when creating a room.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السماح للزوار بالاستماع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow guests to listen"
+          }
+        }
+      }
+    },
+    "rooms.guests.allow.closed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يستقبل الزوارَ إلا غرفةٌ مفتوحة. هذه الغرفة مقصورة على من اختارهم مضيفها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only an open room can have guests. This room is limited to the people its host chose."
+          }
+        }
+      }
+    },
+    "rooms.guests.allow.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستطيع من ليس لديه حساب أن يستمع. لا يمكنه التحدث أو رفع اليد أو التفاعل أو الدردشة، ولا يراه أحد في الغرفة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People without an account can listen. They can't speak, raise a hand, react or chat, and nobody in the room sees them."
+          }
+        }
+      }
+    },
+    "rooms.guests.allow.notHost": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يغيّر هذا إلا المضيف والمضيفون المشاركون."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the host and co-hosts can change this."
+          }
+        }
+      }
+    },
+    "rooms.guests.allow.off": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الاستماع إلى هذه الغرفة للأعضاء فقط الآن."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only members can listen to this room now."
+          }
+        }
+      }
+    },
+    "rooms.guests.allow.on": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن للزوار الاستماع إلى هذه الغرفة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guests can listen to this room."
+          }
+        }
+      }
+    },
+    "rooms.guests.allow.private": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حساب المضيف خاص، لذلك لا يمكن للزوار الاستماع."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The host's account is private, so guests can't listen."
+          }
+        }
+      }
+    },
+    "rooms.guests.allow.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استماع الزوار متوقف في صلة حاليًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest listening is switched off on Sila for now."
+          }
+        }
+      }
+    },
+    "rooms.guests.canListen": {
+      "comment": "On a room card and under a room title: people without an account may listen (contract v31).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن للزوار الاستماع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guests can listen"
+          }
+        }
+      }
+    },
+    "rooms.guests.listening": {
+      "comment": "How many people without an account are listening now. Guests are counted nowhere else.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld من الزوار يستمعون"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld من الزوار يستمعون"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "زائر واحد يستمع"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld من الزوار يستمعون"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "زائران يستمعان"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "لا زوار يستمعون"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld guest listening"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld guests listening"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "rooms.hand.lower": {
       "comment": "Listener control.",
       "extractionState": "manual",
@@ -36812,6 +37660,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stop following"
+          }
+        }
+      }
+    },
+    "rooms.settings.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعدادات الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room settings"
           }
         }
       }

@@ -49,7 +49,26 @@ public struct RootView: View {
         // when the tabs go, so do they.
         .onChange(of: container.session.route) { _, route in
             if route != .feed { SelfVerificationPresenter.dismissAll() }
+            listenToRoomLinkSignedOut()
         }
+        // A shared room link, tapped by somebody who is not signed in: they
+        // listen as a guest at once (contract v31) rather than meeting the
+        // door first.
+        .onChange(of: container.router.pendingLink) { _, _ in listenToRoomLinkSignedOut() }
+    }
+
+    // MARK: - Room links (contract v31)
+
+    /// Somebody signed out, on the welcome screen, with a room link waiting:
+    /// the guest shell opens and takes the link. Not from inside the sign-in
+    /// or sign-up forms — a guest who left a room for one of those is on the
+    /// way back into it as a member, and the link waits for that.
+    private func listenToRoomLinkSignedOut() {
+        guard container.flags.rooms,
+              case .room? = container.router.pendingLink,
+              container.session.route == .unauthenticated,
+              container.router.authPath.isEmpty else { return }
+        container.session.browseAsGuest()
     }
 
     // MARK: - Vouch links

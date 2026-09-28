@@ -210,6 +210,13 @@ public enum AnalyticsEvent: String, Sendable {
     case guestBrowsingStarted = "guest_browsing_started"
     case guestJoinPromptShown = "guest_join_prompt_shown"
     case guestJoinAccepted = "guest_join_accepted"
+    /// A guest opened a room, was connected and listening, or was refused
+    /// — with the refusal's code as `reason` (contract v31).
+    case guestRoomOpened = "guest_room_opened"
+    case guestRoomListening = "guest_room_listening"
+    case guestRoomRefused = "guest_room_refused"
+    /// A host or co-host turned guests on or off in a room (`result`).
+    case roomGuestsSwitched = "room_guests_switched"
 
     // MARK: Contract v4 — feed preferences
 

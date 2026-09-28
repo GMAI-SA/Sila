@@ -52,16 +52,31 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
     public private(set) var canPublish = false {
         didSet { if canPublish != oldValue { onChange?() } }
     }
+    /// Everybody else the media server shows this connection. A guest's
+    /// room draws its stage from this (contract v31); guests themselves are
+    /// hidden and never appear.
+    public private(set) var participants: [VoiceParticipant] = [] {
+        didSet { if participants != oldValue { onChange?() } }
+    }
     public var onChange: (@MainActor () -> Void)?
     public var onRoomEvent: (@MainActor (VoiceRoomEvent) -> Void)?
 
     private let room: LiveKit.Room
     private let permission: MicrophonePermissionRequesting
+    /// A connection that can never publish — a guest's (contract v31). Its
+    /// audio session is a playback one: no recording category, so there is
+    /// no input route for iOS to ask about.
+    private let isListenOnly: Bool
 
-    /// - Parameter permission: The microphone prompt. Injectable so a test can
-    ///   drive the denied path without a device.
-    public init(permission: MicrophonePermissionRequesting = SystemMicrophonePermission()) {
+    /// - Parameters:
+    ///   - permission: The microphone prompt. Injectable so a test can drive
+    ///     the denied path without a device.
+    ///   - listenOnly: For a guest, whose token can never publish: the
+    ///     session is configured for playback, and the microphone refused
+    ///     locally whatever is asked.
+    public init(permission: MicrophonePermissionRequesting = SystemMicrophonePermission(), listenOnly: Bool = false) {
         self.permission = permission
+        self.isListenOnly = listenOnly
         self.room = LiveKit.Room()
         super.init()
         room.add(delegate: self)
@@ -100,6 +115,7 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
             // told; the two agree unless a role changed mid-flight.
             self.canPublish = room.localParticipant.permissions.canPublish
             refreshMuted()
+            refreshParticipants()
         } catch {
             let wrapped = APIError.wrapping(error)
             connection = wrapped.isCancellation ? .idle : .failed(wrapped.userMessage)
@@ -111,6 +127,8 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
 
     public func setMicrophoneEnabled(_ enabled: Bool) async throws {
         if enabled {
+            // Gate zero: a guest's engine never publishes, whatever it is told.
+            guard !isListenOnly else { throw VoiceEngineError.notPermittedToPublish }
             // Gate one: this connection. Unreachable from the UI, which hides
             // the control for a listener — but a silent open microphone would
             // be a worse failure than a named one.
@@ -164,6 +182,7 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
         canPublish = false
         speakingIdentities = []
         mutedIdentities = []
+        participants = []
         connection = .idle
     }
 
@@ -175,6 +194,12 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
     /// deactivates the session around track lifecycles, and a category set
     /// behind its back is one it will overwrite.
     private func configureAudioSession() {
+        if isListenOnly {
+            // Playback only: nothing that records, nothing to ask iOS about.
+            AudioManager.shared.sessionConfiguration = .playback
+            AudioManager.shared.isSpeakerOutputPreferred = true
+            return
+        }
         AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
             category: .playAndRecord,
             categoryOptions: [
@@ -200,6 +225,16 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
             }
         }
         mutedIdentities = muted
+    }
+
+    /// Who the media server shows, read off the remote participants: the
+    /// identity, the name and the metadata the API put on each token.
+    private func refreshParticipants() {
+        participants = room.remoteParticipants.values.compactMap { participant in
+            guard let identity = participant.identity?.stringValue, !identity.isEmpty else { return nil }
+            return VoiceParticipant(identity: identity, name: participant.name, metadata: participant.metadata)
+        }
+        .sorted { $0.identity < $1.identity }
     }
 }
 
@@ -231,6 +266,7 @@ extension LiveKitVoiceEngine: RoomDelegate {
             guard let self else { return }
             self.isMicrophoneEnabled = false
             self.speakingIdentities = []
+            self.participants = []
             self.connection = error.map { .failed($0.localizedDescription) } ?? .idle
         }
     }
@@ -255,6 +291,7 @@ extension LiveKitVoiceEngine: RoomDelegate {
     nonisolated public func room(_ room: LiveKit.Room, participantDidConnect participant: RemoteParticipant) {
         let identity = participant.identity?.stringValue.lowercased() ?? ""
         Task { @MainActor [weak self] in
+            self?.refreshParticipants()
             self?.onRoomEvent?(.participantJoined(identity: identity))
         }
     }
@@ -264,6 +301,7 @@ extension LiveKitVoiceEngine: RoomDelegate {
         Task { @MainActor [weak self] in
             guard let self else { return }
             self.mutedIdentities.remove(identity)
+            self.refreshParticipants()
             self.onRoomEvent?(.participantLeft(identity: identity))
         }
     }
@@ -290,6 +328,7 @@ extension LiveKitVoiceEngine: RoomDelegate {
     nonisolated public func room(_ room: LiveKit.Room, participant: Participant, didUpdateMetadata metadata: String?) {
         let identity = participant.identity?.stringValue.lowercased() ?? ""
         Task { @MainActor [weak self] in
+            self?.refreshParticipants()
             self?.onRoomEvent?(.metadataChanged(identity: identity))
         }
     }

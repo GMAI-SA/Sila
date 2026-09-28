@@ -68,6 +68,19 @@ public final class CreateRoomViewModel {
         get { access == .inviteOnly }
         set { access = newValue ? .inviteOnly : .open }
     }
+    /// Whether people without an account may listen (contract v31). On by
+    /// default, as the server's own default is; offered only where it can
+    /// mean something — see ``offersGuestsSwitch``.
+    public var allowGuests = true
+
+    /// An open room outside a community, opened once rather than weekly:
+    /// the only kind a guest may ever listen to. A weekly series has no
+    /// switch of its own — each week's room starts with guests on, and its
+    /// host can turn them off inside.
+    public var offersGuestsSwitch: Bool {
+        access == .open && selectedCommunityId == nil && !(isScheduled && repeatsWeekly && canRepeat)
+    }
+
     /// Handles typed into the guest field, as typed. Parsed on submit.
     public var inviteHandlesText = ""
     /// Guests ticked in the picker. Joined with the typed handles on submit.
@@ -369,6 +382,9 @@ public final class CreateRoomViewModel {
             request.starterQuestion = question.isEmpty ? nil : String(question.prefix(200))
             request.kind = isAMA ? "ama" : "room"
             request.communityId = selectedCommunityId
+            // Guests listen only to an open room; a closed one answers off
+            // whatever is sent, and saying so is plainer.
+            request.allowGuests = offersGuestsSwitch && allowGuests
             let room = try await service.createRoom(request)
             onCreated?(room)
             return room

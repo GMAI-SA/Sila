@@ -823,6 +823,71 @@ public final class LiveRoomViewModel {
         isConfirmingEnd = true
     }
 
+    // MARK: - Guests (contract v31)
+
+    /// The host and co-hosts run the room's settings until it ends — today,
+    /// whether people without an account may listen.
+    public var canManageRoom: Bool {
+        (room.isHost || room.isCohost || role.isHost) && room.status != .ended
+    }
+
+    /// `true` while the room's settings sheet is up.
+    public var isShowingSettings = false
+    /// `true` while the guests switch is being changed.
+    public private(set) var isChangingGuests = false
+    /// What the switch was last moved to, while the server has not answered.
+    public private(set) var pendingAllowGuests: Bool?
+    /// Why the switch did not move, in words; `nil` when it did.
+    public private(set) var guestsError: String?
+
+    /// Whether the switch shows on: the server's answer, or the move in flight.
+    public var allowsGuests: Bool { pendingAllowGuests ?? room.allowGuests }
+
+    /// Why guests cannot be let in at all, when the room says so already: a
+    /// closed door. (A private host is only known once the server refuses.)
+    public var guestsBlockedReason: String? {
+        room.isClosed ? L10n.t("rooms.guests.allow.closed") : nil
+    }
+
+    /// "Guests can listen · 3 guests listening", or `nil`.
+    public var guestsLine: String? { RoomCopy.guestsLine(room) }
+
+    /// Turns guests on or off. Off takes the guests listening now out at
+    /// once; the room says so over the data channel, and every screen that
+    /// shows the switch re-reads the room.
+    public func setAllowGuests(_ allow: Bool) async {
+        guard canManageRoom, !isChangingGuests, allow != room.allowGuests else { return }
+        isChangingGuests = true
+        pendingAllowGuests = allow
+        guestsError = nil
+        defer {
+            isChangingGuests = false
+            pendingAllowGuests = nil
+        }
+        do {
+            let updated = try await service.setAllowGuests(allow, roomId: room.id)
+            room = updated
+            if allow, !updated.allowGuests {
+                // Accepted, and still off: the host's account is private, or
+                // the platform's switch is off.
+                guestsError = L10n.t("rooms.guests.allow.unavailable")
+            } else {
+                toast = .success(L10n.t(allow ? "rooms.guests.allow.on" : "rooms.guests.allow.off"))
+            }
+        } catch {
+            guard suspension?.notice(error) != true else { return }
+            let wrapped = APIError.wrapping(error)
+            guard !wrapped.isCancellation else { return }
+            switch wrapped.code {
+            case .roomClosed: guestsError = L10n.t("rooms.guests.allow.closed")
+            case .privateHost: guestsError = L10n.t("rooms.guests.allow.private")
+            case .roomEnded: guestsError = L10n.t("guest.room.refusal.roomEnded.title")
+            case .notRoomHost: guestsError = L10n.t("rooms.guests.allow.notHost")
+            default: guestsError = wrapped.userMessage
+            }
+        }
+    }
+
     // MARK: - Liking and sharing
 
     /// `true` while the share sheet is up.

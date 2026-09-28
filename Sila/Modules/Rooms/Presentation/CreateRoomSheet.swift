@@ -383,6 +383,24 @@ public struct CreateRoomSheet: View {
                 .font(SLFont.micro)
                 .foregroundStyle(SLColor.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // People without an account (contract v31): an open room only.
+            if viewModel.offersGuestsSwitch {
+                Toggle(isOn: $viewModel.allowGuests) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.t("rooms.guests.allow"))
+                            .font(SLFont.body)
+                            .foregroundStyle(SLColor.textPrimary)
+                        Text(L10n.t("rooms.guests.allow.detail"))
+                            .font(SLFont.micro)
+                            .foregroundStyle(SLColor.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .tint(SLColor.primary)
+                .padding(.top, SLSpacing.xs)
+                .accessibilityIdentifier("rooms.create.allowGuests")
+            }
         }
         .task(id: viewModel.access) {
             if viewModel.access == .group { await viewModel.loadGroups() }

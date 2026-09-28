@@ -8,9 +8,11 @@ import SwiftUI
 /// prompt names the thing they just reached for, at the moment they wanted
 /// it, and leaves quietly if they would rather keep reading.
 ///
-/// The tabs a guest has no account for — messages, notifications, their own
-/// profile — are present but answer with the same invitation, because hiding
-/// them would hide what joining is *for*.
+/// The tabs a guest has no account for — notifications, their own profile —
+/// are present but answer with the same invitation, because hiding them
+/// would hide what joining is *for*. Rooms is not one of them any more
+/// (contract v31, owner request 2026-09-28): a guest lists the rooms open to
+/// guests and listens to any of them, and only taking part is an invitation.
 @MainActor
 public struct GuestTabView: View {
 
@@ -27,9 +29,17 @@ public struct GuestTabView: View {
     /// own data (contract v24 §3.7). No "See @aziz" — a profile needs an
     /// account, and the explainer already says who.
     @State private var vouchSelection: VouchTagSelection?
+    /// The rooms a guest may open (contract v31).
+    @State private var roomsViewModel: GuestRoomsViewModel
+    /// The room being listened to, pushed like any screen. A connection, not
+    /// a document: it closes when it is popped.
+    @State private var openRoom: GuestRoomRoute?
 
     public init(container: AppContainer) {
         self.container = container
+        self._roomsViewModel = State(
+            initialValue: GuestRoomsViewModel(service: container.guestRoomsService, analytics: container.analytics)
+        )
         self._viewModel = State(
             initialValue: HomeViewModel(
                 service: container.publicFeedService,
@@ -60,7 +70,7 @@ public struct GuestTabView: View {
                             onStub: { _ in ask(.post) },
                             onOpenProfile: { _ in ask(.profile) },
                             onOpenHashtag: { tag in hashtag = tag },
-                            onOpenRoom: { _ in ask(.room) }
+                            onOpenRoom: { card in listen(to: card) }
                         )
                     }
                     .navigationDestination(item: $hashtag) { tag in
@@ -73,9 +83,12 @@ public struct GuestTabView: View {
                             onOpenPost: { openPost = $0 },
                             onOpenProfile: { _ in ask(.profile) },
                             onOpenHashtag: { hashtag = $0 },
-                            onOpenRoom: { _ in ask(.room) },
+                            onOpenRoom: { card in listen(to: card) },
                             onStub: { _ in ask(.post) }
                         )
+                    }
+                    .navigationDestination(item: $openRoom) { route in
+                        guestRoom(route)
                     }
             }
             .tint(SLColor.primary)
@@ -99,31 +112,29 @@ public struct GuestTabView: View {
                 onClose: { vouchSelection = nil }
             )
         }
-        .onChange(of: selection) { _, tab in
-            // The three tabs that need an account invite rather than pretend.
+        .onChange(of: selection) { previous, tab in
+            // The two tabs that need an account invite rather than pretend.
             switch tab {
-            case .notifications: ask(.notifications); selection = .home
-            case .profile: ask(.profile); selection = .home
-            case .rooms: ask(.room); selection = .home
-            case .home, .explore: break
+            case .notifications: ask(.notifications); selection = previous
+            case .profile: ask(.profile); selection = previous
+            case .rooms where !container.flags.rooms: ask(.room); selection = previous
+            case .home, .explore, .rooms: break
             }
+            // A room is left when its tab is: the connection goes with it.
+            if tab == .home || tab == .explore { openRoom = nil }
         }
+        // A shared room link (sila.gmai.sa/rooms/…): a guest listens to it at
+        // once, as somebody signed out does (contract v31).
+        .task { openPendingRoomLink() }
+        .onChange(of: container.router.pendingLink) { _, _ in openPendingRoomLink() }
         .sheet(item: Binding(
             get: { container.session.joinPrompt },
             set: { container.session.joinPrompt = $0 }
         )) { prompt in
             JoinPromptSheet(
                 prompt: prompt,
-                onCreateAccount: {
-                    container.analytics.track(.guestJoinAccepted, properties: ["prompt": prompt.rawValue, "door": "register"])
-                    container.session.leaveGuest()
-                    container.router.push(.register)
-                },
-                onSignIn: {
-                    container.analytics.track(.guestJoinAccepted, properties: ["prompt": prompt.rawValue, "door": "signIn"])
-                    container.session.leaveGuest()
-                    container.router.push(.signIn)
-                },
+                onCreateAccount: { enter(.register, from: prompt) },
+                onSignIn: { enter(.signIn, from: prompt) },
                 onDismiss: { container.session.joinPrompt = nil }
             )
             .presentationDetents([.medium])
@@ -133,6 +144,9 @@ public struct GuestTabView: View {
     @ViewBuilder
     private var content: some View {
         switch selection {
+        case .rooms where container.flags.rooms:
+            GuestRoomsScreen(viewModel: roomsViewModel, onOpen: { card in listen(to: card) })
+                .tnNavigationBar(title: L10n.t("rooms.nav.title"))
         case .explore:
             // Search needs an account; the square is what a guest explores.
             feed.tnNavigationBar(title: L10n.t("guest.feed.title"))
@@ -198,7 +212,7 @@ public struct GuestTabView: View {
             onQuote: { _ in ask(.repost) },
             onMention: { _ in ask(.profile) },
             onHashtag: { tag in hashtag = tag },
-            onOpenRoom: { _ in ask(.room) },
+            onOpenRoom: { card in listen(to: card) },
             onOpenQuoted: { openPost = $0 },
             onOpenAuthor: { _ in ask(.profile) },
             onStub: { _ in ask(.post) }
@@ -211,6 +225,68 @@ public struct GuestTabView: View {
         container.session.joinPrompt = prompt
     }
 
+    /// Through one of the two doors. A guest listening in a room comes back
+    /// to it once signed in: the room waits on the router as a link would,
+    /// and the member's Rooms tab opens it (contract v31).
+    private func enter(_ door: AuthRoute, from prompt: JoinPrompt) {
+        container.analytics.track(.guestJoinAccepted, properties: [
+            "prompt": prompt.rawValue, "door": door == .register ? "register" : "signIn"
+        ])
+        if let room = openRoom {
+            container.router.pendingLink = .room(id: room.id)
+        }
+        container.session.leaveGuest()
+        container.router.push(door)
+    }
+
+    // MARK: - Rooms (contract v31)
+
+    /// Listens to a room: the Rooms tab, with the room open on it.
+    private func listen(to card: RoomCard) {
+        guard container.flags.rooms else { return ask(.room) }
+        selection = .rooms
+        openRoom = GuestRoomRoute(id: card.id, card: card)
+    }
+
+    /// A room link waiting on the router, taken while this shell is the one
+    /// on screen — never after the guest has left it for a door, where the
+    /// link is the way back into the room once signed in.
+    private func openPendingRoomLink() {
+        guard container.flags.rooms, container.session.route == .guest,
+              case let .room(id)? = container.router.pendingLink else { return }
+        container.router.pendingLink = nil
+        selection = .rooms
+        openRoom = GuestRoomRoute(id: id, card: nil)
+    }
+
+    private func guestRoom(_ route: GuestRoomRoute) -> some View {
+        Owned({
+            GuestRoomViewModel(
+                roomId: route.id,
+                card: route.card,
+                service: container.guestRoomsService,
+                passes: container.guestPasses,
+                // One engine per connection, built never to ask for the
+                // microphone.
+                makeEngine: { container.makeGuestVoiceEngine() },
+                analytics: container.analytics
+            )
+        }) { viewModel in
+            GuestRoomScreen(
+                viewModel: viewModel,
+                onLeave: {
+                    openRoom = nil
+                    // The counts on the list behind are a minute old.
+                    Task { await roomsViewModel.load() }
+                },
+                onAsk: { prompt in ask(prompt) },
+                onCreateAccount: { enter(.register, from: .room) },
+                onSignIn: { enter(.signIn, from: .room) }
+            )
+        }
+        .id(route.id)
+    }
+
     private var tabs: [SLTabBarItem<Tab>] {
         [
             SLTabBarItem(id: "home", icon: "house", selectedIcon: "house.fill",
@@ -218,11 +294,20 @@ public struct GuestTabView: View {
             SLTabBarItem(id: "explore", icon: "magnifyingglass", selectedIcon: "magnifyingglass",
                          label: L10n.t("feed.tab.explore.label"), hint: L10n.t("feed.tab.explore.hint"), kind: .tab(.explore)),
             SLTabBarItem(id: "rooms", icon: "waveform", selectedIcon: "waveform.circle.fill",
-                         label: L10n.t("feed.tab.rooms.label"), hint: L10n.t("guest.tab.locked.hint"), kind: .tab(.rooms)),
+                         label: L10n.t("feed.tab.rooms.label"),
+                         hint: container.flags.rooms ? L10n.t("guest.rooms.tab.hint") : L10n.t("guest.tab.locked.hint"),
+                         kind: .tab(.rooms)),
             SLTabBarItem(id: "notifications", icon: "bell", selectedIcon: "bell.fill",
                          label: L10n.t("feed.tab.notifications.label"), hint: L10n.t("guest.tab.locked.hint"), kind: .tab(.notifications)),
             SLTabBarItem(id: "profile", icon: "person", selectedIcon: "person.fill",
                          label: L10n.t("feed.tab.profile.label"), hint: L10n.t("guest.tab.locked.hint"), kind: .tab(.profile)),
         ]
     }
+}
+
+/// A room a guest is listening to: its id, and the card the tap came from
+/// when it came from one (a shared link brings only the id).
+struct GuestRoomRoute: Identifiable, Hashable {
+    let id: UUID
+    let card: RoomCard?
 }

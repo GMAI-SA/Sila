@@ -116,6 +116,15 @@ public protocol RoomsServiceProtocol: Sendable {
     /// `DELETE /rooms/{id}/hands/{handle}`. Not a removal, not a mark.
     func dismissHand(roomId: UUID, handle: String) async throws -> VoiceRoom
 
+    /// Lets people without an account listen, or stops them,
+    /// `PATCH /rooms/{id}` `{"allow_guests": …}` (contract v31). Host or
+    /// co-host. Turning it off takes the guests listening now out at once.
+    ///
+    /// - Throws: `not_room_host`; turning it on in a closed room
+    ///   (`room_closed`) or for a private host (`private_host`); any change
+    ///   once the room ended (`room_ended`).
+    func setAllowGuests(_ allow: Bool, roomId: UUID) async throws -> VoiceRoom
+
     /// Mutes a speaker's microphone now, `POST /rooms/{id}/mute`. Host only.
     /// Soft — they keep the seat; ``demote(roomId:handle:)`` is the hard stop.
     func mute(roomId: UUID, handle: String) async throws
@@ -168,6 +177,11 @@ extension RoomsServiceProtocol {
 /// backend without them, reads as "no groups" rather than failing to compile
 /// or to list rooms. The real service implements every call.
 extension RoomsServiceProtocol {
+    /// A transport without the switch (a scripted one in a test) refuses it
+    /// rather than pretending it changed.
+    public func setAllowGuests(_ allow: Bool, roomId: UUID) async throws -> VoiceRoom {
+        throw APIError.transport("the guests switch is not available here")
+    }
     public func fetchGroups() async throws -> [UserGroup] { [] }
     public func createGroup(name: String, handles: [String]) async throws -> UserGroup {
         throw APIError.transport("groups are not available here")

@@ -131,19 +131,32 @@ public struct LiveRoomScreen: View {
                 }
             }
 
-            if let onReport, !viewModel.isHost {
+            // The room's menu: its settings for the host and co-hosts
+            // (contract v31), reporting for everybody but the host.
+            if viewModel.canManageRoom || (onReport != nil && !viewModel.isHost) {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button(role: .destructive) {
-                            onReport(.room(id: viewModel.room.id, host: SafetyTarget(user: viewModel.room.host),
-                                           title: viewModel.room.title))
-                        } label: {
-                            Label(L10n.t("rooms.report"), systemImage: "flag")
+                        if viewModel.canManageRoom {
+                            Button {
+                                viewModel.isShowingSettings = true
+                            } label: {
+                                Label(L10n.t("rooms.settings.title"), systemImage: "slider.horizontal.3")
+                            }
+                            .accessibilityIdentifier("room.settings")
+                        }
+                        if let onReport, !viewModel.isHost {
+                            Button(role: .destructive) {
+                                onReport(.room(id: viewModel.room.id, host: SafetyTarget(user: viewModel.room.host),
+                                               title: viewModel.room.title))
+                            } label: {
+                                Label(L10n.t("rooms.report"), systemImage: "flag")
+                            }
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle").foregroundStyle(SLColor.primary)
                     }
-                    .accessibilityLabel(Text(L10n.t("rooms.report")))
+                    .accessibilityLabel(Text(viewModel.canManageRoom ? L10n.t("rooms.settings.title") : L10n.t("rooms.report")))
+                    .accessibilityIdentifier("room.menu")
                 }
             }
 
@@ -170,6 +183,9 @@ public struct LiveRoomScreen: View {
                     onClose: { viewModel.isDepthOpen = false }
                 )
             }
+        }
+        .sheet(isPresented: $viewModel.isShowingSettings) {
+            RoomSettingsSheet(viewModel: viewModel)
         }
         .sheet(isPresented: $viewModel.isSharing) {
             ShareRoomSheet(
@@ -550,6 +566,9 @@ public struct LiveRoomScreen: View {
                         .foregroundStyle(SLColor.textMuted)
                 }
             }
+            // Guests are in no roster and no count above (contract v31):
+            // this line is the only place they show.
+            RoomGuestsLine(text: viewModel.guestsLine)
         }
     }
 

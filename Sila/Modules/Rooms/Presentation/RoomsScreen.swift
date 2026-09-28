@@ -340,6 +340,9 @@ struct RoomCardView: View {
 
                 chips
 
+                // Guests are counted nowhere else (contract v31).
+                RoomGuestsLine(text: RoomCopy.guestsLine(room))
+
                 RemindMeButtons(room: room)
 
                 if room.isHost, room.status.isJoinable, let onEnd {

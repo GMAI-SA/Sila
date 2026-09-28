@@ -19,6 +19,15 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
     public private(set) var speakingIdentities: Set<String> = []
     public private(set) var mutedIdentities: Set<String> = []
     public private(set) var canPublish = false
+    /// Who the mocked media server shows. Seeded by ``participantsOnConnect``
+    /// when a connection opens, or set by a test.
+    public private(set) var participants: [VoiceParticipant] = []
+    /// Shown as the room's other connections once a connection opens — a
+    /// guest's stage in a mocked build (contract v31).
+    public var participantsOnConnect: [VoiceParticipant] = []
+    /// Data messages the mocked room "says" once a connection opens: a chat
+    /// line and a reaction, so a mocked guest has something to read.
+    public var messagesOnConnect: [RoomDataMessage] = []
     public var onChange: (@MainActor () -> Void)?
     public var onRoomEvent: (@MainActor (VoiceRoomEvent) -> Void)?
     /// Every data message this engine was asked to send.
@@ -56,7 +65,16 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
         }
         connectedCanPublish = canPublish
         self.canPublish = canPublish
+        participants = participantsOnConnect
         connection = .connected
+        if !messagesOnConnect.isEmpty {
+            let messages = messagesOnConnect
+            Task { @MainActor [weak self] in
+                // After the caller has taken the connection and is listening.
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                for message in messages { self?.onRoomEvent?(.message(message)) }
+            }
+        }
     }
 
     public func setMicrophoneEnabled(_ enabled: Bool) async throws {
@@ -78,6 +96,7 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
         canPublish = false
         speakingIdentities = []
         mutedIdentities = []
+        participants = []
         connection = .idle
     }
 
@@ -117,6 +136,13 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
     /// Simulates a socket dropping under the app.
     public func simulateFailure(_ message: String) {
         isMicrophoneEnabled = false
+        participants = []
         connection = .failed(message)
+    }
+
+    /// Simulates the media server showing a different set of people.
+    public func setParticipants(_ people: [VoiceParticipant]) {
+        participants = people
+        onChange?()
     }
 }

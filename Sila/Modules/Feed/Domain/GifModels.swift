@@ -151,6 +151,15 @@ public struct RoomCard: Equatable, Hashable, Sendable, Decodable {
     public let startedAt: Date?
     public let metrics: RoomMetrics
     public let viewerLiked: Bool
+    /// A question pinned to the room before anybody speaks (contract v21).
+    public var starterQuestion: String? = nil
+    /// `room` or `ama`.
+    public var kind: String = "room"
+    /// Somebody with no account can listen, when the room is live (contract
+    /// v31). `false` from a server before v31.
+    public var allowGuests: Bool = false
+    /// Guests listening now (0 unless live). Never in ``participantCount``.
+    public var guestCount: Int = 0
 
     public init(
         id: UUID,
@@ -185,6 +194,7 @@ public struct RoomCard: Equatable, Hashable, Sendable, Decodable {
     private enum CodingKeys: String, CodingKey {
         case id, title, topic, status, scope, scopeCountry, scopeRegion, host
         case participantCount, scheduledFor, startedAt, metrics, viewerLiked
+        case starterQuestion, kind, allowGuests, guestCount
     }
 
     public init(from decoder: Decoder) throws {
@@ -206,10 +216,33 @@ public struct RoomCard: Equatable, Hashable, Sendable, Decodable {
         startedAt = (try? container.decodeIfPresent(Date.self, forKey: .startedAt)) ?? nil
         metrics = (try? container.decode(RoomMetrics.self, forKey: .metrics)) ?? RoomMetrics()
         viewerLiked = (try? container.decode(Bool.self, forKey: .viewerLiked)) ?? false
+        let question = (try? container.decodeIfPresent(String.self, forKey: .starterQuestion)) ?? nil
+        starterQuestion = (question?.isEmpty == false) ? question : nil
+        kind = (try? container.decode(String.self, forKey: .kind)) ?? "room"
+        allowGuests = (try? container.decode(Bool.self, forKey: .allowGuests)) ?? false
+        guestCount = max(0, (try? container.decode(Int.self, forKey: .guestCount)) ?? 0)
     }
 
     /// Whether tapping through leads anywhere: an ended room has no door.
     public var isJoinable: Bool { status.isJoinable }
+
+    /// An ask-me-anything room.
+    public var isAMA: Bool { kind == "ama" }
+
+    /// The room's topic as a readable label, or `nil` when it has none.
+    public var topicLabel: String? {
+        guard let topic, !topic.isEmpty else { return nil }
+        return TopicOption.makeLabel(from: topic)
+    }
+
+    /// Who may speak, as the chip says it — the same chip a member's card
+    /// draws.
+    public var scopePresentation: ScopePresentation {
+        ScopePresentation.make(scope: scope, country: scopeCountry, region: scopeRegion, noun: "room", verb: "speak")
+    }
+
+    /// Guests listening now, as the line under a card counts them.
+    public var liveGuestCount: Int { status == .live ? guestCount : 0 }
 }
 
 // MARK: - Hashtags
