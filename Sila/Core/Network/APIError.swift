@@ -126,7 +126,8 @@ public enum APIErrorCode: String, Sendable, Equatable {
 
     /// The uploaded file could not be decoded as an image (HTTP 400).
     case invalidImage = "invalid_image"
-    /// The upload is over 5 MB, or over 50 megapixels (HTTP 413).
+    /// The upload is over 40 MB, or over what the server will decode
+    /// (260 MP declared, 120 MP decoded; contract v27 §1) (HTTP 413).
     case imageTooLarge = "image_too_large"
     /// `PUT /me/phone` was given something that is not E.164 (HTTP 400).
     case invalidPhone = "invalid_phone"
@@ -144,6 +145,48 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// answers this until the deletion is cancelled, which is why the client
     /// routes it to the recovery screen rather than showing it as an error.
     case accountDeactivated = "account_deactivated"
+
+    // MARK: Contract v26 — sessions and credentials
+
+    /// A new password over the 72 bytes bcrypt reads — about 72 Latin or 36
+    /// Arabic characters (HTTP 400): at registration, a reset, a password
+    /// change, and a password sent with a code.
+    case passwordTooLong = "password_too_long"
+    /// A credential change on an account with no password, sent without the
+    /// texted code that stands in for one (HTTP 403).
+    case reauthRequired = "reauth_required"
+    /// Neither a password nor a confirmed phone to prove the change with
+    /// (HTTP 409). "Forgot password" sets one.
+    case reauthUnavailable = "reauth_unavailable"
+    /// A texted code asked for on an account that has a password (HTTP 409).
+    case hasPassword = "has_password"
+    /// A number another account holds (HTTP 409).
+    case phoneUnavailable = "phone_unavailable"
+    /// The number this account signs in with, which it cannot give up while
+    /// it has no other way in (HTTP 409).
+    case phoneIsSignIn = "phone_is_sign_in"
+
+    // MARK: Contract v28 — production without dev mode
+
+    /// No SMS provider: every texted code is refused, before anything is
+    /// counted (HTTP 503).
+    case smsUnavailable = "sms_unavailable"
+
+    // MARK: Contract v27 — uploads and media
+
+    /// A post's picture that is not one this server minted for this author,
+    /// or the same one twice (HTTP 400).
+    case invalidImageURL = "invalid_image_url"
+    /// A post's picture that is gone, already on another post, or never
+    /// arrived (HTTP 400). Upload it again.
+    case imageUnavailable = "image_unavailable"
+    /// A request body larger than its route could need (HTTP 413).
+    case requestTooLarge = "request_too_large"
+    /// A GIF the library could not look up: the provider is down (HTTP 503).
+    case gifUnavailable = "gif_unavailable"
+    /// A GIF the library does not hold and no provider could vouch for
+    /// (HTTP 400) — with no provider key, any GIF not already in the library.
+    case invalidGif = "invalid_gif"
 
     // MARK: Safety — block, mute, report, suspension
 
@@ -529,6 +572,30 @@ public enum APIError: Error, Equatable, Sendable {
                 // Shown only if this ever reaches a screen: the deactivation
                 // monitor is meant to route it to the recovery screen first.
                 return L10n.t("error.accountDeactivated")
+            case .passwordTooLong:
+                return L10n.t("error.passwordTooLong")
+            case .reauthRequired:
+                return L10n.t("error.reauthRequired")
+            case .reauthUnavailable:
+                return L10n.t("error.reauthUnavailable")
+            case .hasPassword:
+                return L10n.t("error.hasPassword")
+            case .phoneUnavailable:
+                return L10n.t("error.phoneUnavailable")
+            case .phoneIsSignIn:
+                return L10n.t("error.phoneIsSignIn")
+            case .smsUnavailable:
+                return L10n.t("error.smsUnavailable")
+            case .invalidImageURL:
+                return L10n.t("error.invalidImageUrl")
+            case .imageUnavailable:
+                return L10n.t("error.imageUnavailable")
+            case .requestTooLarge:
+                return L10n.t("error.requestTooLarge")
+            case .gifUnavailable:
+                return L10n.t("error.gifUnavailable")
+            case .invalidGif:
+                return L10n.t("error.invalidGif")
             case .selfBlock:
                 return L10n.t("error.selfBlock")
             case .selfMute:

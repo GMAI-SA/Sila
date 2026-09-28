@@ -14350,6 +14350,24 @@
         }
       }
     },
+    "error.gifUnavailable": {
+      "comment": "503 gif_unavailable (contract v27): the GIF library could not look the GIF up because its provider is down. The post can go without it.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الصور المتحركة غير متاحة الآن. احذف الصورة المتحركة، أو أعد المحاولة بعد قليل."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIFs aren't available right now. Remove the GIF, or try again in a moment."
+          }
+        }
+      }
+    },
     "error.groupExists": {
       "extractionState": "manual",
       "localizations": {
@@ -14419,6 +14437,24 @@
         }
       }
     },
+    "error.hasPassword": {
+      "comment": "409 has_password (contract v26): a texted code was asked for on an account that has a password, which is the proof to use instead.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لهذا الحساب كلمة مرور. أدخلها للتأكيد بدلًا من الرمز."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account has a password. Enter it to confirm instead of a code."
+          }
+        }
+      }
+    },
     "error.httpStatus": {
       "comment": "Unparseable non-2xx response. The %@ is the HTTP status code, which is never translated.",
       "extractionState": "manual",
@@ -14474,19 +14510,37 @@
       }
     },
     "error.imageTooLarge": {
-      "comment": "The uploaded image is over the size limit.",
+      "comment": "413 image_too_large: the uploaded picture is over the server's limit (40 MB since contract v27).",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هذه الصورة كبيرة جدًا. اختر صورة أقل من 5 ميغابايت."
+            "value": "هذه الصورة كبيرة جدًا. اختر صورة أقل من 40 ميغابايت."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "That image is too big. Pick one under 5 MB."
+            "value": "That image is too big. Pick one under 40 MB."
+          }
+        }
+      }
+    },
+    "error.imageUnavailable": {
+      "comment": "400 image_unavailable (contract v27): an uploaded picture is gone, already on another post, or never arrived. Uploading it again fixes it.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إحدى صور هذا المنشور لم تعد متاحة. احذفها ثم أضفها من جديد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A picture in this post is no longer available. Remove it and add it again."
           }
         }
       }
@@ -14563,6 +14617,24 @@
         }
       }
     },
+    "error.invalidGif": {
+      "comment": "400 invalid_gif (contract v27): the GIF is not in Sila's library and no provider can vouch for it — with no provider, only GIFs already in the library can be posted.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن نشر هذه الصورة المتحركة. احذفها أو اختر غيرها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That GIF can't be posted. Remove it, or pick another one."
+          }
+        }
+      }
+    },
     "error.invalidHandle": {
       "comment": "The requested handle breaks the character rule.",
       "extractionState": "manual",
@@ -14595,6 +14667,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "That file couldn't be read as an image. Pick a photo instead."
+          }
+        }
+      }
+    },
+    "error.invalidImageUrl": {
+      "comment": "400 invalid_image_url (contract v27): a picture on the post is not one this person uploaded for it, or the same one is attached twice.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر إرفاق إحدى الصور. احذفها ثم أضفها من جديد."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One of the pictures couldn't be attached. Remove it and add it again."
           }
         }
       }
@@ -15043,6 +15133,24 @@
         }
       }
     },
+    "error.passwordTooLong": {
+      "comment": "400 password_too_long (contract v26): a new password over the 72 bytes the server reads — at registration, a reset, a password change, or sent with a code.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كلمة المرور هذه طويلة جدًا. استخدم 72 حرفًا لاتينيًا على الأكثر، أو نحو 36 حرفًا عربيًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That password is too long. Use up to 72 characters, or about 36 in Arabic."
+          }
+        }
+      }
+    },
     "error.passwordUnchanged": {
       "comment": "The new password is the same as the current one.",
       "extractionState": "manual",
@@ -15057,6 +15165,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "That is already your password. Choose a different one."
+          }
+        }
+      }
+    },
+    "error.phoneIsSignIn": {
+      "comment": "409 phone_is_sign_in (contract v26): the number is how this account signs in, so it cannot be replaced or cleared while the account has no other way in.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا هو الرقم الذي تسجّل الدخول به، فلا يمكن تغييره أو حذفه حتى يكون لحسابك بريد إلكتروني وكلمة مرور أيضًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is the number you sign in with, so it can't be changed or removed until your account also has an email address and a password."
+          }
+        }
+      }
+    },
+    "error.phoneUnavailable": {
+      "comment": "409 phone_unavailable (contract v26): the number cannot be added — another account holds it. Deliberately does not say so.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن إضافة هذا الرقم إلى حسابك. جرّب رقمًا آخر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That number can't be added to your account. Try a different number."
           }
         }
       }
@@ -15163,6 +15307,42 @@
         }
       }
     },
+    "error.reauthRequired": {
+      "comment": "403 reauth_required (contract v26): a credential change on an account with no password, which proves itself with a code texted to its phone — and texted codes are not available yet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد كلمة مرور لهذا الحساب، لذا يحتاج هذا التغيير إلى رمز يُرسل إلى جوالك. هذا غير متاح بعد — أعد المحاولة لاحقًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account has no password, so this change needs a code sent to your phone. That isn't possible yet — please try again later."
+          }
+        }
+      }
+    },
+    "error.reauthUnavailable": {
+      "comment": "409 reauth_unavailable (contract v26): the account has neither a password nor a confirmed phone to prove a change with. “Forgot password?” is the sign-in screen's button, which sets one.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا توجد كلمة مرور لهذا الحساب لتأكيد هويتك. سجّل الخروج واختر «نسيت كلمة المرور؟» لتعيين واحدة، ثم أعد المحاولة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account has no password to confirm it's you. Sign out, choose “Forgot password?” to set one, then try again."
+          }
+        }
+      }
+    },
     "error.removedFromCommunity": {
       "extractionState": "manual",
       "localizations": {
@@ -15194,6 +15374,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "You can't reply to this thread."
+          }
+        }
+      }
+    },
+    "error.requestTooLarge": {
+      "comment": "413 request_too_large (contract v27): the request is larger than its route accepts — in practice a file far over any normal photo or recording.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا أكبر من أن يُرسَل. جرّب ملفًا أصغر."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's too large to send. Try a smaller file."
           }
         }
       }
@@ -15372,6 +15570,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "That address is already taken."
+          }
+        }
+      }
+    },
+    "error.smsUnavailable": {
+      "comment": "503 sms_unavailable (contract v28): there is no SMS provider yet, so no code can be texted. Email and password always work.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرموز عبر الرسائل النصية غير متاحة بعد. استخدم بريدك الإلكتروني وكلمة المرور بدلًا من ذلك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codes by text message aren't available yet. Use your email and password instead."
           }
         }
       }
