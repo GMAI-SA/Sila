@@ -4,7 +4,8 @@ import SwiftUI
 ///
 /// A search field, what people from the viewer's country share on Sila, and
 /// the provider's trending list for that country. The provider is credited
-/// when it answered, and only then.
+/// when it answered, and only then. A server with no GIF anybody could post
+/// gets one plain sentence instead, and no search field (contract v27 §5).
 @MainActor
 public struct GifPickerSheet: View {
 
@@ -22,7 +23,9 @@ public struct GifPickerSheet: View {
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                searchField
+                if !viewModel.isUnavailable {
+                    searchField
+                }
                 content
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -97,14 +100,15 @@ public struct GifPickerSheet: View {
             .padding(SLSpacing.lg)
 
         case .loaded:
-            if viewModel.isLibraryEmpty {
+            if viewModel.isUnavailable {
                 SLEmptyState(
                     icon: "photo.on.rectangle.angled",
-                    title: L10n.t("composer.gif.empty.title"),
-                    subtitle: L10n.t("composer.gif.empty.subtitle"),
+                    title: L10n.t("composer.gif.unavailable.title"),
+                    subtitle: L10n.t("composer.gif.unavailable.subtitle"),
                     tint: SLColor.textSecondary
                 )
                 .padding(SLSpacing.lg)
+                .accessibilityIdentifier("composer.gif.unavailable")
             } else if viewModel.isSearching && viewModel.gifs.isEmpty {
                 SLEmptyState(
                     icon: "magnifyingglass",

@@ -170,7 +170,7 @@ final class GifTests: XCTestCase {
     func testAnEmptyLibraryWithNoProviderSaysSoAndAnOutageIsAFailure() async {
         let empty = GifPickerViewModel(service: GifServiceMock(scenario: .empty), country: "SA", debounce: 0)
         await empty.load()
-        XCTAssertTrue(empty.isLibraryEmpty)
+        XCTAssertTrue(empty.isUnavailable)
         XCTAssertFalse(empty.isFromProvider)
 
         let offline = GifPickerViewModel(service: GifServiceMock(scenario: .offline), country: nil, debounce: 0)

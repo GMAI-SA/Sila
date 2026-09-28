@@ -484,6 +484,11 @@ public struct MainTabView: View {
         }
         // Whether the Profile draws "Vouch for someone you know", and how.
         .task(id: container.session.user?.id) { await refreshVouching() }
+        // Whether there is a GIF to offer, before anybody reaches for one.
+        .task(id: container.session.user?.countryCode) {
+            guard container.flags.composer else { return }
+            await container.gifAvailability.check(country: container.session.user?.countryCode)
+        }
         // A link into the app: one waiting from before sign-in, or one that
         // arrives while the tabs are up.
         .task { await openPendingLink() }
@@ -690,6 +695,7 @@ public struct MainTabView: View {
             composer: container.composerService,
             search: container.searchService,
             gifs: container.gifService,
+            gifAvailability: container.gifAvailability,
             analytics: container.analytics,
             openGifPicker: container.router.composerOpensGifPicker,
             starters: container.discoverService,
@@ -797,13 +803,17 @@ public struct MainTabView: View {
             options.append(SLFloatingActionOption(
                 id: "post", title: L10n.t("feed.fab.option.post"), glyph: .symbol("square.and.pencil"), action: openComposer
             ))
-            options.append(SLFloatingActionOption(
-                id: "gif", title: L10n.t("feed.fab.option.gif"), glyph: .text("GIF"),
-                action: {
-                    container.analytics.track(.composerOpened, properties: ["context": "gif"])
-                    container.router.openComposerWithGif()
-                }
-            ))
+            // Only while the server has a GIF anybody could post (contract
+            // v27 §5): otherwise the option opens on nothing.
+            if container.gifAvailability.isOffered {
+                options.append(SLFloatingActionOption(
+                    id: "gif", title: L10n.t("feed.fab.option.gif"), glyph: .text("GIF"),
+                    action: {
+                        container.analytics.track(.composerOpened, properties: ["context": "gif"])
+                        container.router.openComposerWithGif()
+                    }
+                ))
+            }
         }
         if let create = roomCreationHandler {
             options.append(SLFloatingActionOption(

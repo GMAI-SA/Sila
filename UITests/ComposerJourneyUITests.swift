@@ -14,12 +14,13 @@ final class ComposerJourneyUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launchApp(composerScenario: String = "success") -> XCUIApplication {
+    private func launchApp(composerScenario: String = "success", gifScenario: String = "populated") -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
             "-mockAuth", "-mockScenario", "verified",
             "-mockFeed", "-mockFeedScenario", "populated",
             "-mockComposer", "-mockComposerScenario", composerScenario,
+            "-mockGifScenario", gifScenario,
             "-mockSearch", "-mockSearchScenario", "populated",
             "-noBiometrics",
             // Nothing kept from the journey before this one.
@@ -123,6 +124,63 @@ final class ComposerJourneyUITests: XCTestCase {
         discard.tap()
 
         XCTAssertTrue(app.buttons["For You"].waitForExistence(timeout: 10))
+    }
+
+    /// Holds the round button until its choices fan out.
+    private func holdFloatingButton(_ app: XCUIApplication) {
+        let button = app.descendants(matching: .any)["feed.fab"].firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 15), "the feed has no post button")
+        button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.9)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["feed.fab.post"].waitForExistence(timeout: 5),
+            "holding the button did not fan out its choices"
+        )
+        // The choices spring into place; a tap mid-flight lands where the
+        // choice was a moment ago.
+        sleep(1)
+    }
+
+    /// No GIF provider and nothing in the library — production today
+    /// (contract v27 §5): neither the floating button nor the composer offers
+    /// a GIF picker that could only open on nothing.
+    func testWithNoGifToOfferTheGifWaysInAreHidden() throws {
+        let app = launchApp(gifScenario: "empty")
+        signIn(app)
+        // The tabs ask the library once they open; give the answer a moment.
+        sleep(2)
+
+        holdFloatingButton(app)
+        XCTAssertFalse(app.descendants(matching: .any)["feed.fab.gif"].exists, "the GIF choice is offered with no GIF to pick")
+        add(screenshot(app, named: "FAB — no GIF choice"))
+
+        app.descendants(matching: .any)["feed.fab.post"].firstMatch.tap()
+        XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 10), "the composer sheet never appeared")
+        XCTAssertTrue(app.descendants(matching: .any)["composer.addImage"].waitForExistence(timeout: 5), "the composer lost its photo button")
+        XCTAssertFalse(app.descendants(matching: .any)["composer.addGif"].exists, "the composer offers a GIF button with no GIF to pick")
+        add(screenshot(app, named: "Composer — no GIF button"))
+    }
+
+    /// With a library, both ways in are there, and the floating button's GIF
+    /// choice opens the composer onto the picker.
+    func testWithGifsToOfferTheFloatingButtonOpensThePicker() throws {
+        let app = launchApp()
+        signIn(app)
+        sleep(2)
+
+        holdFloatingButton(app)
+        let gif = app.descendants(matching: .any)["feed.fab.gif"].firstMatch
+        XCTAssertTrue(gif.exists, "the GIF choice is missing although the library has GIFs")
+        // The middle of the row, which is the gap between the word and its
+        // circle: the whole row must answer.
+        gif.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["composer.gif.search"].waitForExistence(timeout: 10),
+            "the GIF choice did not open the picker"
+        )
+        add(screenshot(app, named: "Composer — GIF picker from the floating button"))
+        app.descendants(matching: .any)["composer.gif.cancel"].firstMatch.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["composer.addGif"].waitForExistence(timeout: 5), "the composer has no GIF button")
     }
 
     /// Explore shows real trending tags instead of the Phase-3 placeholder.

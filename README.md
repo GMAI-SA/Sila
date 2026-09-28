@@ -447,6 +447,12 @@ rather than as a clean failure), `unverified`, `offline` and `rateLimited`.
 `SearchServiceMock` ships 3: `populated` (searches the same fixture world the
 mocked feed shows), `empty` and `offline`.
 
+`GifServiceMock` ships 4, picked with `-mockGifScenario`: `populated` (the
+provider answers), `libraryOnly` (no provider, a few GIFs already shared),
+`empty` (no provider and nothing in the library — production today, where the
+GIF button and the floating button's GIF choice are hidden; see
+`GifAvailability`) and `offline`.
+
 `PreferencesServiceMock` ships 4: `populated` (the filter on, two interests, one
 muted topic, one muted country), `empty` (a new account's defaults), `offline`
 and `saveFails` (loads fine, rejects every write — the state the screen must
@@ -514,7 +520,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-1,590 total: 1,527 unit (78 opt-in, see below) and 63 XCUITests (46 journeys, 16
+1,642 total: 1,576 unit (81 opt-in, see below) and 66 XCUITests (49 journeys, 16
 reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a

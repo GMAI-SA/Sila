@@ -78,6 +78,9 @@ public final class ComposerViewModel {
     public var isShowingGuidelines = false
     /// `true` while the GIF picker sheet is up.
     public var isShowingGifPicker = false
+    /// Opened by the floating button's GIF choice: the picker comes up once
+    /// the composer is on screen (``presentRequestedGifPicker()``).
+    public private(set) var opensOnGifPicker: Bool
     /// Mention candidates for the segment being typed.
     public private(set) var mentionSuggestions: [UserSummary] = []
     /// `true` while `/search/users` is in flight for the current prefix.
@@ -96,6 +99,9 @@ public final class ComposerViewModel {
     /// The GIF library. `nil` hides the GIF button rather than showing one
     /// that opens an empty sheet.
     public let gifs: GifServiceProtocol?
+    /// Whether the server has any GIF to offer (contract v27 §5). `nil` —
+    /// tests and previews — takes the library's word for it.
+    public let gifAvailability: GifAvailability?
     private let analytics: AnalyticsClient
     private let mentionDebounce: TimeInterval
     private let onPosted: @MainActor ([Post]) -> Void
@@ -125,6 +131,7 @@ public final class ComposerViewModel {
         composer: ComposerServiceProtocol,
         search: SearchServiceProtocol? = nil,
         gifs: GifServiceProtocol? = nil,
+        gifAvailability: GifAvailability? = nil,
         analytics: AnalyticsClient,
         mentionDebounce: TimeInterval = ComposerConstants.mentionDebounce,
         openGifPicker: Bool = false,
@@ -142,7 +149,11 @@ public final class ComposerViewModel {
         self.composer = composer
         self.search = search
         self.gifs = gifs
-        self.isShowingGifPicker = openGifPicker && gifs != nil
+        self.gifAvailability = gifAvailability
+        // Not `isShowingGifPicker` yet: a sheet cannot rise over a sheet that
+        // is still rising, and one asked for on the composer's first frame
+        // simply never appeared.
+        self.opensOnGifPicker = openGifPicker && gifs != nil
         self.analytics = analytics
         self.mentionDebounce = mentionDebounce
         self.onPosted = onPosted
@@ -208,12 +219,28 @@ public final class ComposerViewModel {
 
     // MARK: - GIF
 
+    /// Whether the GIF button is offered: there is a library, and the server
+    /// has not said it holds nothing anybody could post. Until it has
+    /// answered, the button stays.
+    public var offersGifs: Bool {
+        gifs != nil && gifAvailability?.isOffered != false
+    }
+
     /// Opens the picker. Records it, because "did anybody use this" is the
     /// question that decides whether the library is worth its key.
     public func openGifPicker() {
-        guard gifs != nil else { return }
+        guard offersGifs else { return }
         analytics.track(.gifPickerOpened)
         isShowingGifPicker = true
+    }
+
+    /// Brings up the picker the composer was opened for, once — unless the
+    /// server has said meanwhile that there is no GIF to pick. The screen
+    /// calls this when its own sheet has settled.
+    public func presentRequestedGifPicker() {
+        guard opensOnGifPicker else { return }
+        opensOnGifPicker = false
+        openGifPicker()
     }
 
     // MARK: - Poll

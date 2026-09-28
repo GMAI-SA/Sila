@@ -77,7 +77,11 @@ public struct ComposerSheetScreen: View {
             .sheet(isPresented: $viewModel.isShowingGifPicker) {
                 if let gifs = viewModel.gifs {
                     GifPickerSheet(
-                        viewModel: GifPickerViewModel(service: gifs, country: viewModel.author.countryCode),
+                        viewModel: GifPickerViewModel(
+                            service: gifs,
+                            country: viewModel.author.countryCode,
+                            availability: viewModel.gifAvailability
+                        ),
                         onPick: { gif in viewModel.attach(gif: gif) },
                         onClose: { viewModel.isShowingGifPicker = false }
                     )
@@ -85,6 +89,16 @@ public struct ComposerSheetScreen: View {
             }
             .onAppear { focusedSegment = viewModel.segments.first?.id }
             .task { await viewModel.loadStarters() }
+            // Asks again only when the last answer has gone stale.
+            .task { await viewModel.gifAvailability?.check(country: viewModel.author.countryCode) }
+            // The floating button's GIF choice: the picker rises once this
+            // sheet has finished rising.
+            .task {
+                guard viewModel.opensOnGifPicker else { return }
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                guard !Task.isCancelled else { return }
+                viewModel.presentRequestedGifPicker()
+            }
             .sheet(isPresented: $viewModel.isShowingGuidelines) {
                 if let gate = viewModel.guidelines {
                     GuidelinesSheet(gate: gate, onAccept: {
@@ -196,7 +210,7 @@ public struct ComposerSheetScreen: View {
                 .disabled(viewModel.attachments.count >= ComposerConstants.maximumImages)
                 .accessibilityIdentifier("composer.addImage")
 
-                if viewModel.gifs != nil {
+                if viewModel.offersGifs {
                     Button {
                         viewModel.openGifPicker()
                     } label: {

@@ -6,6 +6,11 @@ import Observation
 /// Opens on the trending list for the viewer's verified country — the
 /// provider's, with what people from that country have shared on Sila above
 /// it — and switches to a search after a short pause in typing.
+///
+/// A server with no provider and nothing in its library has no GIF anybody
+/// could post (contract v27 §5). The picker then says GIFs are not available,
+/// with no search field, and tells ``GifAvailability`` so the ways in are
+/// hidden next time.
 @MainActor
 @Observable
 public final class GifPickerViewModel {
@@ -25,18 +30,28 @@ public final class GifPickerViewModel {
     private let service: GifServiceProtocol
     private let country: String?
     private let debounce: TimeInterval
+    private let availability: GifAvailability?
     private var searchTask: Task<Void, Never>?
     /// The trending list, kept so clearing the search restores it instantly.
     private var trendingList: GifList?
+    /// The server answered `503 gif_unavailable`.
+    private var refusedAsUnavailable = false
 
     /// - Parameters:
     ///   - service: The library.
     ///   - country: The viewer's verified country, for "popular here".
     ///   - debounce: Seconds to wait after a keystroke before searching.
-    public init(service: GifServiceProtocol, country: String?, debounce: TimeInterval = 0.3) {
+    ///   - availability: Told what each trending list says about GIFs here.
+    public init(
+        service: GifServiceProtocol,
+        country: String?,
+        debounce: TimeInterval = 0.3,
+        availability: GifAvailability? = nil
+    ) {
         self.service = service
         self.country = country
         self.debounce = debounce
+        self.availability = availability
     }
 
     public var gifs: [Gif] { list?.gifs ?? [] }
@@ -44,9 +59,13 @@ public final class GifPickerViewModel {
     public var isSearching: Bool { !query.trimmingCharacters(in: .whitespaces).isEmpty }
     /// Whether the provider answered — its attribution is shown only then.
     public var isFromProvider: Bool { list?.isFromProvider ?? false }
-    /// Nothing at all, on a deployment with no provider: say so honestly.
-    public var isLibraryEmpty: Bool {
-        loadState == .loaded && gifs.isEmpty && sharedHere.isEmpty && list?.providerConfigured == false && !isSearching
+    /// No GIF anybody could post: no provider and nothing in the library,
+    /// or the server said `gif_unavailable`. Said plainly, with no search
+    /// field — there is nothing to search.
+    public var isUnavailable: Bool {
+        if refusedAsUnavailable { return true }
+        guard loadState == .loaded, !isSearching, let trendingList else { return false }
+        return !GifAvailability.offers(trendingList)
     }
     public var hasMore: Bool { list?.nextCursor != nil }
 
@@ -116,10 +135,18 @@ public final class GifPickerViewModel {
         loadState = .loading
         do {
             let fetched = try await service.trending(country: country, cursor: nil)
+            availability?.note(fetched)
+            refusedAsUnavailable = false
             trendingList = fetched
             if !isSearching { list = fetched }
             loadState = .loaded
         } catch {
+            availability?.note(error: error)
+            if APIError.wrapping(error).code == .gifUnavailable {
+                refusedAsUnavailable = true
+                loadState = .loaded
+                return
+            }
             guard let message = APIError.wrapping(error).presentableMessage else {
                 // Abandoned, not failed: leave the state ready to load again.
                 loadState = list == nil ? .idle : .loaded
@@ -137,6 +164,12 @@ public final class GifPickerViewModel {
             list = fetched
             loadState = .loaded
         } catch {
+            availability?.note(error: error)
+            if APIError.wrapping(error).code == .gifUnavailable {
+                refusedAsUnavailable = true
+                loadState = .loaded
+                return
+            }
             guard let message = APIError.wrapping(error).presentableMessage else {
                 loadState = list == nil ? .idle : .loaded
                 return

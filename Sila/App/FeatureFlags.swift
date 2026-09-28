@@ -18,6 +18,7 @@ import Foundation
 /// -mockFeedScenario X  pick a FeedServiceMock.MockScenario by raw value
 /// -mockComposer        run against ComposerServiceMock instead of the live API
 /// -mockComposerScenario X  pick a ComposerServiceMock.MockScenario
+/// -mockGifScenario X   pick a GifServiceMock.MockScenario (with a mocked composer)
 /// -mockStoredSession   open on a stored verified session (debug, with -mockAuth)
 /// -mockSearch          run against SearchServiceMock instead of the live API
 /// -mockSearchScenario X    pick a SearchServiceMock.MockScenario
@@ -142,6 +143,8 @@ public struct FeatureFlags: Sendable {
     public var useMockComposer = false
     /// Which mock world to serve when ``useMockComposer`` is on.
     public var mockComposerScenario: ComposerServiceMock.MockScenario = .success
+    /// Which GIF library the mocked composer picks from.
+    public var mockGifScenario: GifServiceMock.MockScenario = .populated
     /// Use ``SearchServiceMock`` instead of the live backend.
     public var useMockSearch = false
     /// Which mock world to serve when ``useMockSearch`` is on.
@@ -270,6 +273,11 @@ public struct FeatureFlags: Sendable {
            let scenario = ComposerServiceMock.MockScenario(rawValue: arguments[index + 1]) {
             flags.useMockComposer = true
             flags.mockComposerScenario = scenario
+        }
+        if let index = arguments.firstIndex(of: "-mockGifScenario"),
+           arguments.indices.contains(index + 1),
+           let scenario = GifServiceMock.MockScenario(rawValue: arguments[index + 1]) {
+            flags.mockGifScenario = scenario
         }
         if arguments.contains("-mockSearch") {
             flags.useMockSearch = true

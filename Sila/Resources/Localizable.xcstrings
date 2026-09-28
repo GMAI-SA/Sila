@@ -9613,40 +9613,6 @@
       },
       "comment": "Required by the provider's terms whenever its results are shown."
     },
-    "composer.gif.empty.subtitle": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "أول الصور المتحركة التي يشاركها الناس هنا ستظهر في هذه المكتبة."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The first GIFs people here share will show up in this library."
-          }
-        }
-      }
-    },
-    "composer.gif.empty.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لا صور متحركة بعد"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No GIFs yet"
-          }
-        }
-      }
-    },
     "composer.gif.noResults.title": {
       "extractionState": "manual",
       "localizations": {
@@ -9780,6 +9746,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trending"
+          }
+        }
+      }
+    },
+    "composer.gif.unavailable.subtitle": {
+      "comment": "Under “GIFs aren't available yet” in the GIF picker: what the person can still do.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يزال بإمكانك إضافة صورة إلى منشورك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can still add a photo to your post."
+          }
+        }
+      }
+    },
+    "composer.gif.unavailable.title": {
+      "comment": "The GIF picker, when the server has no GIF provider and nothing in its library (contract v27 §5): there is no GIF anybody could post.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الصور المتحركة غير متاحة بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIFs aren't available yet"
           }
         }
       }

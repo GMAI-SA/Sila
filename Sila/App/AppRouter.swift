@@ -245,6 +245,7 @@ public final class AppRouter {
     /// Closes the composer sheet.
     public func dismissComposer() {
         presentedComposer = nil
+        composerOpensGifPicker = false
     }
 }
 
@@ -254,6 +255,9 @@ extension AppRouter: ComposerLaunching {
     /// Conforming here is what lets Feed and Explore start a composition
     /// without importing the Composer module's screens.
     public func openComposer(_ context: ComposerContext) {
+        // Whatever the last composer was opened for, this one opens on the
+        // editor.
+        composerOpensGifPicker = false
         presentedComposer = context
     }
 

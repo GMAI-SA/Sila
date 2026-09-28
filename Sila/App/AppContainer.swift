@@ -35,6 +35,9 @@ public final class AppContainer {
     public let composerService: ComposerServiceProtocol
     /// The GIF library the composer picks from.
     public let gifService: GifServiceProtocol
+    /// Whether that library has anything to offer — the GIF button and the
+    /// floating button's GIF option are hidden when it has not.
+    public let gifAvailability: GifAvailability
     /// The read-only half of the API, for somebody who has not joined yet.
     ///
     /// Always built, never used by a signed-in screen: the app is constructed
@@ -291,10 +294,11 @@ public final class AppContainer {
         if let gifService {
             self.gifService = gifService
         } else if flags.useMockComposer {
-            self.gifService = GifServiceMock(latency: 0.25)
+            self.gifService = GifServiceMock(scenario: flags.mockGifScenario, latency: 0.25)
         } else {
             self.gifService = GifService(network: network, tokens: tokens)
         }
+        self.gifAvailability = GifAvailability(service: self.gifService)
 
         let publicFeed = PublicFeedService(network: network, analytics: analytics)
         self.publicFeedService = publicFeed

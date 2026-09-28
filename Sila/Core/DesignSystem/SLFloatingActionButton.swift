@@ -183,6 +183,10 @@ public struct SLFloatingActionButton: View {
                 .frame(width: 44, height: 44)
                 .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 3)
             }
+            // The whole row answers a tap. A plain button otherwise answers
+            // only where something is drawn, and under a short word ("GIF")
+            // the middle of the row is the gap before the circle.
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(option.title))
