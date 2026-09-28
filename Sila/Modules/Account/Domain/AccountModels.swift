@@ -501,9 +501,12 @@ public enum AvatarRejection: Error, Equatable, Sendable {
 /// Client-side rules for `PUT /me/avatar`, and the body it sends.
 public enum AvatarUpload {
 
-    /// The server's pre-decode limit, mirrored so an oversized photo is refused
-    /// here instead of after uploading five megabytes to earn a 413.
-    public static let maximumBytes = 5 * 1024 * 1024
+    /// The server's limit per picture (contract v27 §1: 40 MB, was 5),
+    /// mirrored so a photo over it is refused here instead of after uploading
+    /// forty megabytes to earn a 413 — and never stricter than the server, so
+    /// a full-resolution phone photo (a 48 MP one is 20–30 MB) goes up as it
+    /// is and the server shrinks it.
+    public static let maximumBytes = 40 * 1024 * 1024
 
     /// The form field name the endpoint expects.
     public static let fieldName = "file"

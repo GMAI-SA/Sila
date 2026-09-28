@@ -143,11 +143,15 @@ posts leave every feed, recoverable for 30 days), and `DeletionDisclosure` holds
 that wording as constants so the copy is asserted rather than drifting.
 
 Avatars go through `PhotosUI.PhotosPicker` — zero third-party dependencies is a
-hard rule — and anything over 5 MB is refused client-side rather than uploaded
-to earn a 413. The screen states what the server does to the file: it is
-re-encoded to a 512×512 JPEG and **every EXIF tag, including GPS coordinates, is
-dropped**. That is a privacy fact, not housekeeping; nobody reads "set a photo"
-as a decision about their location history.
+hard rule — and anything over the server's 40 MB (contract v27; it was 5) is
+refused client-side rather than uploaded to earn a 413. Nothing under it is: a
+full-resolution phone photo goes up as it is and the server shrinks it. The
+document route never refuses a picture on the phone at all; each side is made
+a JPEG of at most 1600 px before it leaves. The screen states what the server
+does to the file: it is re-encoded to a 512×512 JPEG and **every EXIF tag,
+including GPS coordinates, is dropped**. That is a privacy fact, not
+housekeeping; nobody reads "set a photo" as a decision about their location
+history.
 
 The email change is two steps and says out loud that the code goes to the **new**
 address. If the address is claimed while the code sits in an inbox the server

@@ -135,7 +135,7 @@ public actor AccountServiceMock: AccountServiceProtocol {
             throw APIError.api(code: .invalidImage, message: "No file was uploaded", status: 400)
         }
         guard image.data.count <= AvatarUpload.maximumBytes else {
-            throw APIError.api(code: .imageTooLarge, message: "Images must be under 5MB", status: 413)
+            throw APIError.api(code: .imageTooLarge, message: "Images must be under 40MB", status: 413)
         }
         guard AvatarUpload.sniffFormat(image.data) != .unknown else {
             throw APIError.api(

@@ -163,9 +163,12 @@ public struct DocumentSubmission: Equatable, Sendable {
         self.sweep = sweep
     }
 
-    /// The server's pre-decode limit per image, mirrored so an oversized
-    /// capture is shrunk here rather than refused after uploading.
-    public static let maximumBytesPerImage = 5 * 1024 * 1024
+    /// The server's limit per image (contract v27 §1: 40 MB, was 5). The app
+    /// never comes near it — every picture is a JPEG of at most 1600 px
+    /// (``DocumentImport/maxEdge``), a few hundred kilobytes — and nothing on
+    /// the phone may be stricter: a genuine photo or scan is never refused
+    /// here (contract v27 §3).
+    public static let maximumBytesPerImage = 40 * 1024 * 1024
 
     /// The multipart body for `POST /verification/document`.
     /// - Parameter boundary: Injectable so tests can assert on exact bytes.

@@ -248,15 +248,23 @@ final class AccountServiceTests: XCTestCase {
         let big = Data(repeating: 0xFF, count: AvatarUpload.maximumBytes + 1)
 
         guard case let .tooLarge(bytes) = AvatarUpload.rejection(for: big) else {
-            return XCTFail("a 5 MB + 1 byte image was not refused")
+            return XCTFail("a 40 MB + 1 byte image was not refused")
         }
         XCTAssertEqual(bytes, AvatarUpload.maximumBytes + 1)
-        XCTAssertTrue(AvatarRejection.tooLarge(bytes: bytes).message.contains("5 MB"))
-        XCTAssertTrue(AvatarRejection.tooLarge(bytes: bytes).message.contains("5.0 MB"))
+        XCTAssertTrue(AvatarRejection.tooLarge(bytes: bytes).message.contains("40 MB"))
+        XCTAssertTrue(AvatarRejection.tooLarge(bytes: bytes).message.contains("40.0 MB"))
     }
 
     func testAnImageExactlyOnTheLimitIsAccepted() {
         XCTAssertNil(AvatarUpload.rejection(for: Data(repeating: 0xFF, count: AvatarUpload.maximumBytes)))
+    }
+
+    /// The server takes a picture up to 40 MB (contract v27 §1; it was 5) and
+    /// shrinks it itself, so the phone refuses nothing the server would take:
+    /// a full-resolution photo from a 48 MP camera, 20–30 MB, goes up as it is.
+    func testTheLimitIsTheServersAndAFullResolutionPhotoPasses() {
+        XCTAssertEqual(AvatarUpload.maximumBytes, 40 * 1024 * 1024)
+        XCTAssertNil(AvatarUpload.rejection(for: Data(repeating: 0xFF, count: 30 * 1024 * 1024)))
     }
 
     func testAnEmptyPickIsRefusedWithItsOwnMessage() {
@@ -283,7 +291,7 @@ final class AccountServiceTests: XCTestCase {
 
     func testAServerErrorSurfacesItsCode() async {
         let network = StubNetworkClient(
-            error: .api(code: .imageTooLarge, message: "Images must be under 5MB", status: 413)
+            error: .api(code: .imageTooLarge, message: "Images must be under 40MB", status: 413)
         )
 
         do {

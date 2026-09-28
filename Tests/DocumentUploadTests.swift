@@ -1,3 +1,4 @@
+import CoreImage
 import UIKit
 import XCTest
 @testable import Sila
@@ -32,9 +33,39 @@ final class DocumentUploadTests: XCTestCase {
         return (viewModel, service)
     }
 
+    /// A photo as a phone camera saves it: every pixel different, so it
+    /// compresses as badly as a real one.
+    private func fullResolutionPhoto(width: Int = 4032, height: Int = 3024) -> Data? {
+        guard let noise = CIFilter(name: "CIRandomGenerator")?.outputImage,
+              let pixels = CIContext().createCGImage(noise, from: CGRect(x: 0, y: 0, width: width, height: height))
+        else { return nil }
+        return UIImage(cgImage: pixels).jpegData(compressionQuality: 0.9)
+    }
+
     func testAChosenImageIsShrunkToTheCamerasSize() throws {
         let jpeg = try XCTUnwrap(DocumentImport.jpeg(from: image()))
         let decoded = try XCTUnwrap(UIImage(data: jpeg))
+        XCTAssertEqual(max(decoded.size.width, decoded.size.height), DocumentImport.maxEdge, accuracy: 1)
+    }
+
+    /// A genuine photo from the library, far over the old 5 MB limit, is
+    /// taken as it is — never refused on the phone — and shrunk to the
+    /// camera's size, far below what the server accepts per picture
+    /// (contract v27: 40 MB, and verification uploads stay seamless).
+    func testAFullResolutionPhotoIsTakenAndShrunk() async throws {
+        XCTAssertEqual(DocumentSubmission.maximumBytesPerImage, 40 * 1024 * 1024, "the server's limit per picture")
+        let photo = try XCTUnwrap(fullResolutionPhoto())
+        XCTAssertGreaterThan(photo.count, 5 * 1024 * 1024, "not a photo the old limit would have refused")
+
+        let (viewModel, _) = make(zone: MRZParserTests.passport(number: "X12345678", nationality: "USA"))
+        viewModel.choose(.passport)
+        await viewModel.importDocument(photo, source: .photos)
+
+        XCTAssertNil(viewModel.importError)
+        XCTAssertEqual(viewModel.phase, .review)
+        let front = try XCTUnwrap(viewModel.frontImage)
+        XCTAssertLessThan(front.count, DocumentSubmission.maximumBytesPerImage)
+        let decoded = try XCTUnwrap(UIImage(data: front))
         XCTAssertEqual(max(decoded.size.width, decoded.size.height), DocumentImport.maxEdge, accuracy: 1)
     }
 

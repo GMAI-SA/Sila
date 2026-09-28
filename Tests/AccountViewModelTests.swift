@@ -439,7 +439,7 @@ final class AccountViewModelTests: XCTestCase {
         await viewModel.setAvatar(data: Data(repeating: 0xFF, count: AvatarUpload.maximumBytes + 1))
 
         let uploads = await service.receivedAvatars
-        XCTAssertTrue(uploads.isEmpty, "5 MB went over the wire to earn a 413")
+        XCTAssertTrue(uploads.isEmpty, "40 MB went over the wire to earn a 413")
         XCTAssertEqual(viewModel.avatarError, AvatarRejection.tooLarge(
             bytes: AvatarUpload.maximumBytes + 1
         ).message)
