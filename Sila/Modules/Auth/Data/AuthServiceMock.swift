@@ -35,6 +35,11 @@ public actor AuthServiceMock: AuthServiceProtocol {
         case otpAlwaysInvalid
         /// Every call fails with a transport error.
         case offline
+        /// Every call waits for a connection that never comes, as the real
+        /// client does offline (``AppConfig/connectivityWait``), and then
+        /// fails as ``offline`` does. A cold launch on a stored session must
+        /// not sit on the splash for that long.
+        case stalled
         /// Not verified, but @noura vouches for them (contract v24): the
         /// feed, the tag, the limited tier and 23 days on the clock.
         case vouched
@@ -272,12 +277,16 @@ public actor AuthServiceMock: AuthServiceProtocol {
     }
 
     private func delay() async throws {
+        if scenario == .stalled {
+            try? await Task.sleep(nanoseconds: UInt64(AppConfig.connectivityWait * 1_000_000_000))
+            return
+        }
         guard latency > 0 else { return }
         try? await Task.sleep(nanoseconds: UInt64(latency * 1_000_000_000))
     }
 
     private func failIfOffline() throws {
-        if scenario == .offline {
+        if scenario == .offline || scenario == .stalled {
             throw APIError.transport("The Internet connection appears to be offline.")
         }
     }

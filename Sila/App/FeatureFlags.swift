@@ -18,6 +18,7 @@ import Foundation
 /// -mockFeedScenario X  pick a FeedServiceMock.MockScenario by raw value
 /// -mockComposer        run against ComposerServiceMock instead of the live API
 /// -mockComposerScenario X  pick a ComposerServiceMock.MockScenario
+/// -mockStoredSession   open on a stored verified session (debug, with -mockAuth)
 /// -mockSearch          run against SearchServiceMock instead of the live API
 /// -mockSearchScenario X    pick a SearchServiceMock.MockScenario
 /// -mockPreferences     run against PreferencesServiceMock instead of the live API

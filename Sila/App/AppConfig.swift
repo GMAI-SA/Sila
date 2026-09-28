@@ -118,6 +118,10 @@ public enum AppConfig {
     /// given up as offline. Long enough to cover a lift or a network handoff,
     /// short enough that a genuinely offline phone is told so.
     public static let connectivityWait: TimeInterval = 45
+    /// How long a cold launch with a stored session waits for the server
+    /// before opening on the account cached on this device. The check goes
+    /// on in the background; see ``AuthSession/restore()``.
+    public static let launchDeadline: TimeInterval = 3
 
     /// `true` when the process was launched by the unit-test runner.
     ///

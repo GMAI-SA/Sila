@@ -71,8 +71,13 @@ public actor AuthTokenStore {
     }
 
     /// Updates only the cached user (e.g. after `/auth/me` or a status poll).
+    ///
+    /// Only while there is a session. An `/auth/me` still out at sign-out —
+    /// a launch's check, which can wait most of a minute for the network —
+    /// must not write the account back into a keychain that sign-out emptied.
     public func updateUser(_ user: AuthUser) {
         hydrateIfNeeded()
+        guard cachedToken != nil else { return }
         cachedUser = user
         try? keychain.save(user, for: .cachedUser)
     }

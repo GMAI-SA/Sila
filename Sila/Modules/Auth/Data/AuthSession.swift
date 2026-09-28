@@ -75,27 +75,40 @@ public final class AuthSession {
     /// How long to wait before the `attempt`th try to reach `/auth/me` again
     /// after an offline launch.
     private let reconnectDelay: @Sendable (Int) async -> Void
+    /// Returns when a launch has waited for the server long enough.
+    private let launchDeadline: @Sendable () async -> Void
     private var reconnectTask: Task<Void, Never>?
 
-    /// - Parameter reconnectDelay: The wait between tries to reach the server
-    ///   after an offline launch. Defaults to 2, 4, 8… seconds, capped at a
-    ///   minute; each try itself waits for the network to come back.
+    /// - Parameters:
+    ///   - reconnectDelay: The wait between tries to reach the server after
+    ///     an offline launch. Defaults to 2, 4, 8… seconds, capped at a
+    ///     minute; each try itself waits for the network to come back.
+    ///   - launchDeadline: How long a launch with a stored session waits for
+    ///     the server before opening on the cached account. Defaults to
+    ///     ``AppConfig/launchDeadline``.
     public init(
         service: AuthServiceProtocol,
         store: AuthTokenStore,
         analytics: AnalyticsClient,
-        reconnectDelay: @escaping @Sendable (Int) async -> Void = { await AuthSession.backoff($0) }
+        reconnectDelay: @escaping @Sendable (Int) async -> Void = { await AuthSession.backoff($0) },
+        launchDeadline: @escaping @Sendable () async -> Void = { await AuthSession.waitForLaunchDeadline() }
     ) {
         self.service = service
         self.store = store
         self.analytics = analytics
         self.reconnectDelay = reconnectDelay
+        self.launchDeadline = launchDeadline
     }
 
     /// 2, 4, 8, 16, 32, then 60 seconds between tries.
     nonisolated public static func backoff(_ attempt: Int) async {
         let seconds = min(60, 2 << min(attempt, 5))
         try? await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
+    }
+
+    /// ``AppConfig/launchDeadline``, or less if the waiting is cancelled.
+    nonisolated public static func waitForLaunchDeadline() async {
+        try? await Task.sleep(nanoseconds: UInt64(AppConfig.launchDeadline * 1_000_000_000))
     }
 
     // MARK: - Boot
@@ -107,6 +120,17 @@ public final class AuthSession {
     /// person out. A phone that is offline, in a lift, or opening the app
     /// while a deploy answers `502` keeps its session: the app opens on the
     /// account cached in the keychain, says it is offline, and keeps trying.
+    ///
+    /// **The launch waits a few seconds, not forty-five.** Offline, the
+    /// client does not fail at once: it waits for the network to come back,
+    /// for up to ``AppConfig/connectivityWait``, and the splash used to wait
+    /// with it. With an account cached, the server now has until
+    /// ``AppConfig/launchDeadline`` to answer; after that the app opens on
+    /// the cached account with the offline strip, and the question already
+    /// asked goes on in the background. Its answer is acted on when it comes
+    /// — the session catches up, or ends if the server refuses it — and if
+    /// it cannot reach the server either, the usual retries follow. An
+    /// answer inside the deadline routes at once, exactly as before.
     public func restore() async {
         isBusy = true
         defer { isBusy = false }
@@ -116,17 +140,79 @@ public final class AuthSession {
             return
         }
 
-        do {
-            if token.expiresSoon() {
-                let pair = try await service.refreshToken(token)
-                user = pair.user
+        let check = confirmSession(token)
+        // With nothing cached there is nothing to open on, and the launch
+        // waits for the server as it always did.
+        guard await store.user() != nil else {
+            await finishRestore(await check.result)
+            return
+        }
+
+        switch await Self.first(check, orDeadline: launchDeadline) {
+        case let .answered(result):
+            await finishRestore(result)
+        case .deadlinePassed:
+            guard let cached = await store.user() else {
+                // The cache went while waiting — the check's refresh was
+                // refused and the store emptied. Its answer is the one to
+                // act on.
+                await finishRestore(await check.result)
+                return
             }
-            let fresh = try await service.currentUser()
+            user = cached
+            applyCachedRoute()
+            isOffline = true
+            scheduleReconnect(awaiting: check)
+        }
+    }
+
+    /// The launch's one question to the server: rotate the pair if it is
+    /// about to expire, then read `/auth/me`. A task of its own, so it goes
+    /// on after the launch has stopped waiting for it.
+    private func confirmSession(_ token: AuthToken) -> Task<AuthUser, Error> {
+        let service = service
+        return Task {
+            if token.expiresSoon() {
+                _ = try await service.refreshToken(token)
+            }
+            return try await service.currentUser()
+        }
+    }
+
+    /// Routes a launch on the server's answer.
+    private func finishRestore(_ result: Result<AuthUser, Error>) async {
+        switch result {
+        case let .success(fresh):
             user = fresh
             isOffline = false
             await applyRouteForCurrentUser()
-        } catch {
+        case let .failure(error):
             await restoreFailed(error)
+        }
+    }
+
+    /// What a launch heard first.
+    private enum LaunchOutcome {
+        case answered(Result<AuthUser, Error>)
+        case deadlinePassed
+    }
+
+    /// Waits for `check` or `deadline`, whichever comes first. The check is
+    /// never cancelled: a launch that stops waiting still wants its answer.
+    private static func first(
+        _ check: Task<AuthUser, Error>,
+        orDeadline deadline: @escaping @Sendable () async -> Void
+    ) async -> LaunchOutcome {
+        await withCheckedContinuation { continuation in
+            let once = ResumeOnce(continuation)
+            let timer = Task {
+                await deadline()
+                once.resume(.deadlinePassed)
+            }
+            Task {
+                once.resume(.answered(await check.result))
+                timer.cancel()
+            }
         }
     }
 
@@ -166,13 +252,22 @@ public final class AuthSession {
     /// Keeps trying `/auth/me` after an offline launch, until it answers or
     /// the session ends some other way.
     ///
-    /// - Parameter immediately: Try once before the first wait.
-    private func scheduleReconnect(immediately: Bool = false) {
+    /// - Parameters:
+    ///   - immediately: Try once before the first wait.
+    ///   - pending: The launch's own check, still out when the launch
+    ///     stopped waiting. Its answer comes first, and the tries begin only
+    ///     if it could not reach the server either.
+    private func scheduleReconnect(immediately: Bool = false, awaiting pending: Task<AuthUser, Error>? = nil) {
         reconnectTask?.cancel()
         let delay = reconnectDelay
         reconnectTask = Task { [weak self] in
             var attempt = 0
             var wait = !immediately
+            if let pending {
+                let result = await pending.result
+                guard !Task.isCancelled, let self else { return }
+                if await self.settle(result) { return }
+            }
             while !Task.isCancelled {
                 if wait { await delay(attempt) }
                 wait = true
@@ -195,14 +290,25 @@ public final class AuthSession {
     private func reconnect() async -> Bool {
         guard isOffline, user != nil else { return true }
         do {
-            let fresh = try await service.currentUser()
-            guard isOffline, user != nil else { return true }
+            return await settle(.success(try await service.currentUser()))
+        } catch {
+            return await settle(.failure(error))
+        }
+    }
+
+    /// Acts on what a check made while offline heard back. `true` when there
+    /// is nothing left to try for.
+    private func settle(_ result: Result<AuthUser, Error>) async -> Bool {
+        // Signed out, signed in afresh, or already caught up meanwhile: this
+        // answer belongs to a session that is no longer the one on screen.
+        guard isOffline, user != nil else { return true }
+        switch result {
+        case let .success(fresh):
             user = fresh
             isOffline = false
             await applyRouteForCurrentUser()
             return true
-        } catch {
-            guard isOffline, user != nil else { return true }
+        case let .failure(error):
             switch SessionCheckFailure(error) {
             case .refused:
                 await endRefusedSession()
@@ -470,5 +576,24 @@ extension AuthSession: AuthSessionProtocol {
         guard user.verificationStatus == .verified else {
             throw AuthGateError.notVerified(user.verificationStatus)
         }
+    }
+}
+
+/// Resumes a continuation with the first value it is handed; later ones are
+/// dropped.
+private final class ResumeOnce<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Value, Never>?
+
+    init(_ continuation: CheckedContinuation<Value, Never>) {
+        self.continuation = continuation
+    }
+
+    func resume(_ value: Value) {
+        let taken: CheckedContinuation<Value, Never>? = lock.withLock {
+            defer { continuation = nil }
+            return continuation
+        }
+        taken?.resume(returning: value)
     }
 }

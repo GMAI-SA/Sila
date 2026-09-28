@@ -113,6 +113,28 @@ public final class AppContainer {
     /// Navigation coordinator.
     public let router: AppRouter
 
+    /// The keychain a launch reads its session from.
+    ///
+    /// `-mockStoredSession` (debug builds, with mocked auth) opens the app on
+    /// a verified account's stored session, as it opens for anybody who
+    /// signed in last time: the mocks never write the keychain, so without
+    /// this no journey could open the app cold on a session. Kept in memory —
+    /// the simulator's keychain is left alone — and the install is marked, so
+    /// the reinstall check does not take the session for a previous install's.
+    private static func launchKeychain(flags: FeatureFlags, storage: StorageClient) -> KeychainClient {
+        #if DEBUG
+        if flags.useMockAuth, ProcessInfo.processInfo.arguments.contains("-mockStoredSession") {
+            let seeded = InMemoryKeychainClient()
+            let pair = AuthServiceMock.makePair(email: "aziz@example.com", scenario: .verified, emailVerified: true)
+            try? seeded.save(pair.token, for: .authToken)
+            try? seeded.save(pair.user, for: .cachedUser)
+            storage.setFlag(true, for: .installed)
+            return seeded
+        }
+        #endif
+        return SystemKeychainClient()
+    }
+
     /// Builds the object graph.
     ///
     /// Pass explicit collaborators in tests; the defaults wire the production
@@ -169,7 +191,7 @@ public final class AppContainer {
         let storage = storage ?? (ProcessInfo.processInfo.arguments.contains("-freshStorage")
             ? InMemoryStorageClient()
             : UserDefaultsStorageClient())
-        let keychain = keychain ?? SystemKeychainClient()
+        let keychain = keychain ?? Self.launchKeychain(flags: flags, storage: storage)
         // The real stack sends events to Sila's own server (contract v19);
         // mock runs and anything that injects its own client never do.
         let batching: BatchingAnalyticsClient? = (analytics == nil && !flags.useMockAuth)

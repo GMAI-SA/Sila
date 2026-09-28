@@ -355,7 +355,7 @@ Around those two:
 ## The session, and what it leaves on the phone
 
 The token pair and the cached account live in the Keychain
-(`WhenUnlockedThisDeviceOnly`). Eight rules keep the session from ending when it
+(`WhenUnlockedThisDeviceOnly`). Nine rules keep the session from ending when it
 should not, and from outliving itself when it should, each asserted in tests:
 
 * **One refresh at a time** (`TokenRefreshTests`). The server revokes a refresh
@@ -374,6 +374,17 @@ should not, and from outliving itself when it should, each asserted in tests:
   foreground) until it answers. A `401` is the only answer that ends the
   session; a `403` in the API's own words (suspended, deletion pending) keeps
   it and lets the screens route.
+* **A launch waits seconds, not forty-five** (`LaunchDeadlineTests`,
+  `OfflineLaunchJourneyUITests`). Offline, the client waits for the network
+  to come back (`AppConfig.connectivityWait`, 45 s) before a request fails,
+  and the splash used to wait with it. With an account cached, the server now
+  has `AppConfig.launchDeadline` (3 s) to answer; then the app opens on the
+  cached account with the offline strip, and the check already asked goes on
+  in the background. Its answer is acted on when it comes — the session
+  catches up, re-routes, or ends on a `401` — and only if it cannot reach the
+  server either do the retries begin. An answer inside the deadline routes at
+  once, as before; a late answer for a session replaced meanwhile is ignored,
+  and one that lands after sign-out cannot write the account back.
 * **Sign-out ends the server's session too** (`SignOutTests`,
   `LiveSessionsTests`). `/auth/logout` carries the refresh token in its body
   beside the access token in the header (contract v26 §1), so an access token
@@ -420,7 +431,11 @@ does not know), an error, or nothing at all is shown as "Document unavailable"
 ```
 `AuthServiceMock` ships 10 scenarios covering every verification-wall state plus
 `screenedOut` (a rejection by the document pre-screen), `emailUnverified`,
-`invalidCredentials`, `otpAlwaysInvalid` and `offline`.
+`invalidCredentials`, `otpAlwaysInvalid`, `offline` and `stalled` (every call
+waits the client's forty-five seconds for a connection, then fails). The mocks
+never write the keychain, so `-mockStoredSession` (debug builds) opens the app
+on a verified account's stored session, in memory — with `-mockScenario
+stalled`, the offline cold launch.
 
 `FeedServiceMock` ships 5: `populated`, `empty`, `unverifiedNoCountry` (the
 409 `no_country` explainer on My Country), `offline` and `paginationExhausted`
