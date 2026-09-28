@@ -578,22 +578,3 @@ extension AuthSession: AuthSessionProtocol {
         }
     }
 }
-
-/// Resumes a continuation with the first value it is handed; later ones are
-/// dropped.
-private final class ResumeOnce<Value>: @unchecked Sendable {
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<Value, Never>?
-
-    init(_ continuation: CheckedContinuation<Value, Never>) {
-        self.continuation = continuation
-    }
-
-    func resume(_ value: Value) {
-        let taken: CheckedContinuation<Value, Never>? = lock.withLock {
-            defer { continuation = nil }
-            return continuation
-        }
-        taken?.resume(returning: value)
-    }
-}

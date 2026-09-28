@@ -24,6 +24,9 @@ public final class PushRegistrar {
     private let analytics: AnalyticsClient
     private let isSignedIn: @MainActor () -> Bool
     private let center: UNUserNotificationCenter?
+    /// Returns when sign-out has waited long enough for the server to hear
+    /// that this phone no longer wants the account's pushes.
+    private let signOutDeadline: @Sendable () async -> Void
     /// Opens a universal link inside the app.
     var openLink: (@MainActor (DeepLink) -> Void)?
     /// Told about a push that arrived while the app was open, before its
@@ -54,18 +57,22 @@ public final class PushRegistrar {
         #endif
     }
 
+    /// - Parameter signOutDeadline: How long sign-out waits for the
+    ///   registration to be withdrawn. Defaults to ``AppConfig/signOutDeadline``.
     public init(
         service: PushServiceProtocol,
         storage: StorageClient,
         analytics: AnalyticsClient,
         isSignedIn: @escaping @MainActor () -> Bool,
-        center: UNUserNotificationCenter? = AppConfig.isRunningUnitTests ? nil : .current()
+        center: UNUserNotificationCenter? = AppConfig.isRunningUnitTests ? nil : .current(),
+        signOutDeadline: @escaping @Sendable () async -> Void = { await Deadline.sleep(AppConfig.signOutDeadline) }
     ) {
         self.service = service
         self.storage = storage
         self.analytics = analytics
         self.isSignedIn = isSignedIn
         self.center = center
+        self.signOutDeadline = signOutDeadline
         self.deviceToken = storage.value(for: Self.tokenKey, as: String.self)
     }
 
@@ -124,9 +131,15 @@ public final class PushRegistrar {
 
     /// Before the access token is dropped: this phone stops getting this
     /// account's pushes.
+    ///
+    /// Sign-out waits for this, and offline the request would wait up to
+    /// forty-five seconds for a connection. It gets a few seconds
+    /// (``AppConfig/signOutDeadline``) and is then abandoned, so an offline
+    /// phone is signed out in seconds.
     public func willSignOut() async {
         guard let deviceToken else { return }
-        try? await service.unregister(token: deviceToken)
+        let service = service
+        await Deadline.run({ try? await service.unregister(token: deviceToken) }, until: signOutDeadline)
     }
 
     // MARK: - Opening

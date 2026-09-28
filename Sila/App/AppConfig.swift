@@ -122,6 +122,11 @@ public enum AppConfig {
     /// before opening on the account cached on this device. The check goes
     /// on in the background; see ``AuthSession/restore()``.
     public static let launchDeadline: TimeInterval = 3
+    /// How long each of sign-out's calls to the server — withdrawing this
+    /// phone's push registration, then `/auth/logout` — waits for an answer
+    /// before it is abandoned. The phone signs out whatever the server says;
+    /// see ``AuthService/signOut()``.
+    public static let signOutDeadline: TimeInterval = 3
 
     /// `true` when the process was launched by the unit-test runner.
     ///

@@ -355,7 +355,7 @@ Around those two:
 ## The session, and what it leaves on the phone
 
 The token pair and the cached account live in the Keychain
-(`WhenUnlockedThisDeviceOnly`). Nine rules keep the session from ending when it
+(`WhenUnlockedThisDeviceOnly`). Ten rules keep the session from ending when it
 should not, and from outliving itself when it should, each asserted in tests:
 
 * **One refresh at a time** (`TokenRefreshTests`). The server revokes a refresh
@@ -390,6 +390,14 @@ should not, and from outliving itself when it should, each asserted in tests:
   beside the access token in the header (contract v26 §1), so an access token
   the server can no longer read still ends its session, rather than leaving a
   thirty-day refresh token good on the server after the phone forgot it.
+* **Sign-out waits seconds, not forty-five** (`SignOutTests`,
+  `PushWithdrawalDeadlineTests`, `OfflineSignOutJourneyUITests`). Offline,
+  withdrawing the push registration and `/auth/logout` would each wait for a
+  connection (`AppConfig.connectivityWait`) before failing, and sign-out
+  waited with them. Each now has `AppConfig.signOutDeadline` (3 s) to be
+  answered; then the request is cancelled and the phone is wiped regardless.
+  The server's session is then left to expire on its own, as it was when the
+  forty-five seconds ran out.
 * **The password travels with the code** (`CodeScreenPasswordTests`,
   `LiveSessionsTests`). The code screen after registering sends the
   registration's password with the code, and the one after a sign-in that

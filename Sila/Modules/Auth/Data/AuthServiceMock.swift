@@ -232,7 +232,13 @@ public actor AuthServiceMock: AuthServiceProtocol {
 
     public func signOut() async throws {
         record("signOut")
-        try await delay()
+        // As the real service does: the server gets a few seconds, then the
+        // phone signs out without it — so the stalled scenario's sign-out
+        // takes seconds, not the forty-five an offline request would wait.
+        await Deadline.run(
+            { [self] in try? await delay() },
+            until: { await Deadline.sleep(AppConfig.signOutDeadline) }
+        )
         storedPair = nil
         biometricAccount = nil
     }

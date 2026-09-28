@@ -14,17 +14,24 @@ public final class AuthService: AuthServiceProtocol {
     private let analytics: AnalyticsClient
     /// Every refresh, from every caller, goes through this one.
     private let refresher = TokenRefresher()
+    /// Returns when sign-out has waited for `/auth/logout` long enough.
+    private let signOutDeadline: @Sendable () async -> Void
 
+    /// - Parameter signOutDeadline: How long sign-out waits for the server
+    ///   before the phone signs itself out without it. Defaults to
+    ///   ``AppConfig/signOutDeadline``.
     public init(
         network: NetworkClient,
         store: AuthTokenStore,
         biometrics: BiometricAuthenticating,
-        analytics: AnalyticsClient
+        analytics: AnalyticsClient,
+        signOutDeadline: @escaping @Sendable () async -> Void = { await Deadline.sleep(AppConfig.signOutDeadline) }
     ) {
         self.network = network
         self.store = store
         self.biometrics = biometrics
         self.analytics = analytics
+        self.signOutDeadline = signOutDeadline
     }
 
     public var availableBiometry: BiometryKind { biometrics.availableBiometry }
@@ -211,8 +218,16 @@ public final class AuthService: AuthServiceProtocol {
                 accessToken: token.accessToken
             )
             // A failed logout must never trap the user in a signed-in state —
-            // the local wipe below is what actually ends the session.
-            if let request { try? await network.send(request) }
+            // the local wipe below is what actually ends the session. Nor may
+            // a slow one: offline, the request would wait up to forty-five
+            // seconds for a connection (`AppConfig.connectivityWait`), and
+            // sign-out waited with it. The server gets a few seconds
+            // (`AppConfig.signOutDeadline`); then the request is abandoned and
+            // the phone signs out without it.
+            if let request {
+                let network = network
+                await Deadline.run({ try? await network.send(request) }, until: signOutDeadline)
+            }
         }
         await store.clear()
         analytics.track(.signedOut)
