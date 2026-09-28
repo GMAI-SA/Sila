@@ -233,6 +233,7 @@ public struct RootView: View {
             case let .rejected(reason):
                 RejectedScreen(
                     reason: reason,
+                    revocationReason: container.session.verificationReport?.revocationReason,
                     appeal: container.session.verificationReport?.appeal,
                     analytics: container.analytics,
                     onAppeal: { message in

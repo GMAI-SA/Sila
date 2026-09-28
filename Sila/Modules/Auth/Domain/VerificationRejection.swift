@@ -39,6 +39,18 @@ public enum VerificationRejection {
         }
     }
 
+    /// The moderator's own sentence for a withdrawn badge, when they wrote
+    /// one (`/verification/status` → `revocation_reason`): shown under
+    /// "Reason given" in place of the code's line, in its own direction, as
+    /// the email already carries it. `nil` for anything but a revocation.
+    public static func writtenRevocation(_ reason: String?, revocationReason: String?) -> String? {
+        guard isRevocation(reason),
+              let written = revocationReason?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !written.isEmpty
+        else { return nil }
+        return written
+    }
+
     /// A badge a moderator withdrew — contested, never simply re-run.
     public static func isRevocation(_ reason: String?) -> Bool {
         reason == "verification_revoked"

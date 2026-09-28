@@ -83,6 +83,8 @@ public final class RealtimeClient: RealtimeMessaging {
     private let onSessionRefused: (@MainActor (Error) async -> Void)?
     private let sleep: @Sendable (TimeInterval) async throws -> Void
     private let jitter: @Sendable () -> Double
+    /// How long after a `1013` the screens wait before refreshing.
+    private let refreshPause: @Sendable () -> TimeInterval
     private let now: @Sendable () -> Date
     /// Silence after which a socket is presumed dead. The server pings every
     /// 25 s and closes after 75 s without an answer; a phone that has heard
@@ -107,6 +109,8 @@ public final class RealtimeClient: RealtimeMessaging {
     ///   - onSessionRefused: The token could not be renewed: the session is over.
     ///   - sleep: Waits between attempts. Injectable so tests do not.
     ///   - jitter: `0...1`.
+    ///   - refreshPause: The pause before ``RealtimeEvent/unavailable``
+    ///     reaches the screens: random, up to ten seconds (§1.7).
     ///   - now: The clock the heartbeat watchdog reads.
     ///   - silenceLimit: How long without a frame before the socket is replaced.
     public init(
@@ -119,6 +123,9 @@ public final class RealtimeClient: RealtimeMessaging {
             try await Task.sleep(nanoseconds: UInt64(max(0, seconds) * 1_000_000_000))
         },
         jitter: @escaping @Sendable () -> Double = { Double.random(in: 0...1) },
+        refreshPause: @escaping @Sendable () -> TimeInterval = {
+            RealtimeBackoff.unavailableRefreshPause(jitter: Double.random(in: 0...1))
+        },
         now: @escaping @Sendable () -> Date = { Date() },
         silenceLimit: TimeInterval = 80
     ) {
@@ -129,6 +136,7 @@ public final class RealtimeClient: RealtimeMessaging {
         self.onSessionRefused = onSessionRefused
         self.sleep = sleep
         self.jitter = jitter
+        self.refreshPause = refreshPause
         self.now = now
         self.silenceLimit = silenceLimit
     }
@@ -185,6 +193,20 @@ public final class RealtimeClient: RealtimeMessaging {
     private func emit(_ event: RealtimeEvent) {
         for continuation in subscribers.values {
             continuation.yield(event)
+        }
+    }
+
+    /// `1013`: the screens refresh as they did before real time — after a
+    /// random pause of up to ten seconds (contract v30 §1.7), so the phones a
+    /// replica drops at the same moment do not all refresh in the same
+    /// second. Not if the socket was stopped or restarted meanwhile: its next
+    /// `ready` refreshes them anyway.
+    private func announceUnavailable(_ current: Int) {
+        let pause = refreshPause()
+        Task { [weak self] in
+            if pause > 0 { try? await Task.sleep(nanoseconds: UInt64(pause * 1_000_000_000)) }
+            guard let self, current == self.generation else { return }
+            self.emit(.unavailable)
         }
     }
 
@@ -335,7 +357,7 @@ public final class RealtimeClient: RealtimeMessaging {
                 // Whatever happened while it was down is only in the HTTP
                 // answers now. A socket that cannot come back for a while
                 // (1013) says so, so the screens refresh as they did before.
-                if case .retry(.unavailable) = decision { emit(.unavailable) }
+                if case .retry(.unavailable) = decision { announceUnavailable(current) }
                 emit(.disconnected)
             }
             return .closed(decision, stayedUp: upSince.map { now().timeIntervalSince($0) })

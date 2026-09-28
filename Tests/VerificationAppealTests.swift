@@ -64,6 +64,30 @@ final class VerificationAppealTests: XCTestCase {
         XCTAssertFalse(VerificationRejection.isRevocation("Photo does not match the document"))
     }
 
+    func testAWithdrawnBadgeShowsTheModeratorsOwnSentenceWhenTheyWroteOne() throws {
+        // The console's "Sentence the person reads" reached only the email
+        // before the 2026-09-28 review; the revoked screen now shows it too.
+        let json = #"""
+        {"status": "rejected", "rejection_reason": "verification_revoked",
+         "revocation_reason": "يرجى التحقق مجددًا بجواز سفرك.", "submitted_at": null, "reviewed_at": null}
+        """#
+        let report = try JSONCoding.decoder.decode(VerificationStatusReport.self, from: Data(json.utf8))
+        XCTAssertEqual(report.revocationReason, "يرجى التحقق مجددًا بجواز سفرك.")
+        XCTAssertEqual(
+            VerificationRejection.writtenRevocation(report.rejectionReason, revocationReason: report.revocationReason),
+            "يرجى التحقق مجددًا بجواز سفرك."
+        )
+        // Without one — or from an older server — the code's own line stands.
+        let older = try JSONCoding.decoder.decode(
+            VerificationStatusReport.self,
+            from: Data(#"{"status": "rejected", "rejection_reason": "verification_revoked"}"#.utf8)
+        )
+        XCTAssertNil(older.revocationReason)
+        XCTAssertNil(VerificationRejection.writtenRevocation("verification_revoked", revocationReason: "  "))
+        // Never for anything but a revocation.
+        XCTAssertNil(VerificationRejection.writtenRevocation("Blurry photo", revocationReason: "Something"))
+    }
+
     func testTheAppealIsBoundedLikeTheServerBoundsIt() {
         XCTAssertEqual(VerificationAppealReceipt.maximumLength, 1_000)
     }

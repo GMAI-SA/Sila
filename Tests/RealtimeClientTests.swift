@@ -23,7 +23,8 @@ final class RealtimeClientTests: XCTestCase {
         suspension: SuspensionReporting? = nil,
         onSessionRefused: (@MainActor (Error) async -> Void)? = nil,
         now: @escaping @Sendable () -> Date = { Date() },
-        silenceLimit: TimeInterval = 80
+        silenceLimit: TimeInterval = 80,
+        refreshPause: TimeInterval = 0
     ) -> RealtimeClient {
         let client = RealtimeClient(
             url: url,
@@ -35,7 +36,9 @@ final class RealtimeClientTests: XCTestCase {
                 await waits.record(delay)
                 try await Task.sleep(nanoseconds: 20_000_000)
             },
-            jitter: { 0 },
+            // The middle of the jitter: every wait exactly its step.
+            jitter: { 0.5 },
+            refreshPause: { refreshPause },
             now: now,
             silenceLimit: silenceLimit
         )
@@ -235,6 +238,40 @@ final class RealtimeClientTests: XCTestCase {
         await eventually { await waits.delays.first != nil }
         let first = await waits.delays.first
         XCTAssertEqual(first, 30, "1013 waits half a minute, not a second")
+    }
+
+    func testTheRefreshAfterA1013WaitsItsPauseNotTheMomentTheSocketCloses() async throws {
+        // A replica that loses Redis drops every socket at once; every phone
+        // refreshing every screen in the same second is a burst the API
+        // feels (2026-09-28 review).
+        let sockets = ScriptedSockets()
+        let client = makeClient(sockets: sockets, refreshPause: 0.6)
+        let heard = listen(to: client)
+        client.start(accountId: nil)
+        await eventually { client.isLive }
+
+        sockets.made[0].serverClose(code: 1013, errorCode: "realtime_unavailable")
+        await eventually("the socket never said it was down") {
+            heard.contains { if case .disconnected = $0 { return true }; return false }
+        }
+        XCTAssertFalse(heard.contains { if case .unavailable = $0 { return true }; return false },
+                       "not the moment the socket closed")
+        await eventually("the screens were not told to refresh after the pause") {
+            heard.contains { if case .unavailable = $0 { return true }; return false }
+        }
+    }
+
+    func testARefreshStillPendingIsDroppedWhenTheSocketIsStopped() async throws {
+        let sockets = ScriptedSockets()
+        let client = makeClient(sockets: sockets, refreshPause: 0.3)
+        let heard = listen(to: client)
+        client.start(accountId: nil)
+        await eventually { client.isLive }
+        sockets.made[0].serverClose(code: 1013, errorCode: "realtime_unavailable")
+        await eventually { heard.contains { if case .disconnected = $0 { return true }; return false } }
+        client.stop()
+        try await Task.sleep(nanoseconds: 600_000_000)
+        XCTAssertFalse(heard.contains { if case .unavailable = $0 { return true }; return false })
     }
 
     func testTooManyConnectionsWaitsAMinute() async {

@@ -63,8 +63,11 @@ public enum RealtimeStopReason: String, Equatable, Sendable {
     case refused
 }
 
-/// The waits of contract v30 §1.7, with up to 30 % random jitter so a
-/// server restart is not answered by every phone in the same second.
+/// The waits of contract v30 §1.7, each multiplied by a random factor
+/// between 0.5 and 1.5, so the phones a restarted server drops come back
+/// spread over the whole window rather than bunched at its start ("up to
+/// 30 % more", before the 2026-09-28 review, brought them all back within
+/// the same few seconds).
 public enum RealtimeBackoff {
 
     static let steps: [TimeInterval] = [1, 2, 5, 10, 30]
@@ -74,12 +77,18 @@ public enum RealtimeBackoff {
     /// A socket that stayed up this long starts the backoff again from 1 s.
     public static let resetAfter: TimeInterval = 60
 
+    /// After a `1013` the screens refresh over HTTP after a random pause of
+    /// up to this long, so the phones a replica drops together do not all
+    /// refresh in the same second.
+    public static let unavailableRefreshCeiling: TimeInterval = 10
+
     /// - Parameters:
     ///   - retry: Which schedule.
     ///   - attempt: Failures since the last socket that stayed up a minute, from 0.
-    ///   - jitter: `0...1`, scaled to at most 30 % more.
+    ///   - jitter: `0...1`: half the wait at 0, the wait itself at 0.5, one
+    ///     and a half times it at 1.
     public static func delay(_ retry: RealtimeRetry, attempt: Int, jitter: Double) -> TimeInterval {
-        let spread = 1 + 0.3 * min(max(jitter, 0), 1)
+        let spread = 0.5 + min(max(jitter, 0), 1)
         switch retry {
         case .backoff:
             let base = attempt < steps.count ? steps[max(attempt, 0)] : ceiling
@@ -90,5 +99,11 @@ public enum RealtimeBackoff {
         case let .later(seconds):
             return seconds * spread
         }
+    }
+
+    /// How long after a `1013` to refresh the screens: anywhere from now to
+    /// ``unavailableRefreshCeiling``, `jitter` being `0...1`.
+    public static func unavailableRefreshPause(jitter: Double) -> TimeInterval {
+        unavailableRefreshCeiling * min(max(jitter, 0), 1)
     }
 }

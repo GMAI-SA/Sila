@@ -171,18 +171,30 @@ final class RealtimeProtocolTests: XCTestCase {
     }
 
     func testTheWaitsAreTheContracts() {
-        let plain = (0..<8).map { RealtimeBackoff.delay(.backoff, attempt: $0, jitter: 0) }
+        // At the middle of the jitter, every wait is exactly its step.
+        let plain = (0..<8).map { RealtimeBackoff.delay(.backoff, attempt: $0, jitter: 0.5) }
         XCTAssertEqual(plain, [1, 2, 5, 10, 30, 60, 60, 60])
-        let unavailable = (0..<7).map { RealtimeBackoff.delay(.unavailable, attempt: $0, jitter: 0) }
+        let unavailable = (0..<7).map { RealtimeBackoff.delay(.unavailable, attempt: $0, jitter: 0.5) }
         XCTAssertEqual(unavailable, [30, 60, 120, 240, 300, 300, 300], "30 s, then up to five minutes")
-        XCTAssertEqual(RealtimeBackoff.delay(.later(60), attempt: 3, jitter: 0), 60)
-        // Up to 30 % jitter, never less than the wait itself; the five-minute
-        // ceiling holds with it.
-        XCTAssertEqual(RealtimeBackoff.delay(.backoff, attempt: 0, jitter: 1), 1.3, accuracy: 0.0001)
-        XCTAssertEqual(RealtimeBackoff.delay(.backoff, attempt: 9, jitter: 1), 78, accuracy: 0.0001)
+        XCTAssertEqual(RealtimeBackoff.delay(.later(60), attempt: 3, jitter: 0.5), 60)
+        // Between half and one and a half times the step (2026-09-28 review:
+        // "up to 30 % more" brought every phone back in the same few
+        // seconds); the five-minute ceiling holds with it.
+        XCTAssertEqual(RealtimeBackoff.delay(.backoff, attempt: 0, jitter: 0), 0.5, accuracy: 0.0001)
+        XCTAssertEqual(RealtimeBackoff.delay(.backoff, attempt: 0, jitter: 1), 1.5, accuracy: 0.0001)
+        XCTAssertEqual(RealtimeBackoff.delay(.backoff, attempt: 9, jitter: 1), 90, accuracy: 0.0001)
+        XCTAssertEqual(RealtimeBackoff.delay(.unavailable, attempt: 0, jitter: 0), 15, accuracy: 0.0001)
+        XCTAssertEqual(RealtimeBackoff.delay(.unavailable, attempt: 0, jitter: 1), 45, accuracy: 0.0001)
         XCTAssertEqual(RealtimeBackoff.delay(.unavailable, attempt: 9, jitter: 1), 300)
-        XCTAssertEqual(RealtimeBackoff.delay(.backoff, attempt: 2, jitter: 5), 6.5, accuracy: 0.0001)
+        XCTAssertEqual(RealtimeBackoff.delay(.backoff, attempt: 2, jitter: 5), 7.5, accuracy: 0.0001)
         XCTAssertEqual(RealtimeBackoff.resetAfter, 60)
+    }
+
+    func testTheRefreshAfterA1013WaitsARandomMomentOfUpToTenSeconds() {
+        XCTAssertEqual(RealtimeBackoff.unavailableRefreshPause(jitter: 0), 0)
+        XCTAssertEqual(RealtimeBackoff.unavailableRefreshPause(jitter: 0.25), 2.5, accuracy: 0.0001)
+        XCTAssertEqual(RealtimeBackoff.unavailableRefreshPause(jitter: 1), 10)
+        XCTAssertEqual(RealtimeBackoff.unavailableRefreshPause(jitter: 7), 10)
     }
 
     // MARK: - Where

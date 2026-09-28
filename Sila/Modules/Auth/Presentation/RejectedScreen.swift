@@ -22,6 +22,7 @@ import SwiftUI
 public struct RejectedScreen: View {
 
     private let reason: String?
+    private let revocationReason: String?
     private let appealOnFile: VerificationAppealReceipt?
     private let analytics: AnalyticsClient
     private let onAppeal: ((String) async throws -> VerificationAppealReceipt)?
@@ -38,6 +39,8 @@ public struct RejectedScreen: View {
 
     /// - Parameters:
     ///   - reason: Rejection reason from `/verification/status`.
+    ///   - revocationReason: A withdrawn badge's own sentence, when the
+    ///     moderator wrote one (`/verification/status`).
     ///   - appeal: The appeal already on file against this decision, if any.
     ///   - analytics: Event sink.
     ///   - onAppeal: Sends an appeal. `nil` hides the appeal affordance.
@@ -51,6 +54,7 @@ public struct RejectedScreen: View {
     ///   - onSignOut: Ends the session.
     public init(
         reason: String?,
+        revocationReason: String? = nil,
         appeal: VerificationAppealReceipt? = nil,
         analytics: AnalyticsClient,
         onAppeal: ((String) async throws -> VerificationAppealReceipt)? = nil,
@@ -59,6 +63,7 @@ public struct RejectedScreen: View {
         onSignOut: @escaping () -> Void
     ) {
         self.reason = reason
+        self.revocationReason = revocationReason
         self.appealOnFile = appeal
         self.analytics = analytics
         self.onAppeal = onAppeal
@@ -68,6 +73,10 @@ public struct RejectedScreen: View {
     }
 
     private var isRevocation: Bool { VerificationRejection.isRevocation(reason) }
+    /// The moderator's words for a withdrawn badge, when there are some.
+    private var written: String? {
+        VerificationRejection.writtenRevocation(reason, revocationReason: revocationReason)
+    }
     /// The pre-screen's no, with somewhere to go: straight back to the camera.
     private var retake: (() async -> Void)? {
         VerificationRejection.isScreening(reason) ? onRetake : nil
@@ -128,7 +137,7 @@ public struct RejectedScreen: View {
                 .padding(.horizontal, SLSpacing.lg)
                 .accessibilityElement(children: .combine)
 
-                if let shown = VerificationRejection.display(reason) {
+                if let shown = written ?? VerificationRejection.display(reason) {
                     SLCard(padding: SLSpacing.lg) {
                         VStack(alignment: .leading, spacing: SLSpacing.sm) {
                             Text(L10n.t("auth.rejected.reasonLabel"))
@@ -142,7 +151,7 @@ public struct RejectedScreen: View {
                                 .foregroundStyle(SLColor.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .slContentDirection(
-                                    VerificationRejection.isMachineReason(reason)
+                                    VerificationRejection.isMachineReason(reason) && written == nil
                                         ? TextDirection.resolve(languageCode: L10n.languageCode, text: shown)
                                         : TextDirection.resolve(languageCode: nil, text: shown)
                                 )
@@ -151,7 +160,9 @@ public struct RejectedScreen: View {
                     .padding(.horizontal, SLSpacing.lg)
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel(Text(L10n.t("auth.rejected.reason.a11yLabel", shown)))
-                    .accessibilityHint(Text(VerificationRejection.reasonHint(reason)))
+                    .accessibilityHint(Text(
+                        written == nil ? VerificationRejection.reasonHint(reason) : L10n.t("auth.rejected.reason.hint")
+                    ))
                 }
 
                 if let receipt {

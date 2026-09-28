@@ -416,6 +416,11 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     public let status: VerificationStatus
     /// Populated only when ``status`` is ``VerificationStatus/rejected``.
     public let rejectionReason: String?
+    /// With ``rejectionReason`` `verification_revoked`: the sentence the
+    /// moderator wrote for the person, as the email carries it — shown under
+    /// "Reason given" in place of the code's own line. `nil` otherwise, when
+    /// none was written, and from a server before the 2026-09-28 review.
+    public let revocationReason: String?
     public let submittedAt: Date?
     public let reviewedAt: Date?
     /// The nationality the person declared — the claim verification tests.
@@ -441,6 +446,7 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     public init(
         status: VerificationStatus,
         rejectionReason: String? = nil,
+        revocationReason: String? = nil,
         submittedAt: Date? = nil,
         reviewedAt: Date? = nil,
         nationality: String? = nil,
@@ -451,6 +457,7 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     ) {
         self.status = status
         self.rejectionReason = rejectionReason
+        self.revocationReason = revocationReason
         self.submittedAt = submittedAt
         self.reviewedAt = reviewedAt
         self.nationality = nationality
@@ -461,7 +468,8 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case status, rejectionReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth, methods, canWithdraw
+        case status, rejectionReason, revocationReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth
+        case methods, canWithdraw
     }
 
     private struct Methods: Decodable {
@@ -472,6 +480,7 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         status = (try? container.decode(VerificationStatus.self, forKey: .status)) ?? .unstarted
         rejectionReason = try? container.decodeIfPresent(String.self, forKey: .rejectionReason)
+        revocationReason = (try? container.decodeIfPresent(String.self, forKey: .revocationReason)) ?? nil
         submittedAt = try? container.decodeIfPresent(Date.self, forKey: .submittedAt)
         reviewedAt = try? container.decodeIfPresent(Date.self, forKey: .reviewedAt)
         nationality = CountryCode.normalised(try? container.decodeIfPresent(String.self, forKey: .nationality))
