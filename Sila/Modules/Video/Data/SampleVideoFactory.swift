@@ -7,13 +7,15 @@ import Foundation
 /// of a person, ever.
 ///
 /// Debug builds only. The UI journeys pick one of these instead of going
-/// through the system's photo picker (`-mockVideoPick short|long`), and the
-/// unit and live tests upload them.
+/// through the system's photo picker (`-mockVideoPick short|portrait|long|big`),
+/// and the unit and live tests upload them.
 public enum SampleVideoFactory {
 
     public enum Kind: String, Sendable {
         /// Three seconds, 320×240, with sound.
         case short
+        /// The same, held upright: 240×320, as a phone films.
+        case portrait
         /// Three minutes and ten seconds of a tiny picture, silent: over the
         /// limit, for the refusal and the trim.
         case long
@@ -28,6 +30,8 @@ public enum SampleVideoFactory {
         switch kind {
         case .short:
             try await write(to: url, seconds: 3, fps: 30, width: 320, height: 240, audio: true, noisy: false, bitRate: nil)
+        case .portrait:
+            try await write(to: url, seconds: 3, fps: 30, width: 240, height: 320, audio: true, noisy: false, bitRate: nil)
         case .long:
             try await write(to: url, seconds: 190, fps: 1, width: 64, height: 64, audio: false, noisy: false, bitRate: nil)
         case .big:

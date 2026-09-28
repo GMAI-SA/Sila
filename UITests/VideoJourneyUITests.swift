@@ -104,9 +104,19 @@ final class VideoJourneyUITests: XCTestCase {
     func testAPickedVideoUploadsIsPreparedThenPlays() throws {
         let app = launch()
         openComposer(app)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "the composer opens ready to type")
         pickVideo(app)
 
         XCTAssertTrue(status(app).waitForExistence(timeout: 15), "the composer never said where the upload is")
+        // The keyboard goes and the video's card is brought into view, so
+        // how far the upload is can be read: it used to sit under the
+        // keyboard, below the scope list.
+        let keyboardGone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == 0"), object: app.keyboards)
+        XCTAssertEqual(XCTWaiter().wait(for: [keyboardGone], timeout: 5), .completed, "the keyboard stayed over the video")
+        XCTAssertTrue(status(app).isHittable, "the upload's progress is off screen")
+        let card = app.descendants(matching: .any)["composer.video"].firstMatch
+        XCTAssertLessThanOrEqual(card.frame.maxY, app.windows.firstMatch.frame.maxY, "the video's card is cut off")
+        shot(app, "Composer — the video just picked, in view")
         XCTAssertTrue(wait(status(app), contains: "Uploaded", timeout: 30), "the upload never finished: \(status(app).label)")
         shot(app, "Composer — video uploaded")
 
@@ -167,7 +177,9 @@ final class VideoJourneyUITests: XCTestCase {
     /// feed, comes back after the relaunch, and appears once the video is
     /// there — without being picked or posted again.
     func testAPostWaitingForItsVideoSurvivesAnAppSwitchAndARelaunch() throws {
-        let app = launch(scenario: "slow")
+        // Filmed upright, as most phone videos are: its thumbnail must stay
+        // inside the strip's card.
+        let app = launch(pick: "portrait", scenario: "slow")
         openComposer(app)
         pickVideo(app)
         XCTAssertTrue(wait(status(app), contains: "Uploading", timeout: 20), "never started uploading: \(status(app).label)")
@@ -186,7 +198,7 @@ final class VideoJourneyUITests: XCTestCase {
 
         // Quit, and opened again.
         app.terminate()
-        let relaunched = launch(scenario: "slow", reset: false, app: XCUIApplication())
+        let relaunched = launch(pick: "portrait", scenario: "slow", reset: false, app: XCUIApplication())
         let back = relaunched.descendants(matching: .any)["video.pending"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 15), "the waiting post did not come back after the relaunch")
         shot(relaunched, "After the relaunch — still waiting, resuming")

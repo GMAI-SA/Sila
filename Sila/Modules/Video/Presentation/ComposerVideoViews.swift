@@ -30,7 +30,12 @@ struct PickedMovie: Transferable {
 @MainActor
 struct ComposerVideoButton: View {
     @Bindable var viewModel: ComposerViewModel
+    /// Called as the button is pressed, before the picker rises: the
+    /// composer puts the keyboard away, so it does not come back over the
+    /// video's progress when the picker goes.
+    var onPick: () -> Void = {}
     @State private var picked: PhotosPickerItem?
+    @State private var isPicking = false
 
     var body: some View {
         Group {
@@ -39,6 +44,7 @@ struct ComposerVideoButton: View {
                 // The journeys' picker: a sample made on the phone, so a UI
                 // test never depends on what the simulator's library holds.
                 Button {
+                    onPick()
                     Task {
                         guard let url = try? await SampleVideoFactory.make(kind, in: FileManager.default.temporaryDirectory) else { return }
                         await viewModel.attachVideo(from: url)
@@ -56,7 +62,11 @@ struct ComposerVideoButton: View {
     }
 
     private var picker: some View {
-        PhotosPicker(selection: $picked, matching: .videos, preferredItemEncoding: .current) { label }
+        Button {
+            onPick()
+            isPicking = true
+        } label: { label }
+            .photosPicker(isPresented: $isPicking, selection: $picked, matching: .videos, preferredItemEncoding: .current)
             .onChange(of: picked) { _, item in
                 guard let item else { return }
                 picked = nil
@@ -77,7 +87,7 @@ struct ComposerVideoButton: View {
     }
 
     #if DEBUG
-    /// `-mockVideoPick short|long|big`.
+    /// `-mockVideoPick short|portrait|long|big`.
     static var mockPick: SampleVideoFactory.Kind? {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: "-mockVideoPick"), arguments.indices.contains(index + 1) else { return nil }
@@ -158,6 +168,9 @@ struct ComposerVideoCard: View {
             VideoThumbnail(data: center.thumbnail(id), durationSeconds: job?.durationSeconds)
                 .frame(width: 96, height: 72)
 
+            // All the width between the thumbnail and the close button, always:
+            // beside a spacer the column's width, and so where the words
+            // wrap and where the bar sits, changed with every percent.
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
                 VideoUploadStatusLine(phase: phase)
                 if case let .failed(failure)? = phase, failure.canRetry {
@@ -166,8 +179,7 @@ struct ComposerVideoCard: View {
                         .accessibilityIdentifier("composer.video.retry")
                 }
             }
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Button {
                 viewModel.removeVideo()
@@ -271,33 +283,46 @@ final class VideoConnectionWatch {
     }
 }
 
-/// A still from the video, with its length.
+/// A still from the video, with its length, filling exactly the frame it is
+/// given.
+///
+/// The still is drawn over a plain fill that takes the frame's size, and cut
+/// to it. Laid out on its own, a portrait still scaled to fill a landscape
+/// frame is as tall as the frame's width asks, more than twice the frame,
+/// and a frame set from outside only centres it: it spilled out of the card
+/// it sits in, above and below.
 struct VideoThumbnail: View {
     let data: Data?
     let durationSeconds: Double?
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            if let data, let image = UIImage(data: data) {
-                Image(uiImage: image).resizable().scaledToFill()
-            } else {
-                SLColor.surface2
-                    .overlay(Image(systemName: "video").foregroundStyle(SLColor.textMuted))
+        SLColor.surface2
+            .overlay {
+                if let data, let image = UIImage(data: data) {
+                    Image(uiImage: image).resizable().scaledToFill()
+                } else {
+                    Image(systemName: "video").foregroundStyle(SLColor.textMuted)
+                }
             }
-            if let durationSeconds, durationSeconds > 0 {
-                Text(VideoCopy.duration(durationSeconds))
-                    .font(SLFont.micro)
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Capsule().fill(.black.opacity(0.6)))
-                    .padding(4)
-                    .environment(\.layoutDirection, .leftToRight)
-            }
+            .clipped()
+            .overlay(alignment: .bottomTrailing) { length }
+            .clipShape(RoundedRectangle(cornerRadius: SLRadius.sm, style: .continuous))
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var length: some View {
+        if let durationSeconds, durationSeconds > 0 {
+            Text(VideoCopy.duration(durationSeconds))
+                .font(SLFont.micro)
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(Capsule().fill(.black.opacity(0.6)))
+                .padding(4)
+                .environment(\.layoutDirection, .leftToRight)
         }
-        .clipShape(RoundedRectangle(cornerRadius: SLRadius.sm, style: .continuous))
-        .accessibilityHidden(true)
     }
 }
 
@@ -406,7 +431,7 @@ public struct PendingVideoPostsStrip: View {
                     .font(SLFont.caption)
                 }
             }
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(SLSpacing.sm)
         .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.surface1))

@@ -386,7 +386,9 @@ pressed before it is there hands the post to the center and closes the
 composer: a strip above the feed says "Uploading… 42%", and the post is
 written — once — when the video is complete, after a relaunch too. A job with
 no post waiting belonged to a composer that is gone, and a relaunch lets it
-go, here and on the server.
+go, here and on the server. Picking a video puts the keyboard away and
+scrolls the composer to the video's card, so its progress and any words about
+it are on screen.
 
 **Both plan types, resumed silently.** `VideoUploader` asks where the upload
 stands first (`GET status_url`, which lists every gap) and sends only what is
@@ -612,7 +614,7 @@ parts), `dropsOnce` (the connection drops half way through the second piece),
 `notAllowed`, `offline` and `slow` (small pieces three seconds apart, to switch away
 or quit mid-upload). It assembles the pieces it is sent into one file, which
 is what plays once "ready", and keeps its state on disk so a relaunched app
-finds it. In debug builds `-mockVideoPick short|long|big` makes "Add a video"
+finds it. In debug builds `-mockVideoPick short|portrait|long|big` makes "Add a video"
 pick a sample made on the simulator instead of opening Photos,
 `-resetVideoUploads` starts with no upload kept, and `-videoAutoplay on|off`
 decides autoplay instead of the Mac's network.
@@ -632,7 +634,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-1,752 total: 1,681 unit (85 opt-in, see below) and 71 XCUITests (54 journeys, 16
+1,753 total: 1,682 unit (85 opt-in, see below) and 71 XCUITests (54 journeys, 16
 reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a

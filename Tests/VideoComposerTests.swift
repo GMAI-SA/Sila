@@ -1,4 +1,5 @@
 import AVFoundation
+import SwiftUI
 import XCTest
 @testable import Sila
 
@@ -459,5 +460,72 @@ final class VideoPreparationTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? VideoPreparationError, .unreadable)
         }
+    }
+}
+
+/// The thumbnail beside a video on its way, in the composer and above the
+/// feed.
+@MainActor
+final class VideoThumbnailTests: XCTestCase {
+
+    /// A portrait still in the strip's landscape frame (72 by 54) stays
+    /// inside the frame: nothing of it is drawn over what is above it.
+    func testAPortraitStillStaysInsideItsFrame() throws {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let still = UIGraphicsImageRenderer(size: CGSize(width: 720, height: 1280), format: format).image { context in
+            UIColor(red: 0, green: 0, blue: 1, alpha: 1).setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 720, height: 1280))
+        }.jpegData(compressionQuality: 0.9)
+        let red = Color(red: 1, green: 0, blue: 0)
+        let strip = VStack(spacing: 0) {
+            red.frame(width: 72, height: 40)
+            VideoThumbnail(data: still, durationSeconds: 120).frame(width: 72, height: 54)
+            red.frame(width: 72, height: 40)
+        }
+        let renderer = ImageRenderer(content: strip)
+        renderer.scale = 1
+        let image = try XCTUnwrap(renderer.cgImage)
+        XCTAssertEqual(image.height, 134)
+
+        let pixels = try XCTUnwrap(Pixels(image))
+        XCTAssertTrue(pixels.isRed(x: 36, y: 20), "above the frame")
+        XCTAssertTrue(pixels.isRed(x: 36, y: 38), "just above the frame, where the still used to spill")
+        XCTAssertTrue(pixels.isBlue(x: 36, y: 67), "the still itself")
+        XCTAssertTrue(pixels.isRed(x: 36, y: 100), "below the frame")
+    }
+}
+
+/// An image's pixels, to look at.
+private struct Pixels {
+    private let data: [UInt8]
+    private let width: Int
+
+    init?(_ image: CGImage) {
+        width = image.width
+        var bytes = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        guard let context = CGContext(
+            data: &bytes, width: image.width, height: image.height, bitsPerComponent: 8,
+            bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        data = bytes
+    }
+
+    /// Red, green, blue at `x`, `y` from the top left.
+    private func rgb(_ x: Int, _ y: Int) -> (Int, Int, Int) {
+        let offset = (y * width + x) * 4
+        return (Int(data[offset]), Int(data[offset + 1]), Int(data[offset + 2]))
+    }
+
+    func isRed(x: Int, y: Int) -> Bool {
+        let (r, g, b) = rgb(x, y)
+        return r > 200 && g < 60 && b < 60
+    }
+
+    func isBlue(x: Int, y: Int) -> Bool {
+        let (r, g, b) = rgb(x, y)
+        return b > 200 && r < 60 && g < 60
     }
 }

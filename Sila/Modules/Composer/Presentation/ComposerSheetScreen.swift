@@ -26,48 +26,55 @@ public struct ComposerSheetScreen: View {
 
     public var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: SLSpacing.lg) {
-                    if let message = viewModel.partialFailureMessage {
-                        partialFailureBanner(message)
-                    }
+            // Read by the video's reveal: the card, its progress and its
+            // words are scrolled into view when a video is picked.
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: SLSpacing.lg) {
+                        if let message = viewModel.partialFailureMessage {
+                            partialFailureBanner(message)
+                        }
 
-                    if viewModel.context.showsScopePicker {
-                        ScopePickerSection(viewModel: viewModel)
-                    }
+                        if viewModel.context.showsScopePicker {
+                            ScopePickerSection(viewModel: viewModel)
+                        }
 
-                    if viewModel.showsStarters {
-                        ComposerStartersRow(starters: viewModel.starters) { starter in
-                            viewModel.use(starter)
+                        if viewModel.showsStarters {
+                            ComposerStartersRow(starters: viewModel.starters) { starter in
+                                viewModel.use(starter)
+                            }
+                        }
+
+                        segmentsSection
+
+                        PollEditorSection(viewModel: viewModel)
+
+                        if let clip = viewModel.voiceClip {
+                            AttachedVoiceChip(clip: clip, onRemove: { viewModel.removeVoice() })
+                        }
+
+                        if let quoted = viewModel.context.quotedPost {
+                            quotedSection(quoted)
+                        }
+
+                        // On every kind of post, replies included: a spoiler is a
+                        // spoiler wherever it is written.
+                        WarningPickerSection(viewModel: viewModel)
+
+                        // Only on a root post or a quote. A reply carries no
+                        // pictures, because the reply bar is one line by design and
+                        // a thumbnail strip inside it would make it something else.
+                        if viewModel.context.showsScopePicker {
+                            attachmentsSection
                         }
                     }
-
-                    segmentsSection
-
-                    PollEditorSection(viewModel: viewModel)
-
-                    if let clip = viewModel.voiceClip {
-                        AttachedVoiceChip(clip: clip, onRemove: { viewModel.removeVoice() })
-                    }
-
-                    if let quoted = viewModel.context.quotedPost {
-                        quotedSection(quoted)
-                    }
-
-                    // On every kind of post, replies included: a spoiler is a
-                    // spoiler wherever it is written.
-                    WarningPickerSection(viewModel: viewModel)
-
-                    // Only on a root post or a quote. A reply carries no
-                    // pictures, because the reply bar is one line by design and
-                    // a thumbnail strip inside it would make it something else.
-                    if viewModel.context.showsScopePicker {
-                        attachmentsSection
-                    }
+                    .padding(.horizontal, SLSpacing.lg)
+                    .padding(.top, SLSpacing.md)
+                    .padding(.bottom, SLSpacing.xxl)
                 }
-                .padding(.horizontal, SLSpacing.lg)
-                .padding(.top, SLSpacing.md)
-                .padding(.bottom, SLSpacing.xxl)
+                .onChange(of: videoCardState) { _, state in
+                    revealVideoCard(state, proxy: proxy)
+                }
             }
             .scrollDismissesKeyboard(.interactively)
             .tnScreenBackground()
@@ -194,6 +201,7 @@ public struct ComposerSheetScreen: View {
             }
 
             ComposerVideoCard(viewModel: viewModel)
+                .id(Self.videoCardID)
 
             if let gif = viewModel.gif {
                 ZStack(alignment: .topTrailing) {
@@ -246,7 +254,7 @@ public struct ComposerSheetScreen: View {
                 // Only for an account the server lets upload one, and only
                 // while the draft has room for it.
                 if viewModel.canAddVideo {
-                    ComposerVideoButton(viewModel: viewModel)
+                    ComposerVideoButton(viewModel: viewModel, onPick: { focusedSegment = nil })
                 }
 
                 if viewModel.canRecordVoice {
@@ -287,6 +295,45 @@ public struct ComposerSheetScreen: View {
                         await viewModel.attach(data)
                     }
                 }
+            }
+        }
+    }
+
+    // MARK: - The video's card
+
+    /// Where the reveal scrolls to. Undotted, so nothing mistakes it for a
+    /// catalog key.
+    private static let videoCardID = "videoCard"
+
+    /// What the draft's video card is showing, as far as bringing it into
+    /// view goes.
+    private enum VideoCardState: Equatable {
+        case none
+        case loading
+        case refused
+        case attached(UUID)
+    }
+
+    private var videoCardState: VideoCardState {
+        if viewModel.isLoadingVideo { return .loading }
+        if viewModel.videoRefusal != nil { return .refused }
+        if let id = viewModel.videoJobId { return .attached(id) }
+        return .none
+    }
+
+    /// A video was picked, refused as too long, or taken on: the keyboard
+    /// goes and the card is scrolled into view, so how far the upload is,
+    /// and any words about waiting or a refusal, are on screen rather than
+    /// under the keyboard. Only when the card changes like this: somebody
+    /// who taps back into the text while the video uploads keeps typing.
+    private func revealVideoCard(_ state: VideoCardState, proxy: ScrollViewProxy) {
+        guard state != .none else { return }
+        focusedSegment = nil
+        Task { @MainActor in
+            // Once the card is laid out and the keyboard is on its way down.
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            withAnimation(.easeInOut(duration: 0.25)) {
+                proxy.scrollTo(Self.videoCardID, anchor: .center)
             }
         }
     }
