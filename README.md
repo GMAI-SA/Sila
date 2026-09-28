@@ -403,6 +403,21 @@ missing at once; `410 upload_expired` starts a new plan with the same file
 without a word. Only a refusal stops an upload, and says why in the app's
 words.
 
+**Nothing done with the phone meanwhile ends it.** Compressing holds the time
+iOS lends an app in the background (`VideoBackgroundTime`), so switching to
+another app while a video is "getting ready" does not stop it; if that time
+runs out first, the export is stopped cleanly and compressed again from the
+kept file when the app is back (`VideoUploadCenter.sceneDidBecomeActive()`),
+still "getting ready", never "couldn't read". Only an export that fails on
+screen with no sign of an interruption says the file cannot be read. Writing
+the waiting post holds that time too, and two refusals are settled with
+`GET /videos/{id}` before anything is shown: `409 video_used` after a try
+whose answer was lost means that try was written, so its `post_id` is read
+and the post shown, once; `409 video_removed` that was not a moderator's (the
+server's daily sweep of videos nobody posted) sends the kept file up again as
+a new video. Pieces an ended process left in `VideoUploads/pieces` are
+removed when the app starts on the account.
+
 **Visible to its author until it is ready.** The author's own post shows
 "Preparing your video. Only you can see this post until it's ready.", "being
 reviewed" for a held video (never why), the failure's words, or the
@@ -617,7 +632,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-1,739 total: 1,668 unit (85 opt-in, see below) and 71 XCUITests (54 journeys, 16
+1,752 total: 1,681 unit (85 opt-in, see below) and 71 XCUITests (54 journeys, 16
 reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a

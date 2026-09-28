@@ -9,6 +9,11 @@ final class FakeVideoPreparer: VideoPreparing, @unchecked Sendable {
     var height = 1280
     var inspectFailure: Error?
     var prepareFailure: Error?
+    /// Thrown by the next calls to `prepare`, one each, before
+    /// ``prepareFailure`` or success: an export iOS stopped half way.
+    var prepareFailures: [Error] = []
+    /// Every call to `prepare`, whatever became of it.
+    private(set) var attempts = 0
     private(set) var prepared: [URL] = []
     private(set) var trimmedTo: [TimeInterval] = []
     private let lock = NSLock()
@@ -21,6 +26,11 @@ final class FakeVideoPreparer: VideoPreparing, @unchecked Sendable {
     }
 
     func prepare(_ source: URL, to destination: URL, progress: @escaping @Sendable (Double) -> Void) async throws -> PreparedVideo {
+        let scripted = lock.withLock { () -> Error? in
+            attempts += 1
+            return prepareFailures.isEmpty ? nil : prepareFailures.removeFirst()
+        }
+        if let scripted { throw scripted }
         if let prepareFailure { throw prepareFailure }
         progress(0.5)
         try? FileManager.default.removeItem(at: destination)
@@ -103,6 +113,58 @@ actor FlakyVideoService: VideoServiceProtocol {
     func discard(_ id: UUID) async throws {
         try trip("discard")
         try await inner.discard(id)
+    }
+}
+
+/// A composer that writes posts as the server does: `POST /posts` takes its
+/// video on the mocked video server (``VideoServiceMock/claim(_:forPost:)``),
+/// so the same video is refused a second time with `409 video_used`.
+/// `loseAnswers` posts are written but answered with a timed-out
+/// connection, as in a lift: written on the server, never heard of here.
+final class CommittingComposerService: ComposerServiceProtocol, @unchecked Sendable {
+    let videos: VideoServiceMock
+    var loseAnswers = 0
+    private(set) var drafts: [PostDraft] = []
+    private(set) var written: [Post] = []
+    private let lock = NSLock()
+
+    init(videos: VideoServiceMock) { self.videos = videos }
+
+    func createPost(_ draft: PostDraft) async throws -> Post {
+        lock.withLock { drafts.append(draft) }
+        let id = UUID()
+        if let videoId = draft.videoId {
+            try await videos.claim(videoId, forPost: id)
+        }
+        var post = Post(
+            id: id,
+            author: FeedServiceMock.aziz,
+            text: draft.trimmedText,
+            createdAt: Date(),
+            scope: PostScope(rawValue: draft.scope.wireValue) ?? .international,
+            scopeCountry: draft.scope.scopeCountry,
+            scopeRegion: draft.scope.scopeRegion,
+            replyToPostId: draft.replyToPostId
+        )
+        post.video = draft.videoId.map { PostVideo(id: $0, status: .processing) }
+        let lose = lock.withLock { () -> Bool in
+            written.append(post)
+            guard loseAnswers > 0 else { return false }
+            loseAnswers -= 1
+            return true
+        }
+        if lose { throw APIError.transport("The request timed out.") }
+        return post
+    }
+
+    func uploadImage(_ data: Data) async throws -> String { "/api/v1/media/posts/committed.jpg" }
+
+    /// `GET /posts/{id}`.
+    func post(_ id: UUID) throws -> Post {
+        guard let post = lock.withLock({ written.first { $0.id == id } }) else {
+            throw APIError.api(code: .postNotFound, message: "", status: 404)
+        }
+        return post
     }
 }
 

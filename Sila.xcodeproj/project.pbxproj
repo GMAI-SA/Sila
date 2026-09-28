@@ -422,6 +422,7 @@
 		F166F29B3B79C69F0978B398 /* PostBodyText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A9D84320222338E9CC5F7C /* PostBodyText.swift */; };
 		F1BCA44B71D965DD7EEC8726 /* GifServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EF8B8302BAABE48012DB92 /* GifServiceMock.swift */; };
 		F2EA8A22343D771AA7F9EFEA /* ReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0E47E8C37C57AFDC5C9BF5 /* ReportViewModel.swift */; };
+		F36286191D9C477ED57483C6 /* VideoBackgroundTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61005C98458C38AC020ED909 /* VideoBackgroundTime.swift */; };
 		F3B231E9AA8B2F7B19472E28 /* PollModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFB775F3ED54DB11B758473 /* PollModels.swift */; };
 		F40C850549AA2C8AA39F56E0 /* ServerTextLength.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201D3EE417427C6905FD9E50 /* ServerTextLength.swift */; };
 		F4E8C2593BF7061D02092CAF /* ComposeScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A7F4D0BA6449C7BE6741FE /* ComposeScope.swift */; };
@@ -628,6 +629,7 @@
 		5E6F7DBF8E300DB8609728BD /* VoiceRecorderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecorderViewModel.swift; sourceTree = "<group>"; };
 		5EC1E03AAE7801628D705458 /* CommunityViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityViewModel.swift; sourceTree = "<group>"; };
 		5F4A0F6426C5107EF9F2138D /* LanguagePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePreference.swift; sourceTree = "<group>"; };
+		61005C98458C38AC020ED909 /* VideoBackgroundTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoBackgroundTime.swift; sourceTree = "<group>"; };
 		612DB805767C501D893B9A42 /* FeedModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedModels.swift; sourceTree = "<group>"; };
 		6161BA5A4B857584A73D098A /* SLButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLButton.swift; sourceTree = "<group>"; };
 		619639D33B6517E9B9553E3E /* AccessTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTokenProvider.swift; sourceTree = "<group>"; };
@@ -1185,6 +1187,7 @@
 				398006F7475000C4B846EAB2 /* AVVideoPreparer.swift */,
 				27F70A0F3041892EF32C77C2 /* BackgroundVideoUploadTransport.swift */,
 				5D5D67BC46F6D10311AD69DC /* SampleVideoFactory.swift */,
+				61005C98458C38AC020ED909 /* VideoBackgroundTime.swift */,
 				D2182F6D0FE0B29F554EA974 /* VideoService.swift */,
 				690603A5DEFF5A4C98CF582F /* VideoServiceMock.swift */,
 				380B0C9074E70B846EFEAA1D /* VideoUploader.swift */,
@@ -2484,6 +2487,7 @@
 				EBC629CE82A0AE29C597FFF6 /* VerificationServiceProtocol.swift in Sources */,
 				0C752A2FA5F2FDB3C944639C /* VerificationWallViewModel.swift in Sources */,
 				A68B893516CEA0D19F45F327 /* VideoAutoplayPolicy.swift in Sources */,
+				F36286191D9C477ED57483C6 /* VideoBackgroundTime.swift in Sources */,
 				CE71B85DF52CF913901447BC /* VideoCopy.swift in Sources */,
 				16E2DE8FE8B328B17FE08F8A /* VideoModels.swift in Sources */,
 				364225EBD256D489B0899E90 /* VideoPlayback.swift in Sources */,

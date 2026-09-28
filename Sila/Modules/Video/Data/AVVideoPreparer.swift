@@ -158,6 +158,13 @@ public final class AVVideoPreparer: VideoPreparing {
         }
         defer { watcher.cancel() }
 
+        // Three minutes of 4K take a while to compress, and people switch
+        // apps while they wait. The time iOS lends an app that asks for it
+        // lets the export carry on in the background; if that runs out, the
+        // export is stopped here, cleanly, and the upload centre runs it
+        // again when the app is back.
+        let time = await VideoBackgroundTime.begin("Preparing a video") { session.cancelExport() }
+
         await withTaskCancellationHandler {
             await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
                 session.exportAsynchronously { continuation.resume() }
@@ -166,15 +173,67 @@ public final class AVVideoPreparer: VideoPreparing {
             session.cancelExport()
         }
 
-        switch session.status {
-        case .completed:
-            return
-        case .cancelled:
-            throw Task.isCancelled ? CancellationError() : VideoPreparationError.cancelled
-        default:
-            throw VideoPreparationError.unreadable
+        let wentAway = await time.finish()
+        if let failure = Self.failure(
+            status: session.status,
+            error: session.error,
+            cancelledByCaller: Task.isCancelled,
+            wentToBackground: wentAway
+        ) {
+            throw failure
         }
     }
+
+    /// What an export that did not complete means.
+    ///
+    /// Stopped because the person gave up on the video (the task was
+    /// cancelled): a cancellation. Stopped by anything else — iOS taking its
+    /// time back, the app going to the background while the encoder was
+    /// busy, the media services restarting — is an interruption, and is
+    /// compressed again. Only a failure on screen, with no sign of an
+    /// interruption, says the file itself could not be read: `inspect`
+    /// read it a moment before, so anything else would refuse a video
+    /// that is fine.
+    /// - Returns: `nil` when the export completed.
+    static func failure(
+        status: AVAssetExportSession.Status,
+        error: Error?,
+        cancelledByCaller: Bool,
+        wentToBackground: Bool
+    ) -> Error? {
+        switch status {
+        case .completed:
+            return nil
+        case .cancelled:
+            return cancelledByCaller ? CancellationError() : VideoPreparationError.interrupted
+        default:
+            if cancelledByCaller { return CancellationError() }
+            if wentToBackground || isInterruption(error) { return VideoPreparationError.interrupted }
+            return VideoPreparationError.unreadable
+        }
+    }
+
+    /// The errors AVFoundation gives an export it had to stop, rather than
+    /// one it could not do. The encoder's own "session no longer valid"
+    /// (kVTInvalidSessionErr) is what the hardware encoder says when iOS
+    /// takes it away from an app in the background.
+    static func isInterruption(_ error: Error?) -> Bool {
+        guard let error = error as NSError? else { return false }
+        if error.domain == AVFoundationErrorDomain,
+           [AVError.Code.operationInterrupted, .mediaServicesWereReset].map(\.rawValue).contains(error.code) {
+            return true
+        }
+        if error.domain == NSOSStatusErrorDomain, error.code == Self.encoderSessionInvalid {
+            return true
+        }
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? Error {
+            return isInterruption(underlying)
+        }
+        return false
+    }
+
+    /// `kVTInvalidSessionErr`.
+    static let encoderSessionInvalid = -12903
 
     static func fileSize(_ url: URL) -> Int {
         ((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber)?.intValue ?? 0

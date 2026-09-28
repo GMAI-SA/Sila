@@ -67,6 +67,12 @@ public actor VideoUploader {
 
     /// New plans in a row before an upload that keeps vanishing is given up.
     static let maximumRestarts = 3
+    /// The folder of the work directory each piece is written to before it
+    /// is sent. Emptied when the app starts on an account (see
+    /// ``VideoUploadCenter/restore(accountId:)``): a piece outlives the
+    /// upload that wrote it only when the process died first, and then
+    /// nothing will ever send it.
+    static let piecesFolder = "pieces"
     /// Immediate re-sends in a row before they wait like any other retry.
     static let maximumResends = 3
 
@@ -230,10 +236,7 @@ public actor VideoUploader {
         let tracker = PieceTracker(base: alreadySent, total: plan.sizeBytes, report: onActivity)
         switch plan.type {
         case .chunked:
-            var pieces: [(Int, URL)] = []
-            for number in numbers {
-                pieces.append((number, try writePiece(number, of: file, plan: plan)))
-            }
+            let pieces = try writePieces(numbers, of: file, plan: plan)
             try await sendAll(pieces, tracker: tracker) { [service] number, piece, progress in
                 try await service.sendChunk(plan, number: number, file: piece, progress: progress)
             }
@@ -247,10 +250,7 @@ public actor VideoUploader {
                 let targets = try await service.partTargets(plan, numbers: batch)
                 var byNumber: [Int: VideoPartTarget] = [:]
                 targets.forEach { byNumber[$0.number] = $0 }
-                var pieces: [(Int, URL)] = []
-                for number in batch where byNumber[number] != nil {
-                    pieces.append((number, try writePiece(number, of: file, plan: plan)))
-                }
+                let pieces = try writePieces(batch.filter { byNumber[$0] != nil }, of: file, plan: plan)
                 let signed = byNumber
                 try await sendAll(pieces, tracker: tracker) { [service] number, piece, progress in
                     guard let target = signed[number] else { return }
@@ -292,10 +292,27 @@ public actor VideoUploader {
         ((try? FileManager.default.attributesOfItem(atPath: file.path))?[.size] as? NSNumber)?.intValue ?? 0
     }
 
+    /// Copies each piece into a file of its own, all before any is sent, so
+    /// the background session has every one of them queued before the app
+    /// can be suspended. If one cannot be written, those already written go
+    /// too: only ``sendAll`` deletes a piece once it has been handed over.
+    private func writePieces(_ numbers: [Int], of file: URL, plan: VideoUploadPlan) throws -> [(Int, URL)] {
+        var pieces: [(Int, URL)] = []
+        do {
+            for number in numbers {
+                pieces.append((number, try writePiece(number, of: file, plan: plan)))
+            }
+        } catch {
+            pieces.forEach { try? FileManager.default.removeItem(at: $0.1) }
+            throw error
+        }
+        return pieces
+    }
+
     /// Copies piece `number` of `file` into a file of its own.
     private func writePiece(_ number: Int, of file: URL, plan: VideoUploadPlan) throws -> URL {
         let range = VideoPieces.range(number: number, total: plan.sizeBytes, pieceSize: plan.pieceSize)
-        let directory = workDirectory.appendingPathComponent("pieces", isDirectory: true)
+        let directory = workDirectory.appendingPathComponent(Self.piecesFolder, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let piece = directory.appendingPathComponent("\(UUID().uuidString)-\(number).part")
         let handle = try FileHandle(forReadingFrom: file)

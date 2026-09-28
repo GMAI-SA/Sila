@@ -1,3 +1,4 @@
+import AVFoundation
 import XCTest
 @testable import Sila
 
@@ -229,6 +230,55 @@ final class VideoComposerTests: XCTestCase {
         XCTAssertTrue(h.viewModel.canAddVideo)
     }
 
+    /// Post pressed on an uploaded video, and the answer lost on its way
+    /// back. Pressed again, the server says the video is on a post already:
+    /// the one the first press wrote. The composer closes and the feed shows
+    /// that post, rather than "That video is already on a post."
+    func testPostingAgainAfterALostAnswerShowsThePostThatWasWritten() async throws {
+        let service = VideoServiceMock(directory: directory.appendingPathComponent("server"), pieceLatency: 0,
+                                       readyAfterReads: 1, pieceSize: 1024)
+        let composer = CommittingComposerService(videos: service)
+        composer.loseAnswers = 1
+        let center = VideoUploadCenter(service: service, preparer: FakeVideoPreparer(), composer: composer,
+                                       store: VideoUploadStore(directory: directory.appendingPathComponent("store")),
+                                       analytics: RecordingAnalyticsClient(),
+                                       fetchPost: { try composer.post($0) }, isActive: { true }, sleep: { _ in })
+        center.restore(accountId: UUID())
+        var feed: [Post] = []
+        center.onPosted = { feed += $0 }
+        let closed = PostedBox()
+        let viewModel = ComposerViewModel(
+            context: .newPost,
+            author: ComposerAuthor(handle: "aziz", countryCode: "SA", isVerified: true),
+            composer: composer,
+            analytics: RecordingAnalyticsClient(),
+            mentionDebounce: 0,
+            videoUploads: center,
+            onPosted: { feed += $0 },
+            onClose: { closed.count += 1 }
+        )
+        await viewModel.attachVideo(from: try VideoFixtures.file(bytes: 3_000, in: directory))
+        let uploaded = Date().addingTimeInterval(5)
+        while Date() < uploaded {
+            if case .uploaded? = viewModel.videoPhase { break }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        viewModel.setText("Sent from the lift", at: 0)
+
+        await viewModel.post()
+        XCTAssertEqual(closed.count, 0, "a lost answer keeps the composer open")
+        XCTAssertEqual(composer.written.count, 1, "but the post was written")
+
+        await viewModel.post()
+        XCTAssertEqual(closed.count, 1, "the second press closes it")
+        let deadline = Date().addingTimeInterval(5)
+        while feed.isEmpty, Date() < deadline { try await Task.sleep(nanoseconds: 20_000_000) }
+
+        XCTAssertEqual(feed.map(\.id), composer.written.map(\.id), "the post the first press wrote, once")
+        XCTAssertEqual(composer.written.count, 1)
+        XCTAssertTrue(center.jobs.isEmpty)
+    }
+
     func testDiscardingTheDraftTakesTheVideoWithIt() async throws {
         let h = harness()
         try await pick(h)
@@ -351,6 +401,53 @@ final class VideoPreparationTests: XCTestCase {
         let after = try await preparer.inspect(trimmed)
         XCTAssertLessThanOrEqual(after.durationSeconds, VideoLimits.maximumDuration)
         XCTAssertEqual(after.durationSeconds, 180, accuracy: 2)
+    }
+
+    /// An export that did not complete: only the person's own cancelling is
+    /// a cancellation, and only a failure on screen with no sign of an
+    /// interruption says the file is at fault. Anything else — iOS taking
+    /// back its time, the app in the background, the media services
+    /// restarting — is compressed again.
+    func testAnExportStoppedByAnythingButThePersonIsCompressedAgain() {
+        func reading(_ status: AVAssetExportSession.Status, _ error: Error? = nil,
+                     cancelled: Bool = false, away: Bool = false) -> Error? {
+            AVVideoPreparer.failure(status: status, error: error, cancelledByCaller: cancelled, wentToBackground: away)
+        }
+        func av(_ code: AVError.Code, underlying: NSError? = nil) -> NSError {
+            NSError(domain: AVFoundationErrorDomain, code: code.rawValue,
+                    userInfo: underlying.map { [NSUnderlyingErrorKey: $0] } ?? [:])
+        }
+        XCTAssertNil(reading(.completed, away: true))
+        XCTAssertTrue(reading(.cancelled, cancelled: true) is CancellationError, "the person took the video off")
+        XCTAssertTrue(reading(.failed, av(.unknown), cancelled: true) is CancellationError)
+        XCTAssertEqual(reading(.cancelled, away: true) as? VideoPreparationError, .interrupted, "iOS took its time back")
+        XCTAssertEqual(reading(.cancelled) as? VideoPreparationError, .interrupted)
+        XCTAssertEqual(reading(.failed, av(.operationInterrupted)) as? VideoPreparationError, .interrupted)
+        XCTAssertEqual(reading(.failed, av(.mediaServicesWereReset)) as? VideoPreparationError, .interrupted)
+        let encoderTaken = av(.unknown, underlying: NSError(domain: NSOSStatusErrorDomain, code: AVVideoPreparer.encoderSessionInvalid))
+        XCTAssertEqual(reading(.failed, encoderTaken) as? VideoPreparationError, .interrupted,
+                       "the hardware encoder taken from an app in the background")
+        XCTAssertEqual(reading(.failed, av(.decodeFailed), away: true) as? VideoPreparationError, .interrupted,
+                       "whatever it says, a failure in the background is tried again on screen")
+        XCTAssertEqual(reading(.failed, av(.decodeFailed)) as? VideoPreparationError, .unreadable,
+                       "on screen, with no sign of an interruption, the file is at fault")
+        XCTAssertEqual(reading(.failed) as? VideoPreparationError, .unreadable)
+    }
+
+    /// The time iOS lends is asked for and handed back, and a trip to the
+    /// background while it is held is noted.
+    @MainActor
+    func testTheBackgroundTimeNotesATripAway() {
+        let away = VideoBackgroundTime.begin("A test")
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertTrue(away.finish())
+        XCTAssertTrue(away.finish(), "safe to finish twice")
+
+        let stayed = VideoBackgroundTime.begin("A test")
+        if UIApplication.shared.applicationState != .background {
+            XCTAssertFalse(stayed.finish(), "never away")
+        }
+        stayed.finish()
     }
 
     func testSomethingThatIsNotAVideoIsUnreadable() async throws {

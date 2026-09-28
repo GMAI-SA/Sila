@@ -137,6 +137,9 @@ public enum VideoPreparationError: Error, Equatable {
     case unreadable
     /// Even the smallest size the phone can make is over the server's limit.
     case tooLarge
-    /// The export was stopped.
-    case cancelled
+    /// Something other than the person stopped the export half way: the app
+    /// went to the background and iOS took back the time it had lent, or the
+    /// phone's media services restarted. Nothing is wrong with the file, so
+    /// it is compressed again once the app is back on screen.
+    case interrupted
 }

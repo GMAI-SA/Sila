@@ -362,7 +362,8 @@ public final class AppContainer {
             composer: self.composerService,
             store: videoStore ?? VideoUploadStore(),
             analytics: analytics,
-            stopTransfers: { await transport.cancelAll() }
+            stopTransfers: { await transport.cancelAll() },
+            fetchPost: { [feedService = self.feedService] id in try await feedService.fetchPost(id) }
         )
         self.videoStatusBoard = VideoStatusBoard(service: resolvedVideo)
 

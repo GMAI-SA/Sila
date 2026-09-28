@@ -365,7 +365,10 @@ public final class ComposerViewModel {
             trimmed = try await videoUploads.firstMinutes(of: refusal.source)
         } catch {
             isLoadingVideo = false
-            toast = .error(L10n.t("video.error.unreadable"))
+            // Stopped by the phone rather than by the file: the button is
+            // still there to press again.
+            let interrupted = (error as? VideoPreparationError) == .interrupted
+            toast = .error(L10n.t(interrupted ? "video.error.prepareInterrupted" : "video.error.unreadable"))
             return
         }
         isLoadingVideo = false
@@ -390,6 +393,18 @@ public final class ComposerViewModel {
         videoJobId = nil
         letGoOfRefusal()
         trimSource = nil
+    }
+
+    /// The draft as a post waiting for its video.
+    private var pendingVideoPost: PendingVideoPost {
+        PendingVideoPost(
+            text: text(at: 0),
+            scope: scope,
+            quotedPostId: context.quotedPost?.id,
+            communityId: context.community?.id,
+            sensitive: sensitive,
+            sensitiveNote: sensitiveNote
+        )
     }
 
     /// "Try again" after a refusal that trying again can help.
@@ -665,14 +680,7 @@ public final class ComposerViewModel {
         if let videoJobId, let videoUploads, !isVideoUploaded {
             // Still going up: the post is written the moment it is there,
             // whether or not this sheet is. The feed shows how far it is.
-            videoUploads.post(videoJobId, PendingVideoPost(
-                text: text(at: 0),
-                scope: scope,
-                quotedPostId: context.quotedPost?.id,
-                communityId: context.community?.id,
-                sensitive: sensitive,
-                sensitiveNote: sensitiveNote
-            ))
+            videoUploads.post(videoJobId, pendingVideoPost)
             self.videoJobId = nil
             analytics.track(.postPublished, properties: ["scope": scope.wireValue, "segments": "1", "kind": "video"])
             onClose()
@@ -735,6 +743,19 @@ public final class ComposerViewModel {
         }
 
         if report.isCompleteSuccess {
+            onClose()
+            return
+        }
+
+        if report.posted.isEmpty, let code = report.error?.code, [APIErrorCode.videoUsed, .videoRemoved].contains(code),
+           let videoJobId, let videoUploads {
+            // "Already on a post" after a Post whose answer never arrived
+            // means that post was written; "removed" before any post was
+            // means the server let an unposted video go. Neither is the
+            // person's doing: the upload centre finds the written post, or
+            // sends the file again, and the feed shows the post as usual.
+            videoUploads.post(videoJobId, pendingVideoPost)
+            self.videoJobId = nil
             onClose()
             return
         }

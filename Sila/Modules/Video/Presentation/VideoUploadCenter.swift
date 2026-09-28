@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UIKit
 
 /// Where one upload is, for the composer and the feed.
 public enum VideoUploadPhase: Equatable, Sendable {
@@ -48,6 +49,13 @@ public struct VideoUploadFailure: Equatable, Sendable {
 ///
 /// A job the person has not posted yet belongs to its composer; one left
 /// behind by a relaunch has no composer to go back to, so it is let go.
+///
+/// Nothing a person does with the phone meanwhile ends a job for good.
+/// Compressing that iOS stops because the app went to the background starts
+/// again when the app is back (``sceneDidBecomeActive()``). A post whose
+/// first try was written but whose answer was lost is found and shown rather
+/// than refused, and a video the server let go before its post was written
+/// goes up again from the file kept here.
 @MainActor
 @Observable
 public final class VideoUploadCenter {
@@ -79,12 +87,32 @@ public final class VideoUploadCenter {
     private let uploader: VideoUploader
     private let sleep: @Sendable (TimeInterval) async throws -> Void
     private let stopTransfers: @Sendable () async -> Void
+    private let fetchPost: (@Sendable (UUID) async throws -> Post)?
+    private let isActive: @MainActor () -> Bool
     private var tasks: [UUID: Task<Void, Never>] = [:]
     private var accountId: UUID?
+    /// Jobs whose compressing iOS stopped while the app was away, to start
+    /// again when it is back.
+    private var awaitingForeground: Set<UUID> = []
+    /// Compressing stopped on screen, in a row, per job.
+    private var interruptionsOnScreen: [UUID: Int] = [:]
+    /// Times a job's video went up again because the server had let the
+    /// last one go before its post was written.
+    private var reuploads: [UUID: Int] = [:]
+
+    /// Compressing stopped on screen this many times in a row — the media
+    /// services restarting — is started again by itself; once more, and
+    /// the person is offered Retry.
+    static let maximumInterruptionsOnScreen = 2
 
     /// - Parameters:
     ///   - stopTransfers: Cancels every piece in flight — the transport's
     ///     ``VideoUploadTransport/cancelAll()``.
+    ///   - fetchPost: Reads one post, for a post an earlier try wrote whose
+    ///     answer never arrived, so the feed can show it. Without it that
+    ///     post is still counted as written; the feed shows it on its next
+    ///     refresh.
+    ///   - isActive: Whether the app is on screen. Tests say.
     ///   - sleep: Waits between retries; tests pass one that returns at once.
     public init(
         service: VideoServiceProtocol,
@@ -93,6 +121,8 @@ public final class VideoUploadCenter {
         store: VideoUploadStore = VideoUploadStore(),
         analytics: AnalyticsClient,
         stopTransfers: @escaping @Sendable () async -> Void = {},
+        fetchPost: (@Sendable (UUID) async throws -> Post)? = nil,
+        isActive: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState == .active },
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { seconds in
             try await Task.sleep(nanoseconds: UInt64(max(0, seconds) * 1_000_000_000))
         }
@@ -103,6 +133,8 @@ public final class VideoUploadCenter {
         self.store = store
         self.analytics = analytics
         self.stopTransfers = stopTransfers
+        self.fetchPost = fetchPost
+        self.isActive = isActive
         self.sleep = sleep
         self.uploader = VideoUploader(service: service, workDirectory: store.directory, sleep: sleep)
     }
@@ -244,11 +276,19 @@ public final class VideoUploadCenter {
     /// A job with a post waiting is resumed. A job without one belonged to a
     /// composer that is gone, so it is discarded — the server removes a
     /// video never posted within a day in any case.
+    ///
+    /// Pieces written for an upload before the last process ended go too.
+    /// Only the upload that wrote a piece ever sends or deletes it, and that
+    /// upload is gone; the resumed one asks the server what is missing and
+    /// writes those afresh. Kept, each interrupted upload would leave up to
+    /// a whole video's worth of files behind.
     public func restore(accountId: UUID?) {
         guard accountId != self.accountId else { return }
         tasks.values.forEach { $0.cancel() }
         tasks = [:]
         phases = [:]
+        forgetInterruptions()
+        store.remove([VideoUploader.piecesFolder])
         self.accountId = accountId
         guard let accountId else {
             jobs = []
@@ -271,12 +311,25 @@ public final class VideoUploadCenter {
         kept.forEach { run($0.id) }
     }
 
+    /// The app is on screen again. Compressing that iOS stopped while it was
+    /// away starts again, from the picked file, which is kept until the
+    /// compressed one is made.
+    public func sceneDidBecomeActive() {
+        let waiting = awaitingForeground
+        awaitingForeground = []
+        for id in waiting where job(id) != nil {
+            interruptionsOnScreen[id] = nil
+            run(id)
+        }
+    }
+
     /// Sign-out: nothing of the account's is kept or sent any further.
     public func forgetAll() {
         tasks.values.forEach { $0.cancel() }
         tasks = [:]
         jobs = []
         phases = [:]
+        forgetInterruptions()
         accountId = nil
         store.removeAll()
         Task { [stopTransfers] in await stopTransfers() }
@@ -324,9 +377,32 @@ public final class VideoUploadCenter {
             }
         } catch is CancellationError {
             return
+        } catch VideoPreparationError.interrupted {
+            guard !Task.isCancelled, job(id) != nil else { return }
+            interrupted(id)
         } catch {
             guard !Task.isCancelled, job(id) != nil else { return }
             fail(id, error)
+        }
+    }
+
+    /// Compressing was stopped by something other than the person. Away
+    /// from the screen the job waits, still "getting ready", for the app to
+    /// come back, and starts again then. On screen — the media services
+    /// restarted — it starts again at once, and only after that has
+    /// happened a few times in a row is the person offered Retry.
+    private func interrupted(_ id: UUID) {
+        guard isActive() else {
+            awaitingForeground.insert(id)
+            return
+        }
+        let count = (interruptionsOnScreen[id] ?? 0) + 1
+        interruptionsOnScreen[id] = count
+        if count <= Self.maximumInterruptionsOnScreen {
+            run(id)
+        } else {
+            interruptionsOnScreen[id] = nil
+            fail(id, VideoPreparationError.interrupted)
         }
     }
 
@@ -349,6 +425,7 @@ public final class VideoUploadCenter {
             }
         }
         try Task.checkCancellation()
+        interruptionsOnScreen[id] = nil
         update(id) {
             $0.fileName = name
             $0.sourceFileName = nil
@@ -364,10 +441,16 @@ public final class VideoUploadCenter {
     /// Writes the post that waited for this video.
     ///
     /// The person has already pressed Post, so a dropped connection here is
-    /// waited out like one during the upload; only a refusal stops it.
+    /// waited out like one during the upload; only a refusal stops it. A
+    /// refusal saying the video is on a post already, or has gone, is not
+    /// what it seems, and is settled with the server first (see
+    /// ``settle(_:videoId:)``). The time iOS lends an app keeps this going
+    /// if the app is switched away from just now.
     private func publish(_ id: UUID, video: PostVideo) async {
         guard let pending = job(id)?.pendingPost else { return }
         phases[id] = .posting
+        let time = VideoBackgroundTime.begin("Posting a video")
+        defer { time.finish() }
         var attempt = 0
         while !Task.isCancelled {
             do {
@@ -375,17 +458,25 @@ public final class VideoUploadCenter {
                 // The server's post carries the video; a copy that does not
                 // (an older mock, a partial answer) is given the one sent.
                 if post.video == nil { post.video = video }
-                remove(id)
-                analytics.track(.videoPosted)
-                if let onPosted {
-                    onPosted([post])
-                } else {
-                    unannounced.append(post)
-                }
+                finishPosting(id, post)
                 return
             } catch {
                 let api = APIError.wrapping(error)
                 if api.isCancellation { return }
+                if let code = api.code, [APIErrorCode.videoUsed, .videoRemoved, .uploadExpired].contains(code) {
+                    switch await settle(api, videoId: video.id) {
+                    case let .written(post):
+                        guard !Task.isCancelled else { return }
+                        finishPosting(id, post)
+                    case .uploadAgain:
+                        if !uploadAgain(id) { fail(id, api) }
+                    case .refused:
+                        fail(id, api)
+                    case .cancelled:
+                        break
+                    }
+                    return
+                }
                 switch VideoUploader.decision(for: api) {
                 case .retry:
                     attempt += 1
@@ -395,6 +486,115 @@ public final class VideoUploadCenter {
                     return
                 }
             }
+        }
+    }
+
+    /// What became of a video the post could not take, as the server tells
+    /// its owner.
+    private enum Settled {
+        /// It is on a post already: this one, written by an earlier try.
+        /// The post, when it could be read.
+        case written(Post?)
+        /// It went, and not by a moderator: send the file again.
+        case uploadAgain
+        /// The refusal stands.
+        case refused
+        /// The job was let go meanwhile.
+        case cancelled
+    }
+
+    /// Asks the server what became of the video before a refusal is shown.
+    ///
+    /// `409 video_used` after a try whose answer was lost — a lift, a
+    /// timeout, the app killed straight after — means that try was written:
+    /// only its owner's own post can hold the video. `409 video_removed`
+    /// means the video went before the post was: the daily sweep of videos
+    /// nobody posted (the app was suspended between the upload and the post
+    /// for more than a day), or the upload running out. Neither is anything
+    /// the person did, so neither is shown. A moderator's removal is, in the
+    /// words it already has.
+    private func settle(_ refusal: APIError, videoId: UUID) async -> Settled {
+        var attempt = 0
+        while !Task.isCancelled {
+            do {
+                let current = try await service.fetchVideo(videoId)
+                if refusal.code == .videoUsed {
+                    guard let postId = current.postId else { return .refused }
+                    return .written(await writtenPost(postId, video: current))
+                }
+                switch current.status {
+                case .removed:
+                    return current.removedByModerator ? .refused : .uploadAgain
+                case .failed:
+                    return current.failure?.code == APIErrorCode.uploadExpired.rawValue ? .uploadAgain : .refused
+                default:
+                    return .refused
+                }
+            } catch {
+                let api = APIError.wrapping(error)
+                if api.isCancellation { return .cancelled }
+                if api.code == .videoNotFound {
+                    return refusal.code == .videoUsed ? .refused : .uploadAgain
+                }
+                guard VideoUploader.decision(for: api) == .retry else { return .refused }
+                attempt += 1
+                try? await sleep(VideoBackoff.delay(attempt: attempt, jitter: Double.random(in: 0...1)))
+            }
+        }
+        return .cancelled
+    }
+
+    /// The post an earlier try wrote, for the feed. `nil` when it cannot be
+    /// read — it has been deleted since, or the connection is not there —
+    /// which leaves the video posted all the same: the job is done.
+    private func writtenPost(_ postId: UUID, video: PostVideo) async -> Post? {
+        guard let fetchPost else { return nil }
+        for attempt in 1...Self.postReads {
+            do {
+                var post = try await fetchPost(postId)
+                if post.video == nil { post.video = video }
+                return post
+            } catch {
+                let api = APIError.wrapping(error)
+                guard !api.isCancellation, VideoUploader.decision(for: api) == .retry, attempt < Self.postReads else {
+                    return nil
+                }
+                try? await sleep(VideoBackoff.delay(attempt: attempt, jitter: Double.random(in: 0...1)))
+            }
+        }
+        return nil
+    }
+
+    /// Tries at reading a post an earlier try wrote.
+    static let postReads = 4
+
+    /// Sends the kept file again as a new video, and writes the post when
+    /// it is there, as if the first had never been.
+    /// - Returns: `false` when the file is gone too, or the video has had to
+    ///   go up again too many times already.
+    private func uploadAgain(_ id: UUID) -> Bool {
+        guard let name = job(id)?.fileName,
+              FileManager.default.fileExists(atPath: store.url(for: name).path) else { return false }
+        let count = (reuploads[id] ?? 0) + 1
+        guard count <= VideoUploader.maximumRestarts else { return false }
+        reuploads[id] = count
+        update(id) {
+            $0.uploadedVideoId = nil
+            $0.checkpoint = nil
+        }
+        run(id)
+        return true
+    }
+
+    /// The post is written: the job is done, and the feed is told.
+    private func finishPosting(_ id: UUID, _ post: Post?) {
+        remove(id)
+        analytics.track(.videoPosted)
+        guard let post else { return }
+        if let onPosted {
+            onPosted([post])
+        } else {
+            unannounced.append(post)
         }
     }
 
@@ -418,7 +618,9 @@ public final class VideoUploadCenter {
             switch preparation {
             case .tooLarge:
                 return VideoUploadFailure(message: L10n.t("video.error.tooLarge"), canRetry: false)
-            case .unreadable, .cancelled:
+            case .interrupted:
+                return VideoUploadFailure(message: L10n.t("video.error.prepareInterrupted"), canRetry: true)
+            case .unreadable:
                 return VideoUploadFailure(message: L10n.t("video.error.unreadable"), canRetry: false)
             }
         }
@@ -468,7 +670,16 @@ public final class VideoUploadCenter {
         jobs.removeAll { $0.id == id }
         phases[id] = nil
         tasks[id] = nil
+        awaitingForeground.remove(id)
+        interruptionsOnScreen[id] = nil
+        reuploads[id] = nil
         save()
+    }
+
+    private func forgetInterruptions() {
+        awaitingForeground = []
+        interruptionsOnScreen = [:]
+        reuploads = [:]
     }
 
     private func save() {

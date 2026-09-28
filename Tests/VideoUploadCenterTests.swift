@@ -17,6 +17,7 @@ final class VideoUploadCenterTests: XCTestCase {
 
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: directory)
+        L10n.use(nil)
         try await super.tearDown()
     }
 
@@ -29,7 +30,9 @@ final class VideoUploadCenterTests: XCTestCase {
         _ service: VideoServiceProtocol,
         composer: ComposerServiceProtocol = ScriptedComposerService(),
         preparer: FakeVideoPreparer = FakeVideoPreparer(),
-        analytics: AnalyticsClient = RecordingAnalyticsClient()
+        analytics: AnalyticsClient = RecordingAnalyticsClient(),
+        fetchPost: (@Sendable (UUID) async throws -> Post)? = nil,
+        isActive: @escaping @MainActor () -> Bool = { true }
     ) -> VideoUploadCenter {
         let center = VideoUploadCenter(
             service: service,
@@ -37,6 +40,8 @@ final class VideoUploadCenterTests: XCTestCase {
             composer: composer,
             store: VideoUploadStore(directory: directory.appendingPathComponent("store")),
             analytics: analytics,
+            fetchPost: fetchPost,
+            isActive: isActive,
             sleep: { _ in }
         )
         center.restore(accountId: account)
@@ -66,6 +71,39 @@ final class VideoUploadCenterTests: XCTestCase {
     private func isUploaded(_ phase: VideoUploadPhase?) -> Bool {
         if case .uploaded? = phase { return true }
         return false
+    }
+
+    private func isFailed(_ phase: VideoUploadPhase?) -> Bool {
+        if case .failed? = phase { return true }
+        return false
+    }
+
+    /// Waits for `condition`, noting every phase `id` goes through.
+    private func until(
+        _ center: VideoUploadCenter,
+        watching id: UUID,
+        timeout: TimeInterval = 8,
+        _ condition: () -> Bool
+    ) async throws -> [VideoUploadPhase] {
+        var seen: [VideoUploadPhase] = []
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() {
+            if let phase = center.phase(id), seen.last != phase { seen.append(phase) }
+            guard Date() < deadline else {
+                XCTFail("timed out; went through \(seen)")
+                return seen
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        return seen
+    }
+
+    /// A video uploaded to the mocked server and completed, as a job that
+    /// got that far keeps it.
+    private func completedVideo(_ service: VideoServiceMock, file: URL, bytes: Int) async throws -> PostVideo {
+        try await VideoUploader(service: service, workDirectory: directory.appendingPathComponent("elsewhere"), sleep: { _ in })
+            .upload(file: file, sizeBytes: bytes, durationSeconds: 12, resumeFrom: nil,
+                    onCheckpoint: { _ in }, onActivity: { _ in })
     }
 
     // MARK: - While the composer is open
@@ -298,6 +336,217 @@ final class VideoUploadCenterTests: XCTestCase {
         XCTAssertEqual(center.pendingPosts.count, 1, "kept, so it can be discarded or tried again")
     }
 
+    // MARK: - An app switch while compressing
+
+    /// Post pressed while the video is still being compressed, then the
+    /// person switches to another app and iOS stops the export. Nothing is
+    /// refused: the job waits, still getting ready, and starts again from
+    /// the picked file when the app is back, and the post is written.
+    func testCompressingStoppedInTheBackgroundStartsAgainWhenTheAppIsBack() async throws {
+        let service = mock()
+        let composer = ScriptedComposerService()
+        let preparer = FakeVideoPreparer()
+        preparer.prepareFailures = [VideoPreparationError.interrupted]
+        let screen = Screen()
+        screen.active = false
+        let center = center(service, composer: composer, preparer: preparer, isActive: { screen.active })
+        var posted: [Post] = []
+        center.onPosted = { posted += $0 }
+        let file = try source()
+        let info = try await preparer.inspect(file)
+
+        let id = try XCTUnwrap(center.begin(source: file, info: info))
+        center.post(id, PendingVideoPost(text: "Posted, then off to another app", scope: .international))
+        _ = try await until(center, watching: id) { preparer.attempts == 1 }
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        guard case .preparing? = center.phase(id) else {
+            return XCTFail("an export iOS stopped is not the person's failure: \(String(describing: center.phase(id)))")
+        }
+        XCTAssertEqual(center.pendingPosts.map(\.id), [id], "the post still waits above the feed")
+        XCTAssertNotNil(center.job(id)?.sourceFileName, "the picked file is kept to compress again")
+        let early = await service.calls
+        XCTAssertFalse(early.contains("start"), "nothing is sent before it is compressed")
+
+        screen.active = true
+        center.sceneDidBecomeActive()
+        let seen = try await until(center, watching: id) { !posted.isEmpty }
+
+        XCTAssertFalse(seen.contains { isFailed($0) }, "never shown as failed: \(seen)")
+        XCTAssertEqual(preparer.attempts, 2, "compressed again once the app was back")
+        XCTAssertEqual(composer.drafts.map(\.text), ["Posted, then off to another app"])
+        XCTAssertNil(center.job(id))
+    }
+
+    /// Stopped with the app on screen — the media services restarted — it
+    /// starts again at once, by itself. Only when that keeps happening is
+    /// the person told, with Retry beside the words.
+    func testCompressingStoppedOnScreenStartsAgainAtOnceAndOnlyThenOffersRetry() async throws {
+        let preparer = FakeVideoPreparer()
+        preparer.prepareFailures = [VideoPreparationError.interrupted]
+        let first = center(mock(), preparer: preparer)
+        let file = try source()
+        let info = try await preparer.inspect(file)
+        let once = try XCTUnwrap(first.begin(source: file, info: info))
+        let seen = try await until(first, watching: once) { isUploaded(first.phase(once)) }
+        XCTAssertFalse(seen.contains { isFailed($0) }, "one stop is never seen: \(seen)")
+        XCTAssertEqual(preparer.attempts, 2)
+
+        let stubborn = FakeVideoPreparer()
+        stubborn.prepareFailures = Array(repeating: VideoPreparationError.interrupted,
+                                         count: VideoUploadCenter.maximumInterruptionsOnScreen + 1)
+        let second = center(mock(), preparer: stubborn)
+        let again = try XCTUnwrap(second.begin(source: try source(), info: info))
+        try await until(second, again) { isFailed($0) }
+        guard case let .failed(failure)? = second.phase(again) else { return XCTFail() }
+        XCTAssertTrue(failure.canRetry, "Retry is offered")
+        XCTAssertEqual(failure.message, L10n.t("video.error.prepareInterrupted"))
+        XCTAssertEqual(stubborn.attempts, VideoUploadCenter.maximumInterruptionsOnScreen + 1)
+
+        second.retry(again)
+        try await until(second, again, isUploaded)
+        XCTAssertEqual(stubborn.attempts, VideoUploadCenter.maximumInterruptionsOnScreen + 2)
+    }
+
+    func testAStoppedCompressionIsSaidInEachLanguageAndATrueFailureStaysFinal() {
+        XCTAssertTrue(L10n.use("en"))
+        let english = VideoUploadCenter.failure(for: VideoPreparationError.interrupted)
+        XCTAssertTrue(english.canRetry)
+        XCTAssertEqual(english.message, "We couldn't finish getting this video ready. Try again.")
+        XCTAssertFalse(VideoUploadCenter.failure(for: VideoPreparationError.unreadable).canRetry,
+                       "a file that cannot be read is still said to be one, with no Retry")
+        guard L10n.use("ar") else { return XCTFail("the build has no Arabic resources") }
+        let arabic = VideoUploadCenter.failure(for: VideoPreparationError.interrupted).message
+        XCTAssertEqual(arabic, "تعذّر إكمال تجهيز هذا الفيديو. حاول مرة أخرى.")
+        XCTAssertNil(arabic.range(of: "[A-Za-z]", options: .regularExpression), "Arabic only: \(arabic)")
+    }
+
+    // MARK: - A post whose answer never arrived
+
+    /// Post pressed, the video goes up, and the post is written — but its
+    /// answer is lost in a lift. The next try is told the video is on a post
+    /// already: that post is this one, so it is shown, once, not refused.
+    func testAPostWrittenWhoseAnswerWasLostIsShownNotRefused() async throws {
+        let service = mock()
+        let composer = CommittingComposerService(videos: service)
+        composer.loseAnswers = 1
+        let center = center(service, composer: composer, fetchPost: { try composer.post($0) })
+        var posted: [Post] = []
+        center.onPosted = { posted += $0 }
+        let file = try source()
+        let info = try await FakeVideoPreparer().inspect(file)
+
+        let id = try XCTUnwrap(center.begin(source: file, info: info))
+        center.post(id, PendingVideoPost(text: "Written in the lift", scope: .international))
+        let seen = try await until(center, watching: id) { !posted.isEmpty }
+
+        XCTAssertFalse(seen.contains { isFailed($0) }, "\(seen)")
+        XCTAssertEqual(composer.written.count, 1, "written once")
+        XCTAssertEqual(composer.drafts.count, 2, "the second try found it written")
+        XCTAssertEqual(posted.map(\.id), composer.written.map(\.id), "the feed shows the post the server has")
+        XCTAssertEqual(posted.first?.video?.id, composer.written.first?.video?.id)
+        XCTAssertNil(center.job(id))
+        XCTAssertTrue(center.pendingPosts.isEmpty)
+    }
+
+    /// The app was killed straight after the post was written, before it
+    /// could let go of the job. The relaunch finds the post rather than
+    /// failing on it at every launch.
+    func testARelaunchAfterThePostWasWrittenShowsThatPostOnce() async throws {
+        let service = mock()
+        let composer = CommittingComposerService(videos: service)
+        let file = try source(bytes: 2_048)
+        let video = try await completedVideo(service, file: file, bytes: 2_048)
+        let pending = PendingVideoPost(text: "Written before the kill", scope: .international)
+        let written = try await composer.createPost(pending.draft(videoId: video.id))
+        let store = VideoUploadStore(directory: directory.appendingPathComponent("store"))
+        _ = try store.adopt(file, as: "job.mp4")
+        store.save([VideoUploadJob(accountId: account, sourceFileName: nil, fileName: "job.mp4", sizeBytes: 2_048,
+                                   durationSeconds: 12, width: 720, height: 1280, uploadedVideoId: video.id,
+                                   pendingPost: pending)])
+
+        let relaunched = center(service, composer: composer, fetchPost: { try composer.post($0) })
+        var posted: [Post] = []
+        relaunched.onPosted = { posted += $0 }
+        let deadline = Date().addingTimeInterval(5)
+        while !relaunched.jobs.isEmpty, Date() < deadline { try await Task.sleep(nanoseconds: 20_000_000) }
+
+        XCTAssertEqual(posted.map(\.id), [written.id])
+        XCTAssertEqual(composer.written.count, 1, "not written a second time")
+        XCTAssertTrue(store.load().isEmpty, "nothing is left to fail at the next launch")
+    }
+
+    /// The upload finished in a background wake, and the app was suspended
+    /// before the post was written — for more than a day, so the server let
+    /// the unposted video go. The file is still on the phone: it goes up
+    /// again without a word, and the post is written.
+    func testAVideoTheServerLetGoBeforeItsPostGoesUpAgainWithoutAWord() async throws {
+        let service = mock()
+        let composer = CommittingComposerService(videos: service)
+        let file = try source(bytes: 3_000)
+        let original = try Data(contentsOf: file)
+        let first = try await completedVideo(service, file: file, bytes: 3_000)
+        await service.remove(first.id, byModerator: false)
+        let store = VideoUploadStore(directory: directory.appendingPathComponent("store"))
+        _ = try store.adopt(file, as: "job.mp4")
+        store.save([VideoUploadJob(accountId: account, sourceFileName: nil, fileName: "job.mp4", sizeBytes: 3_000,
+                                   durationSeconds: 12, width: 720, height: 1280, uploadedVideoId: first.id,
+                                   pendingPost: PendingVideoPost(text: "Two days later", scope: .international))])
+
+        let relaunched = center(service, composer: composer, fetchPost: { try composer.post($0) })
+        var posted: [Post] = []
+        relaunched.onPosted = { posted += $0 }
+        let id = try XCTUnwrap(relaunched.jobs.first?.id)
+        let seen = try await until(relaunched, watching: id) { !posted.isEmpty }
+
+        XCTAssertFalse(seen.contains { isFailed($0) }, "\(seen)")
+        let video = try XCTUnwrap(posted.first?.video)
+        XCTAssertNotEqual(video.id, first.id, "a new video")
+        XCTAssertEqual(try Data(contentsOf: service.storedFile(video.id)), original, "from the file kept on the phone")
+        XCTAssertEqual(composer.written.count, 1)
+        XCTAssertEqual(composer.written.first?.text, "Two days later")
+    }
+
+    /// A moderator's removal is not a sweep: it is said, in its words, and
+    /// the video is not sent again.
+    func testAVideoAModeratorRemovedIsSaidAndNotSentAgain() async throws {
+        let service = mock()
+        let composer = CommittingComposerService(videos: service)
+        let file = try source(bytes: 3_000)
+        let first = try await completedVideo(service, file: file, bytes: 3_000)
+        await service.remove(first.id, byModerator: true)
+        let store = VideoUploadStore(directory: directory.appendingPathComponent("store"))
+        _ = try store.adopt(file, as: "job.mp4")
+        store.save([VideoUploadJob(accountId: account, sourceFileName: nil, fileName: "job.mp4", sizeBytes: 3_000,
+                                   durationSeconds: 12, width: 720, height: 1280, uploadedVideoId: first.id,
+                                   pendingPost: PendingVideoPost(text: "x", scope: .international))])
+
+        let relaunched = center(service, composer: composer)
+        let id = try XCTUnwrap(relaunched.jobs.first?.id)
+        try await until(relaunched, id) { isFailed($0) }
+        guard case let .failed(failure)? = relaunched.phase(id) else { return XCTFail() }
+        XCTAssertEqual(failure.message, L10n.t("video.error.removed"))
+        XCTAssertFalse(failure.canRetry)
+        let starts = await service.calls.filter { $0 == "start" }.count
+        XCTAssertEqual(starts, 1, "only the first upload")
+        XCTAssertTrue(composer.written.isEmpty)
+    }
+
+    // MARK: - Pieces left by a process that ended
+
+    func testPiecesLeftByAnEndedProcessAreClearedAtLaunch() throws {
+        let pieces = directory.appendingPathComponent("store/\(VideoUploader.piecesFolder)", isDirectory: true)
+        try FileManager.default.createDirectory(at: pieces, withIntermediateDirectories: true)
+        for number in 1...3 {
+            try Data(count: 1024).write(to: pieces.appendingPathComponent("\(UUID().uuidString)-\(number).part"))
+        }
+
+        _ = center(mock())
+
+        let left = (try? FileManager.default.contentsOfDirectory(atPath: pieces.path)) ?? []
+        XCTAssertTrue(left.isEmpty, "\(left)")
+    }
+
     func testAPendingPostKeepsItsWholeAudience() {
         let pending = PendingVideoPost(text: "  hi  ", scope: .region(.gcc), quotedPostId: UUID(), communityId: UUID())
         let videoId = UUID()
@@ -363,4 +612,10 @@ final class VideoStatusBoardTests: XCTestCase {
         let calls = await service.calls
         XCTAssertTrue(calls.isEmpty)
     }
+}
+
+/// Whether the app is on screen, as a test says.
+@MainActor
+final class Screen {
+    var active = true
 }

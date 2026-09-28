@@ -41895,6 +41895,24 @@
         }
       }
     },
+    "video.error.prepareInterrupted": {
+      "comment": "Compressing a picked video on the phone was stopped by the phone itself (media services restarted) more than twice in a row, with the app on screen. Retry is offered beside it.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر إكمال تجهيز هذا الفيديو. حاول مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't finish getting this video ready. Try again."
+          }
+        }
+      }
+    },
     "video.error.processingFailed": {
       "comment": "failure video_processing_failed.",
       "extractionState": "manual",

@@ -223,7 +223,47 @@ final class VideoUploaderTests: XCTestCase {
         XCTAssertEqual(log.waits, [1, 2], "1, 2, 4 … seconds")
     }
 
+    /// Forty pieces in flight at once, each taking a moment: the mocked
+    /// server keeps every one, as a real one does, so the upload completes
+    /// the first time without sending anything twice. (It used to keep only
+    /// the last few to arrive, and a video of a few hundred pieces never
+    /// completed in the journeys.)
+    func testManyPiecesArrivingTogetherAreAllKept() async throws {
+        let service = VideoServiceMock(scenario: .success, directory: directory.appendingPathComponent("server"),
+                                       pieceLatency: 0.02, readyAfterReads: 1, pieceSize: 1024)
+        let log = ActivityLog()
+        let file = try VideoFixtures.file(bytes: 40 * 1024, in: directory)
+
+        let video = try await run(uploader(service, log: log), file: file, size: 40 * 1024, log: log)
+
+        XCTAssertEqual(try Data(contentsOf: service.storedFile(video.id)), try Data(contentsOf: file))
+        let calls = await service.calls
+        XCTAssertEqual(calls.filter { $0.hasPrefix("chunk") }.count, 40, "each piece sent once")
+        XCTAssertEqual(calls.filter { $0 == "complete" }.count, 1)
+        XCTAssertTrue(log.waits.isEmpty)
+    }
+
     // MARK: - What stops it
+
+    /// A file shorter than its plan: the last piece cannot be written. The
+    /// pieces written before it go too, rather than staying on the phone
+    /// with nothing left to send or delete them.
+    func testAPieceThatCannotBeWrittenLeavesNoneOfTheOthersBehind() async throws {
+        let service = mock()
+        let log = ActivityLog()
+        let file = try VideoFixtures.file(bytes: 3_500, in: directory)
+        do {
+            _ = try await run(uploader(service, log: log), file: file, size: 4_096, log: log)
+            XCTFail("a file that is not the one planned for cannot be sent")
+        } catch let error as APIError {
+            XCTAssertEqual(error.code, .uploadChunkInvalid)
+        }
+        let pieces = directory.appendingPathComponent("work/\(VideoUploader.piecesFolder)")
+        let left = (try? FileManager.default.contentsOfDirectory(atPath: pieces.path)) ?? []
+        XCTAssertTrue(left.isEmpty, "\(left)")
+        let sent = await service.calls.filter { $0.hasPrefix("chunk") }
+        XCTAssertTrue(sent.isEmpty, "nothing is sent from a file that does not match its plan")
+    }
 
     func testARefusalStopsTheUpload() async throws {
         let service = mock(.notAllowed)

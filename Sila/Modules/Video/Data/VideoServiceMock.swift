@@ -44,6 +44,11 @@ public actor VideoServiceMock: VideoServiceProtocol {
         var status: VideoStatus
         var reads: Int
         var failureCode: String?
+        /// The post that holds it.
+        var postId: UUID?
+        /// Why it was removed: `true` by a moderator, `false` by anything
+        /// else (the sweep of videos nobody posted, a cancelled upload).
+        var removedByModerator: Bool?
     }
 
     private struct State: Codable {
@@ -242,7 +247,41 @@ public actor VideoServiceMock: VideoServiceProtocol {
 
     public func discard(_ id: UUID) async throws {
         calls.append("discard")
+        if state.videos[id]?.postId != nil {
+            throw APIError.api(code: .videoUsed, message: "", status: 409)
+        }
         state.videos[id]?.status = .removed
+        state.videos[id]?.removedByModerator = false
+        try? FileManager.default.removeItem(at: storedFile(id))
+        save()
+    }
+
+    // MARK: - Posts and removals
+
+    /// What `POST /posts` does with the video it names (the server's
+    /// `claim_for_post`): only a complete video on no post yet is taken.
+    /// A composer mock calls this so the mocked server knows the video is
+    /// posted, and refuses it a second time as the real one does.
+    public func claim(_ id: UUID, forPost postId: UUID) throws {
+        calls.append("claim")
+        guard var stored = state.videos[id] else { throw APIError.api(code: .invalidVideo, message: "", status: 400) }
+        if stored.postId != nil { throw APIError.api(code: .videoUsed, message: "", status: 409) }
+        switch stored.status {
+        case .uploading: throw APIError.api(code: .videoNotUploaded, message: "", status: 409)
+        case .failed: throw APIError.api(code: .videoProcessingFailed, message: "", status: 409)
+        case .removed: throw APIError.api(code: .videoRemoved, message: "", status: 409)
+        case .processing, .held, .ready: break
+        }
+        stored.postId = postId
+        state.videos[id] = stored
+        save()
+    }
+
+    /// Removes a video as the server would: `byModerator`, or by the daily
+    /// sweep of videos nobody posted.
+    public func remove(_ id: UUID, byModerator: Bool) {
+        state.videos[id]?.status = .removed
+        state.videos[id]?.removedByModerator = byModerator
         try? FileManager.default.removeItem(at: storedFile(id))
         save()
     }
@@ -251,7 +290,7 @@ public actor VideoServiceMock: VideoServiceProtocol {
 
     private func receive(_ id: UUID, number: Int, file: URL, progress: @escaping @Sendable (Int64) -> Void) async throws {
         try failIfOffline()
-        guard var stored = state.videos[id], stored.status == .uploading else {
+        guard let stored = state.videos[id], stored.status == .uploading else {
             throw APIError.api(code: .uploadExpired, message: "", status: 410)
         }
         let data = try Data(contentsOf: file)
@@ -276,13 +315,20 @@ public actor VideoServiceMock: VideoServiceProtocol {
         if wait > 0 {
             try await Task.sleep(nanoseconds: UInt64(wait / 2 * 1_000_000_000))
         }
+        // Read again after the waits: other pieces of the same video arrived
+        // meanwhile (an actor lets another call in at every wait), and
+        // writing back the copy read before them would forget them — with
+        // a few hundred pieces in flight, most of the video.
+        guard var current = state.videos[id], current.status == .uploading else {
+            throw APIError.api(code: .uploadExpired, message: "", status: 410)
+        }
         let handle = try FileHandle(forWritingTo: storedFile(id))
         try handle.seek(toOffset: UInt64(range.lowerBound))
         try handle.write(contentsOf: data)
         try handle.close()
         progress(Int64(data.count))
-        if !stored.received.contains(number) { stored.received.append(number) }
-        state.videos[id] = stored
+        if !current.received.contains(number) { current.received.append(number) }
+        state.videos[id] = current
         save()
     }
 
@@ -328,7 +374,9 @@ public actor VideoServiceMock: VideoServiceProtocol {
                 VideoCaptionTrack(language: "ar", url: file(id, "captions-ar.vtt")),
                 VideoCaptionTrack(language: "en", url: file(id, "captions-en.vtt")),
             ] : [],
-            failure: stored.failureCode.map { VideoFailure(code: $0) }
+            postId: stored.postId,
+            failure: stored.failureCode.map { VideoFailure(code: $0) },
+            removedByModerator: stored.status == .removed && stored.removedByModerator == true
         )
     }
 

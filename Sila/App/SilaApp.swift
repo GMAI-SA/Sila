@@ -62,6 +62,9 @@ struct SilaApp: App {
                         if container.session.user?.vouch?.isPending == true {
                             Task { await container.session.refreshUser() }
                         }
+                        // A video iOS stopped compressing while the app was
+                        // away starts again now, by itself.
+                        container.videoUploads.sceneDidBecomeActive()
                     }
                     .onChange(of: container.session.user?.id) { _, id in
                         guard id != nil else { return }
