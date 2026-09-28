@@ -581,9 +581,9 @@ final class ReferenceScreenshots: XCTestCase {
         guard signIn(app) else { return ["28-messages-inbox", "29-chat"].forEach { skip($0, "never reached the feed") } }
         if tap(app, id: "tab.messages") {
             _ = byId(app, "messages.screen").waitForExistence(timeout: 10)
-            // Messages have no launch-argument mock: the live call fails and
-            // the error toast clears after 3 s, leaving the empty inbox.
-            shot("28-messages-inbox", "Messages tab: Inbox/Requests folders + empty inbox (no messages mock is launch-selectable).", settleFor: 5)
+            // A mocked session reads the mocked messages (`-mockAuth` implies
+            // `-mockMessages`): one thread with @noura, one request.
+            shot("28-messages-inbox", "Messages tab: Inbox/Requests folders, the mocked thread with @noura.", settleFor: 2)
         } else {
             skip("28-messages-inbox", "no Messages tab")
         }

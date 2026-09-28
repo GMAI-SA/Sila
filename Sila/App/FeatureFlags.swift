@@ -83,6 +83,14 @@ public struct FeatureFlags: Sendable {
     public var messaging = true
     /// Drives the messages surface from ``MessagesServiceMock``.
     public var useMockMessages = false
+    /// Contract v30 — the real-time socket: messages, read receipts, typing,
+    /// the notification badge and the wall, the moment they happen. Off, the
+    /// app refreshes exactly as it did before (on opening, on pulling, on
+    /// coming back), which is also what it does whenever the socket is down.
+    public var realtime = true
+    /// Plays the socket with ``RealtimeServerMock`` instead of the server's.
+    public var useMockRealtime = false
+    public var mockRealtimeScenario: RealtimeServerMock.Scenario = .replies
     /// P5 sub-feature — audio/video calls.
     public var calls = false
     /// P6 — Voice rooms. Turning this off removes the Rooms tab and every
@@ -430,6 +438,28 @@ public struct FeatureFlags: Sendable {
         // able to walk without anybody's real link.
         if flags.useMockAuth && !arguments.contains("-mockVouchingScenario") {
             flags.useMockVouching = true
+        }
+        if arguments.contains("-mockMessages") {
+            flags.useMockMessages = true
+        }
+        // A mocked session's token would 401 against the real
+        // `/conversations`, as it would against every other route above.
+        if flags.useMockAuth {
+            flags.useMockMessages = true
+        }
+        if let index = arguments.firstIndex(of: "-mockRealtime"),
+           arguments.indices.contains(index + 1),
+           let scenario = RealtimeServerMock.Scenario(rawValue: arguments[index + 1]) {
+            flags.useMockRealtime = true
+            flags.mockRealtimeScenario = scenario
+        }
+        // And the socket: the server would refuse a mocked token, and the
+        // mocked messages are what its events have to describe.
+        if flags.useMockAuth || flags.useMockMessages {
+            flags.useMockRealtime = true
+        }
+        if arguments.contains("-noRealtime") {
+            flags.realtime = false
         }
         if arguments.contains("-noVoicePosts") {
             flags.voicePosts = false

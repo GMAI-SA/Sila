@@ -70,6 +70,27 @@ public enum AppConfig {
 
     private static let invalidAPIBaseURL = URL(fileURLWithPath: "/invalid-api-base-url")
 
+    /// The real-time socket (contract v30): ``apiBaseURL`` with `wss` for
+    /// `https` — `wss://sila.gmai.sa/api/v1/realtime` — and `ws` for the
+    /// plain-HTTP loopback a debug build's `-apiOrigin` may name.
+    ///
+    /// Nothing else goes in it. The token is the socket's first frame, never
+    /// part of a URL that nginx, Cloudflare and the system all log.
+    public static var realtimeURL: URL { realtimeURL(for: apiBaseURL) }
+
+    static func realtimeURL(for api: URL) -> URL {
+        guard var components = URLComponents(url: api, resolvingAgainstBaseURL: false) else { return api }
+        switch components.scheme?.lowercased() {
+        case "https": components.scheme = "wss"
+        case "http": components.scheme = "ws"
+        default: return api
+        }
+        components.path = components.path.hasSuffix("/") ? components.path + "realtime" : components.path + "/realtime"
+        components.query = nil
+        components.fragment = nil
+        return components.url ?? api
+    }
+
     /// The API's origin — scheme and host, with no path.
     ///
     /// Media paths come back **root-relative** (`/api/v1/media/avatars/…`), so

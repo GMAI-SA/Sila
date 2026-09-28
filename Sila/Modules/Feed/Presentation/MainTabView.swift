@@ -130,7 +130,9 @@ public struct MainTabView: View {
         self._conversationsViewModel = State(
             initialValue: ConversationsViewModel(
                 service: container.messagesService,
-                analytics: container.analytics
+                analytics: container.analytics,
+                typing: container.typing,
+                viewerId: { container.session.user?.id }
             )
         )
         // `onChange` is wired after construction, because it has to reach the
@@ -455,6 +457,24 @@ public struct MainTabView: View {
             // refreshed by pulling down.
             guard current != .notifications else { return }
             Task { await notificationsViewModel.refreshUnreadCount() }
+        }
+        // The two badges and the inbox, the moment something happens
+        // (contract v30), for as long as the tabs are up. Without a socket
+        // nothing arrives here and everything refreshes as it always has.
+        .task {
+            let events = container.realtime.events()
+            // The inbox badge once, before anybody opens the tab: the socket
+            // may have said `ready` at the wall, before these tabs existed.
+            if container.flags.messaging, !isVouched {
+                await conversationsViewModel.refreshCounts()
+            }
+            for await event in events {
+                await notificationsViewModel.apply(event)
+                // A vouched account has no messages to count (contract v24 §4).
+                if container.flags.messaging, !isVouched {
+                    await conversationsViewModel.apply(event)
+                }
+            }
         }
         // **This is what makes a block visible.** The safety model is the single
         // record of who is blocked; when it grows, everything that person wrote
@@ -1593,7 +1613,9 @@ public struct MainTabView: View {
                 ChatViewModel(
                     conversation: conversation,
                     viewerId: container.session.user?.id,
-                    service: container.messagesService
+                    service: container.messagesService,
+                    realtime: container.flags.realtime ? container.realtime : nil,
+                    typing: container.typing
                 )
             }) { viewModel in
                 ChatScreen(

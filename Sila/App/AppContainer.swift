@@ -122,6 +122,15 @@ public final class AppContainer {
     public let language: LanguagePreference
     /// Navigation coordinator.
     public let router: AppRouter
+    /// The real-time socket (contract v30). Up while the app is in the
+    /// foreground and somebody is signed in — see ``updateRealtime()``.
+    public let realtime: RealtimeClient
+    /// Who is typing where, fed by ``realtime``.
+    public let typing: TypingBoard
+    /// Whether the scene is in the foreground, as far as the socket cares.
+    private var sceneIsActive = false
+    /// Applies the events that belong to the whole app rather than a screen.
+    private var realtimeRouting: Task<Void, Never>?
 
     /// The keychain a launch reads its session from.
     ///
@@ -398,7 +407,11 @@ public final class AppContainer {
         // their tries would spend one of the link's three.
         let videoUploads = self.videoUploads
         let videoStatusBoard = self.videoStatusBoard
+        let realtimeLink = RealtimeLink()
         session.willSignOut = { [weak registrar, weak vouchInbox, weak videoUploads, weak videoStatusBoard] in
+            // The socket first: it must not ask for a token the next line
+            // is about to take away.
+            realtimeLink.client?.stop()
             await registrar?.willSignOut()
             vouchInbox?.forget()
             // An upload of this account's goes no further, and nothing of it
@@ -569,6 +582,103 @@ public final class AppContainer {
         }
 
         self.router = AppRouter()
+
+        // The socket, last: its mocked server plays the other side of the
+        // mocked messages, which exist only now.
+        let sockets: RealtimeSocketFactory
+        let realtimeURL = AppConfig.realtimeURL
+        if flags.useMockRealtime {
+            sockets = RealtimeServerMock(
+                scenario: flags.mockRealtimeScenario,
+                messages: self.messagesService as? MessagesServiceMock
+            )
+        } else if ["ws", "wss"].contains(realtimeURL.scheme?.lowercased() ?? "") {
+            sockets = URLSessionRealtimeSocketFactory()
+        } else {
+            sockets = UnreachableRealtimeSocketFactory()
+        }
+        let realtime = RealtimeClient(
+            url: realtimeURL,
+            sockets: sockets,
+            // A mocked sign-in stores no token; the mocked server asks for
+            // one as the real one does, and reads none of it.
+            tokens: flags.useMockRealtime ? MockRealtimeTokens() : tokens,
+            suspension: suspension.signal,
+            onSessionRefused: { [weak session] error in await session?.sessionRefused(error) }
+        )
+        self.realtime = realtime
+        realtimeLink.client = realtime
+        self.typing = TypingBoard()
+        routeRealtimeEvents()
+    }
+
+    // MARK: - Real time
+
+    /// Tells the socket whether the scene is in the foreground. Only
+    /// `.active` and `.background` count: `.inactive` (the notification
+    /// centre pulled down, the app switcher) passes in a moment, and
+    /// dropping the socket for it would only make it reconnect.
+    public func sceneChanged(active: Bool) {
+        sceneIsActive = active
+        updateRealtime()
+    }
+
+    /// Connects the socket while it is wanted — the app in the foreground,
+    /// somebody signed in (at the wall too: that is where `account.status`
+    /// matters most), not suspended — and closes it otherwise. The push
+    /// covers the time in the background (contract v30 §1.7).
+    public func updateRealtime() {
+        guard flags.realtime else { return }
+        let signedIn: Bool
+        switch session.route {
+        case .feed, .verificationWall, .rejected: signedIn = session.user != nil
+        case .splash, .unauthenticated, .awaitingEmailVerification, .guest: signedIn = false
+        }
+        if sceneIsActive, signedIn, !suspension.isSuspended {
+            realtime.start(accountId: session.user?.id)
+        } else {
+            realtime.stop()
+        }
+    }
+
+    /// The events that belong to the app rather than to one screen: the
+    /// account itself (the wall moves on `account.status`), and who is typing.
+    private func routeRealtimeEvents() {
+        let events = realtime.events()
+        realtimeRouting = Task { [weak self] in
+            for await event in events {
+                guard let self else { return }
+                await self.apply(event)
+            }
+        }
+    }
+
+    func apply(_ event: RealtimeEvent) async {
+        switch event {
+        case let .accountStatus(me):
+            await session.adoptAccount(me)
+        case let .typing(typing):
+            self.typing.apply(typing)
+        case let .messageNew(new):
+            self.typing.messageArrived(conversationId: new.conversationId, from: new.message.sender.id)
+        case .disconnected, .unavailable:
+            self.typing.clearAll()
+        case .ready:
+            // The server answered, so an offline launch can catch up; and a
+            // wall re-reads the account once, because nothing is replayed.
+            session.retryIfOffline()
+            switch session.route {
+            case .verificationWall, .rejected: await session.refreshUser()
+            default: break
+            }
+        case .messageRead, .messageDeleted, .notificationNew, .typingRefused:
+            break
+        }
+    }
+
+    /// Lets `willSignOut`, built before the socket exists, stop it.
+    private final class RealtimeLink: @unchecked Sendable {
+        weak var client: RealtimeClient?
     }
 
     /// Takes a link the system handed the app: a vouch link goes to the

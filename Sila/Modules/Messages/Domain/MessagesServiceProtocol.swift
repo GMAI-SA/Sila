@@ -42,6 +42,17 @@ public protocol MessagesServiceProtocol: Sendable {
     /// it keeps its evidence. Nothing in this client should describe it as
     /// erased.
     func deleteMessage(id: UUID) async throws
+
+    /// Whether the other person is typing now, `GET /conversations/{id}/typing`
+    /// (contract v30) — for a thread just opened, or after the socket
+    /// reconnects between two `typing` events. Always "no" in a request, for
+    /// somebody the viewer muted, and when real time is unavailable.
+    func fetchTyping(conversationId: UUID) async throws -> TypingStatus
+}
+
+extension MessagesServiceProtocol {
+    /// Nobody is typing where there is no server to say otherwise.
+    public func fetchTyping(conversationId: UUID) async throws -> TypingStatus { .notTyping }
 }
 
 /// Limits from the messaging contract.

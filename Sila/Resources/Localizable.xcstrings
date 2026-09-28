@@ -20368,6 +20368,24 @@
         }
       }
     },
+    "messages.bubble.read": {
+      "comment": "Under the viewer's latest message once the other person has read it. Never shown in a request.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت القراءة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read"
+          }
+        }
+      }
+    },
     "messages.bubble.theirs.a11yLabel": {
       "extractionState": "manual",
       "localizations": {
@@ -20823,6 +20841,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Messages"
+          }
+        }
+      }
+    },
+    "messages.typing": {
+      "comment": "Under the last message of a thread while the other person is typing (contract v30).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يكتب…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "typing…"
+          }
+        }
+      }
+    },
+    "messages.typing.row": {
+      "comment": "In place of an inbox row's preview while that person is typing. %@ is their display name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ يكتب…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is typing…"
           }
         }
       }

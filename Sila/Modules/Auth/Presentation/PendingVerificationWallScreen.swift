@@ -34,6 +34,10 @@ public struct PendingVerificationWallScreen: View {
     private let onWithdrawClaim: (() async throws -> Void)?
     /// The session's copy of the account's own vouch, followed as it changes.
     private let vouch: VouchState?
+    /// The session's status, followed as it changes — a decision the socket
+    /// brought (contract v30 `account.status`) that keeps the account at the
+    /// wall, under review now or back at the start.
+    private let status: VerificationStatus
     /// Presented over the app for a vouched account making the vouch its own
     /// (contract v24 §3): "Not now" replaces "Sign out", and closes.
     private let onClose: (() -> Void)?
@@ -89,6 +93,7 @@ public struct PendingVerificationWallScreen: View {
         self.onWithdrawClaim = onWithdrawClaim
         self.onClose = onClose
         self.vouch = vouch
+        self.status = status
     }
 
     public var body: some View {
@@ -190,6 +195,13 @@ public struct PendingVerificationWallScreen: View {
         // A claim made — or answered — while the wall is up.
         .onChange(of: vouch) { _, current in
             viewModel.pendingVouch = current?.isPending == true ? current : nil
+        }
+        // The session moved while the wall is up (the socket's
+        // `account.status`, or another device): the wall reads the report
+        // behind the new status — its reason, its timestamps — at once.
+        .onChange(of: status) { _, current in
+            guard current != viewModel.status else { return }
+            Task { await viewModel.refresh(quietly: true) }
         }
         // Why the last vouch ended: read on arriving with no vouch, and again
         // whenever a waiting claim goes — declined, lapsed or withdrawn.

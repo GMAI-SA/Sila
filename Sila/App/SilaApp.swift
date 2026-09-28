@@ -50,6 +50,19 @@ struct SilaApp: App {
                         }
                         await container.pushRegistrar.refreshRegistration()
                     }
+                    // The socket: up in the foreground, closed in the
+                    // background (the push covers the time between).
+                    .onChange(of: scenePhase, initial: true) { _, phase in
+                        switch phase {
+                        case .active: container.sceneChanged(active: true)
+                        case .background: container.sceneChanged(active: false)
+                        default: break
+                        }
+                    }
+                    // …and only while somebody is signed in and not suspended.
+                    .onChange(of: container.session.route) { container.updateRealtime() }
+                    .onChange(of: container.session.user?.id) { container.updateRealtime() }
+                    .onChange(of: container.suspension.isSuspended) { container.updateRealtime() }
                     // Every foreground: retention is measured from this.
                     .onChange(of: scenePhase, initial: true) { _, phase in
                         guard phase == .active else { return }

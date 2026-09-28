@@ -198,23 +198,35 @@ public struct ConversationsScreen: View {
                         }
                     }
 
-                    Text(conversation.lastMessage ?? L10n.t("messages.preview.deleted"))
-                        .font(SLFont.body)
-                        .foregroundStyle(
-                            conversation.lastMessage == nil ? SLColor.textMuted : SLColor.textSecondary
-                        )
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                        // A message's own direction, not the interface's: an
-                        // Arabic preview must read right-to-left inside an
-                        // English UI.
-                        .environment(
-                            \.layoutDirection,
-                            TextDirection.resolve(
-                                languageCode: nil,
-                                text: conversation.lastMessage
-                            ).layoutDirection
-                        )
+                    if let typingLine = viewModel.typingLine(for: conversation) {
+                        // In place of the preview while they type (contract
+                        // v30): the words are the interface's, so they read in
+                        // its direction.
+                        Text(typingLine)
+                            .font(SLFont.body)
+                            .italic()
+                            .foregroundStyle(SLColor.primary)
+                            .lineLimit(1)
+                            .accessibilityIdentifier("messages.row.typing")
+                    } else {
+                        Text(conversation.lastMessage ?? L10n.t("messages.preview.deleted"))
+                            .font(SLFont.body)
+                            .foregroundStyle(
+                                conversation.lastMessage == nil ? SLColor.textMuted : SLColor.textSecondary
+                            )
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                            // A message's own direction, not the interface's: an
+                            // Arabic preview must read right-to-left inside an
+                            // English UI.
+                            .environment(
+                                \.layoutDirection,
+                                TextDirection.resolve(
+                                    languageCode: nil,
+                                    text: conversation.lastMessage
+                                ).layoutDirection
+                            )
+                    }
 
                     if conversation.isRequest {
                         SLButton(

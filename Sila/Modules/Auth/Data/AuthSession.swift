@@ -403,6 +403,31 @@ public final class AuthSession {
         }
     }
 
+    /// Takes the account the socket just delivered (contract v30
+    /// `account.status`) — exactly what `GET /auth/me` returns now — and
+    /// routes on it, as ``refreshUser()`` does with its answer. This is what
+    /// moves the wall the moment a decision lands: a verification approved
+    /// or refused, a vouch claimed, confirmed, declined, ended or expired.
+    ///
+    /// Ignored for any account but the one signed in: a socket of the last
+    /// session must not re-route the next one.
+    public func adoptAccount(_ fresh: AuthUser) async {
+        guard let current = user, current.id == fresh.id else { return }
+        stopReconnecting()
+        user = fresh
+        await store.updateUser(fresh)
+        await applyRouteForCurrentUser()
+    }
+
+    /// The socket could not renew its token because the server refused the
+    /// session (signed out elsewhere, "sign out everywhere", a password
+    /// change): the same end an HTTP refusal at launch has — the sign-in
+    /// screen. Anything short of a refusal keeps the session.
+    public func sessionRefused(_ error: Error) async {
+        guard user != nil, SessionCheckFailure(error) == .refused else { return }
+        await endRefusedSession()
+    }
+
     /// The first-run subjects step was answered or skipped; the server has
     /// stamped it (contract v19), and so does the cached account, so the step
     /// never shows again on this device even before the next `/auth/me`.

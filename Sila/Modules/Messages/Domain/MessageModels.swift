@@ -121,6 +121,50 @@ public struct MessageCounts: Hashable, Sendable {
     public static let none = MessageCounts(unread: 0, requests: 0)
 }
 
+// MARK: - Changes the socket brings
+
+extension Conversation {
+
+    /// The same thread with some of its facts replaced — how a live event
+    /// (contract v30) moves a row without a round trip.
+    func with(
+        accepted: Bool? = nil,
+        isRequest: Bool? = nil,
+        unreadCount: Int? = nil,
+        lastMessageAt: Date? = nil,
+        lastMessage: String?? = nil
+    ) -> Conversation {
+        Conversation(
+            id: id,
+            other: other,
+            accepted: accepted ?? self.accepted,
+            isRequest: isRequest ?? self.isRequest,
+            unreadCount: unreadCount ?? self.unreadCount,
+            lastMessageAt: lastMessageAt ?? self.lastMessageAt,
+            lastMessage: lastMessage ?? self.lastMessage
+        )
+    }
+}
+
+extension DirectMessage {
+
+    /// Read by the person it was sent to.
+    func markedRead() -> DirectMessage {
+        DirectMessage(
+            id: id, conversationId: conversationId, sender: sender,
+            text: text, deleted: deleted, read: true, createdAt: createdAt
+        )
+    }
+
+    /// Deleted for both people: no text, as the thread shows it.
+    func markedDeleted() -> DirectMessage {
+        DirectMessage(
+            id: id, conversationId: conversationId, sender: sender,
+            text: nil, deleted: true, read: read, createdAt: createdAt
+        )
+    }
+}
+
 // MARK: - Decoding
 
 extension Conversation: Decodable {

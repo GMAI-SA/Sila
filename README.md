@@ -446,6 +446,79 @@ in the app's language only, with Western digits like every number in the app.
 Camera recording is not offered: the composer has no capture, and the
 camera's privacy string promises the camera is used only for verification.
 
+## Real time, and the socket nothing depends on
+
+Contract v30 (`docs/api-contract-v30-realtime.md` in the backend). One
+WebSocket, `wss://sila.gmai.sa/api/v1/realtime`, held by `RealtimeClient`
+(`Modules/Realtime/`) over `URLSessionWebSocketTask`. It makes things arrive
+sooner; it is never the only way to learn anything.
+
+**When it is up.** In the foreground, with somebody signed in — at the wall
+too, where `account.status` matters most — and not suspended
+(`AppContainer.updateRealtime()`). The app going to the background closes it
+(the push covers the time between), and so does signing out, before the token
+goes. `.inactive` (the notification centre, the app switcher) changes nothing.
+
+**The door.** Nothing in the handshake: no token in the URL, no header, no
+cookie (the session is ephemeral) and no `Origin`. The access token is the
+first frame. `ping` is answered `pong`; a socket that hears nothing for 80 s
+is presumed dead and replaced. `reauth_required` is answered on the same
+socket with a token *other than the one it holds*
+(`RealtimeTokenProviding.renewedAccessToken(replacing:)` — a rotation another
+call already made is used as it is, otherwise the single-flight refresh runs).
+
+**Every close has one answer** (`RealtimeCloseDecision`), read from the
+`error` frame the server sends before it, then from the close code: `4401`
+renews the token and reconnects at once (with backoff if it happens again);
+`account_suspended` stops and routes to the suspension screen through the same
+`SuspensionMonitor` an HTTP `403` reaches; `account_deactivated` stops;
+`1013` (`realtime_unavailable`, `busy`, `too_slow`) waits 30 s, then longer, up
+to five minutes; `4429` waits a minute; everything else backs off 1, 2, 5, 10,
+30, then 60 s, with up to 30 % jitter, starting again once a socket has stayed
+up a minute. Only a server refusing the refresh (`401`) signs anybody out; no
+token on the phone is somebody signing out already, and anything else is the
+network.
+
+**Nothing is replayed**, so every `ready` refreshes what is on screen once:
+the open thread, the inbox or its badge, the notification badge, the wall.
+Then the events:
+
+* `message.new` — into the open thread once (matched on its id, so the
+  viewer's own copy from another device slots into place and this device's is
+  dropped), read at once while the thread is on screen, and later when it
+  comes back if not; the inbox row moves to the top with its words and count,
+  and a thread the list has never seen, or one that changed folders, is read
+  from the server instead of guessed. A request never raises the badge.
+  `alert` is decoded and nothing in the app makes a sound of its own: the push
+  already does, exactly where `alert` is true.
+* `message.read` — the other person's: every message of the viewer's sent by
+  then is read, and **Read** / «تمت القراءة» sits under the latest once it is.
+  Never in a request: the requests folder promises that the sender cannot see
+  whether it was read. The viewer's own, from any device: the row's count and
+  the badge clear.
+* `message.deleted` — shown as removed, with no text, as the thread does.
+* `typing` — **typing…** / «يكتب…» under the thread and **Noura is typing…** /
+  «نورة يكتب…» in place of the row's preview, from one `TypingBoard` so the two
+  never disagree; it ends when `expires_in` runs out unrenewed, on
+  `active: false`, on that person's message, and when the socket goes. A
+  thread just opened asks `GET /conversations/{id}/typing`. The viewer's own
+  typing goes out at most every two seconds while the field changes
+  (`TypingThrottle`), `active: false` once when it is cleared or the thread is
+  left, nothing after sending (the server ends it), never in a request, and
+  never again in a thread the server refused it for.
+* `notification.new` — the Alerts badge **is** `unread_count`, never counted
+  up here. The list is left alone; pulling reads it.
+* `account.status` — `AuthSession.adoptAccount(_:)` takes the account exactly
+  as `/auth/me` would give it and routes on it: approved goes to the feed,
+  refused to the rejected screen, a vouch claimed, confirmed, declined or ended
+  moves the wall at once. The wall's own polls stay as they were, as the
+  fallback.
+
+**Without it** — Redis down, the socket refused, the phone offline — every
+screen refreshes exactly as before (on opening, on pulling, on coming back).
+`-noRealtime` turns the socket off entirely; `-mockRealtime replies|incoming|
+unavailable` plays it in-process (`RealtimeServerMock`, see below).
+
 ## The session, and what it leaves on the phone
 
 The token pair and the cached account live in the Keychain
@@ -619,9 +692,17 @@ pick a sample made on the simulator instead of opening Photos,
 `-resetVideoUploads` starts with no upload kept, and `-videoAutoplay on|off`
 decides autoplay instead of the Mac's network.
 
+`RealtimeServerMock` speaks contract v30 over an in-memory socket and plays
+@noura in the mocked thread (`-mockRealtime <scenario>`; `-mockAuth` and
+`-mockMessages` imply it): `replies` (the default — she reads what the viewer
+sends, types, and answers), `incoming` (the first time the inbox is read she
+types, then writes, and a notification lands) and `unavailable` (every socket
+is refused `1013`: the app carries on over HTTP alone). Every frame goes
+through the same client, decoder and view models a real socket's would.
+
 `-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch`,
 `-mockPreferences`, `-mockAccount`, `-mockProfile`, `-mockNotifications`,
-`-mockSafety`, `-mockRooms` and `-mockVouching` unless the matching
+`-mockSafety`, `-mockRooms`, `-mockVouching` and `-mockMessages` unless the matching
 `-mock…Scenario` argument says otherwise, because a mocked session carries no bearer token the
 live API would accept — and in the account module's case because the live
 version of the deletion demo costs a real account.
@@ -634,7 +715,7 @@ To see the whole app without a backend:
 
 ## Tests
 
-1,753 total: 1,682 unit (85 opt-in, see below) and 71 XCUITests (54 journeys, 16
+1,819 total: 1,743 unit (88 opt-in, see below) and 76 XCUITests (59 journeys, 16
 reference screenshots and one live sign-in). The UI tests drive
 sign-in → feed → composer → Explore → feed preferences → account → profile
 against the mocks — no network, no seeded account — and are the only tests that would catch a
@@ -656,7 +737,8 @@ xcrun xcresulttool export --path out.xcresult --id <payloadRef> --output-path sh
 
 `LiveAPITests`, `LiveFeedTests`, `LiveComposerSearchTests`,
 `LivePreferencesTests`, `LiveAccountTests`, `LiveProfileTests`,
-`LiveNotificationsTests`, `LiveSafetyTests` and `LiveRoomsTests` hit a real
+`LiveNotificationsTests`, `LiveSafetyTests`, `LiveRoomsTests` and
+`LiveRealtimeTests` hit a real
 backend and skip unless you opt in — they are the only guard against the
 *server's* wire format drifting away from the app's decoders.
 
@@ -733,6 +815,22 @@ and captions checked, then deleted (which deletes every file of the video).
 A twelve-megabyte sample is resumed after its first chunk, and the refusals
 are read in the app's words.
 
+`LiveRealtimeTests` (contract v30) needs no account either: three disposable
+accounts on staging, the app's own `RealtimeClient` on the real transport to
+`ws://127.0.0.1:8101/api/v1/realtime`. Two people who follow each other talk:
+the message arrives as the thread returns it, the sender's other device hears
+it without an alert, typing reaches the other's open `ChatViewModel` and ends
+with the message, the read receipt comes back and a deletion leaves the other
+screen. The third waits at the wall, hears its own verification through
+`account.status` and routes to the feed on it, then follows, and the other's
+badge is the server's count. A bad token is refused `unauthorized` and the
+adapter reads the server's own close code, `4401`:
+
+```bash
+TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
+xcodebuild ... test -only-testing:SilaTests/LiveRealtimeTests
+```
+
 `LiveVouchingTests` (contract v24) works the same way, with disposable accounts
 only: two made vouchers through the dev hook (verified forty days ago — the
 thirty-day rule), two people. It mints a link, reads it through the app's own
@@ -789,6 +887,10 @@ Sila/
 │                         Presentation (VideoUploadCenter, VideoStatusBoard, the
 │                         player and full screen, the composer's card, the strip
 │                         of posts waiting above the feed)
+├── Modules/Realtime/     Domain (RealtimeEvent and the frames, RealtimeSocket,
+│                         RealtimeCloseDecision, RealtimeBackoff)
+│                         Data (RealtimeClient, URLSessionRealtimeSocket,
+│                         RealtimeServerMock + InMemoryRealtimeSocket)
 └── Modules/Notifications/ Domain (UserNotification/NotificationKind/Page,
                            NotificationPreferences, NotificationCopy)
                            Data (NotificationsService, mock)

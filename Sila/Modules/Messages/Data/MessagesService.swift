@@ -110,6 +110,17 @@ public final class MessagesService: MessagesServiceProtocol {
         )
     }
 
+    public func fetchTyping(conversationId: UUID) async throws -> TypingStatus {
+        let token = try await tokens.accessToken()
+        return try await network.send(
+            APIRequest(
+                path: "/conversations/\(conversationId.uuidString.lowercased())/typing",
+                accessToken: token
+            ),
+            as: TypingStatus.self
+        )
+    }
+
     /// `POST /conversations/{handle}/messages` answers with the thread the
     /// message landed in — which the caller may not have known existed.
     private struct SendResponse: Decodable {

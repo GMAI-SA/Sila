@@ -48,7 +48,16 @@ public struct ChatScreen: View {
         }
         .tnScreenBackground()
         .task { await viewModel.load() }
+        // New messages, read receipts and deletions, the moment they happen
+        // (contract v30). Ends with the screen.
+        .task { await viewModel.listen() }
+        .onAppear { Task { await viewModel.screenAppeared() } }
+        .onDisappear { viewModel.screenDisappeared() }
+        .onChange(of: viewModel.draft) { viewModel.draftDidChange() }
         .tnToast($viewModel.toast)
+        // A container that keeps its children's own identifiers: without
+        // this, "chat.screen" was stamped over the field and the send button.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.screen")
         .confirmationDialog(
             L10n.t("messages.delete.title"),
@@ -84,10 +93,20 @@ public struct ChatScreen: View {
                     ForEach(viewModel.messages) { message in
                         bubble(message)
                             .id(message.id)
+                        if message.id == viewModel.readReceiptMessageId {
+                            readReceipt
+                        }
+                    }
+
+                    if viewModel.isOtherTyping {
+                        typingIndicator
+                            .id(Self.typingAnchor)
+                            .transition(.opacity)
                     }
                 }
                 .padding(.horizontal, SLSpacing.lg)
                 .padding(.vertical, SLSpacing.md)
+                .animation(.easeInOut(duration: 0.2), value: viewModel.isOtherTyping)
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) {
@@ -96,7 +115,47 @@ public struct ChatScreen: View {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
             }
+            .onChange(of: viewModel.isOtherTyping) { _, typing in
+                if typing { withAnimation { proxy.scrollTo(Self.typingAnchor, anchor: .bottom) } }
+            }
         }
+    }
+
+    private static let typingAnchor = "chat.typing"
+
+    /// "typing…", where their next message will appear (contract v30 §3.4).
+    private var typingIndicator: some View {
+        HStack {
+            HStack(spacing: SLSpacing.xs) {
+                // Still, not animated: an endless animation keeps the screen
+                // from ever settling, for VoiceOver and for the UI tests.
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 12, weight: .bold))
+                Text(L10n.t("messages.typing"))
+                    .font(SLFont.caption)
+                    .italic()
+            }
+            .foregroundStyle(SLColor.textSecondary)
+            .padding(.horizontal, SLSpacing.md)
+            .padding(.vertical, SLSpacing.sm)
+            .background(SLColor.surface2)
+            .clipShape(RoundedRectangle(cornerRadius: SLRadius.lg, style: .continuous))
+
+            Spacer(minLength: SLSpacing.xxl)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(L10n.t("messages.typing.row", viewModel.conversation.other.displayName)))
+        .accessibilityIdentifier("chat.typing")
+    }
+
+    /// "Read", under the viewer's latest message once the other person has
+    /// read it. Never in a request: see ``ChatViewModel/readReceiptMessageId``.
+    private var readReceipt: some View {
+        Text(L10n.t("messages.bubble.read"))
+            .font(SLFont.caption)
+            .foregroundStyle(SLColor.textMuted)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .accessibilityIdentifier("chat.read")
     }
 
     /// Shown when the thread is a request the viewer has not accepted.

@@ -259,6 +259,25 @@ public final class NotificationsViewModel {
         unreadCount = count
     }
 
+    /// One event from the socket (contract v30).
+    ///
+    /// `notification.new` carries the badge itself — exactly
+    /// `/notifications/unread-count`'s answer at that moment — so it is
+    /// adopted as it is, never counted up here. The list is left alone: a
+    /// row sliding in under somebody's thumb is worse than the badge saying
+    /// there is more, and pulling reads it. A socket that has just come back
+    /// (nothing is replayed) or cannot be offered re-reads the count.
+    public func apply(_ event: RealtimeEvent) async {
+        switch event {
+        case let .notificationNew(new):
+            unreadCount = max(0, new.unreadCount)
+        case .ready, .unavailable:
+            await refreshUnreadCount()
+        default:
+            break
+        }
+    }
+
     // MARK: - Reading
 
     /// Marks everything read, on purpose.

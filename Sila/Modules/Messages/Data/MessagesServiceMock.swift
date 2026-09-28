@@ -16,6 +16,9 @@ public actor MessagesServiceMock: MessagesServiceProtocol {
     /// Handles the viewer follows — the mock's stand-in for "we already know
     /// each other", which is what lets a thread skip the request folder.
     private var known: Set<String>
+    /// Told about every message the viewer sends — how the mocked socket
+    /// (``RealtimeServerMock``) answers one the way a person would.
+    private var onSent: (@Sendable (DirectMessage, Conversation) -> Void)?
 
     public init(
         viewer: UserSummary = .mockViewer,
@@ -30,7 +33,8 @@ public actor MessagesServiceMock: MessagesServiceProtocol {
     }
 
     public func fetchConversations() async throws -> [Conversation] {
-        conversations.filter { !$0.isRequest }.sorted { ($0.lastMessageAt ?? .distantPast) > ($1.lastMessageAt ?? .distantPast) }
+        onInboxRead?()
+        return conversations.filter { !$0.isRequest }.sorted { ($0.lastMessageAt ?? .distantPast) > ($1.lastMessageAt ?? .distantPast) }
     }
 
     public func fetchRequests() async throws -> [Conversation] {
@@ -69,18 +73,70 @@ public actor MessagesServiceMock: MessagesServiceProtocol {
             )
         }
 
-        messages[id, default: []].append(
-            DirectMessage(
-                id: UUID(),
-                conversationId: id,
-                sender: viewer,
-                text: text,
-                deleted: false,
-                read: true,
-                createdAt: Date()
-            )
+        let message = DirectMessage(
+            id: UUID(),
+            conversationId: id,
+            sender: viewer,
+            text: text,
+            deleted: false,
+            // Unread until the other person reads it, as the server has it.
+            read: false,
+            createdAt: Date()
         )
+        messages[id, default: []].append(message)
+        conversations = conversations.map { thread in
+            thread.id == id ? thread.with(lastMessageAt: message.createdAt, lastMessage: .some(text)) : thread
+        }
+        if let thread = conversations.first(where: { $0.id == id }) {
+            onSent?(message, thread)
+        }
         return id
+    }
+
+    // MARK: - The other side, for the mocked socket
+
+    public func setOnSent(_ handler: (@Sendable (DirectMessage, Conversation) -> Void)?) {
+        onSent = handler
+    }
+
+    /// Told whenever the inbox is read — the moment somebody is looking at it.
+    private var onInboxRead: (@Sendable () -> Void)?
+
+    public func setOnInboxRead(_ handler: (@Sendable () -> Void)?) {
+        onInboxRead = handler
+    }
+
+    /// The thread with `handle`, as this store has it now.
+    public func conversation(with handle: String) -> Conversation? {
+        conversations.first { $0.other.handle == handle }
+    }
+
+    /// `handle` writes to the viewer: the message lands in the thread and
+    /// its preview, and counts as unread — exactly what a real message does
+    /// to what `GET /conversations` answers next.
+    public func receive(from handle: String, text: String) -> (Conversation, DirectMessage)? {
+        guard let thread = conversations.first(where: { $0.other.handle == handle }) else { return nil }
+        let message = DirectMessage(
+            id: UUID(),
+            conversationId: thread.id,
+            sender: thread.other,
+            text: text,
+            deleted: false,
+            read: false,
+            createdAt: Date()
+        )
+        messages[thread.id, default: []].append(message)
+        let updated = thread.with(unreadCount: thread.unreadCount + 1, lastMessageAt: message.createdAt, lastMessage: .some(text))
+        conversations = conversations.map { $0.id == thread.id ? updated : $0 }
+        return (updated, message)
+    }
+
+    /// The other person read the thread: every message of the viewer's in it
+    /// is read now.
+    public func otherPersonRead(conversationId: UUID) {
+        messages[conversationId] = messages[conversationId]?.map { message in
+            message.sender.id == viewer.id ? message.markedRead() : message
+        }
     }
 
     public func accept(conversationId: UUID) async throws {
@@ -138,7 +194,17 @@ public actor MessagesServiceMock: MessagesServiceProtocol {
 
 extension UserSummary {
 
-    public static let mockViewer = UserSummary.mock(handle: "you", displayName: "You")
+    /// The mocked session's own account: the same id `AuthServiceMock`
+    /// signs in with, so a mocked thread knows which bubbles are the viewer's.
+    public static let mockViewer = UserSummary(
+        id: UUID(uuidString: "11111111-2222-3333-4444-555555555555") ?? UUID(),
+        handle: "you",
+        displayName: "You",
+        avatarURL: nil,
+        isVerified: true,
+        countryCode: "SA",
+        verifiedSince: nil
+    )
 
     public static func mock(handle: String, displayName: String? = nil) -> UserSummary {
         UserSummary(
