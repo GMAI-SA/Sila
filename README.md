@@ -355,7 +355,7 @@ Around those two:
 ## The session, and what it leaves on the phone
 
 The token pair and the cached account live in the Keychain
-(`WhenUnlockedThisDeviceOnly`). Six rules keep the session from ending when it
+(`WhenUnlockedThisDeviceOnly`). Eight rules keep the session from ending when it
 should not, and from outliving itself when it should, each asserted in tests:
 
 * **One refresh at a time** (`TokenRefreshTests`). The server revokes a refresh
@@ -374,6 +374,20 @@ should not, and from outliving itself when it should, each asserted in tests:
   foreground) until it answers. A `401` is the only answer that ends the
   session; a `403` in the API's own words (suspended, deletion pending) keeps
   it and lets the screens route.
+* **Sign-out ends the server's session too** (`SignOutTests`,
+  `LiveSessionsTests`). `/auth/logout` carries the refresh token in its body
+  beside the access token in the header (contract v26 §1), so an access token
+  the server can no longer read still ends its session, rather than leaving a
+  thirty-day refresh token good on the server after the phone forgot it.
+* **The password travels with the code** (`CodeScreenPasswordTests`,
+  `LiveSessionsTests`). The code screen after registering sends the
+  registration's password with the code, and the one after a sign-in that
+  answered `email_unverified` sends the password just typed (contract v26
+  §7.1): the code that confirms an address decides its password, not a
+  stranger's registration of the same address. `AppRouter` holds it in memory
+  for that one screen — never in the route, never on disk — and a password the
+  server would refuse beside a code (over 72 bytes, from before that rule) is
+  not sent. A relaunch onto an unconfirmed session sends the code alone.
 * **Nothing the API answers is cached** (`SessionLeftoversTests`). The API
   client's session has no `URLCache`, so `/auth/me` (email, verified name),
   messages and notifications never reach `Cache.db`.
@@ -566,6 +580,14 @@ watch it turn a swatch away:
 TEST_RUNNER_SILA_LIVE_API=1 TEST_RUNNER_SILA_API_ORIGIN=http://127.0.0.1:8101 \
 xcodebuild ... test -only-testing:SilaTests/LiveVerificationPolishTests
 ```
+
+`LiveSessionsTests` (contract v26) needs no account either: it registers a
+disposable address twice — a stranger's registration, then the owner's — has
+the owner resend and type the code through the app's own view models, and
+checks the owner's password is the account's and the stranger's is refused;
+does the same through a sign-in that answers `email_unverified`; and signs out
+with an access token the server cannot read, then checks the refresh token no
+longer works.
 
 `LiveVouchingTests` (contract v24) works the same way, with disposable accounts
 only: two made vouchers through the dev hook (verified forty days ago — the

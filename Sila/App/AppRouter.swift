@@ -85,6 +85,16 @@ public final class AppRouter {
 
     /// The auth stack's path.
     public var authPath: [AuthRoute] = []
+    /// The password typed just before the code screen on the auth stack —
+    /// at registration, or at a sign-in that answered `email_unverified` —
+    /// which that screen sends with the code (contract v26 §7.1).
+    ///
+    /// Not part of ``AuthRoute`` on purpose: a navigation path is a value
+    /// that gets copied, compared and described, and a password belongs in
+    /// none of those. In memory only. It goes when the stack returns to the
+    /// welcome screen or another code screen replaces this one, and it is
+    /// only ever handed to a code screen for the address it was typed for.
+    @ObservationIgnored private var codeScreenPassword: (email: String, password: String)?
     /// The home (Phase 3) stack's path.
     public var feedPath: [FeedRoute] = []
     /// The Explore tab's own stack path.
@@ -172,14 +182,35 @@ public final class AppRouter {
     /// Returns to the welcome screen.
     public func popToRoot() {
         authPath.removeAll()
+        codeScreenPassword = nil
+    }
+
+    /// Pushes the code screen for `email`, holding the password typed on the
+    /// screen before it for the code (see ``password(forCodeTo:)``).
+    public func pushCodeScreen(email: String, purpose: OTPPurpose, password: String?) {
+        codeScreenPassword = password.map { (email, $0) }
+        authPath.append(.otp(email: email, purpose: purpose))
     }
 
     /// Replaces the whole stack with the OTP screen for `email`.
     ///
     /// Used when `/auth/login` answers `email_unverified` — the user should not
-    /// be able to swipe back into a sign-in form that will keep failing.
-    public func replaceWithOTP(email: String, purpose: OTPPurpose) {
+    /// be able to swipe back into a sign-in form that will keep failing. The
+    /// password they signed in with goes with the code.
+    public func replaceWithOTP(email: String, purpose: OTPPurpose, password: String? = nil) {
+        codeScreenPassword = password.map { (email, $0) }
         authPath = [.otp(email: email, purpose: purpose)]
+    }
+
+    /// The password for the code screen for `email`, while that screen is on
+    /// the auth stack; `nil` otherwise.
+    public func password(forCodeTo email: String) -> String? {
+        guard let held = codeScreenPassword, held.email == email else { return nil }
+        let onStack = authPath.contains { route in
+            if case let .otp(address, _) = route { return address == email }
+            return false
+        }
+        return onStack ? held.password : nil
     }
 
     /// Pushes a screen onto the home stack.

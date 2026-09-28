@@ -66,15 +66,34 @@ public final class AuthService: AuthServiceProtocol {
         analytics.track(.passwordReset)
     }
 
-    public func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair {
+    public func verifyOTP(email: String, code: String, purpose: OTPPurpose, password: String?) async throws -> TokenPair {
         let request = try APIRequest.json(
             "/auth/otp/verify",
-            body: OTPVerifyBody(email: normalise(email), code: code, purpose: purpose.rawValue)
+            body: OTPVerifyBody(
+                email: normalise(email),
+                code: code,
+                purpose: purpose.rawValue,
+                password: password.flatMap(Self.sendableWithCode)
+            )
         )
         let pair = try await network.send(request, as: TokenPair.self)
         await store.store(pair)
         analytics.track(.otpVerified, properties: ["purpose": purpose.rawValue])
         return pair
+    }
+
+    /// `password`, when the server would accept it beside a code: 8 to 128
+    /// characters and at most 72 bytes (contract v26 §7.1). Anything else is
+    /// refused before the code is looked at — `422` or `password_too_long` —
+    /// and a password typed at sign-in can be exactly that: one set before
+    /// the 72-byte rule still signs in, and would then keep its owner from
+    /// ever confirming the address. Such a password is not sent, and the code
+    /// is judged on its own, as it was before the field existed.
+    static func sendableWithCode(_ password: String) -> String? {
+        // The server counts code points, not what Swift calls characters.
+        let length = password.unicodeScalars.count
+        guard (8...128).contains(length), password.utf8.count <= 72 else { return nil }
+        return password
     }
 
     // MARK: - Sign in / out
@@ -180,10 +199,20 @@ public final class AuthService: AuthServiceProtocol {
 
     public func signOut() async throws {
         if let token = await store.token() {
-            let request = APIRequest(path: "/auth/logout", method: .post, accessToken: token.accessToken)
+            // The refresh token travels in the body as well as the access
+            // token in the header (contract v26 §1). An access token that has
+            // expired still names its session, but one the server cannot read
+            // at all does not, and then the refresh token is what says which
+            // session to end — rather than leaving a thirty-day token alive on
+            // the server after the phone has forgotten it.
+            let request = try? APIRequest.json(
+                "/auth/logout",
+                body: LogoutRequestBody(refreshToken: token.refreshToken),
+                accessToken: token.accessToken
+            )
             // A failed logout must never trap the user in a signed-in state —
             // the local wipe below is what actually ends the session.
-            try? await network.send(request)
+            if let request { try? await network.send(request) }
         }
         await store.clear()
         analytics.track(.signedOut)

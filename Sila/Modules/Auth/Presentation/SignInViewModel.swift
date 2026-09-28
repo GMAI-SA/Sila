@@ -34,6 +34,9 @@ public final class SignInViewModel {
     public private(set) var signedInPair: TokenPair?
     /// Set when the server demands email confirmation first.
     public private(set) var needsEmailVerification: String?
+    /// The password that answered `email_unverified`, for the code screen to
+    /// send with the code (contract v26 §7.1). The field itself is cleared.
+    public private(set) var passwordForCode: String?
     /// The email a saved biometric credential belongs to, once probed.
     public private(set) var biometricEmail: String?
 
@@ -115,10 +118,15 @@ public final class SignInViewModel {
             // screen is popped straight away and this model goes with it.
             signedInPair = pair
         } catch let error as APIError {
+            let typed = password
             password = ""
             if error.code == .emailUnverified {
                 // Credentials were fine — the address just isn't confirmed.
+                // The server answers this only for the right password, so
+                // it goes with the code: confirming the address then gives
+                // the account the password its owner just typed.
                 _ = try? await service.sendOTP(email: normalised, purpose: .login)
+                passwordForCode = typed
                 needsEmailVerification = normalised
                 return
             }
@@ -154,6 +162,13 @@ public final class SignInViewModel {
     public func consumeNeedsEmailVerification() -> String? {
         defer { needsEmailVerification = nil }
         return needsEmailVerification
+    }
+
+    /// Consumes ``passwordForCode``: handed to the code screen once, and kept
+    /// by this model no longer than that.
+    public func consumePasswordForCode() -> String? {
+        defer { passwordForCode = nil }
+        return passwordForCode
     }
 }
 

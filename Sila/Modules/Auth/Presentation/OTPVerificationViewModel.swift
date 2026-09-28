@@ -34,21 +34,34 @@ public final class OTPVerificationViewModel {
     public private(set) var verifiedPair: TokenPair?
 
     private let service: AuthServiceProtocol
+    /// The password typed on the screen before this one, sent with the code.
+    ///
+    /// Held here, in memory, for as long as the screen is up and never
+    /// written anywhere. When this code confirms the address for the first
+    /// time, the password beside it is the one the account takes (contract
+    /// v26 §7.1) — not whichever registration of the address, perhaps a
+    /// stranger's, the server happens to have on file.
+    private let password: String?
     private var countdownTask: Task<Void, Never>?
 
     /// - Parameters:
     ///   - email: Address the code was sent to.
     ///   - purpose: Register / login / reset.
+    ///   - password: What the person typed at registration, or at the sign-in
+    ///     that sent them here. `nil` when this screen follows neither (a
+    ///     relaunch on an unconfirmed session).
     ///   - service: Auth backend.
     ///   - initialCountdown: Seconds to start the resend timer at.
     public init(
         email: String,
         purpose: OTPPurpose,
+        password: String? = nil,
         service: AuthServiceProtocol,
         initialCountdown: Int = AppConfig.defaultOTPResendSeconds
     ) {
         self.email = email
         self.purpose = purpose
+        self.password = password
         self.service = service
         self.digits = Array(repeating: "", count: AppConfig.otpLength)
         self.focusedIndex = 0
@@ -227,7 +240,7 @@ public final class OTPVerificationViewModel {
         errorMessage = nil
 
         do {
-            let pair = try await service.verifyOTP(email: email, code: code, purpose: purpose)
+            let pair = try await service.verifyOTP(email: email, code: code, purpose: purpose, password: password)
             verifiedPair = pair
         } catch let error as APIError {
             errorMessage = error.userMessage

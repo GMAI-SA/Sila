@@ -153,6 +153,7 @@
 		5419D09DFA05C73AAB54F720 /* PostCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F67A6ED7C1083C38BECCA3 /* PostCardView.swift */; };
 		54C6B4B2915C714FB781F79A /* VoiceEngineMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A64378E776156F50207975E /* VoiceEngineMock.swift */; };
 		5624311D77390A8822D3D2B0 /* FollowRequestsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD190A751F238D9A04E16F9 /* FollowRequestsSheet.swift */; };
+		568ADD85BF1A4F68F0AFE9FB /* LiveSessionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B8C41828782B6BD0F40054 /* LiveSessionsTests.swift */; };
 		56F913869D0AB0A44907C54E /* SLVouchTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D793791D5D06B8F191DCE0 /* SLVouchTag.swift */; };
 		573D120011CF5733F326FF3B /* SuspensionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6A5C13E8B78B3969481F2 /* SuspensionScreen.swift */; };
 		585E04FC29D93905EAA193AD /* VouchDetailsForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A64AC4823E5C805B3D7669 /* VouchDetailsForm.swift */; };
@@ -192,6 +193,7 @@
 		6B36B4A0B450D53E0588ABDD /* FeedContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D2363B5E056E0F4A413E99 /* FeedContractTests.swift */; };
 		6DBD0CBE7BB254530B2EE75B /* MessagesServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203A02D9D1D1434809041ACE /* MessagesServiceMock.swift */; };
 		6DCE7E115892648B78940E35 /* NafathVerificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE009C02035D39DC55147CF /* NafathVerificationTests.swift */; };
+		6E93AAA9A428AEEE3225FB22 /* SignOutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF9113288A09EDD9DFE4B9C /* SignOutTests.swift */; };
 		6E9D4615F6423A3E19B362AE /* OTPVerificationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F67E4B66E6DD7131ED5DD5 /* OTPVerificationViewModelTests.swift */; };
 		6EDB2A2023DDA0862643F639 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B353F14DEB9DC0EC7EC9CB0F /* Localizable.xcstrings */; };
 		6F0194A1C48D3824A38C5406 /* SLColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C618D4849364BE8E400E73FB /* SLColor.swift */; };
@@ -287,6 +289,7 @@
 		ABD28BC4DDA525BC538D5B27 /* SLSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44E9E741167917A52FDAC8A3 /* SLSegmentedControl.swift */; };
 		AC26CC3FBB141B559F6B4DDB /* SplashScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E579FED16AB296D104AFB458 /* SplashScreen.swift */; };
 		AC9D6F541FFDAE246B2075D6 /* OTPVerificationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0229733C75FFD23A06420503 /* OTPVerificationViewModel.swift */; };
+		ADD21FB1134910F25DF02857 /* CodeScreenPasswordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A42C8B1285A313CE02F619 /* CodeScreenPasswordTests.swift */; };
 		ADF73409C16AAED34675247A /* MessagesServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277E1BEFE86DFFAD93FDB8A3 /* MessagesServiceTests.swift */; };
 		AF53EC211808B1815077C784 /* RoomInvitesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F72B6FF67E4C6E84266ABFA8 /* RoomInvitesSheet.swift */; };
 		B027504D6691756FBB2E8E5A /* DiscoverModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 309513FCB23A15CFFFD4DABA /* DiscoverModels.swift */; };
@@ -433,6 +436,7 @@
 		0229733C75FFD23A06420503 /* OTPVerificationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTPVerificationViewModel.swift; sourceTree = "<group>"; };
 		0232D4131612B29C811A26AF /* SLTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLTypography.swift; sourceTree = "<group>"; };
 		02844B29885E7D0036AC2FE4 /* ProfileJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileJourneyUITests.swift; sourceTree = "<group>"; };
+		02A42C8B1285A313CE02F619 /* CodeScreenPasswordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeScreenPasswordTests.swift; sourceTree = "<group>"; };
 		03AC61F158FC2D5BCE2E75D1 /* NotificationsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsServiceTests.swift; sourceTree = "<group>"; };
 		03BD05DAB7254B7FE09B24B6 /* NotificationsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsScreen.swift; sourceTree = "<group>"; };
 		052F76981E0EAF5DD22FAC03 /* SafetyListsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyListsViewModel.swift; sourceTree = "<group>"; };
@@ -514,6 +518,7 @@
 		32AB1A564B5FC6426D089B1F /* TokenRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenRefreshTests.swift; sourceTree = "<group>"; };
 		32EEEAE5F9E3F76BA0C86E54 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		3331D0051B91AC4E42A1D50D /* HashtagViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashtagViewModel.swift; sourceTree = "<group>"; };
+		33B8C41828782B6BD0F40054 /* LiveSessionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSessionsTests.swift; sourceTree = "<group>"; };
 		3474D56C560A0E2F68F663B1 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		35EADF0C7B9F38540BCBFD45 /* VerificationServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationServiceProtocol.swift; sourceTree = "<group>"; };
 		360A6EABB21BF971CD6676D6 /* PreferencesServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesServiceMock.swift; sourceTree = "<group>"; };
@@ -771,6 +776,7 @@
 		DC14D16FAF2A51AA524FB5A0 /* SafetyServiceMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyServiceMock.swift; sourceTree = "<group>"; };
 		DC6CE09D4BCE161193DA6F8D /* PreferencesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesViewModel.swift; sourceTree = "<group>"; };
 		DD3D254702013F47B90B0A6C /* ComposerJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerJourneyUITests.swift; sourceTree = "<group>"; };
+		DDF9113288A09EDD9DFE4B9C /* SignOutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignOutTests.swift; sourceTree = "<group>"; };
 		DE0E47E8C37C57AFDC5C9BF5 /* ReportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportViewModel.swift; sourceTree = "<group>"; };
 		DE1CAAC9916416509C4139B2 /* CreateRoomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateRoomViewModel.swift; sourceTree = "<group>"; };
 		DE30C9A6185ED7B3A2822F45 /* Sila.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sila.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1140,6 +1146,7 @@
 				4712EAF5AC3AD7C5A8625528 /* BiometricLabelTests.swift */,
 				F78D0A34089D18DF40BDEB32 /* CancellationErrorTests.swift */,
 				8E9E338CEDB6B437CEE8F326 /* CancelledLoadTests.swift */,
+				02A42C8B1285A313CE02F619 /* CodeScreenPasswordTests.swift */,
 				51FF92B637B8CECC2E627C67 /* CommunitiesTests.swift */,
 				ADE3599EE430555C0A6EDFBE /* ComposerModelsTests.swift */,
 				AEB166D94B1265CF6D5913DE /* ComposerServiceTests.swift */,
@@ -1174,6 +1181,7 @@
 				D9449E0F8F70C04B0BB8E7BE /* LiveRoomsTests.swift */,
 				360C56BDBA9F48E850A347D7 /* LiveRoomViewModelTests.swift */,
 				B88C66FE719CBE1A4202F73D /* LiveSafetyTests.swift */,
+				33B8C41828782B6BD0F40054 /* LiveSessionsTests.swift */,
 				A97039A13859C8F3CC6DFFE1 /* LiveTarget.swift */,
 				242A3E4E0F74A58F961F575A /* LiveVerificationPolishTests.swift */,
 				FF347559F8FE26B45BB45335 /* LiveVouchingTests.swift */,
@@ -1220,6 +1228,7 @@
 				20BEBB5A3DD2639363E8F348 /* SessionLeftoversTests.swift */,
 				90B663253F247680B67D1C0F /* SessionTestDoubles.swift */,
 				A2C1F4F0B0F0FC9214608731 /* SignInViewModelTests.swift */,
+				DDF9113288A09EDD9DFE4B9C /* SignOutTests.swift */,
 				FF58334D40738BC138A22CCC /* SubjectStripTests.swift */,
 				C5F5248C4BDB3A6A1E49B543 /* TextDirectionTests.swift */,
 				32AB1A564B5FC6426D089B1F /* TokenRefreshTests.swift */,
@@ -2412,6 +2421,7 @@
 				D6E6E4E22DE7092D0774EC1E /* BiometricLabelTests.swift in Sources */,
 				8D2A2826164A2CD2B9A98EE9 /* CancellationErrorTests.swift in Sources */,
 				6983B6417421442058DE7C7B /* CancelledLoadTests.swift in Sources */,
+				ADD21FB1134910F25DF02857 /* CodeScreenPasswordTests.swift in Sources */,
 				3DA030AEA988439575106EA3 /* CommunitiesTests.swift in Sources */,
 				B5905E22F92144CE893E5C8C /* ComposerModelsTests.swift in Sources */,
 				85E3FDF6D2AABADABED6C871 /* ComposerServiceTests.swift in Sources */,
@@ -2446,6 +2456,7 @@
 				A2501FF1FE1F652C38C87910 /* LiveRoomViewModelTests.swift in Sources */,
 				650B3B9F01E6DD81AE1F4957 /* LiveRoomsTests.swift in Sources */,
 				5162CE78BA33E621DAB6A710 /* LiveSafetyTests.swift in Sources */,
+				568ADD85BF1A4F68F0AFE9FB /* LiveSessionsTests.swift in Sources */,
 				23F110BD55419FA094D6A14C /* LiveTarget.swift in Sources */,
 				3D94B14348E8B5FB1D1F47F5 /* LiveVerificationPolishTests.swift in Sources */,
 				4EFB47FD9439061CB4F157F2 /* LiveVouchingTests.swift in Sources */,
@@ -2492,6 +2503,7 @@
 				4032485132670E55975E278B /* SessionLeftoversTests.swift in Sources */,
 				A084B0CC50F20EF0F21C43CA /* SessionTestDoubles.swift in Sources */,
 				3605A24B5C27BC341A97E16C /* SignInViewModelTests.swift in Sources */,
+				6E93AAA9A428AEEE3225FB22 /* SignOutTests.swift in Sources */,
 				B6972CA3689C7481D88CA220 /* SubjectStripTests.swift in Sources */,
 				61385292E9329CA2705354B5 /* TextDirectionTests.swift in Sources */,
 				382DFA86392F5D7CD443FFB5 /* TokenRefreshTests.swift in Sources */,

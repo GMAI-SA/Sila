@@ -20,7 +20,17 @@ public protocol AuthServiceProtocol: Sendable {
     func sendOTP(email: String, purpose: OTPPurpose) async throws -> OTPSendResult
 
     /// Exchanges a code for a session.
-    func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair
+    ///
+    /// - Parameter password: The password the person typed before this code
+    ///   screen — at registration, or at the sign-in that answered
+    ///   `email_unverified` — sent again with the code (contract v26 §7.1).
+    ///   When the code confirms the address for the first time it becomes the
+    ///   account's password, whatever any other registration of the address
+    ///   asked for; otherwise the server does not read it. `nil` when the
+    ///   screen no longer has one (the app was restarted), and a password the
+    ///   server would refuse is not sent: it must not stand between somebody
+    ///   and a code that is right.
+    func verifyOTP(email: String, code: String, purpose: OTPPurpose, password: String?) async throws -> TokenPair
 
     /// Sets a new password using a `reset` code — `POST /auth/password/reset`.
     ///
@@ -65,4 +75,11 @@ public protocol AuthServiceProtocol: Sendable {
 
     /// The biometry this device offers, for labelling that button.
     var availableBiometry: BiometryKind { get }
+}
+
+extension AuthServiceProtocol {
+    /// Exchanges a code for a session, with no password beside it.
+    public func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair {
+        try await verifyOTP(email: email, code: code, purpose: purpose, password: nil)
+    }
 }

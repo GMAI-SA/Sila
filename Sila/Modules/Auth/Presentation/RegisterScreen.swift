@@ -14,7 +14,7 @@ public struct RegisterScreen: View {
 
     @State private var viewModel: RegisterViewModel
     private let router: AppRouter
-    private let onRegistered: (String) -> Void
+    private let onRegistered: (String, String?) -> Void
 
     @FocusState private var focus: Field?
 
@@ -23,11 +23,13 @@ public struct RegisterScreen: View {
     /// - Parameters:
     ///   - service: Auth backend.
     ///   - router: Used to present the legal sheets.
-    ///   - onRegistered: Called with the normalised email once the code is sent.
+    ///   - onRegistered: Called with the normalised email once the code is
+    ///     sent, and the password it was registered with, for the code screen
+    ///     to send with the code.
     public init(
         service: AuthServiceProtocol,
         router: AppRouter,
-        onRegistered: @escaping (String) -> Void
+        onRegistered: @escaping (_ email: String, _ password: String?) -> Void
     ) {
         _viewModel = State(initialValue: RegisterViewModel(service: service))
         self.router = router
@@ -164,7 +166,7 @@ public struct RegisterScreen: View {
         focus = nil
         await viewModel.submit()
         if let email = viewModel.consumeRegisteredEmail() {
-            onRegistered(email)
+            onRegistered(email, viewModel.consumeRegisteredPassword())
         }
     }
 }
@@ -175,7 +177,7 @@ public struct RegisterScreen: View {
         RegisterScreen(
             service: container.authService,
             router: container.router,
-            onRegistered: { _ in }
+            onRegistered: { _, _ in }
         )
     }
 }

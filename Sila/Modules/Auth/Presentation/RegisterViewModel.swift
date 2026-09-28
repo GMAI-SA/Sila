@@ -33,6 +33,11 @@ public final class RegisterViewModel {
     public var toast: SLToastMessage?
     /// Set when registration succeeds; the screen navigates to OTP entry.
     public private(set) var registeredEmail: String?
+    /// The password ``registeredEmail`` was registered with, for the code
+    /// screen to send again with the code (contract v26 §7.1): the code that
+    /// confirms the address then decides its password, not whichever
+    /// registration of it the server has on file.
+    public private(set) var registeredPassword: String?
     /// Field-level error handed back by the server (e.g. `email_taken`).
     public private(set) var serverEmailError: String?
 
@@ -122,6 +127,7 @@ public final class RegisterViewModel {
             // fields hold then. Emptying them first threw the generated
             // password away, so the account could never be signed into again.
             // This model is released with the screen when the flow pops to root.
+            registeredPassword = password
             registeredEmail = normalised
         } catch let error as APIError {
             handle(error)
@@ -134,6 +140,13 @@ public final class RegisterViewModel {
     public func consumeRegisteredEmail() -> String? {
         defer { registeredEmail = nil }
         return registeredEmail
+    }
+
+    /// Consumes ``registeredPassword``: handed to the code screen once, and
+    /// kept by this model no longer than that.
+    public func consumeRegisteredPassword() -> String? {
+        defer { registeredPassword = nil }
+        return registeredPassword
     }
 
     private func handle(_ error: APIError) {

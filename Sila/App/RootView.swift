@@ -315,8 +315,8 @@ public struct RootView: View {
             RegisterScreen(
                 service: container.authService,
                 router: container.router,
-                onRegistered: { email in
-                    container.router.push(.otp(email: email, purpose: .register))
+                onRegistered: { email, password in
+                    container.router.pushCodeScreen(email: email, purpose: .register, password: password)
                 }
             )
 
@@ -324,6 +324,9 @@ public struct RootView: View {
             OTPVerificationScreen(
                 email: email,
                 purpose: purpose,
+                // What was typed on the screen before, sent with the code
+                // (contract v26 §7.1). Held by the router, never the route.
+                password: container.router.password(forCodeTo: email),
                 service: container.authService,
                 onVerified: { pair in
                     Task {
@@ -344,8 +347,8 @@ public struct RootView: View {
                         await container.session.adopt(pair)
                     }
                 },
-                onNeedsEmailVerification: { email in
-                    container.router.replaceWithOTP(email: email, purpose: .login)
+                onNeedsEmailVerification: { email, password in
+                    container.router.replaceWithOTP(email: email, purpose: .login, password: password)
                 },
                 onForgotPassword: { container.router.push(.forgotPassword) }
             )
@@ -379,7 +382,8 @@ public struct RootView: View {
     }
 
     /// The OTP screen shown as a root when a restored session has an
-    /// unconfirmed email — there is nothing to navigate back to.
+    /// unconfirmed email — there is nothing to navigate back to. No password
+    /// goes with this code: nobody typed one on this launch.
     private func emailVerificationRoot(email: String) -> some View {
         NavigationStack {
             OTPVerificationScreen(

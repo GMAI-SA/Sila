@@ -561,6 +561,9 @@ struct OTPVerifyBody: Encodable {
     let email: String
     let code: String
     let purpose: String
+    /// The password the person typed before the code screen, sent again with
+    /// the code (contract v26 §7.1). Left out when there is none.
+    var password: String?
 }
 
 struct LoginRequestBody: Encodable {
@@ -569,5 +572,11 @@ struct LoginRequestBody: Encodable {
 }
 
 struct RefreshRequestBody: Encodable {
+    let refreshToken: String
+}
+
+/// `POST /auth/logout`'s optional body: the session to end, for when the
+/// access token cannot say (contract v26 §1).
+struct LogoutRequestBody: Encodable {
     let refreshToken: String
 }

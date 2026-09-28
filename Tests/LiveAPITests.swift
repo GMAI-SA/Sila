@@ -72,17 +72,17 @@ final class LiveAPITests: XCTestCase {
         }
     }
 
-    /// Registering an address that already exists is the conflict the register
-    /// screen surfaces inline.
-    func testDuplicateRegistrationDecodesTypedError() async throws {
+    /// Registering an address that already has an account answers exactly as
+    /// a new address does (contract v26 §4): the owner is emailed "you
+    /// already have an account" instead of a code, and the answer tells
+    /// nobody which addresses have accounts. It used to be `409 email_taken`.
+    func testRegisteringATakenAddressSaysNothingAboutIt() async throws {
         let creds = try XCTUnwrap(credentials)
-        let service = makeService()
 
-        do {
-            _ = try await service.register(email: creds.email, password: "Passw0rd!234")
-            XCTFail("expected the server to reject a duplicate registration")
-        } catch let error as APIError {
-            XCTAssertEqual(error.code, .emailTaken)
-        }
+        let result = try await makeService().register(email: creds.email, password: "Passw0rd!234")
+
+        XCTAssertTrue(result.otpSent)
+        // And the account is untouched: its own password still signs in.
+        _ = try await makeService().signIn(email: creds.email, password: creds.password)
     }
 }

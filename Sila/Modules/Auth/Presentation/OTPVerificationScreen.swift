@@ -23,16 +23,19 @@ public struct OTPVerificationScreen: View {
     /// - Parameters:
     ///   - email: Address the code went to.
     ///   - purpose: Register / login / reset.
+    ///   - password: The password typed on the screen before, sent with the
+    ///     code (contract v26 §7.1); `nil` when there was none.
     ///   - service: Auth backend.
     ///   - onVerified: Called with the issued session on success.
     public init(
         email: String,
         purpose: OTPPurpose,
+        password: String? = nil,
         service: AuthServiceProtocol,
         onVerified: @escaping (TokenPair) -> Void
     ) {
         _viewModel = State(
-            initialValue: OTPVerificationViewModel(email: email, purpose: purpose, service: service)
+            initialValue: OTPVerificationViewModel(email: email, purpose: purpose, password: password, service: service)
         )
         self.onVerified = onVerified
     }

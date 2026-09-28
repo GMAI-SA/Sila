@@ -90,6 +90,8 @@ public actor AuthServiceMock: AuthServiceProtocol {
 
     /// Calls recorded for test assertions.
     public private(set) var recordedCalls: [String] = []
+    /// The password each code was verified with, `nil` where none was sent.
+    public private(set) var verifiedPasswords: [String?] = []
 
     /// Creates a mock.
     /// - Parameters:
@@ -164,8 +166,9 @@ public actor AuthServiceMock: AuthServiceProtocol {
         }
     }
 
-    public func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair {
+    public func verifyOTP(email: String, code: String, purpose: OTPPurpose, password: String?) async throws -> TokenPair {
         record("verifyOTP")
+        verifiedPasswords.append(password)
         try await delay()
         try failIfOffline()
         if scenario == .otpAlwaysInvalid || code != acceptedCode {

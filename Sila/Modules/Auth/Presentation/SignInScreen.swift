@@ -14,7 +14,7 @@ public struct SignInScreen: View {
 
     @State private var viewModel: SignInViewModel
     private let onSignedIn: (TokenPair) -> Void
-    private let onNeedsEmailVerification: (String) -> Void
+    private let onNeedsEmailVerification: (String, String?) -> Void
     private let onForgotPassword: () -> Void
 
     @FocusState private var focus: Field?
@@ -26,14 +26,16 @@ public struct SignInScreen: View {
     ///   - prefilledEmail: Last signed-in address.
     ///   - biometricsEnabled: ``FeatureFlags/biometricSignIn``.
     ///   - onSignedIn: Called with the issued session.
-    ///   - onNeedsEmailVerification: Called when the server demands OTP first.
+    ///   - onNeedsEmailVerification: Called when the server demands OTP first,
+    ///     with the address and the password just typed, for the code screen
+    ///     to send with the code.
     ///   - onForgotPassword: Pushes the reset flow.
     public init(
         service: AuthServiceProtocol,
         prefilledEmail: String = "",
         biometricsEnabled: Bool = true,
         onSignedIn: @escaping (TokenPair) -> Void,
-        onNeedsEmailVerification: @escaping (String) -> Void,
+        onNeedsEmailVerification: @escaping (_ email: String, _ password: String?) -> Void,
         onForgotPassword: @escaping () -> Void
     ) {
         _viewModel = State(initialValue: SignInViewModel(
@@ -164,7 +166,7 @@ public struct SignInScreen: View {
             return
         }
         if let email = viewModel.consumeNeedsEmailVerification() {
-            onNeedsEmailVerification(email)
+            onNeedsEmailVerification(email, viewModel.consumePasswordForCode())
         }
     }
 }
@@ -254,7 +256,7 @@ public struct ForgotPasswordScreen: View {
         SignInScreen(
             service: container.authService,
             onSignedIn: { _ in },
-            onNeedsEmailVerification: { _ in },
+            onNeedsEmailVerification: { _, _ in },
             onForgotPassword: {}
         )
     }
