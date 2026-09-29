@@ -19,6 +19,8 @@ final class FakeAppAttest: AppAttestProviding, @unchecked Sendable {
     private var attestFailures: [Error] = []
     private var assertionFailures: [String: Error] = [:]
     private var gate: Gate?
+    private var attestsOnce = false
+    private var attestedOnce: Set<String> = []
     private var generatedKeys: [String] = []
     private var attestCalls: [(keyId: String, hash: Data)] = []
     private var assertCalls: [(keyId: String, hash: Data)] = []
@@ -34,6 +36,9 @@ final class FakeAppAttest: AppAttestProviding, @unchecked Sendable {
     func failAssertions(of keyId: String, with error: Error) { lock.withLock { assertionFailures[keyId] = error } }
     /// Attestations wait at `gate` until it opens.
     func holdAttestations(at gate: Gate) { lock.withLock { self.gate = gate } }
+    /// A key Apple has attested once is refused a second attestation — in
+    /// case Apple does; the contract allows either.
+    func refuseAttestingTwice() { lock.withLock { attestsOnce = true } }
 
     var generated: [String] { lock.withLock { generatedKeys } }
     var attested: [(keyId: String, hash: Data)] { lock.withLock { attestCalls } }
@@ -51,7 +56,10 @@ final class FakeAppAttest: AppAttestProviding, @unchecked Sendable {
         if let gate = lock.withLock({ gate }) { await gate.wait() }
         let failure: Error? = lock.withLock {
             attestCalls.append((keyId, clientDataHash))
-            return attestFailures.isEmpty ? nil : attestFailures.removeFirst()
+            if attestsOnce, attestedOnce.contains(keyId) { return DCError(.invalidKey) }
+            let failure = attestFailures.isEmpty ? nil : attestFailures.removeFirst()
+            if failure == nil { attestedOnce.insert(keyId) }
+            return failure
         }
         if let failure { throw failure }
         return Data("attestation of \(keyId)".utf8)
@@ -102,44 +110,121 @@ final class AttestClock: @unchecked Sendable {
     func advance(_ seconds: TimeInterval) { lock.withLock { current += seconds } }
 }
 
-/// The server's side of contract v32, as far as the app can see it.
+/// The server's side of contract v32, as far as the app can see it: the
+/// keys it holds, and what it answers an attestation.
 final class AttestServer: @unchecked Sendable {
 
     enum AttestAnswer {
-        case created, keyExists, refused, lost
+        /// `201`: the key is kept.
+        case created
+        /// `409 key_exists`: the key is on file already.
+        case keyExists
+        /// `400 attestation_invalid`: the attestation itself is refused.
+        case refused
+        /// `400 challenge_stale`: expired, replaced or spent; nothing kept.
+        case stale
+        /// The connection dropped before the request arrived: nothing kept.
+        case lost
+        /// Kept, and the answer lost on the way back.
+        case keptButLost
+        /// `429 rate_limited`, counted before anything is checked.
+        case rateLimited
+        /// A `400` whose code the app does not know.
+        case otherRefusal
     }
 
     private let lock = NSLock()
     private var answer: AttestAnswer = .created
+    private var upcoming: [AttestAnswer] = []
     private var challengeFailure: APIError?
     private var issued = 0
+    private var held: Set<String> = []
+    private var keepsKeys = true
 
-    func answerAttestations(_ answer: AttestAnswer) { lock.withLock { self.answer = answer } }
+    /// Every attestation from now on answers `answer`.
+    func answerAttestations(_ answer: AttestAnswer) { lock.withLock { self.answer = answer; upcoming = [] } }
+    /// The next attestations answer these, in order; then the standing answer.
+    func answerNextAttestations(_ answers: AttestAnswer...) { lock.withLock { upcoming = answers } }
     func failChallenges(_ error: APIError?) { lock.withLock { challengeFailure = error } }
+    /// The server holds `keyId` for the account — attested before the test.
+    func hold(_ keyId: String) { lock.withLock { _ = held.insert(keyId) } }
+    /// The server lets `keyId` go, as when ten newer keys pushed it out.
+    func letGo(_ keyId: String) { lock.withLock { _ = held.remove(keyId) } }
+    /// Accepts attestations and holds none of them.
+    func forgetEveryKey() { lock.withLock { keepsKeys = false; held = [] } }
 
     lazy var network = ScriptedNetwork { [unowned self] request in try self.handle(request) }
+
+    private func sentKey(in request: APIRequest) -> String? {
+        guard let body = request.body else { return nil }
+        return (try? JSONSerialization.jsonObject(with: body) as? [String: String])?["key_id"]
+    }
+
+    private func keep(_ keyId: String?) {
+        lock.lock()
+        defer { lock.unlock() }
+        if keepsKeys, let keyId { held.insert(keyId) }
+    }
+
+    private func holds(_ keyId: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return held.contains(keyId)
+    }
+
+    private func nextAnswer() -> AttestAnswer {
+        lock.lock()
+        defer { lock.unlock() }
+        return upcoming.isEmpty ? answer : upcoming.removeFirst()
+    }
+
+    private func nextChallenge() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        issued += 1
+        return issued
+    }
+
+    private func failure() -> APIError? {
+        lock.lock()
+        defer { lock.unlock() }
+        return challengeFailure
+    }
 
     private func handle(_ request: APIRequest) throws -> String {
         switch request.path {
         case "/device/attest/challenge", "/device/assert/challenge":
-            let (failure, number): (APIError?, Int) = lock.withLock {
-                issued += 1
-                return (challengeFailure, issued)
+            if let failure = failure() { throw failure }
+            // With the key it is about to sign with: is it still on file?
+            let named = request.path == "/device/assert/challenge" ? sentKey(in: request) : nil
+            if let named, !holds(named) {
+                throw APIError.api(code: .keyUnknown, message: "That key is not on file for this account", status: 404)
             }
-            if let failure { throw failure }
+            let number = nextChallenge()
             let purpose = request.path == "/device/attest/challenge" ? "attest" : "assert"
             return #"{"challenge": "\#(purpose)-challenge_\#(number)", "expires_at": "2026-09-29T10:05:00Z"}"#
         case "/device/attest":
-            switch lock.withLock({ answer }) {
+            let keyId = sentKey(in: request)
+            switch nextAnswer() {
             case .created:
-                let body = try JSONSerialization.jsonObject(with: request.body ?? Data()) as? [String: String]
-                return #"{"key_id": "\#(body?["key_id"] ?? "")", "environment": "production", "created_at": "2026-09-29T10:00:00Z"}"#
+                keep(keyId)
+                return #"{"key_id": "\#(keyId ?? "")", "environment": "production", "created_at": "2026-09-29T10:00:00Z"}"#
             case .keyExists:
-                throw APIError.api(code: .unknown, message: "That key is already attested", status: 409)
+                keep(keyId)
+                throw APIError.api(code: .keyExists, message: "That key is already attested", status: 409)
             case .refused:
-                throw APIError.api(code: .unknown, message: "The device could not be attested", status: 400)
+                throw APIError.api(code: .attestationInvalid, message: "The device could not be attested", status: 400)
+            case .stale:
+                throw APIError.api(code: .challengeStale, message: "Ask for a new challenge", status: 400)
             case .lost:
                 throw APIError.transport("The network connection was lost.")
+            case .keptButLost:
+                keep(keyId)
+                throw APIError.transport("The network connection was lost.")
+            case .rateLimited:
+                throw APIError.api(code: .rateLimited, message: "Too many requests", status: 429)
+            case .otherRefusal:
+                throw APIError.api(code: .unknown, message: "Something the app does not know", status: 400)
             }
         case "/verification/document":
             return #"{"id": "case-1", "status": "submitted", "document_type": "passport", "verification_status": "pending_review"}"#
@@ -400,6 +485,14 @@ final class AppAttestorTests: XCTestCase {
 
     private func submission() throws -> DocumentSubmission { try AppAttestClientDataTests.submission() }
 
+    /// The `key_id` the `index`th assertion challenge carried.
+    private func challengeKey(_ index: Int) throws -> String? {
+        let body = try XCTUnwrap(requests("/device/assert/challenge")[index].body)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])["key_id"]
+    }
+
+    private func hash(_ challenge: String) -> Data { Data(SHA256.hash(data: Data(challenge.utf8))) }
+
     private func attestEvents() -> [[String: String]] {
         analytics.recorded.filter { $0.event == .deviceAttestation }.map(\.properties)
     }
@@ -430,7 +523,8 @@ final class AppAttestorTests: XCTestCase {
         XCTAssertEqual(requests("/device/attest").first?.accessToken, "test-access-token")
         XCTAssertEqual(requests("/device/assert/challenge").count, 1)
         XCTAssertEqual(requests("/device/assert/challenge").first?.method, .post)
-        XCTAssertNil(requests("/device/assert/challenge").first?.body, "the challenge routes take no body")
+        XCTAssertNil(requests("/device/attest/challenge").first?.body, "the attestation challenge takes no body")
+        XCTAssertEqual(try challengeKey(0), "key-1", "the assertion challenge names the key, so the server can say it let it go")
 
         let expected = try AppAttestClientData(challenge: "assert-challenge_2", submission: submission).hash()
         XCTAssertEqual(service.asserted.map(\.keyId), ["key-1"])
@@ -570,9 +664,10 @@ final class AppAttestorTests: XCTestCase {
         XCTAssertEqual(try stored()?.keyId, "key-1")
     }
 
-    /// The server refused the attestation: no assertion, the key goes, and no
-    /// new key is made on this install for a day — a genuine phone refused
-    /// is a disagreement a new key per submission would not settle.
+    /// The server refused the attestation (`400 attestation_invalid`): no
+    /// assertion, the key goes, and no new key is made on this install for a
+    /// day — a genuine phone refused is a disagreement a new key per
+    /// submission would not settle.
     func testARefusedAttestationWaitsADayBeforeANewKey() async throws {
         server.answerAttestations(.refused)
         let attestor = makeAttestor()
@@ -603,21 +698,6 @@ final class AppAttestorTests: XCTestCase {
         let proof = await makeAttestor().proof(for: try submission())
         XCTAssertEqual(proof?.keyID, "key-1")
         XCTAssertEqual(try stored()?.attested, true)
-    }
-
-    /// The answer never came: a key is attested once, so it is discarded and
-    /// a new one made next time.
-    func testALostAnswerDiscardsTheKey() async throws {
-        server.answerAttestations(.lost)
-        let attestor = makeAttestor()
-        let proof6 = await attestor.proof(for: try submission())
-        XCTAssertNil(proof6)
-        XCTAssertNil(try stored())
-        XCTAssertEqual(attestEvents().first, ["step": "attest", "result": "failed", "reason": "transport"])
-
-        server.answerAttestations(.created)
-        let proof7 = await attestor.proof(for: try submission())
-        XCTAssertEqual(proof7?.keyID, "key-2")
     }
 
     /// No challenge (offline, rate-limited): nothing happened to the key, and
@@ -652,6 +732,7 @@ final class AppAttestorTests: XCTestCase {
     func testAnAttestedKeyThatIsGoneIsReplacedOnce() async throws {
         try keychain.save(AppAttestor.KeyRecord(keyId: "restored-key", attested: true, refusedAt: nil),
                           for: AppAttestor.keychainKey(for: account!))
+        server.hold("restored-key")
         service.failAssertions(of: "restored-key", with: DCError(.invalidKey))
 
         let proof = await makeAttestor().proof(for: try submission())
@@ -665,6 +746,7 @@ final class AppAttestorTests: XCTestCase {
     func testAKeyIsReplacedAtMostOncePerSubmission() async throws {
         try keychain.save(AppAttestor.KeyRecord(keyId: "restored-key", attested: true, refusedAt: nil),
                           for: AppAttestor.keychainKey(for: account!))
+        server.hold("restored-key")
         service.failAssertions(of: "restored-key", with: DCError(.invalidKey))
         service.failAssertions(of: "key-1", with: DCError(.invalidKey))
 
@@ -704,6 +786,246 @@ final class AppAttestorTests: XCTestCase {
         let next = await attestor.proof(for: try submission())
         XCTAssertEqual(next?.keyID, "key-1")
         XCTAssertEqual(service.generated, ["key-1"])
+    }
+
+    // MARK: A stale challenge or a lost answer is not a refusal
+
+    /// `400 challenge_stale` — the challenge expired while the phone was
+    /// locked, or another device of the account replaced it: asked again at
+    /// once with a fresh challenge, the same key, and nothing paused.
+    func testAStaleChallengeIsAskedAgainAtOnce() async throws {
+        server.answerNextAttestations(.stale)
+        let proof = await makeAttestor().proof(for: try submission())
+
+        XCTAssertEqual(proof?.keyID, "key-1")
+        XCTAssertEqual(service.generated, ["key-1"], "the same key, attested again")
+        XCTAssertEqual(service.attested.map(\.keyId), ["key-1", "key-1"])
+        XCTAssertEqual(service.attested.map(\.hash), [hash("attest-challenge_1"), hash("attest-challenge_2")],
+                       "a fresh challenge the second time")
+        XCTAssertEqual(try attestBody(1)["challenge"], "attest-challenge_2")
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-1", attested: true, refusedAt: nil))
+        XCTAssertEqual(Array(attestEvents().prefix(2)), [
+            ["step": "attest", "result": "again", "reason": "stale"],
+            ["step": "attest", "result": "ok"]
+        ])
+    }
+
+    /// Where Apple will not attest the same key twice, the stale round costs
+    /// one new key, made at once — the contract's "else a new one".
+    func testAStaleChallengeWhereAppleWillNotAttestTheKeyAgainTakesOneNewKey() async throws {
+        service.refuseAttestingTwice()
+        server.answerNextAttestations(.stale)
+        let proof = await makeAttestor().proof(for: try submission())
+
+        XCTAssertEqual(proof?.keyID, "key-2")
+        XCTAssertEqual(service.generated, ["key-1", "key-2"])
+        XCTAssertEqual(service.attested.map(\.keyId), ["key-1", "key-1", "key-2"])
+        XCTAssertEqual(requests("/device/attest").count, 2)
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-2", attested: true, refusedAt: nil),
+                       "one key for the account: the new one")
+    }
+
+    /// Stale every time: a bounded number of fresh challenges, then the key
+    /// is left for next time — no refusal recorded, no day's pause, and the
+    /// next try (the clock unmoved) uses the same key.
+    func testStaleChallengesAreTriedABoundedNumberOfTimesAndPauseNothing() async throws {
+        server.answerAttestations(.stale)
+        let attestor = makeAttestor()
+
+        let none = await attestor.proof(for: try submission())
+        XCTAssertNil(none)
+        XCTAssertEqual(AppAttestor.attestationRounds, 3)
+        XCTAssertEqual(requests("/device/attest/challenge").count, AppAttestor.attestationRounds)
+        XCTAssertEqual(requests("/device/attest").count, AppAttestor.attestationRounds)
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-1", attested: false, refusedAt: nil))
+        XCTAssertFalse(attestEvents().contains { $0["result"] == "refused" })
+
+        server.answerAttestations(.created)
+        let proof = await attestor.proof(for: try submission())
+        XCTAssertEqual(proof?.keyID, "key-1", "at once, not a day later")
+        XCTAssertEqual(service.generated, ["key-1"])
+    }
+
+    /// Only `attestation_invalid` pauses for a day. A `429`, or a `400` the
+    /// app does not know, keeps the key and pauses nothing.
+    func testOnlyAGenuineRefusalPausesAttestation() async throws {
+        for answer in [AttestServer.AttestAnswer.rateLimited, .otherRefusal] {
+            service = FakeAppAttest()
+            server = AttestServer()
+            keychain = InMemoryKeychainClient()
+            server.answerAttestations(answer)
+            let attestor = makeAttestor()
+
+            let none = await attestor.proof(for: try submission())
+            XCTAssertNil(none, "\(answer)")
+            XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-1", attested: false, refusedAt: nil), "\(answer)")
+            XCTAssertEqual(requests("/device/attest").count, 1, "not asked again at once: \(answer)")
+
+            server.answerAttestations(.created)
+            let proof = await attestor.proof(for: try submission())
+            XCTAssertEqual(proof?.keyID, "key-1", "\(answer)")
+            XCTAssertEqual(service.generated, ["key-1"], "\(answer)")
+        }
+    }
+
+    /// The attestation arrived and its answer did not: the server is asked
+    /// whether it holds the key, it does, and the key is used — no second
+    /// attestation, no second key.
+    func testALostAnswerThatArrivedIsFoundOnFile() async throws {
+        server.answerNextAttestations(.keptButLost)
+        let proof = await makeAttestor().proof(for: try submission())
+
+        XCTAssertEqual(proof?.keyID, "key-1")
+        XCTAssertEqual(service.attested.map(\.keyId), ["key-1"], "not attested a second time")
+        XCTAssertEqual(requests("/device/attest").count, 1)
+        XCTAssertEqual(requests("/device/assert/challenge").count, 2, "asked whether it is on file, then the submission's own")
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-1", attested: true, refusedAt: nil))
+        XCTAssertEqual(attestEvents(), [
+            ["step": "attest", "result": "again", "reason": "transport"],
+            ["step": "status", "result": "ok"],
+            ["step": "assert", "result": "ok"]
+        ])
+    }
+
+    /// It never arrived: the server says so, and the same key is attested
+    /// again with a fresh challenge.
+    func testALostAnswerThatNeverArrivedIsAttestedAgainWithAFreshChallenge() async throws {
+        server.answerNextAttestations(.lost)
+        let proof = await makeAttestor().proof(for: try submission())
+
+        XCTAssertEqual(proof?.keyID, "key-1")
+        XCTAssertEqual(service.generated, ["key-1"])
+        XCTAssertEqual(service.attested.map(\.keyId), ["key-1", "key-1"])
+        XCTAssertEqual(try attestBody(1)["challenge"], "attest-challenge_2")
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-1", attested: true, refusedAt: nil))
+        XCTAssertTrue(attestEvents().contains(["step": "status", "result": "forgotten"]))
+    }
+
+    /// Lost every time: bounded, the key kept and remembered as unanswered —
+    /// no refusal — and attested next time.
+    func testAnswersLostEveryTimeKeepTheKeyForNextTime() async throws {
+        server.answerAttestations(.lost)
+        let none = await makeAttestor().proof(for: try submission())
+
+        XCTAssertNil(none)
+        XCTAssertEqual(requests("/device/attest").count, AppAttestor.attestationRounds)
+        XCTAssertEqual(service.generated, ["key-1"])
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-1", attested: false, refusedAt: nil, unanswered: true))
+
+        server.answerAttestations(.created)
+        let proof = await makeAttestor().proof(for: try submission())
+        XCTAssertEqual(proof?.keyID, "key-1")
+        XCTAssertEqual(service.generated, ["key-1"])
+    }
+
+    /// After a relaunch, a key whose answer was lost is asked about before
+    /// anything else, and used as it is when the server holds it.
+    func testAKeyWhoseAnswerWasLostIsAskedAboutAfterARelaunch() async throws {
+        try keychain.save(AppAttestor.KeyRecord(keyId: "sent-key", attested: false, refusedAt: nil, unanswered: true),
+                          for: AppAttestor.keychainKey(for: account!))
+        server.hold("sent-key")
+
+        let proof = await makeAttestor().proof(for: try submission())
+
+        XCTAssertEqual(proof?.keyID, "sent-key")
+        XCTAssertTrue(service.attested.isEmpty)
+        XCTAssertTrue(service.generated.isEmpty)
+        XCTAssertTrue(requests("/device/attest/challenge").isEmpty)
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "sent-key", attested: true, refusedAt: nil))
+    }
+
+    // MARK: A key the server let go
+
+    /// The server let the key go (`404 key_unknown` on the assertion
+    /// challenge): nothing is signed with it; it is dropped, a new key is
+    /// attested, and this submission is signed with that one.
+    func testAKeyTheServerLetGoIsReplacedBeforeSigning() async throws {
+        let attestor = makeAttestor()
+        _ = await attestor.proof(for: try submission())
+        server.letGo("key-1")
+
+        let proof = await attestor.proof(for: try submission())
+
+        XCTAssertEqual(proof?.keyID, "key-2")
+        XCTAssertEqual(service.generated, ["key-1", "key-2"])
+        XCTAssertEqual(service.asserted.map(\.keyId), ["key-1", "key-2"], "nothing signed with a key the server let go")
+        XCTAssertEqual(try (0..<3).map { try challengeKey($0) }, ["key-1", "key-1", "key-2"])
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-2", attested: true, refusedAt: nil),
+                       "one key for the account: the new one")
+        XCTAssertTrue(attestEvents().contains(["step": "status", "result": "forgotten"]))
+    }
+
+    /// Opening the flow asks too, once a launch: a key let go is replaced
+    /// while the person is at the camera, and the submission only signs.
+    func testOpeningTheFlowReplacesAKeyTheServerLetGo() async throws {
+        _ = await makeAttestor().proof(for: try submission())
+        server.letGo("key-1")
+
+        let relaunched = makeAttestor()
+        await relaunched.prepare()
+        XCTAssertEqual(service.generated, ["key-1", "key-2"], "replaced ahead of the submission")
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-2", attested: true, refusedAt: nil))
+
+        let asked = requests("/device/assert/challenge").count
+        let attests = requests("/device/attest").count
+        let proof = await relaunched.proof(for: try submission())
+        XCTAssertEqual(proof?.keyID, "key-2")
+        XCTAssertEqual(requests("/device/assert/challenge").count, asked + 1, "the submission only asks its challenge")
+        XCTAssertEqual(requests("/device/attest").count, attests)
+    }
+
+    /// A key on file is asked about once a launch, however often the flow
+    /// opens; one nobody could answer about is kept and holds nothing up.
+    func testTheKeyIsAskedAboutOnceALaunchAndAnUnansweredAskKeepsIt() async throws {
+        _ = await makeAttestor().proof(for: try submission())
+
+        let relaunched = makeAttestor()
+        let asked = requests("/device/assert/challenge").count
+        await relaunched.prepare()
+        await relaunched.prepare()
+        XCTAssertEqual(requests("/device/assert/challenge").count, asked + 1)
+        XCTAssertEqual(service.generated, ["key-1"])
+
+        server.failChallenges(.transport("offline"))
+        let offline = makeAttestor()
+        await offline.prepare()
+        XCTAssertEqual(try stored(), AppAttestor.KeyRecord(keyId: "key-1", attested: true, refusedAt: nil))
+        XCTAssertEqual(attestEvents().last, ["step": "status", "result": "failed", "reason": "transport"])
+        server.failChallenges(nil)
+        let proof = await offline.proof(for: try submission())
+        XCTAssertEqual(proof?.keyID, "key-1")
+    }
+
+    /// Once a submission: a server that holds no key sees one replacement,
+    /// and the submission goes without.
+    func testAKeyIsReplacedAtMostOnceWhenTheServerKeepsLettingGo() async throws {
+        server.forgetEveryKey()
+        let proof = await makeAttestor().proof(for: try submission())
+
+        XCTAssertNil(proof)
+        XCTAssertEqual(service.generated, ["key-1", "key-2"])
+        XCTAssertTrue(service.asserted.isEmpty)
+        XCTAssertNil(try stored())
+        XCTAssertEqual(attestEvents().last, ["step": "assert", "result": "failed", "reason": "key_unknown"])
+    }
+
+    /// The server's App Attest answers are read by their codes.
+    func testTheServersAppAttestCodesAreRead() {
+        func read(_ status: Int, _ body: String) -> APIError {
+            URLSessionNetworkClient.makeError(status: status, data: Data(body.utf8))
+        }
+        XCTAssertEqual(
+            read(400, #"{"detail": {"code": "challenge_stale", "message": "Ask for a new challenge", "reason": "challenge_expired"}}"#),
+            .api(code: .challengeStale, message: "Ask for a new challenge", status: 400))
+        XCTAssertEqual(
+            read(400, #"{"detail": {"code": "attestation_invalid", "message": "The device could not be attested", "reason": "nonce"}}"#),
+            .api(code: .attestationInvalid, message: "The device could not be attested", status: 400))
+        XCTAssertEqual(
+            read(404, #"{"detail": {"code": "key_unknown", "message": "That key is not on file for this account"}}"#),
+            .api(code: .keyUnknown, message: "That key is not on file for this account", status: 404))
+        XCTAssertEqual(
+            read(409, #"{"detail": {"code": "key_exists", "message": "That key is already attested"}}"#),
+            .api(code: .keyExists, message: "That key is already attested", status: 409))
     }
 
     /// Analytics carry outcomes only: never a key, a challenge or anything

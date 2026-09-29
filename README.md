@@ -534,8 +534,8 @@ over exactly the pictures uploaded. `AppAttestor`
   under the account's id (`appattest.key.<id>`, this device only), so a
   second account on the phone gets a key of its own. The flow screen readies
   the key while the person is still at the camera.
-* **Each submission is signed.** `POST /device/assert/challenge` right before
-  the upload, then `generateAssertion` over the SHA-256 of
+* **Each submission is signed.** `POST /device/assert/challenge {"key_id"}`
+  right before the upload, then `generateAssertion` over the SHA-256 of
   `AppAttestClientData`: the challenge, the form's strings exactly as sent and
   the SHA-256 of every picture as uploaded, in the server's part order, as
   JSON with sorted keys and no escaped slashes. The form and the client data
@@ -543,14 +543,29 @@ over exactly the pictures uploaded. `AppAttestor`
   and `.imageParts`), and a test reads the multipart body back and rebuilds
   the bytes the server's way. The form carries `app_attest_key_id` and
   `app_attest_assertion`.
+* **A key the server let go is replaced.** The assertion challenge carries
+  the key's id, and `404 key_unknown` says the server no longer holds it: the
+  key is dropped and a new one attested, once, before anything is signed.
+  Opening the document flow asks the same once a launch, so the new key is
+  ready before the person reaches the submit. Still one key per account.
+* **Only a refusal pauses.** A `400 challenge_stale` (the challenge expired
+  while the phone was locked, another device replaced it, or it was spent) is
+  asked again at once with a fresh challenge — the same key where Apple
+  attests it again, else one new key. A lost answer to `POST /device/attest`
+  asks the server whether it kept the key before attesting it again (and
+  after a relaunch, if it comes to that). Both stop after
+  `AppAttestor.attestationRounds` (3) challenges and try again next time.
+  Only `400 attestation_invalid` discards the key and makes no new one on
+  this install for a day; a `429` or any other answer keeps the key.
 * **Never in the way.** Unsupported (the simulator, older devices), signed
   out, Apple out of reach, the server refusing, a slow network past fifteen
   seconds: the submission goes without, and a person reviews it. Apple's
   `serverUnavailable` keeps the key for later; any other App Attest error
-  discards it; a `400 attestation_invalid` discards it and no new key is made
-  on this install for a day; a key the Secure Enclave no longer has is
-  replaced once, on the spot. `device_attestation` events say what happened
-  (`step`, `result`, `reason`) and nothing else.
+  discards it; a key the Secure Enclave no longer has is replaced once, on
+  the spot. Every key made counts toward Apple's count of keys on the phone,
+  so none is made that is not needed. `device_attestation` events say what
+  happened (`step`: `attest`, `status` or `assert`; `result`; `reason`) and
+  nothing else.
 
 The entitlement `com.apple.developer.devicecheck.appattest-environment` is
 `$(APP_ATTEST_ENVIRONMENT)`: `development` in Debug, `production` in Release

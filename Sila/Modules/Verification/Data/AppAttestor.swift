@@ -64,7 +64,9 @@ public protocol DocumentAttesting: Sendable {
 /// in a backup — a key does not survive a reinstall, a restore or a new
 /// phone, and the keychain item must not outlive it. A reinstall's keychain
 /// is emptied at launch (``AuthTokenStore``); a key that is gone anyway is
-/// noticed when it fails and replaced.
+/// noticed when it fails and replaced. Every key made counts toward Apple's
+/// count of keys on the phone (contract v32 §8), so a key is replaced only
+/// when it cannot be used.
 ///
 /// The key's life:
 /// 1. `generateKey`, id stored as *not yet attested*;
@@ -72,16 +74,29 @@ public protocol DocumentAttesting: Sendable {
 ///    challenge's UTF-8 bytes, `POST /device/attest`;
 ///    - `201`, or `409 key_exists` (an earlier answer lost on the way back):
 ///      stored as *attested*;
-///    - `DCError.serverUnavailable`: the key is kept and attested later;
-///    - any other App Attest error: the key is discarded (Apple's rule);
+///    - `400 challenge_stale` (the challenge expired, was replaced or was
+///      spent): nothing was said about the device — again at once with a
+///      fresh challenge, the same key where Apple attests it again, else a
+///      new one; at most ``attestationRounds`` rounds, then next time;
+///    - no answer (offline, a `5xx`): the server may hold the key, so it is
+///      asked (the key-status route below) before the key is attested again
+///      with a fresh challenge — within the same rounds, and after a relaunch;
 ///    - `400 attestation_invalid`: the key is discarded, and none is tried
 ///      again on this install for ``refusalCoolDown`` — the genuine app on a
 ///      genuine device is refused only when the two sides disagree about
-///      something, and a new key every submission would not change that;
-///    - anything else (offline, `429`, a `5xx`): the key is discarded — it
-///      may never have reached the server, and a key is attested once.
-/// 3. Before each submission: `POST /device/assert/challenge`, the client
-///    data of ``AppAttestClientData``, `generateAssertion`.
+///      something, and a new key every submission would not change that.
+///      Only this answer pauses attestation;
+///    - anything else (`429`, signed out, another refusal): the key is kept
+///      and attested next time;
+///    - `DCError.serverUnavailable`: the key is kept and attested later;
+///      any other App Attest error: the key is discarded (Apple's rule).
+/// 3. Before each submission: `POST /device/assert/challenge {"key_id"}`,
+///    the client data of ``AppAttestClientData``, `generateAssertion`. The
+///    key rides along so the server can say `404 key_unknown` when it no
+///    longer holds it (let go since); the key is then dropped and a new one
+///    attested, once, on the spot. Opening the document flow asks the same
+///    once a launch, so a key the server let go is replaced while the person
+///    is still at the camera rather than on the submission's clock.
 public actor AppAttestor: DocumentAttesting {
 
     /// What the keychain holds for one account.
@@ -92,11 +107,17 @@ public actor AppAttestor: DocumentAttesting {
         var attested: Bool
         /// When the server last refused an attestation from this install.
         var refusedAt: Date?
+        /// The key went to `POST /device/attest` and no answer came back:
+        /// the server may hold it, and is asked before it is attested again.
+        var unanswered: Bool?
     }
 
     /// How long to wait after the server refused an attestation before
     /// making another key.
     public static let refusalCoolDown: TimeInterval = 24 * 3600
+    /// The most challenges one attempt to attest asks for when a challenge
+    /// goes stale or an answer is lost, before leaving it for next time.
+    public static let attestationRounds = 3
     /// How long a submission waits for its assertion before going without.
     /// The key is normally attested before the person reaches the camera,
     /// which leaves a challenge and an on-device signature.
@@ -117,6 +138,8 @@ public actor AppAttestor: DocumentAttesting {
     /// The attestation under way, per account: one at a time, however many
     /// callers ask.
     private var attesting: [String: Task<String?, Never>] = [:]
+    /// Keys the server said it holds (or accepted) since launch.
+    private var confirmed: Set<String> = []
 
     /// - Parameters:
     ///   - service: App Attest.
@@ -155,9 +178,11 @@ public actor AppAttestor: DocumentAttesting {
 
     // MARK: DocumentAttesting
 
+    /// Attests the key if there is none yet, and otherwise asks the server
+    /// once a launch whether it still holds it.
     public func prepare() async {
         guard service.isSupported, let account = await account() else { return }
-        _ = await attestedKey(for: account)
+        _ = await attestedKey(for: account, confirming: true)
     }
 
     public func proof(for submission: DocumentSubmission) async -> DeviceProof? {
@@ -202,9 +227,9 @@ public actor AppAttestor: DocumentAttesting {
             track(.assert, "failed", reason: "signed_out")
             return nil
         }
-        // Twice at most: a key the keychain remembers but the Secure Enclave
-        // no longer has is replaced once, here, rather than cost this
-        // submission its assertion.
+        // Twice at most: a key the server no longer holds, or one the
+        // keychain remembers but the Secure Enclave no longer has, is
+        // replaced once, here, rather than cost this submission its assertion.
         for attempt in 0..<2 {
             guard let keyId = await attestedKey(for: account) else {
                 signingFailed("no_key")
@@ -216,11 +241,22 @@ public actor AppAttestor: DocumentAttesting {
             guard !Task.isCancelled else { return nil }
             let challenge: String
             do {
-                challenge = try await fetchChallenge("/device/assert/challenge")
+                challenge = try await fetchAssertChallenge(for: keyId)
+            } catch let error where Self.code(of: error) == .keyUnknown {
+                // Let go on the server: every signature with it would be in
+                // vain. Dropped, and a new key attested.
+                track(.status, "forgotten")
+                forget(keyId, of: account)
+                guard attempt == 0 else {
+                    signingFailed("key_unknown")
+                    return nil
+                }
+                continue
             } catch {
                 signingFailed(Self.reason(error))
                 return nil
             }
+            confirmed.insert(keyId)
             do {
                 let hash = try AppAttestClientData(challenge: challenge, submission: submission).hash()
                 let assertion = try await service.generateAssertion(keyId, clientDataHash: hash)
@@ -246,33 +282,50 @@ public actor AppAttestor: DocumentAttesting {
     // MARK: The key
 
     /// This account's attested key, attesting one first when there is none.
-    private func attestedKey(for account: String) async -> String? {
+    /// `confirming` also asks the server whether an attested key is still on
+    /// file, once a launch.
+    private func attestedKey(for account: String, confirming: Bool = false) async -> String? {
         if let running = attesting[account] {
             return await running.value
         }
         // Unstructured on purpose: a caller that stops waiting (a screen
         // closed, a submission out of time) must not abandon a key halfway
         // between Apple and the server.
-        let task = Task { await self.establishKey(for: account) }
+        let task = Task { await self.establishKey(for: account, confirming: confirming) }
         attesting[account] = task
         let key = await task.value
         attesting[account] = nil
         return key
     }
 
-    private func establishKey(for account: String) async -> String? {
-        let stored = record(for: account)
-        if stored?.attested == true, let keyId = stored?.keyId {
-            return keyId
+    private func establishKey(for account: String, confirming: Bool) async -> String? {
+        if let stored = record(for: account), stored.attested, let keyId = stored.keyId {
+            guard confirming, !confirmed.contains(keyId) else { return keyId }
+            switch await keyStatus(keyId) {
+            case .onFile, .unknown:
+                // Held, or nobody could say: used as it is. The submission's
+                // own challenge asks again.
+                return keyId
+            case .forgotten:
+                // Let go on the server: replaced below.
+                forget(keyId, of: account)
+            }
         }
+        let stored = record(for: account)
         if let refusedAt = stored?.refusedAt, now().timeIntervalSince(refusedAt) < Self.refusalCoolDown {
             return nil
         }
         var keyId = stored?.keyId
-        // Twice at most: a stored key that App Attest no longer knows is
-        // replaced by a fresh one straight away.
-        for _ in 0..<2 {
-            let isFresh = keyId == nil
+        var mayBeOnFile = stored?.unanswered == true
+        // A key made in this call that Apple has not attested yet is not
+        // replaced when Apple refuses it (a new key would likely meet the
+        // same refusal, and each one counts on the phone); any other key
+        // Apple refuses — a stored one, or one being attested again after a
+        // stale challenge — is replaced once, at once.
+        var isFresh = false
+        var attestedByApple = false
+        var replaced = false
+        for _ in 0..<Self.attestationRounds {
             let current: String
             if let keyId {
                 current = keyId
@@ -284,18 +337,43 @@ public actor AppAttestor: DocumentAttesting {
                     return nil
                 }
                 store(KeyRecord(keyId: current, attested: false, refusedAt: nil), for: account)
+                keyId = current
+                isFresh = true
+                attestedByApple = false
+                mayBeOnFile = false
+            }
+            if mayBeOnFile {
+                // Its answer was lost: the server may have kept it.
+                switch await keyStatus(current) {
+                case .onFile:
+                    store(KeyRecord(keyId: current, attested: true, refusedAt: nil), for: account)
+                    return current
+                case .forgotten:
+                    // Never arrived: attested again below, with a fresh challenge.
+                    store(KeyRecord(keyId: current, attested: false, refusedAt: nil), for: account)
+                    mayBeOnFile = false
+                case .unknown:
+                    // Asked again next time, before anything else.
+                    return nil
+                }
             }
             switch await attest(current, for: account) {
             case .attested:
                 return current
             case .later:
                 return nil
+            case let .again(lost):
+                attestedByApple = true
+                mayBeOnFile = lost
             case .discardKey:
                 forget(current, of: account)
-                guard !isFresh else { return nil }
+                guard !replaced, !isFresh || attestedByApple else { return nil }
+                replaced = true
                 keyId = nil
             }
         }
+        // Out of rounds: the key stays — not attested, and no cool-down,
+        // since nothing was said about the device — and is tried next time.
         return nil
     }
 
@@ -304,6 +382,9 @@ public actor AppAttestor: DocumentAttesting {
         case attested
         /// Nothing more now; the stored key (or refusal) stands.
         case later
+        /// Again with a fresh challenge: the challenge went stale, or the
+        /// answer was `lost` (the server may hold the key).
+        case again(lost: Bool)
         /// App Attest refused the key: make another.
         case discardKey
     }
@@ -337,22 +418,33 @@ public actor AppAttestor: DocumentAttesting {
             )
             _ = try await network.sendData(request)
             track(.attest, "ok")
+            confirmed.insert(keyId)
         } catch let error where Self.status(of: error) == 409 {
             // `key_exists`: already on file — an earlier answer that never
-            // arrived. If it is this account's, its assertions verify.
+            // arrived. If it is this account's, its assertions verify; the
+            // next status check says if not.
             track(.attest, "ok", reason: "key_exists")
-        } catch let error where Self.status(of: error) == 400 {
-            // `attestation_invalid`. The reason is in the server's log and on
-            // no screen: nobody here can act on it.
+        } catch let error where Self.code(of: error) == .attestationInvalid {
+            // The server's verdict on the attestation itself. The reason is in
+            // the server's log and on no screen: nobody here can act on it.
             track(.attest, "refused", reason: "http_400")
             store(KeyRecord(keyId: nil, attested: false, refusedAt: now()), for: account)
             return .later
+        } catch let error where Self.code(of: error) == .challengeStale {
+            // Expired (the phone locked on the way), replaced (another device
+            // of the account asked meanwhile) or spent: not the device's fault.
+            track(.attest, "again", reason: "stale")
+            return .again(lost: false)
+        } catch let error where Self.isLostAnswer(error) {
+            // Maybe it arrived, maybe not: remembered, so the server is asked
+            // before the key is attested again — now or after a relaunch.
+            track(.attest, "again", reason: Self.reason(error))
+            store(KeyRecord(keyId: keyId, attested: false, refusedAt: nil, unanswered: true), for: account)
+            return .again(lost: true)
         } catch {
-            // Maybe it arrived, maybe not; a key is attested once. A new one
-            // next time — a spare key on the server is cleared with the
-            // account's least recently used.
+            // Not kept (rate-limited, signed out, refused for something other
+            // than the device): the key stays and is attested next time.
             track(.attest, "failed", reason: Self.reason(error))
-            forget(keyId, of: account)
             return .later
         }
         store(KeyRecord(keyId: keyId, attested: true, refusedAt: nil), for: account)
@@ -365,6 +457,10 @@ public actor AppAttestor: DocumentAttesting {
         let challenge: String
     }
 
+    private struct KeyBody: Encodable {
+        let keyId: String
+    }
+
     private struct ChallengeResponse: Decodable {
         let challenge: String
     }
@@ -373,6 +469,42 @@ public actor AppAttestor: DocumentAttesting {
         let token = try await tokens.accessToken()
         let request = APIRequest(path: path, method: .post, accessToken: token)
         return try await network.send(request, as: ChallengeResponse.self).challenge
+    }
+
+    /// An assertion challenge for `keyId`. The key rides along so the
+    /// server answers `404 key_unknown`, and issues nothing, when this
+    /// account no longer holds it.
+    private func fetchAssertChallenge(for keyId: String) async throws -> String {
+        let token = try await tokens.accessToken()
+        let request = try APIRequest.json("/device/assert/challenge", body: KeyBody(keyId: keyId), accessToken: token)
+        return try await network.send(request, as: ChallengeResponse.self).challenge
+    }
+
+    private enum KeyStatus {
+        /// The server holds it for this account.
+        case onFile
+        /// `404 key_unknown`: never arrived, or let go since.
+        case forgotten
+        /// Nobody could say (offline, rate-limited): nothing changes.
+        case unknown
+    }
+
+    /// Whether the server still holds `keyId` for this account. The
+    /// challenge it issues on the way is left unused; a submission asks for
+    /// its own right before it signs.
+    private func keyStatus(_ keyId: String) async -> KeyStatus {
+        do {
+            _ = try await fetchAssertChallenge(for: keyId)
+            confirmed.insert(keyId)
+            track(.status, "ok")
+            return .onFile
+        } catch let error where Self.code(of: error) == .keyUnknown {
+            track(.status, "forgotten")
+            return .forgotten
+        } catch {
+            track(.status, "failed", reason: Self.reason(error))
+            return .unknown
+        }
     }
 
     // MARK: The keychain
@@ -391,6 +523,7 @@ public actor AppAttestor: DocumentAttesting {
 
     /// Drops `keyId` — only if it is still the one kept for `account`.
     private func forget(_ keyId: String, of account: String) {
+        confirmed.remove(keyId)
         guard record(for: account)?.keyId == keyId else { return }
         records[account] = KeyRecord(keyId: nil, attested: false, refusedAt: nil)
         try? keychain.delete(Self.keychainKey(for: account))
@@ -412,6 +545,23 @@ public actor AppAttestor: DocumentAttesting {
         case let .api(_, _, status)?: return status
         case let .http(status, _)?: return status
         default: return nil
+        }
+    }
+
+    /// The server's code, when it sent one.
+    static func code(of error: Error) -> APIErrorCode? {
+        (error as? APIError)?.code
+    }
+
+    /// A request that may have reached the server without its answer
+    /// reaching the phone: the connection failed, or something between
+    /// them answered a `5xx`.
+    static func isLostAnswer(_ error: Error) -> Bool {
+        switch error as? APIError {
+        case .transport?: return true
+        case let .api(_, _, status)?: return status >= 500
+        case let .http(status, _)?: return status >= 500
+        default: return false
         }
     }
 
@@ -437,6 +587,8 @@ public actor AppAttestor: DocumentAttesting {
     private enum Step: String {
         case attest
         case assert
+        /// Whether the server still holds the key.
+        case status
     }
 
     private func track(_ step: Step, _ result: String, reason: String? = nil) {

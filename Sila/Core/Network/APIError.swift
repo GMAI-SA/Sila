@@ -486,6 +486,23 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// Turning guests on in a private host's room (HTTP 409).
     case privateHost = "private_host"
 
+    // MARK: Contract v32 — App Attest (read by `AppAttestor`, never shown)
+
+    /// The server refused the attestation itself (HTTP 400): Apple's
+    /// certificate chain, the nonce, the key — the two sides disagree about
+    /// the device. The only answer that pauses attestation on the install.
+    case attestationInvalid = "attestation_invalid"
+    /// The attestation's challenge was not one to answer (HTTP 400):
+    /// replaced by a newer one, already spent, or past its five minutes.
+    /// Nothing was said about the device; the app asks for a fresh one.
+    case challengeStale = "challenge_stale"
+    /// `POST /device/assert/challenge {"key_id"}` for a key this account does
+    /// not hold, or no longer holds (HTTP 404). The app attests a new one.
+    case keyUnknown = "key_unknown"
+    /// The attested key is already on file (HTTP 409): an earlier answer
+    /// that never arrived.
+    case keyExists = "key_exists"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -861,6 +878,10 @@ public enum APIError: Error, Equatable, Sendable {
             case .guestsNotAllowed: return L10n.t("guest.room.refusal.guestsNotAllowed.title")
             case .guestsFull: return L10n.t("guest.room.refusal.guestsFull.title")
             case .privateHost: return L10n.t("rooms.guests.allow.private")
+            case .attestationInvalid, .challengeStale, .keyUnknown, .keyExists:
+                // App Attest's answers stay inside `AppAttestor`: a submission
+                // goes with or without the device's signature, never stopped.
+                return L10n.t("common.somethingWentWrong")
             case .unknown:
                 return message.isEmpty ? L10n.t("common.somethingWentWrong") : message
             }
