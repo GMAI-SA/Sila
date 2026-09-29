@@ -519,6 +519,45 @@ screen refreshes exactly as before (on opening, on pulling, on coming back).
 `-noRealtime` turns the socket off entirely; `-mockRealtime replies|incoming|
 unavailable` plays it in-process (`RealtimeServerMock`, see below).
 
+## App Attest, and the submission it never holds up
+
+Contract v32 (`docs/api-contract-v32-app-attest.md` in the backend). The
+server's automatic approval only trusts a document submission when Apple's
+App Attest proves it came from the genuine Sila app on a real Apple device,
+over exactly the pictures uploaded. `AppAttestor`
+(`Modules/Verification/Data/`) does the device's half, behind
+`AppAttestProviding` so every rule is tested without a Secure Enclave:
+
+* **One key per account per install.** `generateKey`, then `POST
+  /device/attest/challenge`, `attestKey` over the SHA-256 of the challenge's
+  UTF-8 bytes, `POST /device/attest`. The key's id is kept in the keychain
+  under the account's id (`appattest.key.<id>`, this device only), so a
+  second account on the phone gets a key of its own. The flow screen readies
+  the key while the person is still at the camera.
+* **Each submission is signed.** `POST /device/assert/challenge` right before
+  the upload, then `generateAssertion` over the SHA-256 of
+  `AppAttestClientData`: the challenge, the form's strings exactly as sent and
+  the SHA-256 of every picture as uploaded, in the server's part order, as
+  JSON with sorted keys and no escaped slashes. The form and the client data
+  are built from one list of fields and parts (`DocumentSubmission.textFields`
+  and `.imageParts`), and a test reads the multipart body back and rebuilds
+  the bytes the server's way. The form carries `app_attest_key_id` and
+  `app_attest_assertion`.
+* **Never in the way.** Unsupported (the simulator, older devices), signed
+  out, Apple out of reach, the server refusing, a slow network past fifteen
+  seconds: the submission goes without, and a person reviews it. Apple's
+  `serverUnavailable` keeps the key for later; any other App Attest error
+  discards it; a `400 attestation_invalid` discards it and no new key is made
+  on this install for a day; a key the Secure Enclave no longer has is
+  replaced once, on the spot. `device_attestation` events say what happened
+  (`step`, `result`, `reason`) and nothing else.
+
+The entitlement `com.apple.developer.devicecheck.appattest-environment` is
+`$(APP_ATTEST_ENVIRONMENT)`: `development` in Debug, `production` in Release
+(`project.yml`). TestFlight and the App Store use production whatever it
+says. The App ID needs the **App Attest** capability for a provisioning
+profile to carry it.
+
 ## The session, and what it leaves on the phone
 
 The token pair and the cached account live in the Keychain

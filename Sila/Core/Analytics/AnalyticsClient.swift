@@ -84,6 +84,12 @@ public enum AnalyticsEvent: String, Sendable {
     /// The withdrawal was refused. Carries `code` — the structured error
     /// code only.
     case documentWithdrawRefused = "document_withdraw_refused"
+    /// App Attest, on this device (contract v32). Carries `step` (attest |
+    /// assert), `result` (ok | unsupported | refused | failed) and, when it
+    /// did not work, `reason` — a fixed word such as `dc_4` (a DeviceCheck
+    /// error code), `http_400` or `timeout`. Never a key, a challenge or
+    /// anything about the document.
+    case deviceAttestation = "device_attestation"
 
     // MARK: Contract v24 — vouching
     //

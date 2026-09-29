@@ -170,35 +170,98 @@ public struct DocumentSubmission: Equatable, Sendable {
     /// here (contract v27 §3).
     public static let maximumBytesPerImage = 40 * 1024 * 1024
 
-    /// The multipart body for `POST /verification/document`.
-    /// - Parameter boundary: Injectable so tests can assert on exact bytes.
-    public func form(boundary: String? = nil) -> MultipartFormData {
-        var form = boundary.map { MultipartFormData(boundary: $0) } ?? MultipartFormData()
-        form.appendField(documentType.wireValue, name: "document_type")
-        form.appendField(source.rawValue, name: "document_source")
+    /// The text fields the form carries, in the order it carries them.
+    ///
+    /// The one place that decides what each field says: ``form(boundary:device:)``
+    /// sends these strings and ``AppAttestClientData`` signs these same
+    /// strings, so what the device signs is what the server receives.
+    public var textFields: [DocumentFormField] {
+        var fields = [
+            DocumentFormField(name: "document_type", value: documentType.wireValue),
+            DocumentFormField(name: "document_source", value: source.rawValue)
+        ]
         if let mrz, mrz.isValid {
-            form.appendField(mrz.text, name: "mrz")
+            fields.append(DocumentFormField(name: "mrz", value: mrz.text))
         }
         if let sweep {
-            form.appendField(sweep.traceJSON(), name: "liveness")
+            fields.append(DocumentFormField(name: "liveness", value: sweep.traceJSON()))
         } else if !challenges.isEmpty {
             let list = challenges.map(\.wireValue).map { "\"\($0)\"" }.joined(separator: ",")
-            form.appendField("[\(list)]", name: "liveness")
+            fields.append(DocumentFormField(name: "liveness", value: "[\(list)]"))
         }
-        form.appendFile(front, name: "front", filename: "front.jpg", mimeType: "image/jpeg")
+        return fields
+    }
+
+    /// The value of the text field `name`, or `nil` when the form does not
+    /// carry it.
+    public func fieldValue(_ name: String) -> String? {
+        textFields.first { $0.name == name }?.value
+    }
+
+    /// The pictures the form carries, in the order it carries them — the
+    /// same bytes, part names and order ``AppAttestClientData`` hashes.
+    public var imageParts: [DocumentImagePart] {
+        var parts = [DocumentImagePart(name: "front", filename: "front.jpg", data: front)]
         if let back {
-            form.appendFile(back, name: "back", filename: "back.jpg", mimeType: "image/jpeg")
+            parts.append(DocumentImagePart(name: "back", filename: "back.jpg", data: back))
         }
-        form.appendFile(selfie, name: "selfie", filename: "selfie.jpg", mimeType: "image/jpeg")
+        parts.append(DocumentImagePart(name: "selfie", filename: "selfie.jpg", data: selfie))
         if let sweep {
             // One part per sector, in trace order — the server pairs them by index.
             for frame in sweep.frames {
-                form.appendFile(frame.jpeg, name: "frames", filename: "turn_\(frame.sector).jpg", mimeType: "image/jpeg")
+                parts.append(DocumentImagePart(name: "frames", filename: "turn_\(frame.sector).jpg", data: frame.jpeg))
             }
         } else if let turn {
-            form.appendFile(turn, name: "turn", filename: "turn.jpg", mimeType: "image/jpeg")
+            parts.append(DocumentImagePart(name: "turn", filename: "turn.jpg", data: turn))
+        }
+        return parts
+    }
+
+    /// The multipart body for `POST /verification/document`.
+    /// - Parameters:
+    ///   - boundary: Injectable so tests can assert on exact bytes.
+    ///   - device: The App Attest assertion over exactly this submission
+    ///     (contract v32), or `nil` to send none — a device that cannot
+    ///     attest, or one whose attestation failed, submits without it and a
+    ///     person reviews the case.
+    public func form(boundary: String? = nil, device: DeviceProof? = nil) -> MultipartFormData {
+        var form = boundary.map { MultipartFormData(boundary: $0) } ?? MultipartFormData()
+        for field in textFields {
+            form.appendField(field.value, name: field.name)
+        }
+        if let device {
+            form.appendField(device.keyID, name: "app_attest_key_id")
+            form.appendField(device.assertion, name: "app_attest_assertion")
+        }
+        for part in imageParts {
+            form.appendFile(part.data, name: part.name, filename: part.filename, mimeType: "image/jpeg")
         }
         return form
+    }
+}
+
+/// One text field of a document submission's form.
+public struct DocumentFormField: Equatable, Sendable {
+    public let name: String
+    public let value: String
+
+    public init(name: String, value: String) {
+        self.name = name
+        self.value = value
+    }
+}
+
+/// One picture of a document submission's form: the form field's name, the
+/// file name reported, and the bytes exactly as uploaded.
+public struct DocumentImagePart: Equatable, Sendable {
+    public let name: String
+    public let filename: String
+    public let data: Data
+
+    public init(name: String, filename: String, data: Data) {
+        self.name = name
+        self.filename = filename
+        self.data = data
     }
 }
 

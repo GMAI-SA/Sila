@@ -52,6 +52,16 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         DEVELOPMENT_ASSET_PATHS: ""
+      # App Attest's environment, read by Sila.entitlements
+      # (com.apple.developer.devicecheck.appattest-environment). Debug builds
+      # attest against Apple's development environment, which only staging
+      # accepts; archives — Xcode Cloud, TestFlight, the store — are Release
+      # and production. The App ID must have the App Attest capability.
+      configs:
+        Debug:
+          APP_ATTEST_ENVIRONMENT: development
+        Release:
+          APP_ATTEST_ENVIRONMENT: production
 
   SilaTests:
     type: bundle.unit-test

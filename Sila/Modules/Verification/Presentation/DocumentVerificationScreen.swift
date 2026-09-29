@@ -88,6 +88,9 @@ public struct DocumentVerificationScreen: View {
         }
         .tint(SLColor.primary)
         .interactiveDismissDisabled(viewModel.phase == .submitting || viewModel.phase == .submitted)
+        // App Attest's key, attested while the person is still at the camera
+        // (contract v32). Leaving the flow stops nobody waiting for it.
+        .task { await viewModel.prepareDevice() }
     }
 
     // MARK: - Phases

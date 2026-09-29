@@ -16,15 +16,24 @@ public final class VerificationService: VerificationServiceProtocol {
     private let network: NetworkClient
     private let tokens: AccessTokenProviding
     private let analytics: AnalyticsClient
+    private let attestor: DocumentAttesting?
 
     /// - Parameters:
     ///   - network: HTTP transport.
     ///   - tokens: Supplies the bearer token.
     ///   - analytics: Event sink.
-    public init(network: NetworkClient, tokens: AccessTokenProviding, analytics: AnalyticsClient) {
+    ///   - attestor: Signs each document submission with this device's App
+    ///     Attest key (contract v32). `nil` sends none.
+    public init(
+        network: NetworkClient,
+        tokens: AccessTokenProviding,
+        analytics: AnalyticsClient,
+        attestor: DocumentAttesting? = nil
+    ) {
         self.network = network
         self.tokens = tokens
         self.analytics = analytics
+        self.attestor = attestor
     }
 
     // MARK: The claim
@@ -83,12 +92,20 @@ public final class VerificationService: VerificationServiceProtocol {
 
     // MARK: Document + selfie
 
+    public func prepareDeviceAttestation() async {
+        await attestor?.prepare()
+    }
+
     public func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase {
+        // The device's signature over exactly these bytes, when it can give
+        // one in time; without it the submission goes as it always has, and
+        // a person reviews it.
+        let device = await attestor?.proof(for: submission)
         let token = try await tokens.accessToken()
         let request = APIRequest.multipart(
             "/verification/document",
             method: .post,
-            form: submission.form(),
+            form: submission.form(device: device),
             accessToken: token
         )
         do {

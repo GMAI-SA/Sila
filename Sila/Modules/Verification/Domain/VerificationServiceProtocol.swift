@@ -72,6 +72,12 @@ public protocol VerificationServiceProtocol: Sendable {
     ///   - ``APIErrorCode/underMinimumAge`` — terminal, server's words.
     func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase
 
+    /// Readies this device's App Attest key before the person reaches the
+    /// submit (contract v32), so the submission only has to sign. Never
+    /// throws and never holds anything up: a device that cannot attest
+    /// submits without, and a person reviews the case.
+    func prepareDeviceAttestation() async
+
     /// The caller's most recent document case, or `nil` when there has never
     /// been one.
     func latestDocumentCase() async throws -> DocumentCase?
@@ -98,4 +104,10 @@ public protocol VerificationServiceProtocol: Sendable {
     ///   one is already on file — the state it describes, not a failure — and
     ///   `nothing_to_appeal` (400) on an account that is not closed.
     func appealVerification(message: String) async throws -> VerificationAppealReceipt
+}
+
+extension VerificationServiceProtocol {
+    /// Nothing to ready: a service without App Attest (a mock, a preview)
+    /// submits without it.
+    public func prepareDeviceAttestation() async {}
 }

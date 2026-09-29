@@ -293,7 +293,16 @@ public final class AppContainer {
             self.verificationService = VerificationService(
                 network: network,
                 tokens: tokens,
-                analytics: analytics
+                analytics: analytics,
+                // One App Attest key per account on this install, its id in
+                // the keychain under the account's id (contract v32).
+                attestor: AppAttestor(
+                    network: network,
+                    tokens: tokens,
+                    keychain: keychain,
+                    analytics: analytics,
+                    account: { await store.user()?.id.uuidString.lowercased() }
+                )
             )
         }
 

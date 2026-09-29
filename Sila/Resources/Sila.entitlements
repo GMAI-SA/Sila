@@ -6,6 +6,14 @@
 	     production for TestFlight and the store. -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- App Attest (contract v32): the server proves a document submission
+	     came from the genuine app on a real Apple device. The value is the
+	     APP_ATTEST_ENVIRONMENT build setting (project.yml): `development` in
+	     Debug, `production` in Release. TestFlight and the App Store use
+	     production whatever it says. The App ID needs the App Attest
+	     capability for a profile to carry this key. -->
+	<key>com.apple.developer.devicecheck.appattest-environment</key>
+	<string>$(APP_ATTEST_ENVIRONMENT)</string>
 	<!--
 	  Password AutoFill keys a saved password to a *website*. Without this,
 	  iOS has no way to know that the Sila app is sila.gmai.sa, so a password

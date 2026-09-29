@@ -392,6 +392,12 @@ public final class DocumentVerificationViewModel {
         Task { await submit() }
     }
 
+    /// Readies the device's App Attest key while the person photographs
+    /// the document, so the submit only has to sign. Never holds the flow up.
+    public func prepareDevice() async {
+        await service.prepareDeviceAttestation()
+    }
+
     /// Sends everything to `/verification/document`.
     public func submit() async {
         guard let documentType, let frontImage, let selfie, !isSubmitting else { return }
