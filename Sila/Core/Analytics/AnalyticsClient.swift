@@ -245,6 +245,11 @@ public enum AnalyticsEvent: String, Sendable {
     case accountLoaded = "account_loaded"
     /// The server accepted a profile write.
     case accountProfileSaved = "account_profile_saved"
+    /// "Choose your @handle" opened (contract v33); `source`: signup,
+    /// existing or settings. Never the handle.
+    case handleOffered = "handle_offered"
+    /// A handle was taken; `result`: suggestion, typed, kept or skipped.
+    case handleChosen = "handle_chosen"
     /// A picture was stored.
     case accountAvatarUploaded = "account_avatar_uploaded"
     /// A picture was deleted.

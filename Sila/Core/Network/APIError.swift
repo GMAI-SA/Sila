@@ -94,6 +94,9 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case handleTaken = "handle_taken"
     /// The requested handle breaks the `[a-z0-9_]{3,20}` rule.
     case invalidHandle = "invalid_handle"
+    /// The requested handle is on the server's reserved list — platform and
+    /// government names (contract v33).
+    case handleReserved = "handle_reserved"
     /// An account tried to follow itself.
     case selfFollow = "self_follow"
     /// No active account has that handle.
@@ -611,6 +614,8 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.handleTaken")
             case .invalidHandle:
                 return L10n.t("error.invalidHandle")
+            case .handleReserved:
+                return L10n.t("account.handle.reason.reserved")
             case .selfFollow:
                 return L10n.t("error.selfFollow")
             case .userNotFound:

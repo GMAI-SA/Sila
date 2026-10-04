@@ -13,6 +13,14 @@ public struct RootView: View {
     /// Set once the first-run flow has finished on this launch, so a forced
     /// flow (`-forceOnboarding`) does not come back.
     @State private var onboardingFinished = false
+    /// The account "Choose your @handle" was closed for on this launch
+    /// without the server taking anything — swiped away, or offline. Kept on
+    /// the device too (``StorageKey/handleOffered(_:)``), so an older
+    /// account is asked once, not on every launch.
+    @State private var handleStepClosed: UUID?
+    /// The account was created on this launch: the handle is a step of the
+    /// sign-up, not an offer over the app.
+    @State private var signedUpNow = false
 
     /// - Parameter container: The DI root.
     public init(container: AppContainer) {
@@ -49,6 +57,8 @@ public struct RootView: View {
         // when the tabs go, so do they.
         .onChange(of: container.session.route) { _, route in
             if route != .feed { SelfVerificationPresenter.dismissAll() }
+            // The next account signed in on this launch was not just made.
+            if route == .unauthenticated { signedUpNow = false }
             listenToRoomLinkSignedOut()
         }
         // A shared room link, tapped by somebody who is not signed in: they
@@ -165,6 +175,12 @@ public struct RootView: View {
             get: { container.router.toast },
             set: { container.router.toast = $0 }
         ))
+        // An account that never chose, offered its handle once, gently: a
+        // sheet over the wall or the feed that "Keep" or a swipe puts away.
+        .sheet(isPresented: offersHandleSheet) {
+            handleStep
+                .environment(\.layoutDirection, container.language.layoutDirection)
+        }
     }
 
     /// `true` once there is a session a suspension could apply to.
@@ -210,6 +226,12 @@ public struct RootView: View {
 
             case let .awaitingEmailVerification(email):
                 emailVerificationRoot(email: email)
+                    .transition(.opacity)
+
+            // Right after sign-up the handle is the next step, before the
+            // wall. An older account is offered it over the app instead.
+            case .verificationWall where showsHandleStep && signedUpNow, .feed where showsHandleStep && signedUpNow:
+                handleStep
                     .transition(.opacity)
 
             case let .verificationWall(status):
@@ -286,6 +308,81 @@ public struct RootView: View {
         }
     }
 
+    // MARK: - Choosing a handle (contract v33)
+
+    /// A new account is given a random handle; this is where the person
+    /// replaces it — right after sign-up, before verification, and once for
+    /// an older account that never chose. Never offline (the step could only
+    /// fail), never over a suspension, and "Keep @user… for now" is always
+    /// there: it does not block anything.
+    private var showsHandleStep: Bool {
+        guard container.flags.account,
+              let user = container.session.user,
+              !user.handleChosen,
+              user.handle?.isEmpty == false,
+              handleStepClosed != user.id,
+              !container.session.isOffline,
+              !container.suspension.isSuspended else { return false }
+        return true
+    }
+
+    /// The offer to an older account: on the wall or the feed (after the
+    /// first-run subjects, never over a vouch link), and only if this device
+    /// has not offered it to the account before.
+    private var offersHandleSheet: Binding<Bool> {
+        Binding(
+            get: {
+                guard showsHandleStep, !signedUpNow,
+                      let user = container.session.user,
+                      !container.storage.flag(.handleOffered(user.id)),
+                      container.vouchInbox.pending == nil else { return false }
+                switch container.session.route {
+                case .verificationWall: return true
+                case .feed: return container.flags.feed && !showsOnboarding
+                default: return false
+                }
+            },
+            set: { shown in
+                // Swiped away, or put away by Keep: not offered again here.
+                // Settings can still change it.
+                if !shown, let user = container.session.user { closeHandleStep(for: user.id) }
+            }
+        )
+    }
+
+    private func closeHandleStep(for account: UUID) {
+        handleStepClosed = account
+        container.storage.setFlag(true, for: .handleOffered(account))
+    }
+
+    @ViewBuilder
+    private var handleStep: some View {
+        if let user = container.session.user {
+            Owned({ handleChooserViewModel(for: user) }) { viewModel in
+                HandleChooserScreen(viewModel: viewModel)
+            }
+            .id(user.id)
+        }
+    }
+
+    private func handleChooserViewModel(for user: AuthUser) -> HandleChooserViewModel {
+        let account = user.id
+        return HandleChooserViewModel(
+            service: container.handleService,
+            analytics: container.analytics,
+            currentHandle: user.handle,
+            context: signedUpNow ? .signUp : .existing,
+            onChosen: { fresh in
+                closeHandleStep(for: account)
+                await container.session.adoptAccount(fresh)
+                if let handle = fresh.atHandle, fresh.handle != user.handle {
+                    container.router.toast = .success(L10n.t("account.handle.toast.saved", "\u{2066}\(handle)\u{2069}"))
+                }
+            },
+            onDismiss: { closeHandleStep(for: account) }
+        )
+    }
+
     // MARK: - First run
 
     /// The subjects-and-people step shows once, for a verified account the
@@ -350,6 +447,9 @@ public struct RootView: View {
                 service: container.authService,
                 onVerified: { pair in
                     Task {
+                        // A registration's code: the account is new, and
+                        // its handle is the one it was given.
+                        if purpose == .register { signedUpNow = true }
                         container.router.popToRoot()
                         await container.session.adopt(pair)
                     }

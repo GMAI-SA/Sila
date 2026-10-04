@@ -15,8 +15,12 @@ public enum DocumentPhase: Equatable, Sendable {
     case review
     /// The live head-turn.
     case liveness
-    /// `POST /verification/document` in flight.
+    /// `POST /verification/document` in flight: the upload's progress, then
+    /// the server checking what arrived.
     case submitting
+    /// The pictures did not reach the server — no connection, a timeout, a
+    /// server error. Everything is kept; "Try again" sends the same again.
+    case sendFailed
     /// Under review. The only way through is a reviewer's decision.
     case submitted
     /// This document already verified a Sila account — **not** a failure.
@@ -33,6 +37,36 @@ public enum DocumentPhase: Equatable, Sendable {
     /// the device before anything is uploaded — on the server this closes
     /// the account — so the person can correct the claim or retake.
     case dateOfBirthMismatch
+}
+
+/// One side of a document.
+public enum DocumentSide: String, Equatable, Sendable {
+    case front, back
+}
+
+/// Why a photo or file chosen for a side could not be used, in words.
+public enum DocumentImportProblem: Equatable, Sendable {
+    /// Not a picture or a PDF the phone can open.
+    case unreadableFile
+    /// Photos handed back nothing — an iCloud original that would not
+    /// download, usually.
+    case notDownloaded
+
+    /// The sentence the capture step shows.
+    public var message: String {
+        switch self {
+        case .unreadableFile: return L10n.t("document.upload.error.unreadableFile")
+        case .notDownloaded: return L10n.t("document.upload.error.notDownloaded")
+        }
+    }
+}
+
+/// Where a submission is while ``DocumentPhase/submitting`` shows.
+public enum DocumentSubmissionStage: Equatable, Sendable {
+    /// The pictures are going up; the fraction of bytes sent, `0…1`.
+    case uploading(Double)
+    /// Every byte arrived; the server is checking them and has not answered.
+    case checking
 }
 
 /// Drives ``DocumentVerificationScreen``.
@@ -88,10 +122,24 @@ public final class DocumentVerificationViewModel {
     /// Where the front and back images came from.
     public private(set) var frontSource: DocumentSource = .camera
     public private(set) var backSource: DocumentSource = .camera
-    /// A chosen photo or file is being read.
-    public private(set) var isImporting = false
+    /// The side being read on the phone right now — a chosen photo coming
+    /// down from iCloud, a PDF or HEIC being turned into a picture, the zone
+    /// being read off the front. The step says "Reading your document…"
+    /// until it is done, so a pick never looks like a tap that did nothing.
+    public private(set) var reading: DocumentSide?
+    /// The picture being read, once there is one to show beside the words.
+    public private(set) var readingPreview: Data?
     /// Why a chosen photo or file was not accepted, on the capture screen.
-    public private(set) var importError: String?
+    public private(set) var importProblem: DocumentImportProblem?
+    /// A plain sentence at the top of the step the person was sent back to,
+    /// and why: the server could not verify the zone, the face check has to
+    /// be done again. Gone once they move on.
+    public private(set) var stepNotice: String?
+    /// How far the submission has got, while ``phase`` is
+    /// ``DocumentPhase/submitting``.
+    public private(set) var submissionStage: DocumentSubmissionStage = .uploading(0)
+    /// Why the pictures did not go, on ``DocumentPhase/sendFailed``.
+    public private(set) var sendFailure: String?
     /// The submission can still be taken back: it was accepted by this flow,
     /// or the server said one is already waiting (contract v25).
     public private(set) var canWithdraw = false
@@ -101,6 +149,29 @@ public final class DocumentVerificationViewModel {
     /// Reads the zone off a JPEG. Injectable so tests need no Vision.
     var zoneReader: @Sendable (Data) async -> String? = { jpeg in
         DocumentTextReader.zone(from: await DocumentTextReader.lines(in: jpeg))
+    }
+    /// Turns a chosen photo or file into the camera's JPEG, off the main
+    /// thread: a PDF or a 48-megapixel HEIC takes long enough to freeze the
+    /// screen otherwise. Injectable so a test can hold it open.
+    var converter: @Sendable (Data, Bool?) async -> Data? = { data, isPDF in
+        await Task.detached(priority: .userInitiated) {
+            DocumentImport.jpeg(from: data, isPDF: isPDF)
+        }.value
+    }
+
+    /// Something is being read: the pickers wait.
+    public var isImporting: Bool { reading != nil }
+
+    /// Why a chosen photo or file was not accepted, in words.
+    public var importError: String? { importProblem?.message }
+
+    /// The side the capture step is photographing, if it is one.
+    public var captureSide: DocumentSide? {
+        switch phase {
+        case .captureFront: return .front
+        case .captureBack: return .back
+        default: return nil
+        }
     }
 
     /// The source sent with the submission: a chosen image on either side
@@ -220,7 +291,7 @@ public final class DocumentVerificationViewModel {
         case .captureBack: return (4, count)
         case .review: return (hasBack ? 5 : 4, count)
         case .liveness: return (hasBack ? 6 : 5, count)
-        case .submitting, .submitted: return (count, count)
+        case .submitting, .sendFailed, .submitted: return (count, count)
         case .identityUsed, .underAge, .documentExpired, .useNafath, .dateOfBirthMismatch: return nil
         }
     }
@@ -259,6 +330,7 @@ public final class DocumentVerificationViewModel {
         frontImage = nil
         backImage = nil
         mrz = nil
+        stepNotice = nil
         phase = .birthdate
     }
 
@@ -276,7 +348,8 @@ public final class DocumentVerificationViewModel {
         documentType = nil
         frontSource = .camera
         backSource = .camera
-        importError = nil
+        importProblem = nil
+        stepNotice = nil
         releaseImages()
         mrz = nil
         phase = .chooseDocument
@@ -287,9 +360,12 @@ public final class DocumentVerificationViewModel {
     /// The zone is parsed with the OCR-repair pass; the strict parse is what
     /// decides validity either way. An expired document, a Saudi one, and a
     /// zone that contradicts the declared birthdate are all stopped here —
-    /// there is no point photographing the back.
+    /// there is no point photographing the back. A back already taken (the
+    /// front was retaken from the review) is kept: the review comes next.
     public func acceptFront(jpeg: Data, recognisedText: String?) {
         frontImage = jpeg
+        importProblem = nil
+        stepNotice = nil
         mrz = recognisedText.flatMap { MRZParser.parseRepairing($0) }
         if zoneIsNafathOnly {
             releaseImages()
@@ -304,13 +380,37 @@ public final class DocumentVerificationViewModel {
             phase = .dateOfBirthMismatch
             return
         }
-        phase = documentType?.hasBack == true ? .captureBack : .review
+        phase = documentType?.hasBack == true && backImage == nil ? .captureBack : .review
     }
 
     /// Accepts the back photo.
     public func acceptBack(jpeg: Data) {
         backImage = jpeg
+        importProblem = nil
         phase = .review
+    }
+
+    /// The camera's "Use this photo": the front is read for its zone first,
+    /// under "Reading your document…", and both sides then move on exactly
+    /// as an upload does.
+    /// - Parameter knownZone: The zone, when the caller already has it (the
+    ///   simulator's sample photo). Read off the picture otherwise.
+    public func useCapturedPhoto(_ jpeg: Data, knownZone: String? = nil) async {
+        guard let side = captureSide, reading == nil else { return }
+        importProblem = nil
+        guard side == .front else {
+            backSource = .camera
+            acceptBack(jpeg: jpeg)
+            return
+        }
+        reading = .front
+        readingPreview = jpeg
+        defer { finishReading() }
+        let text: String?
+        if let knownZone { text = knownZone } else { text = await zoneReader(jpeg) }
+        guard phase == .captureFront else { return }
+        frontSource = .camera
+        acceptFront(jpeg: jpeg, recognisedText: text)
     }
 
     // MARK: Uploading instead of photographing
@@ -324,21 +424,40 @@ public final class DocumentVerificationViewModel {
     /// as it does for the camera. Refusing an upload the camera would have
     /// let through made the passport camera-only whenever the reader missed.
     public func importDocument(_ data: Data, isPDF: Bool? = nil, source: DocumentSource) async {
-        guard phase == .captureFront || phase == .captureBack, !isImporting else { return }
-        isImporting = true
-        importError = nil
-        defer { isImporting = false }
-        guard let jpeg = DocumentImport.jpeg(from: data, isPDF: isPDF) else {
-            importError = L10n.t("document.upload.error.unreadableFile")
+        await importDocument(source: source) { (data, isPDF) }
+    }
+
+    /// ``importDocument(_:isPDF:source:)`` for a pick whose bytes are still
+    /// on their way — a Photos item coming down from iCloud. "Reading your
+    /// document…" shows from the moment of the pick, not from the moment the
+    /// bytes arrive; `load` answering `nil` is said as such.
+    public func importDocument(source: DocumentSource, load: @escaping () async -> (Data, Bool?)?) async {
+        guard let side = captureSide, reading == nil else { return }
+        let startedOn = phase
+        reading = side
+        readingPreview = nil
+        importProblem = nil
+        defer { finishReading() }
+        guard let (data, isPDF) = await load() else {
+            if phase == startedOn { importProblem = .notDownloaded }
             return
         }
-        analytics.track(.documentUploaded, properties: ["source": source.rawValue, "step": phase == .captureFront ? "front" : "back"])
-        if phase == .captureBack {
+        let converted = await converter(data, isPDF)
+        // Cancelled, or the document changed, while this was being read.
+        guard phase == startedOn else { return }
+        guard let jpeg = converted else {
+            importProblem = .unreadableFile
+            return
+        }
+        readingPreview = jpeg
+        analytics.track(.documentUploaded, properties: ["source": source.rawValue, "step": side.rawValue])
+        if side == .back {
             backSource = source
             acceptBack(jpeg: jpeg)
             return
         }
         let text = await zoneReader(jpeg)
+        guard phase == startedOn else { return }
         frontSource = source
         acceptFront(jpeg: jpeg, recognisedText: text)
     }
@@ -346,24 +465,35 @@ public final class DocumentVerificationViewModel {
     /// The picker or the file browser handed back nothing readable — an
     /// iCloud photo that would not download, a file that would not open.
     /// Said on the capture screen rather than swallowed.
-    public func importFailed() {
-        guard phase == .captureFront || phase == .captureBack else { return }
-        importError = L10n.t("document.upload.error.unreadableFile")
+    public func importFailed(_ problem: DocumentImportProblem = .unreadableFile) {
+        guard captureSide != nil else { return }
+        importProblem = problem
     }
 
     /// The camera took over again on this side.
     public func clearImportError() {
-        importError = nil
+        importProblem = nil
     }
 
     /// Discards the front photo (and the zone read from it) for another try.
+    /// The back, when there is one, stays: it was not the problem.
     public func retakeFront() {
         frontSource = .camera
-        backSource = .camera
         frontImage = nil
-        backImage = nil
         mrz = nil
+        importProblem = nil
+        stepNotice = nil
         phase = .captureFront
+    }
+
+    /// Discards the back photo for another try, keeping the front.
+    public func retakeBack() {
+        guard documentType?.hasBack == true, frontImage != nil else { return }
+        backSource = .camera
+        backImage = nil
+        importProblem = nil
+        stepNotice = nil
+        phase = .captureBack
     }
 
     /// The person confirmed the details read off the document.
@@ -375,6 +505,7 @@ public final class DocumentVerificationViewModel {
     /// The live head-turn finished. Submits immediately: there is nothing
     /// left for the person to decide.
     public func sweepCompleted(_ sweep: LivenessSweep) {
+        stepNotice = nil
         self.sweep = sweep
         self.selfie = sweep.straightFrame
         analytics.track(.livenessCompleted, properties: ["sectors": String(sweep.frames.count)])
@@ -384,6 +515,7 @@ public final class DocumentVerificationViewModel {
     /// The legacy three-pose sequence finished. Kept for a client without a
     /// face tracker; submits the same way.
     public func livenessCompleted(selfie: Data, turn: Data?, challenges: [LivenessChallenge]) {
+        stepNotice = nil
         self.selfie = selfie
         self.turnFrame = turn
         self.completedChallenges = challenges
@@ -398,10 +530,14 @@ public final class DocumentVerificationViewModel {
         await service.prepareDeviceAttestation()
     }
 
-    /// Sends everything to `/verification/document`.
+    /// Sends everything to `/verification/document`: "Uploading… 42%" as
+    /// the bytes go, "Checking your documents…" once they have all arrived,
+    /// and then the server's answer — never back to a screen with no word.
     public func submit() async {
         guard let documentType, let frontImage, let selfie, !isSubmitting else { return }
         isSubmitting = true
+        sendFailure = nil
+        submissionStage = .uploading(0)
         phase = .submitting
         defer { isSubmitting = false }
 
@@ -419,16 +555,37 @@ public final class DocumentVerificationViewModel {
         sent.source = documentSource
 
         do {
-            submittedCase = try await service.submitDocument(sent)
+            // Held only as long as the request is.
+            submittedCase = try await service.submitDocument(sent) { fraction in
+                Task { @MainActor in self.uploadProgressed(fraction) }
+            }
             releaseImages()
             canWithdraw = submittedCase?.status == .submitted
             phase = .submitted
         } catch let error as APIError {
             handleSubmitFailure(error)
         } catch {
-            toast = .error(L10n.t("common.somethingWentWrong"))
-            phase = .liveness
+            sendFailure = L10n.t("common.somethingWentWrong")
+            phase = .sendFailed
         }
+    }
+
+    /// The share of the pictures that has gone. All of it means the server
+    /// is checking them: the words change to say so.
+    func uploadProgressed(_ fraction: Double) {
+        guard phase == .submitting else { return }
+        if fraction >= 1 {
+            submissionStage = .checking
+        } else if case let .uploading(sent) = submissionStage, fraction > sent {
+            submissionStage = .uploading(fraction)
+        }
+    }
+
+    /// "Try again" after the pictures did not go: the same pictures and the
+    /// same face, sent again. Nothing has to be taken twice.
+    public func retrySend() async {
+        guard phase == .sendFailed else { return }
+        await submit()
     }
 
     /// Back to the document choice, for a different document. The birthdate
@@ -441,6 +598,9 @@ public final class DocumentVerificationViewModel {
         sweep = nil
         submittedCase = nil
         underAgeMessage = ""
+        importProblem = nil
+        stepNotice = nil
+        sendFailure = nil
         phase = declaredDateOfBirth == nil ? .birthdate : .chooseDocument
     }
 
@@ -481,6 +641,12 @@ public final class DocumentVerificationViewModel {
         selfie = nil
         turnFrame = nil
         sweep = nil
+        readingPreview = nil
+    }
+
+    private func finishReading() {
+        reading = nil
+        readingPreview = nil
     }
 
     private func handleSubmitFailure(_ error: APIError) {
@@ -515,19 +681,23 @@ public final class DocumentVerificationViewModel {
             releaseImages()
             phase = .birthdate
         case .invalidMrz:
-            toast = .error(error.userMessage)
+            // Said at the top of the camera it sends them back to, not in a
+            // banner that is gone before the camera has started.
+            stepNotice = error.userMessage
             mrz = nil
             frontImage = nil
             backImage = nil
             phase = .captureFront
         case .livenessMismatch, .tooManyFrames:
-            toast = .error(error.userMessage)
+            stepNotice = error.userMessage
             sweep = nil
             selfie = nil
             phase = .liveness
         default:
-            toast = .error(error.userMessage)
-            phase = .liveness
+            // No connection, a timeout, the server down: nothing about the
+            // pictures was wrong, so they are kept and sent again on a tap.
+            sendFailure = error.isCancellation ? L10n.t("common.somethingWentWrong") : error.userMessage
+            phase = .sendFailed
         }
     }
 }

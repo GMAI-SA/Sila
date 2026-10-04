@@ -371,6 +371,7 @@ public final class AuthSession {
                 )
                 updated.guidelinesVersion = current.guidelinesVersion
                 updated.currentGuidelinesVersion = current.currentGuidelinesVersion
+                updated.handleChosen = current.handleChosen
                 // The status says nothing about a vouch; only `/auth/me` does.
                 updated = updated.settingVouch(current.vouch, standing: current.standing)
                 user = updated

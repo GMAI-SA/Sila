@@ -188,6 +188,7 @@ struct SweepCaptureView: View {
             ) {
                 onCompleted(SampleCapture.sweep())
             }
+            .accessibilityIdentifier("document.sweep.useSample")
         default:
             EmptyView()
         }

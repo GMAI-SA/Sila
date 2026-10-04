@@ -327,6 +327,19 @@ public struct ProfileDraft: Equatable, Sendable {
     }
 }
 
+extension Account {
+    /// A copy carrying the handle the server just took (contract v33).
+    public func replacingHandle(_ handle: String?) -> Account {
+        Account(
+            id: id, email: email, handle: handle, displayName: displayName, bio: bio,
+            avatarPath: avatarPath, phone: phone, countryCode: countryCode,
+            verificationStatus: verificationStatus, deletionRequestedAt: deletionRequestedAt,
+            purgeAfter: purgeAfter, isPrivate: isPrivate, verifiedName: verifiedName,
+            hideVerifiedName: hideVerifiedName
+        )
+    }
+}
+
 /// The handle rule, mirrored from the server's `^[a-z0-9_]{3,20}$`.
 public enum Handle {
 

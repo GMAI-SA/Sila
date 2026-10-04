@@ -112,15 +112,43 @@ public final class URLSessionNetworkClient: NetworkClient {
         }
     }
 
+    public func upload<Response: Decodable>(
+        _ request: APIRequest,
+        as type: Response.Type,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> Response {
+        let data = try await perform(request, progress: progress)
+        if data.isEmpty {
+            throw APIError.decoding("Expected \(Response.self) but the response body was empty.")
+        }
+        do {
+            return try JSONCoding.decoder.decode(Response.self, from: data)
+        } catch {
+            throw APIError.decoding("Could not decode \(Response.self): \(error)")
+        }
+    }
+
     // MARK: - Plumbing
 
-    private func perform(_ request: APIRequest, notingRetryAfter: Bool = false) async throws -> Data {
-        let urlRequest = try makeURLRequest(request)
+    private func perform(
+        _ request: APIRequest,
+        notingRetryAfter: Bool = false,
+        progress: (@Sendable (Double) -> Void)? = nil
+    ) async throws -> Data {
+        var urlRequest = try makeURLRequest(request)
 
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(for: urlRequest)
+            if let progress, let body = urlRequest.httpBody {
+                // An upload task, so the bytes can be counted as they go;
+                // the same request otherwise, through the same refusals.
+                urlRequest.httpBody = nil
+                let delegate = UploadProgressReporter(progress)
+                (data, response) = try await session.upload(for: urlRequest, from: body, delegate: delegate)
+            } else {
+                (data, response) = try await session.data(for: urlRequest)
+            }
         } catch let error as URLError {
             // -999: the app cancelled its own request. Not a network failure.
             throw error.code == .cancelled ? APIError.cancelled : .transport(error.localizedDescription)
@@ -242,5 +270,18 @@ public final class URLSessionNetworkClient: NetworkClient {
     /// The first refused field's sentence; the person fixes one thing at a time.
     static func validationMessage(_ fields: [ValidationField]) -> String {
         fields.first?.userMessage ?? L10n.t("error.validation")
+    }
+}
+
+/// Tells an upload's caller how much of the body has gone, `0…1`.
+private final class UploadProgressReporter: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let report: @Sendable (Double) -> Void
+
+    init(_ report: @escaping @Sendable (Double) -> Void) { self.report = report }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64,
+                    totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
+        guard totalBytesExpectedToSend > 0 else { return }
+        report(min(1, Double(totalBytesSent) / Double(totalBytesExpectedToSend)))
     }
 }

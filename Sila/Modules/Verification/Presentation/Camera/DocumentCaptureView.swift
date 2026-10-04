@@ -16,16 +16,16 @@ import Vision
 /// The flow is still capture → look at the still → keep or retake: the person
 /// sees what was captured before anything is read from it, because the
 /// failure mode of a document photo is "blurry" and they are the best judge.
+/// Reading it is the flow's job, under its own "Reading your document…".
 @MainActor
 struct DocumentCaptureView: View {
 
-    enum Side {
-        case front, back
-    }
+    typealias Side = DocumentSide
 
     let side: Side
     let documentType: DocumentType
-    /// Called with the JPEG and, for the front, the recognised text.
+    /// Called with the kept JPEG and, only where the zone is already known
+    /// (the simulator's sample), that zone. The flow reads everything else.
     let onCaptured: (Data, String?) -> Void
 
     @State private var session = CameraSession(position: .back, frameInterval: 0.1)
@@ -33,8 +33,9 @@ struct DocumentCaptureView: View {
     @State private var guide = CaptureGuide()
     @State private var still: Data?
     @State private var isCapturing = false
-    @State private var isReading = false
     @State private var autoCaptureFired = false
+    /// The camera did not hand a photo back: said under the shutter.
+    @State private var captureFailed = false
 
     var body: some View {
         VStack(spacing: SLSpacing.lg) {
@@ -65,9 +66,9 @@ struct DocumentCaptureView: View {
                 .accessibilityValue(Text(hint))
 
             if still == nil, availability == .available {
-                Text(hint)
+                Text(captureFailed ? L10n.t("document.capture.failed") : hint)
                     .font(SLFont.bodyEmphasis)
-                    .foregroundStyle(guide.state.isSteady ? SLColor.secondary : SLColor.textSecondary)
+                    .foregroundStyle(captureFailed ? SLColor.warning : guide.state.isSteady ? SLColor.secondary : SLColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .animation(.default, value: hint)
                     .padding(.horizontal, SLSpacing.lg)
@@ -167,26 +168,20 @@ struct DocumentCaptureView: View {
                 SLButton(
                     L10n.t("document.capture.usePhoto"),
                     variant: .primary,
-                    isLoading: isReading,
                     accessibilityHint: L10n.t("document.capture.usePhoto.hint")
                 ) {
-                    Task { await accept() }
+                    accept()
                 }
+                .accessibilityIdentifier("document.capture.usePhoto")
                 SLButton(
                     L10n.t("document.capture.retake"),
                     variant: .secondary,
-                    isEnabled: !isReading,
                     accessibilityHint: L10n.t("document.retake.hint")
                 ) {
                     still = nil
                     autoCaptureFired = false
                     guide.reset()
                     watch()
-                }
-                if isReading {
-                    Text(L10n.t("document.capture.reading"))
-                        .font(SLFont.caption)
-                        .foregroundStyle(SLColor.textSecondary)
                 }
             }
         } else {
@@ -223,6 +218,7 @@ struct DocumentCaptureView: View {
                                              : UIColor(red: 0.16, green: 0.31, blue: 0.55, alpha: 1)
                     )
                 }
+                .accessibilityIdentifier("document.mock.useSample")
             default:
                 EmptyView()
             }
@@ -249,32 +245,29 @@ struct DocumentCaptureView: View {
     private func capture(automatic: Bool) async {
         guard !isCapturing else { return }
         isCapturing = true
+        captureFailed = false
         defer { isCapturing = false }
         session.stopFrames()
         guard let data = try? await session.capturePhoto() else {
+            // Never a shutter that did nothing: the line under the camera
+            // says so, and the camera is watching again.
+            captureFailed = true
             watch()
             return
         }
         // The card, not the tabletop: squared from the rectangle's corners
-        // when the still shows one, the whole still otherwise.
-        still = CardDetector.cropToCard(data) ?? data
+        // when the still shows one, the whole still otherwise. Off the main
+        // thread, so the shutter's spinner keeps turning while it is done.
+        let cropped = await Task.detached(priority: .userInitiated) {
+            CardDetector.cropToCard(data)
+        }.value
+        still = cropped ?? data
     }
 
-    private func accept() async {
-        guard let still, !isReading else { return }
-        isReading = true
-        defer { isReading = false }
-        guard side == .front else {
-            onCaptured(still, nil)
-            return
-        }
-        var text: String?
-        if CameraEnvironment.isSimulated, availability == .unavailable {
-            text = SampleCapture.passportZone()
-        } else {
-            text = DocumentTextReader.zone(from: await DocumentTextReader.lines(in: still))
-        }
-        onCaptured(still, text)
+    private func accept() {
+        guard let still else { return }
+        let sample = CameraEnvironment.isSimulated && availability == .unavailable && side == .front
+        onCaptured(still, sample ? SampleCapture.passportZone() : nil)
     }
 }
 

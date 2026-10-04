@@ -72,6 +72,14 @@ public protocol VerificationServiceProtocol: Sendable {
     ///   - ``APIErrorCode/underMinimumAge`` — terminal, server's words.
     func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase
 
+    /// ``submitDocument(_:)``, telling `progress` how much of the upload has
+    /// gone, `0…1`, so the person watches it go rather than a spinner. `1`
+    /// means every byte has arrived and the server is checking them.
+    func submitDocument(
+        _ submission: DocumentSubmission,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> DocumentCase
+
     /// Readies this device's App Attest key before the person reaches the
     /// submit (contract v32), so the submission only has to sign. Never
     /// throws and never holds anything up: a device that cannot attest
@@ -110,4 +118,13 @@ extension VerificationServiceProtocol {
     /// Nothing to ready: a service without App Attest (a mock, a preview)
     /// submits without it.
     public func prepareDeviceAttestation() async {}
+
+    /// A service that cannot count bytes submits as it always has and says
+    /// nothing until the answer.
+    public func submitDocument(
+        _ submission: DocumentSubmission,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> DocumentCase {
+        try await submitDocument(submission)
+    }
 }

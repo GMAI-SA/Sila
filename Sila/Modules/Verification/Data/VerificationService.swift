@@ -97,6 +97,13 @@ public final class VerificationService: VerificationServiceProtocol {
     }
 
     public func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase {
+        try await submitDocument(submission, progress: { _ in })
+    }
+
+    public func submitDocument(
+        _ submission: DocumentSubmission,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> DocumentCase {
         // The device's signature over exactly these bytes, when it can give
         // one in time; without it the submission goes as it always has, and
         // a person reviews it.
@@ -109,7 +116,9 @@ public final class VerificationService: VerificationServiceProtocol {
             accessToken: token
         )
         do {
-            let documentCase = try await network.send(request, as: DocumentCase.self)
+            // Counted as it goes: the pictures are the one upload in the app
+            // somebody sits and watches.
+            let documentCase = try await network.upload(request, as: DocumentCase.self, progress: progress)
             analytics.track(.documentSubmitted, properties: [
                 "document_type": submission.documentType.wireValue,
                 "mrz": submission.mrz?.isValid == true ? "read" : "none",

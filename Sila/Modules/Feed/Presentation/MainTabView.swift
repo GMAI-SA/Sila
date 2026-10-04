@@ -650,7 +650,11 @@ public struct MainTabView: View {
                 container.suspension.clear()
                 container.router.popFeedToRoot()
                 Task { await container.session.signOut() }
-            }
+            },
+            handles: container.handleService,
+            // The new handle everywhere at once: the profile tab, the
+            // composer's mention of oneself, the next sign-in's label.
+            onHandleChosen: { fresh in await container.session.adoptAccount(fresh) }
         )
     }
 

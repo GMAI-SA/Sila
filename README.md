@@ -573,6 +573,39 @@ The entitlement `com.apple.developer.devicecheck.appattest-environment` is
 says. The App ID needs the **App Attest** capability for a provisioning
 profile to carry it.
 
+## Choosing a handle, and the document step that says what happened
+
+Contract v33 (`docs/api-contract-v33-handles.md` in the backend). A new account
+is still given a random `@user…` handle, so nothing is ever made from the email
+or the phone number; `handle_chosen` on the account says whether the person has
+replaced it.
+
+* **Right after sign-up**, before the wall, "Choose your @handle" / «اختر
+  معرّفك» is the next step: the first of `GET /handles/check`'s suggestions is
+  in the field, the others are chips, and typing is checked a third of a second
+  after it stops, with one line for `invalid`, `reserved` or `taken` in the
+  chosen language. Save is `POST /me/handle`; "Keep @user… for now" sends the
+  handle the account has, which counts as a choice. No name is sent with the
+  check: the server builds suggestions from the display name it has.
+* **An older account** whose `handle_chosen` is false is offered it once, as a
+  sheet over the wall or the feed; Keep or a swipe puts it away, and this
+  device does not offer it again (`StorageKey.handleOffered`). Never offline,
+  never over a suspension or a vouch link.
+* **Account settings** show the handle with **Change**, which opens the same
+  chooser (no Keep) and works before verification, as the profile form does
+  not.
+
+The document flow's capture step makes every side unmistakable: a photo being
+read on the phone (the zone, a PDF or HEIC turned into a picture, an iCloud
+original coming down) shows "Reading your document…"; a side that is in shows
+its picture and a check ("Front added", "Photo page added" for a passport)
+above the next side's camera ("Now the back"); a file that cannot be used says
+why, with Choose another and Retake; the review shows both sides with a Retake
+on each. The submission counts its bytes (`NetworkClient.upload`, an upload
+task's progress) as "Uploading… 42%", then "Checking your documents…" until the
+server answers, then "We received your documents"; a send that fails keeps the
+pictures and the face for **Try again**.
+
 ## The session, and what it leaves on the phone
 
 The token pair and the cached account live in the Keychain
@@ -753,6 +786,11 @@ sends, types, and answers), `incoming` (the first time the inbox is read she
 types, then writes, and a notification lands) and `unavailable` (every socket
 is refused `1013`: the app carries on over HTTP alone). Every frame goes
 through the same client, decoder and view models a real socket's would.
+
+`-mockHandleUnchosen` signs in to an account still on its random handle, so
+the handle offer shows (a registration's code always does);
+`-mockSlowDocumentUpload` stretches the mocked document upload and the
+server's check to a few seconds each, so both can be watched.
 
 `-mockAuth` implies `-mockFeed`, `-mockComposer`, `-mockSearch`,
 `-mockPreferences`, `-mockAccount`, `-mockProfile`, `-mockNotifications`,

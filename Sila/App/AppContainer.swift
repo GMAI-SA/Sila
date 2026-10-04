@@ -80,6 +80,9 @@ public final class AppContainer {
     public let preferencesService: PreferencesServiceProtocol
     /// Contract v5's account service — profile, credentials, export, deletion.
     public let accountService: AccountServiceProtocol
+    /// Contract v33: whether a handle is free, and taking one — open to an
+    /// account that has not verified, so a handle is chosen at sign-up.
+    public let handleService: HandleServiceProtocol
     /// Phase 7's profile service — other people's pages, timelines and follows.
     public let profileService: ProfileServiceProtocol
     /// Blocking, muting, reporting, and the two endpoints a suspended account
@@ -179,6 +182,7 @@ public final class AppContainer {
         searchService: SearchServiceProtocol? = nil,
         preferencesService: PreferencesServiceProtocol? = nil,
         accountService: AccountServiceProtocol? = nil,
+        handleService: HandleServiceProtocol? = nil,
         profileService: ProfileServiceProtocol? = nil,
         safetyService: SafetyServiceProtocol? = nil,
         notificationsService: NotificationsServiceProtocol? = nil,
@@ -463,6 +467,21 @@ public final class AppContainer {
                 tokens: tokens,
                 analytics: analytics
             )
+        }
+
+        if let handleService {
+            self.handleService = handleService
+        } else if flags.useMockAccount {
+            // Answers for the session's own account, so a mocked choice
+            // changes its handle and nothing else.
+            let authMock = resolvedService as? AuthServiceMock
+            self.handleService = HandleServiceMock(
+                latency: 0.25,
+                account: { [weak session] in await session?.user },
+                onChosen: { user in await authMock?.adoptChosenHandle(user) }
+            )
+        } else {
+            self.handleService = HandleService(network: network, tokens: tokens, analytics: analytics)
         }
 
         if let profileService {

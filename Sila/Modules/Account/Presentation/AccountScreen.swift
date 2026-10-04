@@ -194,6 +194,35 @@ public struct AccountScreen: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The handle as it is, and Change.
+    private var handleRow: some View {
+        VStack(alignment: .leading, spacing: SLSpacing.xs) {
+            Text(L10n.t("account.profile.handle.label"))
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textSecondary)
+            HStack(spacing: SLSpacing.md) {
+                Text(viewModel.account?.atHandle ?? "—")
+                    .font(SLFont.bodyEmphasis)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .slContentDirection(.leftToRight)
+                    .accessibilityIdentifier("account.handle.current")
+                Spacer(minLength: 0)
+                SLButton(
+                    L10n.t("account.handle.change"),
+                    variant: .secondary,
+                    size: .compact,
+                    accessibilityHint: L10n.t("account.handle.change.hint")
+                ) {
+                    viewModel.presentedSheet = .handle
+                }
+                .frame(width: 110)
+                .accessibilityIdentifier("account.handle.change")
+            }
+            .padding(SLSpacing.md)
+            .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.surface2))
+        }
+    }
+
     // MARK: - Picture
 
     private var pictureSection: some View {
@@ -293,15 +322,22 @@ public struct AccountScreen: View {
                 TextDirection.resolve(languageCode: nil, text: viewModel.profileDraft.displayName)
             )
 
-            // A handle is `[a-z0-9_]`. It is typed and read left-to-right in
-            // every interface language; the example is not translated copy.
-            SLTextField(
-                L10n.t("account.profile.handle.label"),
-                text: $viewModel.profileDraft.handle,
-                placeholder: "aziz_sa",
-                accessibilityHint: L10n.t("account.profile.handle.hint")
-            )
-            .slContentDirection(.leftToRight)
+            if viewModel.handles != nil {
+                // Changed in its own sheet, which says as the person types
+                // whether a handle is free (contract v33) — and works before
+                // verification, as the profile form does not.
+                handleRow
+            } else {
+                // A handle is `[a-z0-9_]`. It is typed and read left-to-right in
+                // every interface language; the example is not translated copy.
+                SLTextField(
+                    L10n.t("account.profile.handle.label"),
+                    text: $viewModel.profileDraft.handle,
+                    placeholder: "aziz_sa",
+                    accessibilityHint: L10n.t("account.profile.handle.hint")
+                )
+                .slContentDirection(.leftToRight)
+            }
 
             VStack(alignment: .leading, spacing: SLSpacing.xs) {
                 SLTextField(
@@ -606,6 +642,12 @@ public struct AccountScreen: View {
             PhoneSheet(viewModel: viewModel)
         case .delete:
             DeleteAccountSheet(viewModel: viewModel)
+        case .handle:
+            Owned({ viewModel.makeHandleChooser() }) { model in
+                if let model {
+                    HandleChooserScreen(viewModel: model)
+                }
+            }
         }
     }
 

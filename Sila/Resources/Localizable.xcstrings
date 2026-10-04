@@ -1327,6 +1327,348 @@
         }
       }
     },
+    "account.handle.change": {
+      "comment": "Button beside the handle in account settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيير"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
+          }
+        }
+      }
+    },
+    "account.handle.change.hint": {
+      "comment": "VoiceOver hint for Change beside the handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح نافذة لاختيار معرّف جديد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens a sheet to choose a new handle"
+          }
+        }
+      }
+    },
+    "account.handle.change.message": {
+      "comment": "Under the field in the settings sheet that changes the handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يصبح معرّفك القديم متاحًا للجميع فور الحفظ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your old handle becomes free for anyone as soon as you save."
+          }
+        }
+      }
+    },
+    "account.handle.change.title": {
+      "comment": "Title of the settings sheet that changes the handle.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيير المعرّف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change your @handle"
+          }
+        }
+      }
+    },
+    "account.handle.choose.existing": {
+      "comment": "Under 'Choose your @handle' for an older account still on its random handle. %@ is that handle, e.g. @user7k2m9q4x.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حين انضممت أُعطيت المعرّف %@. اختر معرّفًا خاصًا بك أو أبقِ عليه حاليًا — يمكنك تغييره لاحقًا من الإعدادات."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you joined you were given %@. Choose a handle of your own, or keep it for now — you can change it later in Settings."
+          }
+        }
+      }
+    },
+    "account.handle.choose.message": {
+      "comment": "Under 'Choose your @handle' right after sign-up.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "به يجدك الناس ويذكرونك في صلة. يمكنك تغييره لاحقًا من الإعدادات."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's how people find and mention you on Sila. You can change it later in Settings."
+          }
+        }
+      }
+    },
+    "account.handle.choose.title": {
+      "comment": "Heading of the step after sign-up that offers a handle of the person's own (contract v33).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر معرّفك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your @handle"
+          }
+        }
+      }
+    },
+    "account.handle.keep": {
+      "comment": "Goes on with the random handle the account was given. %@ is that handle, e.g. @user7k2m9q4x.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإبقاء على %@ حاليًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep %@ for now"
+          }
+        }
+      }
+    },
+    "account.handle.keep.hint": {
+      "comment": "VoiceOver hint for 'Keep @user… for now'.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتابع بالمعرّف الذي أُعطيته. يمكنك تغييره لاحقًا من الإعدادات."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goes on with the handle you were given. You can change it later in Settings."
+          }
+        }
+      }
+    },
+    "account.handle.reason.invalid": {
+      "comment": "Under the handle field: breaks the 3–20 a–z 0–9 _ rule.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "من 3 إلى 20 حرفًا لاتينيًا (a–z) أو أرقامًا أو شرطة سفلية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3–20 letters (a–z), numbers or underscores."
+          }
+        }
+      }
+    },
+    "account.handle.reason.reserved": {
+      "comment": "Under the handle field: on the reserved list.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا المعرّف محجوز."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That handle is reserved."
+          }
+        }
+      }
+    },
+    "account.handle.reason.taken": {
+      "comment": "Under the handle field: another account has it.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا المعرّف مستخدم."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That handle is taken."
+          }
+        }
+      }
+    },
+    "account.handle.save.hint": {
+      "comment": "VoiceOver hint for Save under the handle field.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعتمد هذا المعرّف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes this handle"
+          }
+        }
+      }
+    },
+    "account.handle.status.available": {
+      "comment": "Under the handle field: nobody has it.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "متاح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available"
+          }
+        }
+      }
+    },
+    "account.handle.status.checking": {
+      "comment": "Under the handle field while the server is asked.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ التحقق…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        }
+      }
+    },
+    "account.handle.status.current": {
+      "comment": "Under the handle field: the account already has this one.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذا معرّفك الحالي."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's your handle now."
+          }
+        }
+      }
+    },
+    "account.handle.suggestion.hint": {
+      "comment": "VoiceOver hint for a suggested handle chip.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يضع هذا المعرّف في الحقل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puts this handle in the field"
+          }
+        }
+      }
+    },
+    "account.handle.suggestions": {
+      "comment": "Label over the suggested handles.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقتراحات"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggestions"
+          }
+        }
+      }
+    },
+    "account.handle.toast.saved": {
+      "comment": "Toast once a new handle is taken. %@ is the handle, e.g. @aziz_sa.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معرّفك الآن %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your handle is now %@"
+          }
+        }
+      }
+    },
     "account.identity.noName": {
       "comment": "Shown in the header when no display name is set.",
       "extractionState": "manual",
@@ -11807,13 +12149,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "املأ الإطار بالبطاقة كاملة."
+            "value": "اقلب البطاقة واملأ الإطار بوجهها الخلفي كاملًا."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fill the frame with the whole card."
+            "value": "Turn the card over and fill the frame with the whole back."
           }
         }
       }
@@ -11825,13 +12167,31 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "والآن الظهر"
+            "value": "والآن الوجه الخلفي"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Now the back"
+          }
+        }
+      }
+    },
+    "document.capture.failed": {
+      "comment": "Under the document camera: the shutter fired but no photo came back.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تُلتقط الصورة. اثبت وحاول مجددًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The photo didn't take. Hold still and try again."
           }
         }
       }
@@ -12030,24 +12390,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sila needs the camera to photograph your document. Allow it in Settings."
-          }
-        }
-      }
-    },
-    "document.capture.reading": {
-      "comment": "Progress text while the zone is read.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "جارٍ قراءة الوثيقة…"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reading the document…"
           }
         }
       }
@@ -12412,6 +12754,114 @@
         }
       }
     },
+    "document.problem.chooseAnother": {
+      "comment": "Button on the unusable-photo card: opens Photos again.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر غيرها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose another"
+          }
+        }
+      }
+    },
+    "document.problem.chooseAnother.hint": {
+      "comment": "VoiceOver hint for 'Choose another'.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفتح صورك لتختار غيرها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens your photos to choose a different one"
+          }
+        }
+      }
+    },
+    "document.problem.retake.hint": {
+      "comment": "VoiceOver hint for 'Retake' on the unusable-photo card.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعود إلى الكاميرا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goes back to the camera"
+          }
+        }
+      }
+    },
+    "document.problem.title": {
+      "comment": "A chosen photo or file cannot be used; the reason follows.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن استخدام هذه الصورة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This photo can't be used"
+          }
+        }
+      }
+    },
+    "document.reading.message": {
+      "comment": "Under 'Reading your document…'.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستغرق هذا بضع ثوانٍ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This takes a few seconds."
+          }
+        }
+      }
+    },
+    "document.reading.title": {
+      "comment": "While a captured or chosen side is read on the phone (zone, cropping, PDF or HEIC conversion).",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نقرأ وثيقتك…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading your document…"
+          }
+        }
+      }
+    },
     "document.retake.hint": {
       "comment": "Accessibility hint on Retake.",
       "extractionState": "manual",
@@ -12610,6 +13060,24 @@
         }
       }
     },
+    "document.review.photos": {
+      "comment": "Heading over the two side cards on the review step.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صورك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your photos"
+          }
+        }
+      }
+    },
     "document.review.title": {
       "comment": "Review step headline when the zone was read.",
       "extractionState": "manual",
@@ -12660,6 +13128,168 @@
           "stringUnit": {
             "state": "translated",
             "value": "We couldn't read the zone"
+          }
+        }
+      }
+    },
+    "document.sendFailed.kept": {
+      "comment": "Under the reason the pictures did not send.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يضِع شيء — صورك ما زالت هنا. حاول مجددًا عند اتصالك بالإنترنت."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing was lost — your photos are still here. Try again when you're connected."
+          }
+        }
+      }
+    },
+    "document.sendFailed.retry": {
+      "comment": "Sends the same pictures again.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حاول مجددًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "document.sendFailed.retry.hint": {
+      "comment": "VoiceOver hint for Try again after a failed send.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسل الصور نفسها مجددًا"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends the same photos again"
+          }
+        }
+      }
+    },
+    "document.sendFailed.title": {
+      "comment": "The pictures did not reach the server.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تُرسَل وثائقك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your documents didn't send"
+          }
+        }
+      }
+    },
+    "document.side.back.added": {
+      "comment": "Card with the back's thumbnail and a check mark, once the back is in.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت إضافة الوجه الخلفي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back added"
+          }
+        }
+      }
+    },
+    "document.side.front.added": {
+      "comment": "Card with the front's thumbnail and a check mark, once the front is in.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت إضافة الوجه الأمامي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front added"
+          }
+        }
+      }
+    },
+    "document.side.page.added": {
+      "comment": "A passport's one side, its photo page, is in.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت إضافة صفحة الصورة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo page added"
+          }
+        }
+      }
+    },
+    "document.side.retake.back.hint": {
+      "comment": "VoiceOver hint for Retake beside the back's thumbnail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعيد التقاط الوجه الخلفي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes the back again"
+          }
+        }
+      }
+    },
+    "document.side.retake.front.hint": {
+      "comment": "VoiceOver hint for Retake beside the front's thumbnail.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يعيد التقاط الوجه الأمامي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes the front again"
           }
         }
       }
@@ -12736,6 +13366,24 @@
         }
       }
     },
+    "document.submitted.received": {
+      "comment": "Top of the under-review screen: the submission arrived.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استلمنا وثائقك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We received your documents"
+          }
+        }
+      }
+    },
     "document.submitted.title": {
       "comment": "Headline after submission.",
       "extractionState": "manual",
@@ -12750,6 +13398,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Under review"
+          }
+        }
+      }
+    },
+    "document.submitting.checking": {
+      "comment": "After the upload, until the server answers.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نتحقق من وثائقك…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking your documents…"
+          }
+        }
+      }
+    },
+    "document.submitting.keepOpen": {
+      "comment": "Under 'Checking your documents…'.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستغرق هذا عادةً بضع ثوانٍ. أبقِ صلة مفتوحة حتى ينتهي."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This usually takes a few seconds. Keep Sila open until it's done."
           }
         }
       }
@@ -12772,20 +13456,38 @@
         }
       }
     },
-    "document.submitting.title": {
-      "comment": "Headline while uploading.",
+    "document.submitting.uploaded": {
+      "comment": "Checklist line once every byte has arrived.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ الإرسال…"
+            "value": "اكتمل الرفع"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sending…"
+            "value": "Uploaded"
+          }
+        }
+      }
+    },
+    "document.submitting.uploading": {
+      "comment": "The pictures going up. %@ is the percentage sent, e.g. 42%.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ الرفع… %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploading… %@"
           }
         }
       }
@@ -13180,6 +13882,24 @@
         }
       }
     },
+    "document.upload.error.notDownloaded": {
+      "comment": "A photo chosen from Photos came back empty — usually an iCloud original that would not download.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تصل هذه الصورة — ربما ما زالت تُنزَّل من iCloud. حاول مجددًا أو اختر غيرها."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That photo didn't come through — it may still be downloading from iCloud. Try again, or choose another."
+          }
+        }
+      }
+    },
     "document.upload.error.unreadableFile": {
       "extractionState": "manual",
       "localizations": {
@@ -13278,23 +13998,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Upload a photo"
-          }
-        }
-      }
-    },
-    "document.upload.reading": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "نقرأ الوثيقة…"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reading the document…"
           }
         }
       }

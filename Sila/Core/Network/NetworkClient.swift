@@ -244,9 +244,31 @@ public protocol NetworkClient: Sendable {
     /// than "wait a moment". Every other caller keeps the plain
     /// ``APIError`` it has always caught.
     func sendNotingRetryAfter<Response: Decodable>(_ request: APIRequest, as type: Response.Type) async throws -> Response
+    /// Sends a request with a body and decodes the answer exactly as
+    /// ``send(_:as:)`` does, telling `progress` how much of the body has
+    /// gone, `0…1`. `1` means every byte has left the phone; the server's
+    /// answer may still be a while.
+    ///
+    /// For the one upload a person sits and watches: their identity
+    /// document (contract v32). Everything else uses ``send(_:as:)``.
+    func upload<Response: Decodable>(
+        _ request: APIRequest,
+        as type: Response.Type,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> Response
 }
 
 extension NetworkClient {
+    /// A transport that cannot count bytes — a test's scripted one — sends
+    /// as ``send(_:as:)`` does and reports nothing until it is done.
+    public func upload<Response: Decodable>(
+        _ request: APIRequest,
+        as type: Response.Type,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> Response {
+        try await send(request, as: type)
+    }
+
     /// A transport that cannot read headers — a test's scripted one — answers
     /// as ``send(_:as:)`` does, and its refusals carry no wait.
     public func sendNotingRetryAfter<Response: Decodable>(

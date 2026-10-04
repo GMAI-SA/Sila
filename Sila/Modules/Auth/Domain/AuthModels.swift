@@ -126,6 +126,12 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
     /// nothing offered, so no entry point appears until the server says so.
     public var features: AccountFeatures = AccountFeatures()
 
+    /// Whether the person chose their handle (contract v33). `false` while it
+    /// is still the random one the server gave a new account, and the app
+    /// offers the choice. Absent — an older server, or a session cached
+    /// before it — reads as chosen: nobody is asked twice over a missing key.
+    public var handleChosen: Bool = true
+
     /// Carries a live vouch — the tag, the limited tier, the feed.
     public var isVouched: Bool { standing == .vouched }
 
@@ -166,7 +172,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         case id, email, displayName, emailVerified, verificationStatus, createdAt
         case handle, countryCode, phone, verifiedName, hideVerifiedName
         case needsInterestPrompt, experimentBucket, guidelinesVersion, currentGuidelinesVersion
-        case standing, vouch, features
+        case standing, vouch, features, handleChosen
         case avatarURL = "avatarUrl"
     }
 
@@ -207,6 +213,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         currentGuidelinesVersion = AuthUser.version(container, .currentGuidelinesVersion)
         vouch = (try? container.decodeIfPresent(VouchState.self, forKey: .vouch)) ?? nil
         features = ((try? container.decodeIfPresent(AccountFeatures.self, forKey: .features)) ?? nil) ?? AccountFeatures()
+        handleChosen = ((try? container.decodeIfPresent(Bool.self, forKey: .handleChosen)) ?? nil) ?? true
         // Identity always wins; a server that predates `standing` is read
         // from the status, which is all it knew.
         let sent = (try? container.decodeIfPresent(Standing.self, forKey: .standing)) ?? nil
@@ -240,6 +247,7 @@ public struct AuthUser: Codable, Equatable, Sendable, Identifiable {
         copy.standing = standing
         copy.vouch = vouch
         copy.features = features
+        copy.handleChosen = handleChosen
         return copy
     }
 

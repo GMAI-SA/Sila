@@ -109,6 +109,12 @@ public actor AuthServiceMock: AuthServiceProtocol {
     /// the server until the real integration is live; `-nafathAvailable`
     /// turns it on for a journey through the Nafath screen.
     public let nafathAvailable: Bool
+    /// Whether a signed-in account still has the random handle it was given
+    /// (contract v33), so "Choose your @handle" is offered once.
+    /// `-mockHandleUnchosen` turns it on. A sign-up always starts that way.
+    public let handleUnchosen: Bool
+    /// The random handle the mocked server gives an account nobody named.
+    public static let generatedHandle = "user7k2m9q4x"
 
     public init(
         scenario: MockScenario = .pendingReview,
@@ -116,9 +122,11 @@ public actor AuthServiceMock: AuthServiceProtocol {
         latency: Double = 0,
         biometry: BiometryKind = .faceID,
         hasBiometricCredential: Bool = false,
-        nafathAvailable: Bool = ProcessInfo.processInfo.arguments.contains("-nafathAvailable")
+        nafathAvailable: Bool = ProcessInfo.processInfo.arguments.contains("-nafathAvailable"),
+        handleUnchosen: Bool = ProcessInfo.processInfo.arguments.contains("-mockHandleUnchosen")
     ) {
         self.nafathAvailable = nafathAvailable
+        self.handleUnchosen = handleUnchosen
         self.scenario = scenario
         self.acceptedCode = acceptedCode
         self.latency = latency
@@ -137,6 +145,15 @@ public actor AuthServiceMock: AuthServiceProtocol {
     /// What the mocked vouching service did to this account's own vouch.
     public func setVouch(_ vouch: VouchState?, standing: Standing) {
         vouchOverride = (vouch, standing)
+    }
+
+    /// The handle the mocked handle service just took, which `/auth/me`
+    /// then reports — chosen, so the step is not offered again.
+    public func adoptChosenHandle(_ user: AuthUser) {
+        guard let pair = storedPair, pair.user.id == user.id else { return }
+        var updated = user
+        updated.handleChosen = true
+        storedPair = TokenPair(token: pair.token, user: updated)
     }
 
     // MARK: - AuthServiceProtocol
@@ -179,7 +196,10 @@ public actor AuthServiceMock: AuthServiceProtocol {
         if scenario == .otpAlwaysInvalid || code != acceptedCode {
             throw APIError.api(code: .otpInvalid, message: "Incorrect code", status: 400)
         }
-        let pair = Self.makePair(email: email, scenario: scenario, emailVerified: true)
+        // A code that confirms a registration confirms a brand-new account:
+        // the random handle, not yet chosen.
+        let pair = Self.makePair(email: email, scenario: scenario, emailVerified: true,
+                                 handleUnchosen: purpose == .register || handleUnchosen)
         storedPair = pair
         return pair
     }
@@ -194,7 +214,7 @@ public actor AuthServiceMock: AuthServiceProtocol {
         case .emailUnverified:
             throw APIError.api(code: .emailUnverified, message: "Email not verified", status: 403)
         default:
-            let pair = Self.makePair(email: email, scenario: scenario, emailVerified: true)
+            let pair = Self.makePair(email: email, scenario: scenario, emailVerified: true, handleUnchosen: handleUnchosen)
             storedPair = pair
             biometricAccount = email
             return pair
@@ -301,7 +321,8 @@ public actor AuthServiceMock: AuthServiceProtocol {
     static func makePair(
         email: String,
         scenario: MockScenario,
-        emailVerified: Bool = false
+        emailVerified: Bool = false,
+        handleUnchosen: Bool = false
     ) -> TokenPair {
         var user = AuthUser(
             id: UUID(uuidString: "11111111-2222-3333-4444-555555555555") ?? UUID(),
@@ -310,7 +331,7 @@ public actor AuthServiceMock: AuthServiceProtocol {
             emailVerified: emailVerified,
             verificationStatus: scenario.verificationStatus,
             createdAt: Date().addingTimeInterval(-86_400),
-            handle: "aziz",
+            handle: handleUnchosen ? generatedHandle : "aziz",
             // Only a verified account carries a country badge, which is what
             // makes the composer's "My Country" scope appear or not appear
             // in a mocked run.
@@ -319,6 +340,7 @@ public actor AuthServiceMock: AuthServiceProtocol {
         // Video is open on the mocked server, and a verified account may
         // upload one; a vouched one may not (contract v28 §1).
         user.features = AccountFeatures(video: true, videoUpload: scenario.verificationStatus == .verified)
+        user.handleChosen = !handleUnchosen
         return TokenPair(
             token: AuthToken(
                 accessToken: "mock-access-token",

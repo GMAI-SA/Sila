@@ -54,8 +54,10 @@ public struct DocumentVerificationScreen: View {
 
     public var body: some View {
         NavigationStack {
+            ScrollViewReader { scroller in
             ScrollView {
                 VStack(spacing: SLSpacing.lg) {
+                    Color.clear.frame(height: 0).id(Self.top)
                     if let step = viewModel.progress {
                         VStack(spacing: SLSpacing.xs) {
                             // The bar draws its own "Step 4 of 6" beside the
@@ -71,6 +73,14 @@ public struct DocumentVerificationScreen: View {
                         .frame(maxWidth: .infinity)
                 }
                 .padding(.vertical, SLSpacing.xl)
+            }
+            // Every step starts at its top: a step that opened where the last
+            // one had been scrolled to hid the card saying what had just been
+            // added, which is how "Front added" read as nothing happening.
+            .onChange(of: viewModel.phase) { previous, current in
+                withAnimation(.easeOut(duration: 0.25)) { scroller.scrollTo(Self.top, anchor: .top) }
+                announce(from: previous, to: current)
+            }
             }
             .tnScreenBackground()
             .tnToast($viewModel.toast)
@@ -95,41 +105,36 @@ public struct DocumentVerificationScreen: View {
 
     // MARK: - Phases
 
+    private static let top = "flowTop"
+
+    /// VoiceOver hears what the screen shows: the side that was just added,
+    /// and what comes next.
+    private func announce(from previous: DocumentPhase, to current: DocumentPhase) {
+        var words: [String] = []
+        if previous == .captureFront, current == .captureBack {
+            words = [L10n.t("document.side.front.added"), L10n.t("document.capture.back.title")]
+        } else if previous == .captureFront, current == .review {
+            words = [DocumentSideCard.addedTitle(.front, documentType: viewModel.documentType)]
+        } else if previous == .captureBack, current == .review {
+            words = [L10n.t("document.side.back.added")]
+        }
+        guard !words.isEmpty else { return }
+        AccessibilityNotification.Announcement(words.joined(separator: ". ")).post()
+    }
+
     @ViewBuilder
     private var content: some View {
         switch viewModel.phase {
         case .birthdate: birthdate
         case .chooseDocument: chooseDocument
-        case .captureFront:
-            VStack(spacing: SLSpacing.md) {
-                DocumentCaptureView(side: .front, documentType: viewModel.documentType ?? .passport) { jpeg, text in
-                    viewModel.clearImportError()
-                    viewModel.acceptFront(jpeg: jpeg, recognisedText: text)
-                }
-                .id("front")
-                DocumentUploadBar(viewModel: viewModel)
-                SLButton(
-                    L10n.t("document.changeDocument"),
-                    variant: .ghost,
-                    size: .compact,
-                    accessibilityHint: L10n.t("document.changeDocument.hint")
-                ) {
-                    viewModel.changeDocument()
-                }
-                .accessibilityIdentifier("document.changeDocument")
-            }
-        case .captureBack:
-            VStack(spacing: SLSpacing.md) {
-                DocumentCaptureView(side: .back, documentType: viewModel.documentType ?? .nationalId) { jpeg, _ in
-                    viewModel.clearImportError()
-                    viewModel.acceptBack(jpeg: jpeg)
-                }
-                .id("back")
-                DocumentUploadBar(viewModel: viewModel)
-            }
+        case .captureFront, .captureBack:
+            DocumentCaptureStep(viewModel: viewModel)
         case .review: review
         case .liveness:
             VStack(spacing: SLSpacing.sm) {
+                if let notice = viewModel.stepNotice {
+                    StepNoticeCard(text: notice)
+                }
                 // No upload here, on purpose: the face check has to be live.
                 Label(L10n.t("document.upload.liveOnly"), systemImage: "faceid")
                     .font(SLFont.caption)
@@ -142,6 +147,7 @@ public struct DocumentVerificationScreen: View {
                 }
             }
         case .submitting: submitting
+        case .sendFailed: sendFailed
         case .submitted: submitted
         case .identityUsed: identityUsed
         case .underAge: underAge
@@ -326,6 +332,28 @@ public struct DocumentVerificationScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            // Both sides, each with its own Retake: a blurry back is retaken
+            // without photographing the front again.
+            VStack(alignment: .leading, spacing: SLSpacing.sm) {
+                Text(L10n.t("document.review.photos"))
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.textSecondary)
+                DocumentSideCard(
+                    side: .front,
+                    documentType: viewModel.documentType,
+                    image: viewModel.frontImage,
+                    onRetake: { viewModel.retakeFront() }
+                )
+                if viewModel.documentType?.hasBack == true {
+                    DocumentSideCard(
+                        side: .back,
+                        documentType: viewModel.documentType,
+                        image: viewModel.backImage,
+                        onRetake: { viewModel.retakeBack() }
+                    )
+                }
+            }
+
             if viewModel.zoneIsReadable {
                 SLCard(padding: SLSpacing.md) {
                     VStack(spacing: SLSpacing.sm) {
@@ -354,23 +382,15 @@ public struct DocumentVerificationScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(spacing: SLSpacing.md) {
-                SLButton(
-                    L10n.t("document.review.continue"),
-                    variant: .primary,
-                    isEnabled: viewModel.canContinueFromReview,
-                    accessibilityHint: L10n.t("document.review.continue.hint")
-                ) {
-                    viewModel.confirmDetails()
-                }
-                SLButton(
-                    L10n.t("document.capture.retake"),
-                    variant: .secondary,
-                    accessibilityHint: L10n.t("document.retake.hint")
-                ) {
-                    viewModel.retakeFront()
-                }
+            SLButton(
+                L10n.t("document.review.continue"),
+                variant: .primary,
+                isEnabled: viewModel.canContinueFromReview,
+                accessibilityHint: L10n.t("document.review.continue.hint")
+            ) {
+                viewModel.confirmDetails()
             }
+            .accessibilityIdentifier("document.review.continue")
         }
         .padding(.horizontal, SLSpacing.lg)
     }
@@ -411,29 +431,120 @@ public struct DocumentVerificationScreen: View {
 
     // MARK: Submitting / submitted
 
+    /// Two lines that fill in as they happen: the upload with its real
+    /// percentage, then the server's check, until the server answers.
     private var submitting: some View {
         VStack(spacing: SLSpacing.xl) {
-            ProgressView()
-                .controlSize(.large)
-                .tint(SLColor.primary)
-                .padding(.top, SLSpacing.xxl)
+            hero(icon: isChecking ? "doc.text.magnifyingglass" : "arrow.up.doc", tint: SLColor.primary)
             VStack(spacing: SLSpacing.sm) {
-                Text(L10n.t("document.submitting.title"))
-                    .font(SLFont.displayL)
+                Text(isChecking ? L10n.t("document.submitting.checking") : uploadingLine)
+                    .font(SLFont.displayM)
                     .foregroundStyle(SLColor.textPrimary)
-                Text(L10n.t("document.submitting.message"))
+                    .multilineTextAlignment(.center)
+                    .contentTransition(.numericText())
+                Text(isChecking ? L10n.t("document.submitting.keepOpen") : L10n.t("document.submitting.message"))
                     .font(SLFont.bodyLight)
                     .foregroundStyle(SLColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            SLCard(padding: SLSpacing.md) {
+                VStack(alignment: .leading, spacing: SLSpacing.md) {
+                    VStack(alignment: .leading, spacing: SLSpacing.sm) {
+                        stageRow(
+                            done: isChecking,
+                            active: !isChecking,
+                            text: isChecking ? L10n.t("document.submitting.uploaded") : uploadingLine
+                        )
+                        if case let .uploading(fraction) = viewModel.submissionStage {
+                            SLProgressBar(value: fraction, label: VideoCopy.percent(fraction))
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("document.upload.progress")
+                    stageRow(done: false, active: isChecking, text: L10n.t("document.submitting.checking"))
+                        .accessibilityIdentifier(isChecking ? "document.checking" : "document.checking.waiting")
+                }
+            }
         }
         .padding(.horizontal, SLSpacing.lg)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.submissionStage)
+    }
+
+    private var isChecking: Bool { viewModel.submissionStage == .checking }
+
+    private var uploadingLine: String {
+        if case let .uploading(fraction) = viewModel.submissionStage {
+            return L10n.t("document.submitting.uploading", VideoCopy.percent(fraction))
+        }
+        return L10n.t("document.submitting.uploaded")
+    }
+
+    private func stageRow(done: Bool, active: Bool, text: String) -> some View {
+        HStack(spacing: SLSpacing.sm) {
+            Group {
+                if done {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(SLColor.secondary)
+                } else if active {
+                    ProgressView().controlSize(.small).tint(SLColor.primary)
+                } else {
+                    Image(systemName: "circle").foregroundStyle(SLColor.textMuted)
+                }
+            }
+            .frame(width: 22)
+            Text(text)
+                .font(SLFont.bodyEmphasis)
+                .foregroundStyle(done || active ? SLColor.textPrimary : SLColor.textMuted)
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The pictures did not go. Nothing is lost and nothing has to be taken
+    /// again: one tap sends the same ones.
+    private var sendFailed: some View {
+        VStack(spacing: SLSpacing.xl) {
+            hero(icon: "wifi.exclamationmark", tint: SLColor.warning)
+            VStack(spacing: SLSpacing.sm) {
+                Text(L10n.t("document.sendFailed.title"))
+                    .font(SLFont.displayL)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                if let reason = viewModel.sendFailure {
+                    Text(reason)
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text(L10n.t("document.sendFailed.kept"))
+                    .font(SLFont.bodyLight)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            SLButton(
+                L10n.t("document.sendFailed.retry"),
+                variant: .primary,
+                icon: "arrow.clockwise",
+                accessibilityHint: L10n.t("document.sendFailed.retry.hint"),
+                asyncAction: { await viewModel.retrySend() }
+            )
+            .accessibilityIdentifier("document.sendFailed.retry")
+        }
+        .padding(.horizontal, SLSpacing.lg)
+        .padding(.top, SLSpacing.xl)
     }
 
     private var submitted: some View {
         VStack(spacing: SLSpacing.xl) {
             hero(icon: "hourglass", tint: SLColor.primary)
+            // The answer to "did it arrive?", before anything else.
+            Label(L10n.t("document.submitted.received"), systemImage: "checkmark.circle.fill")
+                .font(SLFont.bodyEmphasis)
+                .foregroundStyle(SLColor.secondary)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("document.submitted")
             VStack(spacing: SLSpacing.sm) {
                 Text(L10n.t("document.submitted.title"))
                     .font(SLFont.displayL)
@@ -608,21 +719,113 @@ public struct DocumentVerificationScreen: View {
     .preferredColorScheme(.dark)
 }
 
-/// "Upload a photo" and "Choose a file", beside the camera, for the front and
-/// back of the document only.
+
+// MARK: - Photographing or choosing a side
+
+/// One side of the document, front or back, made unmistakable: what was
+/// already added sits at the top with its picture and a check; while a photo
+/// is read on the phone the step says so; a photo that cannot be used says
+/// why, with Retake and Choose another; and only then the camera, with
+/// Photos and Files beside it.
 @MainActor
-private struct DocumentUploadBar: View {
+private struct DocumentCaptureStep: View {
     @Bindable var viewModel: DocumentVerificationViewModel
+    @State private var isPickingPhoto = false
     @State private var picked: PhotosPickerItem?
     @State private var isChoosingFile = false
 
+    private var side: DocumentSide { viewModel.captureSide ?? .front }
+
     var body: some View {
+        VStack(spacing: SLSpacing.md) {
+            if let notice = viewModel.stepNotice {
+                StepNoticeCard(text: notice)
+            }
+            if side == .back {
+                // The front is in: its picture and a check, before the camera
+                // asks for the back.
+                DocumentSideCard(
+                    side: .front,
+                    documentType: viewModel.documentType,
+                    image: viewModel.frontImage,
+                    onRetake: { viewModel.retakeFront() }
+                )
+                .padding(.horizontal, SLSpacing.lg)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            if viewModel.reading != nil {
+                ReadingCard(preview: viewModel.readingPreview)
+                    .padding(.horizontal, SLSpacing.lg)
+            } else if let problem = viewModel.importProblem {
+                ProblemCard(
+                    problem: problem,
+                    onRetake: { viewModel.clearImportError() },
+                    onChooseAnother: { isPickingPhoto = true }
+                )
+                .padding(.horizontal, SLSpacing.lg)
+            } else {
+                DocumentCaptureView(side: side, documentType: viewModel.documentType ?? (side == .front ? .passport : .nationalId)) { jpeg, zone in
+                    Task { await viewModel.useCapturedPhoto(jpeg, knownZone: zone) }
+                }
+                .id(side)
+                uploadButtons
+                if side == .front {
+                    SLButton(
+                        L10n.t("document.changeDocument"),
+                        variant: .ghost,
+                        size: .compact,
+                        accessibilityHint: L10n.t("document.changeDocument.hint")
+                    ) {
+                        viewModel.changeDocument()
+                    }
+                    .accessibilityIdentifier("document.changeDocument")
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.reading)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.importProblem)
+        .photosPicker(isPresented: $isPickingPhoto, selection: $picked, matching: .images)
+        .onChange(of: picked) { _, item in
+            guard let item else { return }
+            picked = nil
+            // "Reading your document…" from the moment of the pick: an
+            // iCloud original can take a while to come down.
+            Task {
+                await viewModel.importDocument(source: .photos) {
+                    guard let data = try? await item.loadTransferable(type: Data.self) else { return nil }
+                    return (data, false)
+                }
+            }
+        }
+        .fileImporter(isPresented: $isChoosingFile, allowedContentTypes: DocumentImport.fileTypes) { result in
+            guard case let .success(url) = result else {
+                viewModel.importFailed()
+                return
+            }
+            Task {
+                await viewModel.importDocument(source: .file) {
+                    await Task.detached(priority: .userInitiated) { () -> (Data, Bool?)? in
+                        let scoped = url.startAccessingSecurityScopedResource()
+                        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                        guard let data = try? Data(contentsOf: url) else { return nil }
+                        return (data, url.pathExtension.lowercased() == "pdf" || DocumentImport.looksLikePDF(data))
+                    }.value
+                }
+            }
+        }
+    }
+
+    /// "Upload a photo" and "Choose a file", beside the camera, for the
+    /// front and back of the document only.
+    private var uploadButtons: some View {
         VStack(spacing: SLSpacing.sm) {
             Text(L10n.t("document.upload.or"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textSecondary)
             HStack(spacing: SLSpacing.md) {
-                PhotosPicker(selection: $picked, matching: .images) {
+                Button {
+                    isPickingPhoto = true
+                } label: {
                     Label(L10n.t("document.upload.photo"), systemImage: "photo.on.rectangle")
                         .font(SLFont.caption)
                         .frame(maxWidth: .infinity, minHeight: 40)
@@ -640,46 +843,191 @@ private struct DocumentUploadBar: View {
                 .accessibilityIdentifier("document.upload.file")
             }
             .disabled(viewModel.isImporting)
-            if viewModel.isImporting {
-                ProgressView(L10n.t("document.upload.reading")).font(SLFont.caption)
-            }
-            if let error = viewModel.importError {
-                Text(error)
-                    .font(SLFont.caption)
-                    .foregroundStyle(SLColor.warning)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("document.upload.error")
-            }
         }
         .padding(.horizontal, SLSpacing.lg)
-        .onChange(of: picked) { _, item in
-            guard let item else { return }
-            picked = nil
-            Task {
-                // An iCloud original that will not download comes back as
-                // nothing: said, rather than a tap that did nothing.
-                guard let data = try? await item.loadTransferable(type: Data.self) else {
-                    viewModel.importFailed()
-                    return
+    }
+}
+
+/// A side that is in: its picture, a check, "Front added", and Retake.
+@MainActor
+struct DocumentSideCard: View {
+    let side: DocumentSide
+    let documentType: DocumentType?
+    let image: Data?
+    let onRetake: () -> Void
+
+    /// "Front added", "Back added" — and for a passport, whose one side is
+    /// its photo page, "Photo page added".
+    static func addedTitle(_ side: DocumentSide, documentType: DocumentType?) -> String {
+        switch side {
+        case .front:
+            return documentType == .passport ? L10n.t("document.side.page.added") : L10n.t("document.side.front.added")
+        case .back:
+            return L10n.t("document.side.back.added")
+        }
+    }
+
+    var body: some View {
+        SLCard(padding: SLSpacing.md) {
+            HStack(spacing: SLSpacing.md) {
+                thumbnail
+                Label {
+                    Text(Self.addedTitle(side, documentType: documentType))
+                        .font(SLFont.bodyEmphasis)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(SLColor.secondary)
                 }
-                await viewModel.importDocument(data, isPDF: false, source: .photos)
+                .accessibilityElement(children: .combine)
+                Spacer(minLength: 0)
+                Button(L10n.t("document.capture.retake"), action: onRetake)
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.primary)
+                    .accessibilityHint(Text(L10n.t(side == .front ? "document.side.retake.front.hint" : "document.side.retake.back.hint")))
+                    .accessibilityIdentifier(side == .front ? "document.retake.front" : "document.retake.back")
             }
         }
-        .fileImporter(isPresented: $isChoosingFile, allowedContentTypes: DocumentImport.fileTypes) { result in
-            guard case let .success(url) = result else {
-                viewModel.importFailed()
-                return
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(side == .front ? "document.sideAdded.front" : "document.sideAdded.back")
+    }
+
+    @ViewBuilder
+    private var thumbnail: some View {
+        Group {
+            if let image, let picture = UIImage(data: image) {
+                Image(uiImage: picture)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                SLColor.surface2
             }
-            let scoped = url.startAccessingSecurityScopedResource()
-            let data = try? Data(contentsOf: url)
-            if scoped { url.stopAccessingSecurityScopedResource() }
-            guard let data else {
-                viewModel.importFailed()
-                return
-            }
-            let isPDF = url.pathExtension.lowercased() == "pdf" || DocumentImport.looksLikePDF(data)
-            Task { await viewModel.importDocument(data, isPDF: isPDF, source: .file) }
         }
+        .frame(width: 72, height: 46)
+        .clipShape(RoundedRectangle(cornerRadius: SLRadius.sm))
+        .overlay(RoundedRectangle(cornerRadius: SLRadius.sm).strokeBorder(SLColor.secondary, lineWidth: 1.5))
+        .accessibilityHidden(true)
+    }
+}
+
+/// "Reading your document…" — the picture being read, when there is one,
+/// under a spinner that does not stop until the step moves on.
+@MainActor
+private struct ReadingCard: View {
+    let preview: Data?
+
+    var body: some View {
+        SLCard(padding: SLSpacing.lg) {
+            VStack(spacing: SLSpacing.md) {
+                ZStack {
+                    if let preview, let picture = UIImage(data: preview) {
+                        Image(uiImage: picture)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 170)
+                            .clipShape(RoundedRectangle(cornerRadius: SLRadius.md))
+                            .opacity(0.55)
+                    } else {
+                        Image(systemName: "doc.text.viewfinder")
+                            .font(.system(size: 52, weight: .light))
+                            .foregroundStyle(SLColor.primary)
+                            .frame(height: 110)
+                    }
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(SLColor.primary)
+                }
+                .accessibilityHidden(true)
+                Text(L10n.t("document.reading.title"))
+                    .font(SLFont.displayM)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text(L10n.t("document.reading.message"))
+                    .font(SLFont.bodyLight)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("document.reading")
+    }
+}
+
+/// A photo or file that cannot be used: why, in plain words, and the two
+/// ways on.
+@MainActor
+private struct ProblemCard: View {
+    let problem: DocumentImportProblem
+    let onRetake: () -> Void
+    let onChooseAnother: () -> Void
+
+    var body: some View {
+        SLCard(padding: SLSpacing.lg) {
+            VStack(spacing: SLSpacing.md) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 36, weight: .regular))
+                    .foregroundStyle(SLColor.warning)
+                    .accessibilityHidden(true)
+                VStack(spacing: SLSpacing.xs) {
+                    Text(L10n.t("document.problem.title"))
+                        .font(SLFont.displayM)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                    Text(problem.message)
+                        .font(SLFont.bodyLight)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("document.upload.error")
+                }
+                .accessibilityElement(children: .combine)
+                SLButton(
+                    L10n.t("document.problem.chooseAnother"),
+                    variant: .primary,
+                    icon: "photo.on.rectangle",
+                    accessibilityHint: L10n.t("document.problem.chooseAnother.hint"),
+                    action: onChooseAnother
+                )
+                .accessibilityIdentifier("document.problem.chooseAnother")
+                SLButton(
+                    L10n.t("document.capture.retake"),
+                    variant: .secondary,
+                    icon: "camera.fill",
+                    accessibilityHint: L10n.t("document.problem.retake.hint"),
+                    action: onRetake
+                )
+                .accessibilityIdentifier("document.problem.retake")
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("document.problem")
+    }
+}
+
+/// Why the person is back on this step, at its top.
+@MainActor
+private struct StepNoticeCard: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: SLSpacing.sm) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(SLColor.warning)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(SLFont.caption)
+                .foregroundStyle(SLColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(SLSpacing.md)
+        .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.warning.opacity(0.12)))
+        .padding(.horizontal, SLSpacing.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("document.stepNotice")
     }
 }

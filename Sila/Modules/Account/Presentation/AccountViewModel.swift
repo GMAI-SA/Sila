@@ -16,6 +16,8 @@ public enum AccountSheet: String, Identifiable, Hashable, Sendable {
     case phone
     /// `POST /me/delete`.
     case delete
+    /// `POST /me/handle` — "Change your @handle" (contract v33).
+    case handle
 
     public var id: String { rawValue }
 
@@ -26,6 +28,7 @@ public enum AccountSheet: String, Identifiable, Hashable, Sendable {
         case .email: return L10n.t("account.sheet.email.title")
         case .phone: return L10n.t("account.sheet.phone.title")
         case .delete: return L10n.t("account.sheet.delete.title")
+        case .handle: return L10n.t("account.handle.change.title")
         }
     }
 }
@@ -177,6 +180,13 @@ public final class AccountViewModel {
     private let onSignOut: (@MainActor () -> Void)?
     /// Where the export is written, and removed from.
     private let leftovers: SessionLeftovers
+    /// Checks and takes handles (contract v33). When present, the handle is
+    /// changed in its own sheet, with live availability, rather than typed
+    /// into the profile form.
+    public let handles: HandleServiceProtocol?
+    /// Told about the account the server answered after a handle change, so
+    /// the session — and every screen showing the handle — follows.
+    private let onHandleChosen: (@MainActor (AuthUser) async -> Void)?
 
     /// - Parameters:
     ///   - service: Account backend.
@@ -189,12 +199,16 @@ public final class AccountViewModel {
         service: AccountServiceProtocol,
         analytics: AnalyticsClient,
         onSignOut: (@MainActor () -> Void)? = nil,
-        leftovers: SessionLeftovers = SessionLeftovers()
+        leftovers: SessionLeftovers = SessionLeftovers(),
+        handles: HandleServiceProtocol? = nil,
+        onHandleChosen: (@MainActor (AuthUser) async -> Void)? = nil
     ) {
         self.service = service
         self.analytics = analytics
         self.onSignOut = onSignOut
         self.leftovers = leftovers
+        self.handles = handles
+        self.onHandleChosen = onHandleChosen
     }
 
     // MARK: - Derived state
@@ -333,6 +347,36 @@ public final class AccountViewModel {
             profileError = APIError.wrapping(error).presentableMessage
             toast = .error(profileError ?? L10n.t("account.profile.toast.saveFailed"))
         }
+    }
+
+    // MARK: - Handle
+
+    /// The chooser for "Change", over the handle the account has now.
+    public func makeHandleChooser() -> HandleChooserViewModel? {
+        guard let handles else { return nil }
+        return HandleChooserViewModel(
+            service: handles,
+            analytics: analytics,
+            currentHandle: account?.handle,
+            context: .settings,
+            onChosen: { [weak self] fresh in await self?.handleChosen(fresh) },
+            onDismiss: { [weak self] in self?.presentedSheet = nil }
+        )
+    }
+
+    /// The server took a new handle. The screen shows it at once, any other
+    /// unsaved profile edits stay where they are, and the session follows.
+    public func handleChosen(_ fresh: AuthUser) async {
+        let previous = account?.handle
+        if let account {
+            self.account = account.replacingHandle(fresh.handle)
+        }
+        profileDraft.handle = fresh.handle ?? ""
+        presentedSheet = nil
+        if let handle = fresh.atHandle, fresh.handle != previous {
+            toast = .success(L10n.t("account.handle.toast.saved", "\u{2066}\(handle)\u{2069}"))
+        }
+        await onHandleChosen?(fresh)
     }
 
     /// Throws away the unsaved profile edits.
@@ -708,6 +752,9 @@ public final class AccountViewModel {
         case .delete:
             deletion = DeletionConfirmation()
             deletionError = nil
+        case .handle:
+            // The chooser holds nothing worth keeping once it has closed.
+            break
         }
     }
 }

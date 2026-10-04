@@ -58,6 +58,11 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
 
     /// Artificial latency, in seconds, applied to every call.
     private let latency: Double
+    /// How long a mocked document upload takes, and how long the server then
+    /// checks it. `-mockSlowDocumentUpload` stretches both, so a UI journey
+    /// can see "Uploading… 40%" and "Checking your documents…".
+    private let uploadSeconds: Double
+    private let checkSeconds: Double
 
     /// Calls recorded for test assertions. Deliberately **never** includes the
     /// national ID, the zone, or anything read off a document — the mock
@@ -89,6 +94,9 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         self.pendingPolls = pendingPolls
         self.requestLifetime = requestLifetime
         self.latency = latency
+        let slow = ProcessInfo.processInfo.arguments.contains("-mockSlowDocumentUpload")
+        self.uploadSeconds = slow ? 4 : latency * 2
+        self.checkSeconds = slow ? 3 : latency
     }
 
     /// Switches scenario mid-flight (used by previews).
@@ -226,9 +234,27 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
     // MARK: - Document + selfie
 
     public func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase {
+        try await submitDocument(submission, progress: { _ in })
+    }
+
+    /// The upload goes in ten steps over ``uploadSeconds``, then the server
+    /// "checks" for ``checkSeconds`` before it answers — so the progress, and
+    /// the wait after it, can be watched in a mocked run.
+    public func submitDocument(
+        _ submission: DocumentSubmission,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws -> DocumentCase {
         record("submitDocument")
-        try await delay()
         try failIfOffline()
+        for step in 1...10 {
+            if uploadSeconds > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(uploadSeconds / 10 * 1_000_000_000))
+            }
+            progress(Double(step) / 10)
+        }
+        if checkSeconds > 0 {
+            try? await Task.sleep(nanoseconds: UInt64(checkSeconds * 1_000_000_000))
+        }
 
         switch scenario {
         case .alreadyVerified:

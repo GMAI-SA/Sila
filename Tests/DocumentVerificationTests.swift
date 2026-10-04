@@ -283,7 +283,10 @@ final class DocumentVerificationTests: XCTestCase {
         await waitForSubmit(viewModel)
         XCTAssertEqual(viewModel.phase, .captureFront)
         XCTAssertNil(viewModel.mrz)
-        XCTAssertNotNil(viewModel.toast)
+        // Said at the top of the camera, where it stays until the next photo —
+        // not in a banner gone before the camera has started.
+        XCTAssertEqual(viewModel.stepNotice, L10n.t("error.invalidMrz"))
+        XCTAssertNil(viewModel.toast)
     }
 
     func testAlreadyVerifiedAndReviewPendingReadAsDone() async {
@@ -296,14 +299,18 @@ final class DocumentVerificationTests: XCTestCase {
         }
     }
 
-    func testOfflineKeepsThePersonOnTheFaceStepWithAToast() async {
+    func testOfflineSaysThePicturesDidNotSendAndKeepsThem() async {
         let viewModel = makeViewModel(service: VerificationServiceMock(scenario: .offline))
         reachLiveness(viewModel)
         viewModel.sweepCompleted(sweep())
         await waitForSubmit(viewModel)
-        XCTAssertEqual(viewModel.phase, .liveness)
-        XCTAssertNotNil(viewModel.toast)
+        // Not back at the face scan with a banner: a screen that says the
+        // pictures did not go, and sends the same ones again on a tap.
+        XCTAssertEqual(viewModel.phase, .sendFailed)
+        XCTAssertEqual(viewModel.sendFailure, APIError.transport("The Internet connection appears to be offline.").userMessage)
+        XCTAssertNil(viewModel.toast)
         XCTAssertNotNil(viewModel.frontImage, "nothing was sent, so nothing is released")
+        XCTAssertNotNil(viewModel.selfie, "the face is not asked for twice")
     }
 
     // MARK: - Privacy

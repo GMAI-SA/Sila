@@ -44,6 +44,12 @@ public struct StorageKey: RawRepresentable, Hashable, Sendable {
     /// the app but keeps its Keychain items, so a missing marker next to a
     /// surviving session means the app was deleted and installed again.
     public static let installed = StorageKey("com.socialsa.sila.installed")
+    /// "Choose your @handle" was offered to this account on this device and
+    /// put away (contract v33): an older account is asked once, not on every
+    /// launch. The server's `handle_chosen` still decides when it was taken.
+    public static func handleOffered(_ account: UUID) -> StorageKey {
+        StorageKey("com.socialsa.sila.handleOffered.\(account.uuidString.lowercased())")
+    }
 }
 
 /// `UserDefaults`-backed ``StorageClient``.
