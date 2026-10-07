@@ -2,3 +2,4 @@
 - 2026-10-07 models, service, mock+launch args (-mockRetentionConsent/-mockConsentRequired/-mockKeptPhotos), VM send step, consent card, privacy row, rejected kept copy, strings written (not yet built)
 - 2026-10-07 targeted unit tests green (VerificationFilesConsentTests 20/20 + document/attest/wall suites; one existing assertion updated for the pre-send status read)
 - 2026-10-07 UI journey ConsentCardJourneyUITests 3/3 green (EN, AR, unticked); committed
+- 2026-10-07 existing DocumentStepsJourney (no announcement) still green; lane done
