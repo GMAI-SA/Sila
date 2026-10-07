@@ -180,4 +180,18 @@ public final class VerificationService: VerificationServiceProtocol {
             return nil
         }
     }
+
+    // MARK: Verification photos (contract v34)
+
+    public func verificationStatus() async throws -> VerificationStatusReport {
+        let token = try await tokens.accessToken()
+        let request = APIRequest(path: "/verification/status", accessToken: token)
+        return try await network.send(request, as: VerificationStatusReport.self)
+    }
+
+    public func withdrawPhotoConsent() async throws -> PhotoConsentWithdrawal {
+        let token = try await tokens.accessToken()
+        let request = APIRequest(path: "/verification/photos/withdraw-consent", method: .post, accessToken: token)
+        return try await network.send(request, as: PhotoConsentWithdrawal.self)
+    }
 }

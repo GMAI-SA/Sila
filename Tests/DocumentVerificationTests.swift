@@ -255,7 +255,9 @@ final class DocumentVerificationTests: XCTestCase {
         XCTAssertNil(viewModel.selfie)
         XCTAssertNil(viewModel.sweep)
         let calls = await service.recordedCalls
-        XCTAssertEqual(calls, ["submitDocument"])
+        // The status is read just before sending (contract v34 §7.1): no
+        // consent announced, so it goes straight on, as before.
+        XCTAssertEqual(calls, ["verificationStatus", "submitDocument"])
     }
 
     func testIdentityAlreadyUsedIsNotAFailure() async {

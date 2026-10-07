@@ -29,6 +29,10 @@ public struct RejectedScreen: View {
     private let onTryAgain: (() -> Void)?
     private let onRetake: (() async -> Void)?
     private let onSignOut: () -> Void
+    /// Whether the turned-away submission's photographs stay in the person's
+    /// verification file (contract v34 §7.5) — read once, from the case.
+    private let loadPhotosKept: (() async -> Bool)?
+    @State private var photosKept = false
 
     @State private var showsForm = false
     @State private var message = ""
@@ -60,8 +64,10 @@ public struct RejectedScreen: View {
         onAppeal: ((String) async throws -> VerificationAppealReceipt)? = nil,
         onTryAgain: (() -> Void)? = nil,
         onRetake: (() async -> Void)? = nil,
+        loadPhotosKept: (() async -> Bool)? = nil,
         onSignOut: @escaping () -> Void
     ) {
+        self.loadPhotosKept = loadPhotosKept
         self.reason = reason
         self.revocationReason = revocationReason
         self.appealOnFile = appeal
@@ -89,7 +95,8 @@ public struct RejectedScreen: View {
 
     private var explanation: String {
         if isRevocation { return L10n.t("auth.rejected.revoked.message") }
-        return L10n.t(retake == nil ? "auth.rejected.message" : "auth.rejected.screened.message")
+        if retake == nil { return L10n.t("auth.rejected.message") }
+        return L10n.t(photosKept ? "auth.rejected.screened.message.kept" : "auth.rejected.screened.message")
     }
 
     /// The appeal to show: the one just sent, else the one the server knew about.
@@ -221,6 +228,10 @@ public struct RejectedScreen: View {
         }
         .tnScreenBackground()
         .tnToast($toast)
+        .task {
+            guard retake != nil, let loadPhotosKept else { return }
+            photosKept = await loadPhotosKept()
+        }
     }
 
     // MARK: - Appeal

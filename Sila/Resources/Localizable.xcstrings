@@ -311,37 +311,37 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "بعد %lld أيام يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
+                  "value": "بعد %lld أيام يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك وصور التحقق الخاصة بك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "بعد %lld يومًا يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
+                  "value": "بعد %lld يومًا يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك وصور التحقق الخاصة بك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
                 }
               },
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "بعد يوم واحد يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
+                  "value": "بعد يوم واحد يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك وصور التحقق الخاصة بك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "بعد %lld يوم يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
+                  "value": "بعد %lld يوم يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك وصور التحقق الخاصة بك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
                 }
               },
               "two": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "بعد يومين يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
+                  "value": "بعد يومين يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك وصور التحقق الخاصة بك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
                 }
               },
               "zero": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "بعد ذلك يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
+                  "value": "بعد ذلك يُحذف حسابك ومنشوراتك وتفاعلاتك ومتابعاتك وإعداداتك وصور التحقق الخاصة بك حذفًا نهائيًا. المنشورات تُحذف ولا يُخفى صاحبها فقط. ولا يمكن التراجع عن ذلك."
                 }
               }
             }
@@ -353,13 +353,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "After %lld day your account, your posts, your reactions, your follows and your settings are deleted outright. Posts are deleted, not anonymised. That cannot be undone."
+                  "value": "After %lld day your account, your posts, your reactions, your follows, your settings and your verification photos are deleted outright. Posts are deleted, not anonymised. That cannot be undone."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "After %lld days your account, your posts, your reactions, your follows and your settings are deleted outright. Posts are deleted, not anonymised. That cannot be undone."
+                  "value": "After %lld days your account, your posts, your reactions, your follows, your settings and your verification photos are deleted outright. Posts are deleted, not anonymised. That cannot be undone."
                 }
               }
             }
@@ -1136,13 +1136,13 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "حسابك، وكل منشور كتبته، وإعدادات مواضيعك، ومن تتابعهم، في ملف JSON. أما تصنيفات المواضيع التلقائية فمستثناة، والملف يوضّح ذلك: فهي تخمينات من صلة عن منشوراتك، وليست شيئًا كتبته أنت."
+            "value": "حسابك، وكل منشور كتبته، وإعدادات مواضيعك، ومن تتابعهم، وسجل التحقق الخاص بك (التواريخ ونوع الوثيقة وهل حُفظت الصور — دون الصور نفسها)، في ملف JSON. أما تصنيفات المواضيع التلقائية فمستثناة، والملف يوضّح ذلك: فهي تخمينات من صلة عن منشوراتك، وليست شيئًا كتبته أنت."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your account, every post you have written, your topic settings and who you follow, as a JSON file. Automatic topic labels are left out and the file says so: they are guesses Sila made about your posts, not anything you wrote."
+            "value": "Your account, every post you have written, your topic settings, who you follow and the history of your verification (dates, document type, and whether photos were kept — never the photos themselves), as a JSON file. Automatic topic labels are left out and the file says so: they are guesses Sila made about your posts, not anything you wrote."
           }
         }
       }
@@ -4017,6 +4017,24 @@
         }
       }
     },
+    "account.section.privacy": {
+      "comment": "Settings section header: Privacy.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخصوصية"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        }
+      }
+    },
     "account.section.profile": {
       "comment": "Section header. Upper case in English by design.",
       "extractionState": "manual",
@@ -6233,6 +6251,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "An automatic check turned this submission away before a reviewer saw it, and its photos have been deleted. Send it again with new photos — or appeal if you think the check got it wrong."
+          }
+        }
+      }
+    },
+    "auth.rejected.screened.message.kept": {
+      "comment": "Contract v34 §7.5: the pre-screen rejection when the photos are kept with the account.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رفض فحص آلي هذا الطلب قبل أن يراه مراجع. تبقى صوره في ملف التحقق الخاص بك. أرسله مجددًا بصور جديدة — أو اعترض إن رأيت أن الفحص أخطأ."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An automatic check turned this submission away before a reviewer saw it. Its photos stay in your verification file. Send it again with new photos — or appeal if you think the check got it wrong."
           }
         }
       }
@@ -12538,6 +12574,186 @@
         }
       }
     },
+    "document.consent.checkbox": {
+      "comment": "Contract v34 §7.2 consent card. The checkbox. Starts unticked.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "احتفظوا بصور هويتي وصورتي الذاتية في ملف التحقق ما دام حسابي موجودًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep my ID photos and selfie in my verification file while my account exists."
+          }
+        }
+      }
+    },
+    "document.consent.checkbox.off": {
+      "comment": "Contract v34 §7.2 consent card. VoiceOver value of the unticked box.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غير محدَّد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not ticked"
+          }
+        }
+      }
+    },
+    "document.consent.checkbox.on": {
+      "comment": "Contract v34 §7.2 consent card. VoiceOver value of the ticked box.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محدَّد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ticked"
+          }
+        }
+      }
+    },
+    "document.consent.line1": {
+      "comment": "Contract v34 §7.2 consent card. Line 1.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إن وضعت علامة في المربع، تبقى صور هويتك وصورتك الذاتية مشفّرةً في ملف التحقق الخاص بك بعد القرار، إلى جانب البيانات المقروءة من هويتك التي نحتفظ بها في كل تحقق."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you tick the box, your ID photos and selfie stay in your verification file after the decision, encrypted, next to the details read from your ID that we keep for every verification."
+          }
+        }
+      }
+    },
+    "document.consent.line2": {
+      "comment": "Contract v34 §7.2 consent card. Line 2.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يطّلع على ملفك إلا موظفو صلة الموثَّقون، ويُسجَّل كل اطّلاع. نستخدمه فقط للتحقق من هويتك ولمنع الحسابات المزيّفة والمكرّرة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only Sila's verified staff can open your file, and every time they do is recorded. We use it only to check your identity and to stop fake and duplicate accounts."
+          }
+        }
+      }
+    },
+    "document.consent.line3": {
+      "comment": "Contract v34 §7.2 consent card. Line 3, the transfer-stated wording (true today). Gate G3: if the model moves to the Kingdom, replace with the in-Kingdom wording from the contract before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يفحص الصورَ أولًا نظامٌ آلي على جهاز تديره صلة في كندا؛ تصل إليه مشفّرةً ولا تُحفظ هناك. ولا تُرسَل أبدًا إلى ذكاء اصطناعي لأي شركة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An automatic check on a computer Sila runs in Canada looks at the photos first; they travel there encrypted and are not kept there. They are never sent to another company's AI."
+          }
+        }
+      }
+    },
+    "document.consent.line4": {
+      "comment": "Contract v34 §7.2 consent card. Line 4.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الأمر متروك لك: يمكن توثيقك دون العلامة، وتُحذف صورك عند البتّ في طلبك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's up to you: without the tick you can still be verified, and your photos are deleted once your verification is decided."
+          }
+        }
+      }
+    },
+    "document.consent.line5": {
+      "comment": "Contract v34 §7.2 consent card. Line 5.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غيّرت رأيك؟ اسحب موافقتك في أي وقت من الإعدادات › الخصوصية › صور التحقق، فتُحذف الصور المحفوظة. وتُحذف كذلك عند حذف حسابك، أو فورًا إن سحبت هذا الطلب قبل القرار."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changed your mind? Withdraw any time in Settings › Privacy › Verification photos, and the kept photos are deleted. They are also deleted when your account is deleted, or at once if you withdraw this submission before a decision."
+          }
+        }
+      }
+    },
+    "document.consent.link": {
+      "comment": "Contract v34 §7.2 consent card. Link under the card to the privacy policy.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كيف تحفظ صلة بياناتك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How Sila keeps your data"
+          }
+        }
+      }
+    },
+    "document.consent.title": {
+      "comment": "Contract v34 §7.2 consent card. Title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل نحتفظ بصورك؟ (اختياري)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your photos? (optional)"
+          }
+        }
+      }
+    },
     "document.expired.title": {
       "comment": "Headline of the expired-document screen.",
       "extractionState": "manual",
@@ -12750,6 +12966,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "The document number is never stored — only a fingerprint of it, so one document can verify one account. Your photos are deleted once reviewed."
+          }
+        }
+      }
+    },
+    "document.privacy.offer": {
+      "comment": "Contract v34 §7.5: privacy note under the document picker while the server offers to keep photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا نخزّن رقم وثيقتك نصًّا — بصمة منه فقط، ليتحقق حساب واحد بوثيقة واحدة. تُحذف صورك (وهو ظاهر فيها) بعد المراجعة، إلا إن اخترت أدناه الاحتفاظ بها في ملف التحقق."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We don't store your document number as text — only a fingerprint of it, so one document can verify one account. Your photos (which show it) are deleted once reviewed, unless you choose below to keep them in your verification file."
           }
         }
       }
@@ -13132,6 +13366,78 @@
         }
       }
     },
+    "document.send.button": {
+      "comment": "Contract v34: the Send button beside the consent card.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إرسال"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        }
+      }
+    },
+    "document.send.button.hint": {
+      "comment": "Contract v34: hint for Send.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسل صورك للمراجعة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends your photos to be reviewed"
+          }
+        }
+      }
+    },
+    "document.send.message": {
+      "comment": "Contract v34: body of the send step.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتملت صور وثيقتك والتحقق من وجهك. أرسلها للمراجعة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your document and your face check are done. Send them to be reviewed."
+          }
+        }
+      }
+    },
+    "document.send.title": {
+      "comment": "Contract v34: the step that sends, shown with the consent card.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جاهز للإرسال"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to send"
+          }
+        }
+      }
+    },
     "document.sendFailed.kept": {
       "comment": "Under the reason the pictures did not send.",
       "extractionState": "manual",
@@ -13452,6 +13758,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your photos travel encrypted and are deleted the moment a reviewer decides."
+          }
+        }
+      }
+    },
+    "document.submitting.message.kept": {
+      "comment": "Contract v34 §7.5: body while uploading, when the keep box was ticked.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُنقل صورك مشفّرةً وتُحفظ مشفّرةً في ملف التحقق الخاص بك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your photos travel encrypted and are kept encrypted in your verification file."
           }
         }
       }
@@ -14925,6 +15249,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Type DELETE exactly to confirm."
+          }
+        }
+      }
+    },
+    "error.consentChanged": {
+      "comment": "Contract v34 §7.4: 400 consent_version_unknown / 409 consent_not_offered.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيّر شيء من جهتنا. راجع التفاصيل وأرسل مجددًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something changed on our side. Check the details and send again."
           }
         }
       }
@@ -42384,6 +42726,114 @@
           "stringUnit": {
             "state": "translated",
             "value": "TRENDING NOW"
+          }
+        }
+      }
+    },
+    "settings.privacy.verificationPhotos.button": {
+      "comment": "Contract v34 §7.8: Settings › Privacy › Verification photos. Button.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "احذف صور التحقق الخاصة بي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete my verification photos"
+          }
+        }
+      }
+    },
+    "settings.privacy.verificationPhotos.confirm": {
+      "comment": "Contract v34 §7.8: Settings › Privacy › Verification photos. In-place confirmation.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسحب هذا موافقتك ويحذف صور التحقق المحفوظة الآن. تبقى شارتك والبيانات المقروءة من هويتك. أما الطلب الذي ما زال قيد المراجعة فتُحذف صوره بعد البتّ فيه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This withdraws your consent and deletes the kept photos of your verification now. Your badge and the details read from your ID stay. A submission still waiting is deleted after its decision."
+          }
+        }
+      }
+    },
+    "settings.privacy.verificationPhotos.detail": {
+      "comment": "Contract v34 §7.8: Settings › Privacy › Verification photos. Row detail. %@ is the date.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محفوظة في ملف التحقق منذ %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept in your verification file since %@"
+          }
+        }
+      }
+    },
+    "settings.privacy.verificationPhotos.detail.undated": {
+      "comment": "Contract v34 §7.8: Settings › Privacy › Verification photos. Row detail when the server gave no date.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محفوظة في ملف التحقق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept in your verification file"
+          }
+        }
+      }
+    },
+    "settings.privacy.verificationPhotos.done": {
+      "comment": "Contract v34 §7.8: Settings › Privacy › Verification photos. Done toast.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حُذفت صور التحقق الخاصة بك."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your verification photos are deleted."
+          }
+        }
+      }
+    },
+    "settings.privacy.verificationPhotos.row": {
+      "comment": "Contract v34 §7.8: Settings › Privacy › Verification photos. Row title.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صور التحقق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification photos"
           }
         }
       }

@@ -142,6 +142,10 @@ public struct DocumentSubmission: Equatable, Sendable {
     public let sweep: LivenessSweep?
     /// Taken with the camera, or chosen from Photos or Files.
     public var source: DocumentSource = .camera
+    /// The person ticked "keep my photos" on the consent card (contract v34
+    /// §7.3), or `nil` — no tick, or no card — and the case is
+    /// `until_decision`, as from an older app.
+    public var consent: RetentionConsent?
 
     public init(
         documentType: DocumentType,
@@ -180,6 +184,12 @@ public struct DocumentSubmission: Equatable, Sendable {
             DocumentFormField(name: "document_type", value: documentType.wireValue),
             DocumentFormField(name: "document_source", value: source.rawValue)
         ]
+        // Only with the tick, straight after `document_source`. Not signed:
+        // the App Attest client data picks its own seven keys (v32 §4).
+        if let consent {
+            fields.append(DocumentFormField(name: "consent_version", value: consent.version))
+            fields.append(DocumentFormField(name: "consent_locale", value: consent.locale))
+        }
         if let mrz, mrz.isValid {
             fields.append(DocumentFormField(name: "mrz", value: mrz.text))
         }
@@ -237,6 +247,30 @@ public struct DocumentSubmission: Equatable, Sendable {
             form.appendFile(part.data, name: part.name, filename: part.filename, mimeType: "image/jpeg")
         }
         return form
+    }
+}
+
+/// The consent the person gave on the card (contract v34 §7.3): exactly the
+/// version the server announced, and the language the card was drawn in.
+public struct RetentionConsent: Equatable, Sendable {
+    public let version: String
+    /// `en` or `ar`.
+    public let locale: String
+
+    public init(version: String, locale: String) {
+        self.version = version
+        self.locale = locale == "ar" ? "ar" : "en"
+    }
+}
+
+/// How long a case's photographs live (contract v34 §7.4). Anything this
+/// build does not know reads as ``untilDecision`` — keeping less.
+public enum DocumentRetention: String, Equatable, Sendable {
+    case withAccount = "with_account"
+    case untilDecision = "until_decision"
+
+    public init(serverValue: String?) {
+        self = serverValue.flatMap(DocumentRetention.init(rawValue:)) ?? .untilDecision
     }
 }
 
@@ -335,6 +369,15 @@ public struct DocumentCase: Decodable, Equatable, Sendable {
     public let rejectionReason: String?
     /// The account's overall stage after this call.
     public let verificationStatus: VerificationStatus?
+    /// Kept with the account or deleted at the decision (contract v34).
+    /// Missing, from a server before v34 → ``DocumentRetention/untilDecision``.
+    public let retention: DocumentRetention
+    /// Whether this case's photographs exist now.
+    public let imagesKept: Bool
+
+    /// The photographs stay in the person's verification file: kept with the
+    /// account and still there — the `.kept` copy variants read this.
+    public var photosKeptInFile: Bool { retention == .withAccount && imagesKept }
 
     public init(
         id: String,
@@ -346,7 +389,9 @@ public struct DocumentCase: Decodable, Equatable, Sendable {
         submittedAt: Date? = nil,
         reviewedAt: Date? = nil,
         rejectionReason: String? = nil,
-        verificationStatus: VerificationStatus? = nil
+        verificationStatus: VerificationStatus? = nil,
+        retention: DocumentRetention = .untilDecision,
+        imagesKept: Bool = false
     ) {
         self.id = id
         self.status = status
@@ -358,11 +403,14 @@ public struct DocumentCase: Decodable, Equatable, Sendable {
         self.reviewedAt = reviewedAt
         self.rejectionReason = rejectionReason
         self.verificationStatus = verificationStatus
+        self.retention = retention
+        self.imagesKept = imagesKept
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, status, documentType, nationality, mrzValid, livenessPassed
         case submittedAt, reviewedAt, rejectionReason, verificationStatus
+        case retention, imagesKept
     }
 
     /// Tolerant decode: `id` and `status` are load-bearing; everything else
@@ -379,5 +427,7 @@ public struct DocumentCase: Decodable, Equatable, Sendable {
         reviewedAt = try? container.decodeIfPresent(Date.self, forKey: .reviewedAt)
         rejectionReason = (try? container.decodeIfPresent(String.self, forKey: .rejectionReason)) ?? nil
         verificationStatus = try? container.decodeIfPresent(VerificationStatus.self, forKey: .verificationStatus)
+        retention = DocumentRetention(serverValue: (try? container.decodeIfPresent(String.self, forKey: .retention)) ?? nil)
+        imagesKept = (try? container.decodeIfPresent(Bool.self, forKey: .imagesKept)) ?? false
     }
 }

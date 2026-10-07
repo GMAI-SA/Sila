@@ -654,7 +654,9 @@ public struct MainTabView: View {
             handles: container.handleService,
             // The new handle everywhere at once: the profile tab, the
             // composer's mention of oneself, the next sign-in's label.
-            onHandleChosen: { fresh in await container.session.adoptAccount(fresh) }
+            onHandleChosen: { fresh in await container.session.adoptAccount(fresh) },
+            // Settings › Privacy › Verification photos (contract v34).
+            verification: container.flags.verification ? container.verificationService : nil
         )
     }
 

@@ -65,6 +65,7 @@
 		1C68726A3E923FE5ACE37D17 /* VouchingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26CEFF6162529F611B24F35B /* VouchingService.swift */; };
 		1D703D575DE3AD5DF76712B5 /* ComposerServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC72187B14DF20C322B073F /* ComposerServiceProtocol.swift */; };
 		1F7B1021E74AC0C02547950F /* DepthMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10EAADEBE7A6194B6CD6C7AF /* DepthMocks.swift */; };
+		2337D4F598C38E918DF7F7B1 /* VerificationPhotosViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BC009E6E1695A88D5E59D6 /* VerificationPhotosViewModel.swift */; };
 		23F110BD55419FA094D6A14C /* LiveTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97039A13859C8F3CC6DFFE1 /* LiveTarget.swift */; };
 		23F9E5C4D506D9AC9CB08919 /* LiveVideoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B992E794F941565966E416 /* LiveVideoTests.swift */; };
 		243955FE1A9CF8695D23C983 /* VoicePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4519F00A24E9CCA9EF68674 /* VoicePlayer.swift */; };
@@ -421,6 +422,7 @@
 		DAC5D525307F3B1FBF4009B7 /* ArabicRTLJourneyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EA7F298A179109D6CFB224 /* ArabicRTLJourneyUITests.swift */; };
 		DAE9401200E0EDB3BBB64F09 /* GifMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5282229F6C0859B028ADA5C8 /* GifMediaView.swift */; };
 		DBBE8A6A18C08AA4E4D88A67 /* RoomsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8F925D791FA50BD2399174 /* RoomsViewModel.swift */; };
+		DC3BAFF62F924023CA4CAE0F /* RetentionConsentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C99E71093B7A7DE7C286B23 /* RetentionConsentCard.swift */; };
 		DCD786949AA43B9F36B2AC1A /* SavedPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D25EA961685F620E3F9B51 /* SavedPostsViewModel.swift */; };
 		DD42440409DE4F3F63998AA5 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAAE3ABE9B5F271D4F181E56 /* DiscoverService.swift */; };
 		DD87DBC8210BD01251A38445 /* VouchConfirmControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC36CAA4B2B91DFFA89FC0BD /* VouchConfirmControl.swift */; };
@@ -449,6 +451,7 @@
 		EBC629CE82A0AE29C597FFF6 /* VerificationServiceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35EADF0C7B9F38540BCBFD45 /* VerificationServiceProtocol.swift */; };
 		EC679A0CC12290617BA2269D /* SLTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08426E189F66DA3306BF5CAA /* SLTextField.swift */; };
 		EF090B5AD2BD0595289841E5 /* SLFloatingActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 064318A1887D238D73A531E8 /* SLFloatingActionButton.swift */; };
+		EF9E3E7494CAABA36CD3F8B5 /* VerificationFilesConsentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D4E7909945D8387F3C053EA /* VerificationFilesConsentTests.swift */; };
 		EFF64112A33B5EC1244ED8AF /* EventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E036D375A767BA0549EA8F0E /* EventsTests.swift */; };
 		F03E247351A6C1D59BB08632 /* LiveRoomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D395D6FF1D876F17795327EE /* LiveRoomViewModel.swift */; };
 		F0579AC7804FE9C2C4C7E292 /* SignInViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FF318FFF9AC39FFB9ED53C /* SignInViewModel.swift */; };
@@ -460,6 +463,7 @@
 		F2EA8A22343D771AA7F9EFEA /* ReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0E47E8C37C57AFDC5C9BF5 /* ReportViewModel.swift */; };
 		F36286191D9C477ED57483C6 /* VideoBackgroundTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61005C98458C38AC020ED909 /* VideoBackgroundTime.swift */; };
 		F3B231E9AA8B2F7B19472E28 /* PollModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFB775F3ED54DB11B758473 /* PollModels.swift */; };
+		F3D820018678246D3D0E9DB3 /* ConsentCardJourneyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A98E16E94058F8EC116811A /* ConsentCardJourneyUITests.swift */; };
 		F40C850549AA2C8AA39F56E0 /* ServerTextLength.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201D3EE417427C6905FD9E50 /* ServerTextLength.swift */; };
 		F4E8C2593BF7061D02092CAF /* ComposeScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A7F4D0BA6449C7BE6741FE /* ComposeScope.swift */; };
 		F63BDC8141C7A043434121B2 /* VouchingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0D80F037B97C3A01AA6CF0 /* VouchingViewModel.swift */; };
@@ -585,6 +589,7 @@
 		2ABFF2E15F4B8BE4B9D76682 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
 		2C355C4FE779CF4296C6825A /* DocumentVerificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentVerificationTests.swift; sourceTree = "<group>"; };
 		2C8A472810F38DE9796632B9 /* SignInScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInScreen.swift; sourceTree = "<group>"; };
+		2C99E71093B7A7DE7C286B23 /* RetentionConsentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionConsentCard.swift; sourceTree = "<group>"; };
 		2DA1C065F65D47FA241DE0DB /* VerificationGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationGateTests.swift; sourceTree = "<group>"; };
 		2DB9365550F50E1F8D5C6E2E /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		2E77107DE5981608D40302CE /* RoomInvitesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomInvitesViewModel.swift; sourceTree = "<group>"; };
@@ -659,6 +664,7 @@
 		57340967DB4E6DEAFBFB51BE /* VerificationPolishTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationPolishTests.swift; sourceTree = "<group>"; };
 		58A32408E52BF4B41C2E4FC5 /* ExploreScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreScreen.swift; sourceTree = "<group>"; };
 		58E6A25E97C3A7079B305866 /* FeedServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedServiceProtocol.swift; sourceTree = "<group>"; };
+		59BC009E6E1695A88D5E59D6 /* VerificationPhotosViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationPhotosViewModel.swift; sourceTree = "<group>"; };
 		59C70A87166179F862CA0E8B /* NationalityPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NationalityPickerSheet.swift; sourceTree = "<group>"; };
 		5A751BE4CA00A862FE4A8819 /* DepthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthViews.swift; sourceTree = "<group>"; };
 		5A7A69F0CED0597F021A5506 /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
@@ -688,6 +694,7 @@
 		6906A68844AEE1EE9116F6CD /* SessionCheckFailure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCheckFailure.swift; sourceTree = "<group>"; };
 		6986603795327E901D0ADF4E /* LocalizedFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedFormattingTests.swift; sourceTree = "<group>"; };
 		6A05A01805B38EFEF92B98C1 /* StorageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageClient.swift; sourceTree = "<group>"; };
+		6A98E16E94058F8EC116811A /* ConsentCardJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentCardJourneyUITests.swift; sourceTree = "<group>"; };
 		6BE47CBD190C7C6E054D91F3 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		6D747E7307C568BA675FF121 /* DepthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthTests.swift; sourceTree = "<group>"; };
 		6DB31EA1EB97F0ED06CE73D7 /* AccountViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountViewModelTests.swift; sourceTree = "<group>"; };
@@ -776,6 +783,7 @@
 		9BB1BBDAE04B04787BBD105F /* ReplyGuidelinesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplyGuidelinesTests.swift; sourceTree = "<group>"; };
 		9BDE55C08435E050D5CD466E /* VouchWarningCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VouchWarningCard.swift; sourceTree = "<group>"; };
 		9CF14CB948FFF359FBD0CD2E /* LiveComposerSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveComposerSearchTests.swift; sourceTree = "<group>"; };
+		9D4E7909945D8387F3C053EA /* VerificationFilesConsentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationFilesConsentTests.swift; sourceTree = "<group>"; };
 		9D97188D5AD7492E38AFE90F /* RoomsJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomsJourneyUITests.swift; sourceTree = "<group>"; };
 		9E73848D5958CFB3DE3354BD /* CommunityScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityScreen.swift; sourceTree = "<group>"; };
 		9FD190A751F238D9A04E16F9 /* FollowRequestsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowRequestsSheet.swift; sourceTree = "<group>"; };
@@ -1416,6 +1424,7 @@
 				32AB1A564B5FC6426D089B1F /* TokenRefreshTests.swift */,
 				A94B6BB51EE682465FB4E7EC /* ValidationErrorTests.swift */,
 				72088CA22D27140AAAAEDEBF /* VerificationAppealTests.swift */,
+				9D4E7909945D8387F3C053EA /* VerificationFilesConsentTests.swift */,
 				2DA1C065F65D47FA241DE0DB /* VerificationGateTests.swift */,
 				57340967DB4E6DEAFBFB51BE /* VerificationPolishTests.swift */,
 				103C7F823AD9B71B8F17F433 /* VerificationWallTests.swift */,
@@ -1481,6 +1490,7 @@
 				231BF1644DFAB2B29E11F221 /* AccountJourneyUITests.swift */,
 				83EA7F298A179109D6CFB224 /* ArabicRTLJourneyUITests.swift */,
 				DD3D254702013F47B90B0A6C /* ComposerJourneyUITests.swift */,
+				6A98E16E94058F8EC116811A /* ConsentCardJourneyUITests.swift */,
 				C3704D0C1ED87DF81015A70B /* DeletePostJourneyUITests.swift */,
 				B84D46CD1525FBA9C65870A4 /* DocumentStepsJourneyUITests.swift */,
 				CC2AE01F51451D8C8BD50870 /* FeedJourneyUITests.swift */,
@@ -2152,7 +2162,9 @@
 				3DE6C836598767C8EC7C8D9C /* NafathVerificationScreen.swift */,
 				564AECF667793CEB504BFF58 /* NafathVerificationViewModel.swift */,
 				59C70A87166179F862CA0E8B /* NationalityPickerSheet.swift */,
+				2C99E71093B7A7DE7C286B23 /* RetentionConsentCard.swift */,
 				A36099BF27554FC085493E13 /* VerificationMethodSheet.swift */,
+				59BC009E6E1695A88D5E59D6 /* VerificationPhotosViewModel.swift */,
 				848E7AEFF966EC4F800B7686 /* WithdrawSubmissionControl.swift */,
 				EA5621B4F21189919F196593 /* Camera */,
 			);
@@ -2563,6 +2575,7 @@
 				F2EA8A22343D771AA7F9EFEA /* ReportViewModel.swift in Sources */,
 				285E12B27D3D4B33BECB13FA /* ResetPasswordScreen.swift in Sources */,
 				31994EC3D93FE7551CA79CD5 /* ResetPasswordViewModel.swift in Sources */,
+				DC3BAFF62F924023CA4CAE0F /* RetentionConsentCard.swift in Sources */,
 				AF53EC211808B1815077C784 /* RoomInvitesSheet.swift in Sources */,
 				FB097037C68AAA9AD830664F /* RoomInvitesViewModel.swift in Sources */,
 				5D0A620417333BEBC4884D5F /* RoomModels.swift in Sources */,
@@ -2638,6 +2651,7 @@
 				E28DB05913C72E6D20D4113A /* VerificationGate.swift in Sources */,
 				E36ED33A9D5DC5E926E7DCE3 /* VerificationMethodSheet.swift in Sources */,
 				FE493A559B3DACA0FCD91E0F /* VerificationModels.swift in Sources */,
+				2337D4F598C38E918DF7F7B1 /* VerificationPhotosViewModel.swift in Sources */,
 				4711E1E993CCC7C6FC744738 /* VerificationRejection.swift in Sources */,
 				4BAAC9D02A21C76ACA5E8C24 /* VerificationService.swift in Sources */,
 				320D2B541FC2C907BA05CFD2 /* VerificationServiceMock.swift in Sources */,
@@ -2698,6 +2712,7 @@
 				3ED700526E291615AB82888F /* AccountJourneyUITests.swift in Sources */,
 				DAC5D525307F3B1FBF4009B7 /* ArabicRTLJourneyUITests.swift in Sources */,
 				5AD82B86EB36301276429C32 /* ComposerJourneyUITests.swift in Sources */,
+				F3D820018678246D3D0E9DB3 /* ConsentCardJourneyUITests.swift in Sources */,
 				2584DB877982B95443AF4329 /* DeletePostJourneyUITests.swift in Sources */,
 				CE6AA06A5C08AF4B547BB2EF /* DocumentStepsJourneyUITests.swift in Sources */,
 				D643D8A0DF933F16938C936C /* FeedJourneyUITests.swift in Sources */,
@@ -2835,6 +2850,7 @@
 				382DFA86392F5D7CD443FFB5 /* TokenRefreshTests.swift in Sources */,
 				2E603593873A3C3DB1F8AD72 /* ValidationErrorTests.swift in Sources */,
 				0FD761FA569DEE3AC00ABE74 /* VerificationAppealTests.swift in Sources */,
+				EF9E3E7494CAABA36CD3F8B5 /* VerificationFilesConsentTests.swift in Sources */,
 				79ADC68E845793CE609CB2A7 /* VerificationGateTests.swift in Sources */,
 				94444744023D2923DC8D8EED /* VerificationPolishTests.swift in Sources */,
 				24DDBF412A5FA03BE8D61363 /* VerificationWallTests.swift in Sources */,

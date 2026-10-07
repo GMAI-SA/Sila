@@ -187,6 +187,9 @@ public final class AccountViewModel {
     /// Told about the account the server answered after a handle change, so
     /// the session — and every screen showing the handle — follows.
     private let onHandleChosen: (@MainActor (AuthUser) async -> Void)?
+    /// Settings › Privacy › Verification photos (contract v34), or `nil`
+    /// when this build has no verification service to ask.
+    public let verificationPhotos: VerificationPhotosViewModel?
 
     /// - Parameters:
     ///   - service: Account backend.
@@ -201,14 +204,17 @@ public final class AccountViewModel {
         onSignOut: (@MainActor () -> Void)? = nil,
         leftovers: SessionLeftovers = SessionLeftovers(),
         handles: HandleServiceProtocol? = nil,
-        onHandleChosen: (@MainActor (AuthUser) async -> Void)? = nil
+        onHandleChosen: (@MainActor (AuthUser) async -> Void)? = nil,
+        verification: VerificationServiceProtocol? = nil
     ) {
+        self.verificationPhotos = verification.map { VerificationPhotosViewModel(service: $0) }
         self.service = service
         self.analytics = analytics
         self.onSignOut = onSignOut
         self.leftovers = leftovers
         self.handles = handles
         self.onHandleChosen = onHandleChosen
+        verificationPhotos?.onToast = { [weak self] message in self?.toast = message }
     }
 
     // MARK: - Derived state

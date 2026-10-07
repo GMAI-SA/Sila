@@ -269,6 +269,10 @@ public struct RootView: View {
                         container.analytics.track(.verificationStarted, properties: ["status": "retake"])
                         container.session.retryVerification(retaking: DocumentRetake(latest: latest))
                     } : nil,
+                    loadPhotosKept: container.flags.verification ? {
+                        let latest = try? await container.verificationService.latestDocumentCase()
+                        return latest?.photosKeptInFile ?? false
+                    } : nil,
                     onSignOut: { Task { await container.session.signOut() } }
                 )
                 .transition(.opacity)

@@ -70,6 +70,16 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
     /// inspects it proves the right thing.
     public private(set) var recordedCalls: [String] = []
 
+    /// What `GET /verification/status` announces (contract v34 §2.1):
+    /// `"vf1"` while files are on, `nil` while the server keeps nothing.
+    public private(set) var consentVersion: String?
+    /// `retention_consent_required` — off unless a test turns it on.
+    public private(set) var consentRequired: Bool
+    /// `verification_photos`: what the account has kept, if anything.
+    public private(set) var keptPhotos: VerificationPhotos?
+    /// The consent the last submission carried, for assertions.
+    public private(set) var lastConsent: RetentionConsent?
+
     private var pollCount = 0
     private var submitted: DocumentCase?
     private var declared: String?
@@ -88,15 +98,26 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         scenario: MockScenario = .approved,
         pendingPolls: Int = 2,
         requestLifetime: TimeInterval = 90,
-        latency: Double = 0
+        latency: Double = 0,
+        consentVersion: String? = nil,
+        consentRequired: Bool = false,
+        keptPhotos: VerificationPhotos? = nil
     ) {
         self.scenario = scenario
+        self.consentVersion = consentVersion
+        self.consentRequired = consentRequired
+        self.keptPhotos = keptPhotos
         self.pendingPolls = pendingPolls
         self.requestLifetime = requestLifetime
         self.latency = latency
         let slow = ProcessInfo.processInfo.arguments.contains("-mockSlowDocumentUpload")
         self.uploadSeconds = slow ? 4 : latency * 2
         self.checkSeconds = slow ? 3 : latency
+    }
+
+    /// Turns the announcement on or off mid-flight, as the server switch does.
+    public func setConsentVersion(_ version: String?) {
+        consentVersion = version
     }
 
     /// Switches scenario mid-flight (used by previews).
@@ -246,6 +267,20 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
     ) async throws -> DocumentCase {
         record("submitDocument")
         try failIfOffline()
+        // Both refusals come before anything is read or counted (v34 §2.2).
+        if let consent = submission.consent {
+            guard let consentVersion else {
+                throw APIError.api(
+                    code: .consentNotOffered,
+                    message: "Verification files are switched off; refresh and send again",
+                    status: 409
+                )
+            }
+            guard consent.version == consentVersion else {
+                throw APIError.api(code: .consentVersionUnknown, message: "Unknown consent version", status: 400)
+            }
+        }
+        lastConsent = submission.consent
         for step in 1...10 {
             if uploadSeconds > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(uploadSeconds / 10 * 1_000_000_000))
@@ -298,8 +333,16 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
                 mrzValid: submission.mrz?.isValid ?? false,
                 livenessPassed: Set(submission.challenges) == Set(LivenessChallenge.allCases),
                 submittedAt: Date(),
-                verificationStatus: .pendingReview
+                verificationStatus: .pendingReview,
+                retention: submission.consent == nil ? .untilDecision : .withAccount,
+                imagesKept: true
             )
+            if submission.consent != nil {
+                keptPhotos = VerificationPhotos(
+                    keptAttempts: (keptPhotos?.keptAttempts ?? 0) + 1,
+                    consentedAt: keptPhotos?.consentedAt ?? Date()
+                )
+            }
             submitted = documentCase
             withdrawn = false
             return documentCase
@@ -324,6 +367,12 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
             throw APIError.api(code: .nothingToWithdraw, message: "There is no submission waiting for review", status: 409)
         }
         withdrawn = true
+        // A withdrawal always deletes that case's photographs (v34 §2.5).
+        if submitted?.retention == .withAccount, let kept = keptPhotos {
+            keptPhotos = kept.keptAttempts > 1
+                ? VerificationPhotos(keptAttempts: kept.keptAttempts - 1, consentedAt: kept.consentedAt)
+                : nil
+        }
         submitted = nil
         // Nothing is sent before both claims, so the answer carries them even
         // when this mock never heard them — as the server's would.
@@ -383,6 +432,32 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         default:
             return submitted
         }
+    }
+
+    // MARK: - Verification photos (contract v34)
+
+    public func verificationStatus() async throws -> VerificationStatusReport {
+        record("verificationStatus")
+        try await delay()
+        try failIfOffline()
+        return VerificationStatusReport(
+            status: submitted == nil ? .unstarted : .pendingReview,
+            nationality: declared,
+            dateOfBirth: declaredDay,
+            canWithdraw: submitted != nil && !withdrawn,
+            retentionConsentVersion: consentVersion,
+            retentionConsentRequired: consentRequired,
+            verificationPhotos: keptPhotos
+        )
+    }
+
+    public func withdrawPhotoConsent() async throws -> PhotoConsentWithdrawal {
+        record("withdrawPhotoConsent")
+        try await delay()
+        try failIfOffline()
+        let kept = keptPhotos?.keptAttempts ?? 0
+        keptPhotos = nil
+        return PhotoConsentWithdrawal(withdrawnCases: kept, photosDeleted: kept)
     }
 
     // MARK: - Internals

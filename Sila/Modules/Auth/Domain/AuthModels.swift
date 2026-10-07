@@ -450,6 +450,19 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     /// (contract v25) — the wall offers "Withdraw and start again" exactly
     /// while this is true. Missing from an older server → `false`.
     public let canWithdraw: Bool
+    /// The consent the server offers to keep this submission's photographs
+    /// with the account (contract v34 §2.1) — `"vf1"` today — or `nil` when
+    /// it keeps nothing past the decision. The document flow shows the
+    /// consent card, and the new wording, only while this is non-nil, and
+    /// sends back exactly this string.
+    public let retentionConsentVersion: String?
+    /// Whether the tick must be given before Send (`retention_consent_required`,
+    /// a server setting off by default). Missing → `false`: Send always works.
+    public let retentionConsentRequired: Bool
+    /// The account's kept verification photographs, when there are any with
+    /// consent not withdrawn — drives Settings › Privacy › Verification photos.
+    /// Answered whatever the switch says, so a person can always withdraw.
+    public let verificationPhotos: VerificationPhotos?
 
     public init(
         status: VerificationStatus,
@@ -461,7 +474,10 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         appeal: VerificationAppealReceipt? = nil,
         dateOfBirth: String? = nil,
         nafathAvailable: Bool = false,
-        canWithdraw: Bool = false
+        canWithdraw: Bool = false,
+        retentionConsentVersion: String? = nil,
+        retentionConsentRequired: Bool = false,
+        verificationPhotos: VerificationPhotos? = nil
     ) {
         self.status = status
         self.rejectionReason = rejectionReason
@@ -473,11 +489,15 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         self.dateOfBirth = dateOfBirth
         self.nafathAvailable = nafathAvailable
         self.canWithdraw = canWithdraw
+        self.retentionConsentVersion = retentionConsentVersion
+        self.retentionConsentRequired = retentionConsentRequired
+        self.verificationPhotos = verificationPhotos
     }
 
     private enum CodingKeys: String, CodingKey {
         case status, rejectionReason, revocationReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth
         case methods, canWithdraw
+        case retentionConsentVersion, retentionConsentRequired, verificationPhotos
     }
 
     private struct Methods: Decodable {
@@ -497,6 +517,54 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         let methods = (try? container.decodeIfPresent(Methods.self, forKey: .methods)) ?? nil
         nafathAvailable = methods?.nafath == "available"
         canWithdraw = (try? container.decodeIfPresent(Bool.self, forKey: .canWithdraw)) ?? false
+        let version = (try? container.decodeIfPresent(String.self, forKey: .retentionConsentVersion)) ?? nil
+        retentionConsentVersion = (version?.isEmpty ?? true) ? nil : version
+        retentionConsentRequired = (try? container.decodeIfPresent(Bool.self, forKey: .retentionConsentRequired)) ?? false
+        verificationPhotos = (try? container.decodeIfPresent(VerificationPhotos.self, forKey: .verificationPhotos)) ?? nil
+    }
+}
+
+/// `verification_photos` on `GET /verification/status` (contract v34 §2.1):
+/// how many attempts still have photographs kept with consent, and since when.
+public struct VerificationPhotos: Decodable, Equatable, Sendable {
+    public let keptAttempts: Int
+    /// The earliest consent still in force, or `nil` when the server did not say.
+    public let consentedAt: Date?
+
+    public init(keptAttempts: Int, consentedAt: Date? = nil) {
+        self.keptAttempts = keptAttempts
+        self.consentedAt = consentedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case keptAttempts, consentedAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        keptAttempts = (try? container.decodeIfPresent(Int.self, forKey: .keptAttempts)) ?? 0
+        consentedAt = (try? container.decodeIfPresent(Date.self, forKey: .consentedAt)) ?? nil
+    }
+}
+
+/// `POST /verification/photos/withdraw-consent` (contract v34 §2.10).
+public struct PhotoConsentWithdrawal: Decodable, Equatable, Sendable {
+    public let withdrawnCases: Int
+    public let photosDeleted: Int
+
+    public init(withdrawnCases: Int, photosDeleted: Int) {
+        self.withdrawnCases = withdrawnCases
+        self.photosDeleted = photosDeleted
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case withdrawnCases, photosDeleted
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        withdrawnCases = (try? container.decodeIfPresent(Int.self, forKey: .withdrawnCases)) ?? 0
+        photosDeleted = (try? container.decodeIfPresent(Int.self, forKey: .photosDeleted)) ?? 0
     }
 }
 

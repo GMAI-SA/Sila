@@ -22,6 +22,8 @@ public struct DocumentVerificationScreen: View {
     private let onUseNafath: (() -> Void)?
     private let onWithdrawn: ((VerificationStatusReport) -> Void)?
     private let onClose: () -> Void
+    /// The privacy policy, from the consent card's link.
+    @State private var showsPolicy = false
 
     /// - Parameters:
     ///   - viewModel: Owns the flow's state.
@@ -101,6 +103,12 @@ public struct DocumentVerificationScreen: View {
         // App Attest's key, attested while the person is still at the camera
         // (contract v32). Leaving the flow stops nobody waiting for it.
         .task { await viewModel.prepareDevice() }
+        // Whether the server offers to keep the photographs (contract v34):
+        // the card and the new wording only while it does.
+        .task { await viewModel.loadConsentOffer() }
+        .sheet(isPresented: $showsPolicy) {
+            LegalDocumentSheet(document: .privacy) { showsPolicy = false }
+        }
     }
 
     // MARK: - Phases
@@ -146,6 +154,7 @@ public struct DocumentVerificationScreen: View {
                     viewModel.sweepCompleted(sweep)
                 }
             }
+        case .send: sendStep
         case .submitting: submitting
         case .sendFailed: sendFailed
         case .submitted: submitted
@@ -302,7 +311,7 @@ public struct DocumentVerificationScreen: View {
                 }
             }
 
-            Text(L10n.t("document.privacy"))
+            Text(L10n.t(viewModel.offersConsent ? "document.privacy.offer" : "document.privacy"))
                 .font(SLFont.caption)
                 .foregroundStyle(SLColor.textMuted)
                 .multilineTextAlignment(.center)
@@ -442,7 +451,7 @@ public struct DocumentVerificationScreen: View {
                     .foregroundStyle(SLColor.textPrimary)
                     .multilineTextAlignment(.center)
                     .contentTransition(.numericText())
-                Text(isChecking ? L10n.t("document.submitting.keepOpen") : L10n.t("document.submitting.message"))
+                Text(isChecking ? L10n.t("document.submitting.keepOpen") : submittingMessage)
                     .font(SLFont.bodyLight)
                     .foregroundStyle(SLColor.textSecondary)
                     .multilineTextAlignment(.center)
@@ -472,6 +481,48 @@ public struct DocumentVerificationScreen: View {
     }
 
     private var isChecking: Bool { viewModel.submissionStage == .checking }
+
+    /// "…deleted the moment a reviewer decides", unless the box was ticked.
+    private var submittingMessage: String {
+        L10n.t(viewModel.sentWithConsent ? "document.submitting.message.kept" : "document.submitting.message")
+    }
+
+    // MARK: Send (contract v34)
+
+    /// Everything is taken; the consent card sits beside Send. Send works
+    /// with or without the tick unless the server has made it required.
+    private var sendStep: some View {
+        VStack(spacing: SLSpacing.lg) {
+            VStack(spacing: SLSpacing.xs) {
+                Text(L10n.t("document.send.title"))
+                    .font(SLFont.displayM)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("document.send.title")
+                Text(L10n.t("document.send.message"))
+                    .font(SLFont.bodyLight)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let notice = viewModel.consentNotice {
+                StepNoticeCard(text: notice)
+            }
+            if viewModel.offersConsent {
+                RetentionConsentCard(isTicked: $viewModel.consentTicked) { showsPolicy = true }
+            }
+            SLButton(
+                L10n.t("document.send.button"),
+                variant: .primary,
+                isLoading: viewModel.isSubmitting,
+                isEnabled: viewModel.canSend,
+                accessibilityHint: L10n.t("document.send.button.hint"),
+                asyncAction: { await viewModel.send() }
+            )
+            .accessibilityIdentifier("document.send.button")
+        }
+        .padding(.horizontal, SLSpacing.lg)
+    }
 
     private var uploadingLine: String {
         if case let .uploading(fraction) = viewModel.submissionStage {

@@ -112,9 +112,32 @@ public protocol VerificationServiceProtocol: Sendable {
     ///   one is already on file — the state it describes, not a failure — and
     ///   `nothing_to_appeal` (400) on an account that is not closed.
     func appealVerification(message: String) async throws -> VerificationAppealReceipt
+
+    // MARK: Verification photos (contract v34)
+
+    /// `GET /verification/status`, read by the document flow when it opens
+    /// and again just before it sends: whether the consent card is offered
+    /// (``VerificationStatusReport/retentionConsentVersion``).
+    func verificationStatus() async throws -> VerificationStatusReport
+
+    /// Withdraws the consent to keep verification photographs and deletes the
+    /// kept ones, `POST /verification/photos/withdraw-consent`. Idempotent:
+    /// nothing kept answers `0, 0`.
+    /// - Throws: ``APIError`` with ``APIErrorCode/rateLimited`` past 5 an hour.
+    func withdrawPhotoConsent() async throws -> PhotoConsentWithdrawal
 }
 
 extension VerificationServiceProtocol {
+    /// A service that cannot read the status offers no consent card: the
+    /// flow behaves exactly as before v34.
+    public func verificationStatus() async throws -> VerificationStatusReport {
+        throw APIError.cancelled
+    }
+
+    public func withdrawPhotoConsent() async throws -> PhotoConsentWithdrawal {
+        throw APIError.cancelled
+    }
+
     /// Nothing to ready: a service without App Attest (a mock, a preview)
     /// submits without it.
     public func prepareDeviceAttestation() async {}

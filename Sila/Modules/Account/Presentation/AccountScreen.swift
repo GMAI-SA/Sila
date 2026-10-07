@@ -58,6 +58,7 @@ public struct AccountScreen: View {
                 }
             }
             .task { await viewModel.load() }
+            .task { await viewModel.verificationPhotos?.load() }
             // A downloaded export does not outlive the screen.
             .onDisappear { viewModel.screenClosed() }
             .tnToast($viewModel.toast)
@@ -116,6 +117,9 @@ public struct AccountScreen: View {
                     profileSection
                     contactSection
                     securitySection
+                    if let photos = viewModel.verificationPhotos, photos.showsRow {
+                        privacySection(photos)
+                    }
                     dataSection
                     dangerSection
                 }
@@ -534,6 +538,16 @@ public struct AccountScreen: View {
             ) {
                 viewModel.presentedSheet = .password
             }
+        }
+    }
+
+    // MARK: - Privacy
+
+    /// Only while verification photographs are kept (contract v34 §7.8).
+    private func privacySection(_ photos: VerificationPhotosViewModel) -> some View {
+        VStack(alignment: .leading, spacing: SLSpacing.md) {
+            sectionHeader(L10n.t("account.section.privacy"))
+            VerificationPhotosRow(viewModel: photos)
         }
     }
 

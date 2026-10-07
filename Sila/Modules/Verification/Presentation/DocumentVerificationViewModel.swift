@@ -15,6 +15,10 @@ public enum DocumentPhase: Equatable, Sendable {
     case review
     /// The live head-turn.
     case liveness
+    /// Ready to send, with the consent card beside the Send button (contract
+    /// v34 §7.2). Only while the server announces a consent version; without
+    /// one the flow sends straight after the head-turn, as before.
+    case send
     /// `POST /verification/document` in flight: the upload's progress, then
     /// the server checking what arrived.
     case submitting
@@ -146,6 +150,33 @@ public final class DocumentVerificationViewModel {
     /// The in-place "are you sure" before a withdrawal.
     public var isConfirmingWithdrawal = false
     public private(set) var isWithdrawing = false
+
+    // MARK: The consent card (contract v34)
+
+    /// The consent version the server announces, read when the flow opens and
+    /// again just before sending; `nil` while it keeps nothing past the
+    /// decision — then there is no card and the old wording stays.
+    public private(set) var consentVersion: String?
+    /// The server's setting that makes the tick a condition of Send. Off by
+    /// default: Send always works and an unticked submission keeps nothing.
+    public private(set) var consentRequired = false
+    /// The box on the card. Starts unticked, every time; never remembered
+    /// between submissions, and cleared by every retake.
+    public var consentTicked = false
+    /// Said on the send step when the server's offer changed under the
+    /// person ("Something changed on our side…").
+    public private(set) var consentNotice: String?
+    /// The submission in flight, or the one that went, carried the tick —
+    /// the "kept encrypted in your verification file" wording.
+    public private(set) var sentWithConsent = false
+
+    /// The card is on screen: there is something to consent to.
+    public var offersConsent: Bool { consentVersion != nil }
+
+    /// Send is always enabled — unless the server has made the tick required.
+    public var canSend: Bool {
+        !isSubmitting && (!offersConsent || !consentRequired || consentTicked)
+    }
     /// Reads the zone off a JPEG. Injectable so tests need no Vision.
     var zoneReader: @Sendable (Data) async -> String? = { jpeg in
         DocumentTextReader.zone(from: await DocumentTextReader.lines(in: jpeg))
@@ -291,7 +322,7 @@ public final class DocumentVerificationViewModel {
         case .captureBack: return (4, count)
         case .review: return (hasBack ? 5 : 4, count)
         case .liveness: return (hasBack ? 6 : 5, count)
-        case .submitting, .sendFailed, .submitted: return (count, count)
+        case .send, .submitting, .sendFailed, .submitted: return (count, count)
         case .identityUsed, .underAge, .documentExpired, .useNafath, .dateOfBirthMismatch: return nil
         }
     }
@@ -478,6 +509,7 @@ public final class DocumentVerificationViewModel {
     /// Discards the front photo (and the zone read from it) for another try.
     /// The back, when there is one, stays: it was not the problem.
     public func retakeFront() {
+        consentTicked = false
         frontSource = .camera
         frontImage = nil
         mrz = nil
@@ -489,6 +521,7 @@ public final class DocumentVerificationViewModel {
     /// Discards the back photo for another try, keeping the front.
     public func retakeBack() {
         guard documentType?.hasBack == true, frontImage != nil else { return }
+        consentTicked = false
         backSource = .camera
         backImage = nil
         importProblem = nil
@@ -509,7 +542,7 @@ public final class DocumentVerificationViewModel {
         self.sweep = sweep
         self.selfie = sweep.straightFrame
         analytics.track(.livenessCompleted, properties: ["sectors": String(sweep.frames.count)])
-        Task { await submit() }
+        Task { await proceedAfterLiveness() }
     }
 
     /// The legacy three-pose sequence finished. Kept for a client without a
@@ -521,13 +554,66 @@ public final class DocumentVerificationViewModel {
         self.completedChallenges = challenges
         self.sweep = nil
         analytics.track(.livenessCompleted, properties: ["challenges": String(challenges.count)])
-        Task { await submit() }
+        Task { await proceedAfterLiveness() }
     }
 
     /// Readies the device's App Attest key while the person photographs
     /// the document, so the submit only has to sign. Never holds the flow up.
     public func prepareDevice() async {
         await service.prepareDeviceAttestation()
+    }
+
+    /// Reads whether the server offers to keep the photographs (contract v34
+    /// §2.1). Called when the flow opens; a failure leaves what was known.
+    public func loadConsentOffer() async {
+        guard let report = try? await service.verificationStatus() else { return }
+        applyConsentOffer(report)
+    }
+
+    private func applyConsentOffer(_ report: VerificationStatusReport) {
+        consentVersion = report.retentionConsentVersion
+        consentRequired = report.retentionConsentRequired
+        if consentVersion == nil { consentTicked = false }
+    }
+
+    /// After the head-turn: the send step with the card while the server
+    /// announces a version, otherwise straight to the upload, as before.
+    public func proceedAfterLiveness() async {
+        await loadConsentOffer()
+        if offersConsent {
+            consentTicked = false
+            consentNotice = nil
+            phase = .send
+        } else {
+            await submit()
+        }
+    }
+
+    /// Send, from the card's step. Reads the offer once more first: when it
+    /// changed since the card was drawn, the card is drawn again, unticked,
+    /// and nothing goes until the person sends again — what they agreed to
+    /// is exactly what the server records, or nothing is.
+    public func send() async {
+        guard phase == .send, canSend else { return }
+        let shown = consentVersion
+        if let report = try? await service.verificationStatus() {
+            applyConsentOffer(report)
+            if consentVersion != shown {
+                consentTicked = false
+                consentNotice = L10n.t("error.consentChanged")
+                return
+            }
+            guard canSend else { return }
+        }
+        consentNotice = nil
+        await submit()
+    }
+
+    /// The consent parts to send: only with the tick, and only the version
+    /// the server announced, in the language the card was drawn in.
+    var consentToSend: RetentionConsent? {
+        guard consentTicked, let consentVersion else { return nil }
+        return RetentionConsent(version: consentVersion, locale: L10n.languageCode)
     }
 
     /// Sends everything to `/verification/document`: "Uploading… 42%" as
@@ -553,6 +639,8 @@ public final class DocumentVerificationViewModel {
         )
         var sent = submission
         sent.source = documentSource
+        sent.consent = consentToSend
+        sentWithConsent = sent.consent != nil
 
         do {
             // Held only as long as the request is.
@@ -591,6 +679,8 @@ public final class DocumentVerificationViewModel {
     /// Back to the document choice, for a different document. The birthdate
     /// on file stays: it was the person's, not the document's.
     public func startAgain() {
+        consentTicked = false
+        consentNotice = nil
         documentType = nil
         releaseImages()
         mrz = nil
@@ -684,12 +774,23 @@ public final class DocumentVerificationViewModel {
             // Said at the top of the camera it sends them back to, not in a
             // banner that is gone before the camera has started.
             stepNotice = error.userMessage
+            consentTicked = false
             mrz = nil
             frontImage = nil
             backImage = nil
             phase = .captureFront
+        case .consentVersionUnknown, .consentNotOffered:
+            // The offer changed between the read and the send: read it
+            // again, draw the card again (or none), unticked. The pictures
+            // stay; nothing has to be taken twice.
+            consentTicked = false
+            sentWithConsent = false
+            consentNotice = error.userMessage
+            phase = .send
+            Task { await loadConsentOffer() }
         case .livenessMismatch, .tooManyFrames:
             stepNotice = error.userMessage
+            consentTicked = false
             sweep = nil
             selfie = nil
             phase = .liveness

@@ -382,6 +382,11 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// Nothing is waiting to be withdrawn: never sent, already withdrawn, or
     /// already decided — by a moderator or the pre-screen (HTTP 409).
     case nothingToWithdraw = "nothing_to_withdraw"
+    // MARK: Contract v34 — verification files
+    /// The consent version sent is not the one the server announces (HTTP 400).
+    case consentVersionUnknown = "consent_version_unknown"
+    /// Consent sent while the server keeps nothing past the decision (HTTP 409).
+    case consentNotOffered = "consent_not_offered"
 
     // MARK: Contract v24 — vouching
     /// A vouched account reached something only a verified one may do (HTTP
@@ -812,6 +817,8 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.nafathUnavailable")
             case .nothingToWithdraw:
                 return L10n.t("error.nothingToWithdraw")
+            case .consentVersionUnknown, .consentNotOffered:
+                return L10n.t("error.consentChanged")
             case .unknownReaction: return L10n.t("reaction.error.unknown")
             case .ownPost: return L10n.t("reaction.error.ownPost")
             case .tooManyCohosts: return L10n.t("rooms.cohosts.error.tooMany")

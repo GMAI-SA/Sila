@@ -291,7 +291,12 @@ public final class AppContainer {
         } else if flags.useMockVerification {
             self.verificationService = VerificationServiceMock(
                 scenario: flags.mockVerificationScenario,
-                latency: 0.4
+                latency: 0.4,
+                consentVersion: flags.mockRetentionConsent ? "vf1" : nil,
+                consentRequired: flags.mockConsentRequired,
+                keptPhotos: flags.mockKeptPhotos
+                    ? VerificationPhotos(keptAttempts: 1, consentedAt: Date().addingTimeInterval(-3 * 86_400))
+                    : nil
             )
         } else {
             self.verificationService = VerificationService(

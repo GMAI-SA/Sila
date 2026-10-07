@@ -359,6 +359,13 @@ public actor AccountServiceMock: AccountServiceProtocol {
           "posts": [],
           "topic_preferences": [],
           "following": [],
+          "verification_file": [
+            {"attempt": 1, "submitted_at": "2026-08-20T10:00:00+00:00", "decided_at": "2026-08-20T12:00:00+00:00",
+             "document_type": "passport", "nationality": "US", "status": "approved", "retention": "with_account",
+             "consent_version": "vf1", "consent_locale": "en", "consented_at": "2026-08-20T10:00:00+00:00",
+             "consent_withdrawn_at": null, "images_kept": ["front", "selfie", "frames"],
+             "images_deleted_at": null, "images_deleted_reason": null}
+          ],
           "note": "Topic labels applied to your posts by automated classification are not included: they are inferences drawn about your posts, not content you provided."
         }
         """
