@@ -5,7 +5,8 @@ import XCTest
 /// Contract v34 (verification files), the iPhone's part, mirroring §11:
 /// the consent parts travel only with the tick and are not signed; the card
 /// shows only while the server announces a version, in one language, starts
-/// unticked and never blocks Send; the tick is cleared by a retake; the case
+/// unticked and never blocks Send; the tick is cleared by a retake and by a
+/// refusal that sends the person back; Try again reads the offer first; the case
 /// and the status decode with and without the new keys; the copy follows
 /// `retention`; and Settings › Privacy › Verification photos shows only with
 /// kept photos and withdraws them.
@@ -113,7 +114,6 @@ final class VerificationFilesConsentTests: XCTestCase {
         """#
         let report = try JSONCoding.decoder.decode(VerificationStatusReport.self, from: Data(json.utf8))
         XCTAssertEqual(report.retentionConsentVersion, "vf1")
-        XCTAssertTrue(report.retentionConsentRequired)
         XCTAssertEqual(report.verificationPhotos?.keptAttempts, 2)
         XCTAssertNotNil(report.verificationPhotos?.consentedAt)
     }
@@ -124,7 +124,6 @@ final class VerificationFilesConsentTests: XCTestCase {
                      #"{"status":"unstarted","retention_consent_version":""}"#] {
             let report = try JSONCoding.decoder.decode(VerificationStatusReport.self, from: Data(json.utf8))
             XCTAssertNil(report.retentionConsentVersion, json)
-            XCTAssertFalse(report.retentionConsentRequired, json)
             XCTAssertNil(report.verificationPhotos, json)
         }
     }
@@ -221,16 +220,92 @@ final class VerificationFilesConsentTests: XCTestCase {
         XCTAssertFalse(viewModel.consentTicked)
     }
 
-    func testTheServerCanMakeTheTickRequired() async {
-        let viewModel = make(VerificationServiceMock(consentVersion: "vf1", consentRequired: true))
+    /// Review fix (finding 4): no server key can make the tick a condition
+    /// of Send — §7.2 says Send is always enabled (*Deviation 3*). A status
+    /// carrying `retention_consent_required: true` changes nothing.
+    func testNoStatusKeyCanBlockSendWithoutTheTick() async throws {
+        let service = ScriptedSubmitService(
+            statusJSON: #"{"status":"unstarted","retention_consent_version":"vf1","retention_consent_required":true}"#
+        )
+        let viewModel = make(service)
         await viewModel.loadConsentOffer()
         await walkToTheEnd(viewModel)
         await eventually(viewModel.phase == .send)
-        XCTAssertFalse(viewModel.canSend, "required: not without the tick")
+        XCTAssertFalse(viewModel.consentTicked)
+        XCTAssertTrue(viewModel.canSend, "Send is always enabled")
         await viewModel.send()
-        XCTAssertEqual(viewModel.phase, .send)
+        XCTAssertEqual(viewModel.phase, .submitted)
+        let submits = await service.submits
+        let consent = await service.lastConsent
+        XCTAssertEqual(submits, 1)
+        XCTAssertNil(consent, "unticked: no consent parts")
+    }
+
+    // MARK: - Try again reads the offer first (review fix, finding 3)
+
+    /// The pictures did not go; by the time of Try again the switch has
+    /// moved. Try again reads the status first and draws the step again,
+    /// unticked, with the notice — no refused round trip.
+    func testTryAgainReadsTheOfferAgainAndRedrawsTheCardWhenItChanged() async {
+        for newVersion in [String?.none, "vf2"] {
+            let service = ScriptedSubmitService(version: "vf1", failures: [.transport("offline")])
+            let viewModel = make(service)
+            await viewModel.loadConsentOffer()
+            await walkToTheEnd(viewModel)
+            await eventually(viewModel.phase == .send)
+            viewModel.consentTicked = true
+            await viewModel.send()
+            XCTAssertEqual(viewModel.phase, .sendFailed)
+            await service.setVersion(newVersion)
+
+            await viewModel.retrySend()
+            XCTAssertEqual(viewModel.phase, .send, "\(String(describing: newVersion))")
+            XCTAssertFalse(viewModel.consentTicked, "drawn again unticked")
+            XCTAssertEqual(viewModel.consentNotice, L10n.t("error.consentChanged"))
+            XCTAssertEqual(viewModel.consentVersion, newVersion)
+            let submits = await service.submits
+            XCTAssertEqual(submits, 1, "nothing went on Try again")
+            XCTAssertNotNil(viewModel.frontImage, "nothing has to be taken twice")
+        }
+    }
+
+    /// An unchanged offer: Try again sends the same pictures with the tick.
+    func testTryAgainWithTheSameOfferSendsTheTick() async {
+        let service = ScriptedSubmitService(version: "vf1", failures: [.transport("offline")])
+        let viewModel = make(service)
+        await viewModel.loadConsentOffer()
+        await walkToTheEnd(viewModel)
+        await eventually(viewModel.phase == .send)
         viewModel.consentTicked = true
-        XCTAssertTrue(viewModel.canSend)
+        await viewModel.send()
+        XCTAssertEqual(viewModel.phase, .sendFailed)
+        let readsBefore = await service.statusReads
+
+        await viewModel.retrySend()
+        XCTAssertEqual(viewModel.phase, .submitted)
+        let readsAfter = await service.statusReads
+        let submits = await service.submits
+        let consent = await service.lastConsent
+        XCTAssertEqual(readsAfter, readsBefore + 1, "the status is read just before the send")
+        XCTAssertEqual(submits, 2)
+        XCTAssertEqual(consent?.version, "vf1")
+    }
+
+    // MARK: - The tick resets on a refusal that sends the person back (finding 5)
+
+    func testTheTickIsClearedWhenTheZoneOrTheFaceIsRefused() async {
+        let refusals: [(APIErrorCode, DocumentPhase)] = [(.invalidMrz, .captureFront), (.livenessMismatch, .liveness)]
+        for (code, back) in refusals {
+            let service = ScriptedSubmitService(version: "vf1", failures: [.api(code: code, message: "no", status: 422)])
+            let viewModel = make(service)
+            await viewModel.loadConsentOffer()
+            await walkToTheEnd(viewModel)
+            await eventually(viewModel.phase == .send)
+            viewModel.consentTicked = true
+            await viewModel.send()
+            XCTAssertEqual(viewModel.phase, back, "\(code)")
+            XCTAssertFalse(viewModel.consentTicked, "\(code): asked again")
+        }
     }
 
     /// The switch went off between the card and Send: nothing goes, the
@@ -315,6 +390,59 @@ final class VerificationFilesConsentTests: XCTestCase {
         XCTAssertTrue(L10n.plural("account.delete.effect.permanent", 30, 30).contains("your verification photos"))
     }
 
+    // MARK: - Line 5 names the real route (review fix, finding 1)
+
+    /// The card says where to withdraw in the words this app's screens
+    /// carry — Profile › Account › Privacy › Verification photos — not a
+    /// "Settings" screen iOS does not have.
+    func testLineFiveNamesTheRouteThePersonFollows() {
+        for lang in ["en", "ar"] {
+            L10n.use(lang)
+            let line = RetentionConsentCard.text("document.consent.line5")
+            XCTAssertFalse(line.contains("%@"), lang)
+            XCTAssertTrue(line.contains(RetentionConsentCard.withdrawalRoute), "\(lang): \(line)")
+            // Each step is the label on screen: the tab, the entry and the
+            // sheet's title, the section, the row.
+            let route = RetentionConsentCard.withdrawalRoute.components(separatedBy: " › ")
+            XCTAssertEqual(route, [
+                L10n.t("feed.tab.profile.label"), L10n.t("account.nav.title"),
+                L10n.t("account.section.privacy"), L10n.t("settings.privacy.verificationPhotos.row")
+            ], lang)
+            XCTAssertEqual(L10n.t("feed.profileOff.account.title"), L10n.t("account.nav.title"), "\(lang): entry and sheet agree")
+            XCTAssertFalse(line.contains(lang == "ar" ? "الإعدادات" : "Settings"), "\(lang): no Settings screen on iOS")
+        }
+        L10n.use("ar")
+        let card = RetentionConsentCard.lineKeys.map(RetentionConsentCard.text).joined()
+        XCTAssertNil(card.range(of: "[A-Za-z]", options: .regularExpression), "one language on the card")
+    }
+
+    // MARK: - The rejected screen's words follow retention (review fix, finding 5)
+
+    func testTheRejectedScreenSaysKeptOnlyForAKeptCase() throws {
+        func latest(_ json: String) throws -> DocumentCase {
+            try JSONCoding.decoder.decode(DocumentCase.self, from: Data(json.utf8))
+        }
+        let keptStill = try latest(#"{"id":"c1","status":"rejected","retention":"with_account","images_kept":true}"#)
+        let keptGone = try latest(#"{"id":"c1","status":"rejected","retention":"with_account","images_kept":false}"#)
+        let untilDecision = try latest(#"{"id":"c1","status":"rejected","retention":"until_decision","images_kept":false}"#)
+        let older = try latest(#"{"id":"c1","status":"rejected"}"#)
+
+        XCTAssertTrue(RejectedScreen.photosKept(in: keptStill))
+        XCTAssertFalse(RejectedScreen.photosKept(in: keptGone), "withdrawn: the photos are gone")
+        XCTAssertFalse(RejectedScreen.photosKept(in: untilDecision), "unticked")
+        XCTAssertFalse(RejectedScreen.photosKept(in: older))
+        XCTAssertFalse(RejectedScreen.photosKept(in: nil))
+
+        func key(_ c: DocumentCase?) -> String {
+            RejectedScreen.explanationKey(isRevocation: false, screened: true, photosKept: RejectedScreen.photosKept(in: c))
+        }
+        XCTAssertEqual(key(keptStill), "auth.rejected.screened.message.kept")
+        XCTAssertEqual(key(keptGone), "auth.rejected.screened.message")
+        XCTAssertEqual(key(untilDecision), "auth.rejected.screened.message")
+        XCTAssertEqual(RejectedScreen.explanationKey(isRevocation: false, screened: false, photosKept: true), "auth.rejected.message")
+        XCTAssertEqual(RejectedScreen.explanationKey(isRevocation: true, screened: true, photosKept: true), "auth.rejected.revoked.message")
+    }
+
     // MARK: - Settings › Privacy › Verification photos (§7.8)
 
     func testThePhotosRowShowsOnlyWithKeptPhotosAndWithdraws() async {
@@ -382,6 +510,46 @@ private actor ConsentRefusingService: VerificationServiceProtocol {
     }
     func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase {
         throw APIError.api(code: code, message: "refused", status: code == .consentNotOffered ? 409 : 400)
+    }
+    func setNationality(_ code: String) async throws -> VerificationStatusReport { VerificationStatusReport(status: .unstarted) }
+    func setDateOfBirth(_ day: String) async throws -> VerificationStatusReport { VerificationStatusReport(status: .unstarted) }
+    func startNafath(nationalID: String) async throws -> NafathStart { throw APIError.cancelled }
+    func pollNafath(requestID: String) async throws -> NafathPoll { throw APIError.cancelled }
+    func latestDocumentCase() async throws -> DocumentCase? { nil }
+    func withdrawDocument() async throws -> VerificationStatusReport { VerificationStatusReport(status: .unstarted) }
+    func appealVerification(message: String) async throws -> VerificationAppealReceipt { throw APIError.cancelled }
+}
+
+/// A server whose announcement can move, whose status can be any JSON, and
+/// whose submissions fail with the queued errors first.
+private actor ScriptedSubmitService: VerificationServiceProtocol {
+    private var version: String?
+    private let statusJSON: String?
+    private var failures: [APIError]
+    private(set) var submits = 0
+    private(set) var statusReads = 0
+    private(set) var lastConsent: RetentionConsent?
+
+    init(version: String? = nil, statusJSON: String? = nil, failures: [APIError] = []) {
+        self.version = version
+        self.statusJSON = statusJSON
+        self.failures = failures
+    }
+
+    func setVersion(_ version: String?) { self.version = version }
+
+    func verificationStatus() async throws -> VerificationStatusReport {
+        statusReads += 1
+        if let statusJSON {
+            return try JSONCoding.decoder.decode(VerificationStatusReport.self, from: Data(statusJSON.utf8))
+        }
+        return VerificationStatusReport(status: .unstarted, retentionConsentVersion: version)
+    }
+    func submitDocument(_ submission: DocumentSubmission) async throws -> DocumentCase {
+        submits += 1
+        lastConsent = submission.consent
+        if !failures.isEmpty { throw failures.removeFirst() }
+        return try JSONCoding.decoder.decode(DocumentCase.self, from: Data(#"{"id":"c1","status":"submitted"}"#.utf8))
     }
     func setNationality(_ code: String) async throws -> VerificationStatusReport { VerificationStatusReport(status: .unstarted) }
     func setDateOfBirth(_ day: String) async throws -> VerificationStatusReport { VerificationStatusReport(status: .unstarted) }

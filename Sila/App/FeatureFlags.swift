@@ -15,7 +15,6 @@ import Foundation
 /// -mockVerification    run against VerificationServiceMock instead of the live API
 /// -mockVerificationScenario X  pick a VerificationServiceMock.MockScenario
 /// -mockRetentionConsent  the verification mock announces consent `vf1` (v34)
-/// -mockConsentRequired   …and says the tick is required before Send
 /// -mockKeptPhotos        the verification mock reports kept verification photos
 /// -mockFeed            run against FeedServiceMock instead of the live API
 /// -mockFeedScenario X  pick a FeedServiceMock.MockScenario by raw value
@@ -155,8 +154,6 @@ public struct FeatureFlags: Sendable {
     public var mockVerificationScenario: VerificationServiceMock.MockScenario = .approved
     /// The verification mock announces the v34 consent (`vf1`).
     public var mockRetentionConsent = false
-    /// The verification mock says the tick is required.
-    public var mockConsentRequired = false
     /// The verification mock reports photographs kept in the file.
     public var mockKeptPhotos = false
 
@@ -293,10 +290,6 @@ public struct FeatureFlags: Sendable {
             flags.mockVerificationScenario = scenario
         }
         if arguments.contains("-mockRetentionConsent") { flags.mockRetentionConsent = true }
-        if arguments.contains("-mockConsentRequired") {
-            flags.mockRetentionConsent = true
-            flags.mockConsentRequired = true
-        }
         if arguments.contains("-mockKeptPhotos") { flags.mockKeptPhotos = true }
         // A mocked session's token would 401 against the real
         // `/verification/nafath/start`, and spending a real identity is not

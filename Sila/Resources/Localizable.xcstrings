@@ -12701,19 +12701,19 @@
       }
     },
     "document.consent.line5": {
-      "comment": "Contract v34 §7.2 consent card. Line 5.",
+      "comment": "Consent card line 5 (contract v34 §7.2), iPhone wording: %@ is the route to the Verification photos row built from the app's own labels (Profile › Account › Privacy › Verification photos). iOS has no screen named Settings.",
       "extractionState": "manual",
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "غيّرت رأيك؟ اسحب موافقتك في أي وقت من الإعدادات › الخصوصية › صور التحقق، فتُحذف الصور المحفوظة. وتُحذف كذلك عند حذف حسابك، أو فورًا إن سحبت هذا الطلب قبل القرار."
+            "value": "غيّرت رأيك؟ اسحب موافقتك في أي وقت من %@، فتُحذف الصور المحفوظة. وتُحذف كذلك عند حذف حسابك، أو فورًا إن سحبت هذا الطلب قبل القرار."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Changed your mind? Withdraw any time in Settings › Privacy › Verification photos, and the kept photos are deleted. They are also deleted when your account is deleted, or at once if you withdraw this submission before a decision."
+            "value": "Changed your mind? Withdraw any time in %@, and the kept photos are deleted. They are also deleted when your account is deleted, or at once if you withdraw this submission before a decision."
           }
         }
       }

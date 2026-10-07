@@ -3,3 +3,10 @@
 - 2026-10-07 targeted unit tests green (VerificationFilesConsentTests 20/20 + document/attest/wall suites; one existing assertion updated for the pre-send status read)
 - 2026-10-07 UI journey ConsentCardJourneyUITests 3/3 green (EN, AR, unticked); committed
 - 2026-10-07 existing DocumentStepsJourney (no announcement) still green; lane done
+- 2026-10-07 review fix: (1) consent line 5 now names the real iOS route, built from the screens' own labels: "Profile › Account › Privacy › Verification photos" / «الملف الشخصي › الحساب › الخصوصية › صور التحقق» (iOS has no Settings screen); unit test + UI journey (EN/AR) follows the route to the row and withdraws
+- 2026-10-07 review fix: (2) with the card, the send step drops the "Ready to send" heading/message; UI journey asserts title, lines 1-5, checkbox, link and Send lie wholly inside the window, below the nav bar, Send hittable, before any swipe, on iPhone 15 at the default text size, EN and AR
+- 2026-10-07 review fix: (3) Try again re-reads GET /verification/status first; a changed offer redraws the send step unticked with the notice and sends nothing; tests for changed (nil, vf2) and unchanged
+- 2026-10-07 review fix: (4) removed retention_consent_required (model, mock, -mockConsentRequired); Send is always enabled; test that the key cannot block Send
+- 2026-10-07 review fix: (5) rejected-screen wording pulled into RejectedScreen.explanationKey/photosKept(in:) and tested for with_account/true, with_account/false, until_decision, pre-v34, none; tick reset tested on invalid_mrz and liveness_mismatch; Verification photos row covered by the new route journey; dev-server specimen journey not done (see review response)
+- 2026-10-07 review fix: (6) line 3 / gate G3 left as a tracked pre-release gate, no code change
+- 2026-10-07 review fix: green — 145 unit tests in 9 related suites (VerificationFilesConsentTests 24/24), ConsentCardJourneyUITests 5/5 on iPhone 15 / iOS 17.2 (card fit EN+AR, route EN+AR, unticked)

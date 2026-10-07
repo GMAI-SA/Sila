@@ -24,6 +24,29 @@ struct RetentionConsentCard: View {
         "document.consent.line5"
     ]
 
+    /// Where the person withdraws, as this app labels it: the Profile tab,
+    /// its Account entry (the sheet titled Account), the Privacy section and
+    /// the Verification photos row (contract v34 §7.8). Built from the very
+    /// labels those screens show, so line 5 cannot name a screen the app
+    /// does not have.
+    static let withdrawalRouteKeys = [
+        "feed.tab.profile.label",
+        "feed.profileOff.account.title",
+        "account.section.privacy",
+        "settings.privacy.verificationPhotos.row"
+    ]
+
+    /// "Profile › Account › Privacy › Verification photos", in the app's
+    /// language.
+    static var withdrawalRoute: String {
+        withdrawalRouteKeys.map { L10n.t($0) }.joined(separator: " › ")
+    }
+
+    /// The words of one line, line 5 with the route filled in.
+    static func text(_ key: String) -> String {
+        key == "document.consent.line5" ? L10n.t(key, withdrawalRoute) : L10n.t(key)
+    }
+
     var body: some View {
         VStack(spacing: SLSpacing.sm) {
         SLCard(padding: SLSpacing.md) {
@@ -34,11 +57,12 @@ struct RetentionConsentCard: View {
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("document.consent.title")
                 ForEach(Self.lineKeys, id: \.self) { key in
-                    Text(L10n.t(key))
+                    Text(Self.text(key))
                         .font(SLFont.caption)
                         .foregroundStyle(SLColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier(key)
                 }
                 Button {
                     isTicked.toggle()

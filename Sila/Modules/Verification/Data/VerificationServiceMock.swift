@@ -73,8 +73,6 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
     /// What `GET /verification/status` announces (contract v34 §2.1):
     /// `"vf1"` while files are on, `nil` while the server keeps nothing.
     public private(set) var consentVersion: String?
-    /// `retention_consent_required` — off unless a test turns it on.
-    public private(set) var consentRequired: Bool
     /// `verification_photos`: what the account has kept, if anything.
     public private(set) var keptPhotos: VerificationPhotos?
     /// The consent the last submission carried, for assertions.
@@ -100,12 +98,10 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         requestLifetime: TimeInterval = 90,
         latency: Double = 0,
         consentVersion: String? = nil,
-        consentRequired: Bool = false,
         keptPhotos: VerificationPhotos? = nil
     ) {
         self.scenario = scenario
         self.consentVersion = consentVersion
-        self.consentRequired = consentRequired
         self.keptPhotos = keptPhotos
         self.pendingPolls = pendingPolls
         self.requestLifetime = requestLifetime
@@ -446,7 +442,6 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
             dateOfBirth: declaredDay,
             canWithdraw: submitted != nil && !withdrawn,
             retentionConsentVersion: consentVersion,
-            retentionConsentRequired: consentRequired,
             verificationPhotos: keptPhotos
         )
     }

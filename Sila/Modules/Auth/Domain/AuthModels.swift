@@ -456,9 +456,6 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
     /// consent card, and the new wording, only while this is non-nil, and
     /// sends back exactly this string.
     public let retentionConsentVersion: String?
-    /// Whether the tick must be given before Send (`retention_consent_required`,
-    /// a server setting off by default). Missing → `false`: Send always works.
-    public let retentionConsentRequired: Bool
     /// The account's kept verification photographs, when there are any with
     /// consent not withdrawn — drives Settings › Privacy › Verification photos.
     /// Answered whatever the switch says, so a person can always withdraw.
@@ -476,7 +473,6 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         nafathAvailable: Bool = false,
         canWithdraw: Bool = false,
         retentionConsentVersion: String? = nil,
-        retentionConsentRequired: Bool = false,
         verificationPhotos: VerificationPhotos? = nil
     ) {
         self.status = status
@@ -490,14 +486,13 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         self.nafathAvailable = nafathAvailable
         self.canWithdraw = canWithdraw
         self.retentionConsentVersion = retentionConsentVersion
-        self.retentionConsentRequired = retentionConsentRequired
         self.verificationPhotos = verificationPhotos
     }
 
     private enum CodingKeys: String, CodingKey {
         case status, rejectionReason, revocationReason, submittedAt, reviewedAt, nationality, appeal, dateOfBirth
         case methods, canWithdraw
-        case retentionConsentVersion, retentionConsentRequired, verificationPhotos
+        case retentionConsentVersion, verificationPhotos
     }
 
     private struct Methods: Decodable {
@@ -519,7 +514,6 @@ public struct VerificationStatusReport: Decodable, Equatable, Sendable {
         canWithdraw = (try? container.decodeIfPresent(Bool.self, forKey: .canWithdraw)) ?? false
         let version = (try? container.decodeIfPresent(String.self, forKey: .retentionConsentVersion)) ?? nil
         retentionConsentVersion = (version?.isEmpty ?? true) ? nil : version
-        retentionConsentRequired = (try? container.decodeIfPresent(Bool.self, forKey: .retentionConsentRequired)) ?? false
         verificationPhotos = (try? container.decodeIfPresent(VerificationPhotos.self, forKey: .verificationPhotos)) ?? nil
     }
 }

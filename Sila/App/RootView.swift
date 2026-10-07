@@ -271,7 +271,7 @@ public struct RootView: View {
                     } : nil,
                     loadPhotosKept: container.flags.verification ? {
                         let latest = try? await container.verificationService.latestDocumentCase()
-                        return latest?.photosKeptInFile ?? false
+                        return RejectedScreen.photosKept(in: latest)
                     } : nil,
                     onSignOut: { Task { await container.session.signOut() } }
                 )

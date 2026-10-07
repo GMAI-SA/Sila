@@ -157,9 +157,6 @@ public final class DocumentVerificationViewModel {
     /// again just before sending; `nil` while it keeps nothing past the
     /// decision — then there is no card and the old wording stays.
     public private(set) var consentVersion: String?
-    /// The server's setting that makes the tick a condition of Send. Off by
-    /// default: Send always works and an unticked submission keeps nothing.
-    public private(set) var consentRequired = false
     /// The box on the card. Starts unticked, every time; never remembered
     /// between submissions, and cleared by every retake.
     public var consentTicked = false
@@ -173,10 +170,9 @@ public final class DocumentVerificationViewModel {
     /// The card is on screen: there is something to consent to.
     public var offersConsent: Bool { consentVersion != nil }
 
-    /// Send is always enabled — unless the server has made the tick required.
-    public var canSend: Bool {
-        !isSubmitting && (!offersConsent || !consentRequired || consentTicked)
-    }
+    /// Send is always enabled (contract v34 §7.2, *Deviation 3*): the tick is
+    /// optional, and an unticked submission simply keeps nothing.
+    public var canSend: Bool { !isSubmitting }
     /// Reads the zone off a JPEG. Injectable so tests need no Vision.
     var zoneReader: @Sendable (Data) async -> String? = { jpeg in
         DocumentTextReader.zone(from: await DocumentTextReader.lines(in: jpeg))
@@ -572,7 +568,6 @@ public final class DocumentVerificationViewModel {
 
     private func applyConsentOffer(_ report: VerificationStatusReport) {
         consentVersion = report.retentionConsentVersion
-        consentRequired = report.retentionConsentRequired
         if consentVersion == nil { consentTicked = false }
     }
 
@@ -603,7 +598,6 @@ public final class DocumentVerificationViewModel {
                 consentNotice = L10n.t("error.consentChanged")
                 return
             }
-            guard canSend else { return }
         }
         consentNotice = nil
         await submit()
@@ -671,8 +665,24 @@ public final class DocumentVerificationViewModel {
 
     /// "Try again" after the pictures did not go: the same pictures and the
     /// same face, sent again. Nothing has to be taken twice.
+    ///
+    /// The offer is read again first, as Send does (contract v34 §7.1): when
+    /// it changed since the card was drawn, the send step is drawn again
+    /// (with the card, unticked, or without it), with the notice, and
+    /// nothing goes until the person sends from it. A read that fails (still offline) leaves what was shown.
     public func retrySend() async {
         guard phase == .sendFailed else { return }
+        let shown = consentVersion
+        if let report = try? await service.verificationStatus() {
+            applyConsentOffer(report)
+            if consentVersion != shown {
+                consentTicked = false
+                sentWithConsent = false
+                consentNotice = L10n.t("error.consentChanged")
+                phase = .send
+                return
+            }
+        }
         await submit()
     }
 

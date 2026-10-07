@@ -293,7 +293,6 @@ public final class AppContainer {
                 scenario: flags.mockVerificationScenario,
                 latency: 0.4,
                 consentVersion: flags.mockRetentionConsent ? "vf1" : nil,
-                consentRequired: flags.mockConsentRequired,
                 keptPhotos: flags.mockKeptPhotos
                     ? VerificationPhotos(keptAttempts: 1, consentedAt: Date().addingTimeInterval(-3 * 86_400))
                     : nil

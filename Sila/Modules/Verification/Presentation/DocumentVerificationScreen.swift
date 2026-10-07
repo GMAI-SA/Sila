@@ -490,20 +490,28 @@ public struct DocumentVerificationScreen: View {
     // MARK: Send (contract v34)
 
     /// Everything is taken; the consent card sits beside Send. Send works
-    /// with or without the tick unless the server has made it required.
+    /// with or without the tick.
+    ///
+    /// With the card, the step drops its "Ready to send" heading and
+    /// message: every line of the card and Send have to fit on the screen
+    /// without scrolling at the default text size (contract v34 §7.2), and
+    /// the card's own title says what the step is. Without the card the
+    /// step reads as it did.
     private var sendStep: some View {
-        VStack(spacing: SLSpacing.lg) {
-            VStack(spacing: SLSpacing.xs) {
-                Text(L10n.t("document.send.title"))
-                    .font(SLFont.displayM)
-                    .foregroundStyle(SLColor.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("document.send.title")
-                Text(L10n.t("document.send.message"))
-                    .font(SLFont.bodyLight)
-                    .foregroundStyle(SLColor.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: viewModel.offersConsent ? SLSpacing.md : SLSpacing.lg) {
+            if !viewModel.offersConsent {
+                VStack(spacing: SLSpacing.xs) {
+                    Text(L10n.t("document.send.title"))
+                        .font(SLFont.displayM)
+                        .foregroundStyle(SLColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("document.send.title")
+                    Text(L10n.t("document.send.message"))
+                        .font(SLFont.bodyLight)
+                        .foregroundStyle(SLColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             if let notice = viewModel.consentNotice {
                 StepNoticeCard(text: notice)

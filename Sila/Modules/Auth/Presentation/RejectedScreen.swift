@@ -94,9 +94,22 @@ public struct RejectedScreen: View {
     }
 
     private var explanation: String {
-        if isRevocation { return L10n.t("auth.rejected.revoked.message") }
-        if retake == nil { return L10n.t("auth.rejected.message") }
-        return L10n.t(photosKept ? "auth.rejected.screened.message.kept" : "auth.rejected.screened.message")
+        L10n.t(Self.explanationKey(isRevocation: isRevocation, screened: retake != nil, photosKept: photosKept))
+    }
+
+    /// Which words explain the screen (contract v34 §7.5): the "stay in your
+    /// verification file" variant only for a screened-out submission whose
+    /// photographs are kept; today's words otherwise.
+    static func explanationKey(isRevocation: Bool, screened: Bool, photosKept: Bool) -> String {
+        if isRevocation { return "auth.rejected.revoked.message" }
+        if !screened { return "auth.rejected.message" }
+        return photosKept ? "auth.rejected.screened.message.kept" : "auth.rejected.screened.message"
+    }
+
+    /// Whether the latest case's photographs stay in the file: kept with
+    /// the account and still there. No case, or one from before v34, is not.
+    static func photosKept(in latest: DocumentCase?) -> Bool {
+        latest?.photosKeptInFile ?? false
     }
 
     /// The appeal to show: the one just sent, else the one the server knew about.
