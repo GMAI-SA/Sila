@@ -66,6 +66,10 @@ public enum FeedRoute: Hashable, Sendable {
 public enum RoomsRoute: Hashable, Sendable {
     /// A room to join.
     case room(VoiceRoom)
+    /// A room reached from outside the app — a link, a push, an invitation:
+    /// its card with a Join button, and nothing joined until it is tapped
+    /// (round-2 CA-1). See ``RoomOpenOrigin``.
+    case roomLink(VoiceRoom)
     /// An event, by id; read on arrival (contract v23).
     case event(UUID)
     /// One account's public page, reached from the participant list.
@@ -140,6 +144,11 @@ public final class AppRouter {
     /// feed, so a link tapped while signed out is still honoured after
     /// signing in rather than dropped on the floor.
     public var pendingLink: DeepLink?
+    /// A room a guest was listening in when they went to sign in or create
+    /// an account: the member's Rooms tab joins it once the tabs are up.
+    /// Unlike ``pendingLink``, this one was chosen inside the app, so it
+    /// does not stop at the room's card (round-2 CA-1).
+    public var resumeRoomId: UUID?
 
     public init() {}
 

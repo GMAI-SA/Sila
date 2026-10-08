@@ -50702,6 +50702,342 @@
           }
         }
       }
+    },
+    "rooms.link.ended": {
+      "comment": "Status line on a linked room's card: the room is over.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت هذه الغرفة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This room has ended"
+          }
+        }
+      }
+    },
+    "rooms.link.heading": {
+      "comment": "Small line above a room's card when the room was opened from a link, a push or an invitation.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت مشاركة غرفة معك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A room was shared with you"
+          }
+        }
+      }
+    },
+    "rooms.link.host": {
+      "comment": "Host line on a linked room's card. %@ is the host's display name.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستضيفها %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosted by %@"
+          }
+        }
+      }
+    },
+    "rooms.link.join": {
+      "comment": "Button on a linked room's card that joins the room.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join"
+          }
+        }
+      }
+    },
+    "rooms.link.join.hint": {
+      "comment": "VoiceOver hint for Join on a linked room's card.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ينضمك إلى الغرفة. سيراك المضيف ومن فيها"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joins the room. The host and the people in it will see you"
+          }
+        }
+      }
+    },
+    "rooms.link.join.note": {
+      "comment": "Under a linked room's card, signed in: why nothing has happened yet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تنضم بعد. لن يراك المضيف إلا بعد أن تضغط «انضم»."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't joined. The host sees you only after you tap Join."
+          }
+        }
+      }
+    },
+    "rooms.link.listen": {
+      "comment": "Button on a linked room's card, signed out, that starts listening.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استمع"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen"
+          }
+        }
+      }
+    },
+    "rooms.link.listen.hint": {
+      "comment": "VoiceOver hint for Listen on a linked room's card.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يبدأ الاستماع إلى الغرفة دون حساب"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts listening to the room without an account"
+          }
+        }
+      }
+    },
+    "rooms.link.listen.note": {
+      "comment": "Under a linked room's card, signed out: why nothing has happened yet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تبدأ الاستماع بعد. اضغط «استمع» لتسمع الغرفة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You aren't listening yet. Tap Listen to hear the room."
+          }
+        }
+      }
+    },
+    "rooms.link.live": {
+      "comment": "Status line on a linked room's card: the room is live.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مباشر الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live now"
+          }
+        }
+      }
+    },
+    "rooms.link.live.people": {
+      "comment": "Status line on a linked room's card: live, with how many people are in it. %lld is the count.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مباشر الآن · %lld أشخاص في الغرفة"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مباشر الآن · %lld شخصًا في الغرفة"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مباشر الآن · شخص واحد في الغرفة"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مباشر الآن · %lld شخص في الغرفة"
+                }
+              },
+              "two": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مباشر الآن · شخصان في الغرفة"
+                }
+              },
+              "zero": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "مباشر الآن · لا أحد في الغرفة"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Live now · %lld person in the room"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Live now · %lld people in the room"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rooms.link.loading": {
+      "comment": "On a guest's linked room card while the room is being looked up.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ البحث عن الغرفة…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding the room…"
+          }
+        }
+      }
+    },
+    "rooms.link.notNow": {
+      "comment": "Button on a linked room's card that leaves without joining.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس الآن"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        }
+      }
+    },
+    "rooms.link.scheduled": {
+      "comment": "Status line on a linked room's card: the room has not started.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم تبدأ بعد"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hasn't started yet"
+          }
+        }
+      }
+    },
+    "rooms.link.unlisted.status": {
+      "comment": "Status line on a linked room's card when nothing is known about the room yet.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط «استمع» لتعرف إن كانت متاحة لك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap Listen to see if it's open to you"
+          }
+        }
+      }
+    },
+    "rooms.link.unlisted.title": {
+      "comment": "Title on a linked room's card when a guest's public lists do not show that room.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غرفة مشتركة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A shared room"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

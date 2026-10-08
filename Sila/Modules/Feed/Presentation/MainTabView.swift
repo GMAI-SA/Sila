@@ -530,6 +530,10 @@ public struct MainTabView: View {
             guard link != nil else { return }
             Task { await openPendingLink() }
         }
+        .onChange(of: container.router.resumeRoomId) { _, id in
+            guard id != nil else { return }
+            Task { await openPendingLink() }
+        }
     }
 
     // MARK: - Safety
@@ -987,7 +991,9 @@ public struct MainTabView: View {
                     viewModel: notificationsViewModel,
                     onOpenPost: openPost,
                     onOpenProfile: openProfile,
-                    onOpenRoom: openRoomFromNotification,
+                    // An invitation row is the in-app twin of the push: the
+                    // room's card first (CA-1).
+                    onOpenRoom: { roomId in openRoomFromNotification(roomId, from: .outside) },
                     onOpenCommunity: { slug in push(.community(slug: slug)) },
                     onOpenHome: { selection = .home },
                     onOpenEvent: { id in openEvent(id) },
@@ -1146,6 +1152,12 @@ public struct MainTabView: View {
     /// the link only carries an id. Not found, deleted or blocked: the
     /// server's sentence, as a toast, and nothing is pushed.
     private func openPendingLink() async {
+        // The room a guest was in when they went to sign in: chosen inside
+        // the app, so it is joined straight away.
+        if let roomId = container.router.resumeRoomId {
+            container.router.resumeRoomId = nil
+            openRoomFromNotification(roomId, from: .inApp)
+        }
         guard let link = container.router.pendingLink else { return }
         container.router.pendingLink = nil
         switch link {
@@ -1163,7 +1175,8 @@ public struct MainTabView: View {
             selection = .home
             openProfile(handle)
         case let .room(id):
-            openRoomFromNotification(id)
+            // A link or a push: the room's card first, never a join (CA-1).
+            openRoomFromNotification(id, from: .outside)
         case let .event(id):
             openEvent(id)
         case .vouching:
@@ -1465,18 +1478,35 @@ public struct MainTabView: View {
     /// the door may have closed since somebody shared it.
     private func openRoomCard(_ card: RoomCard) {
         container.analytics.track(.roomCardOpened, properties: ["status": card.status.rawValue])
-        openRoomFromNotification(card.id)
+        openRoomFromNotification(card.id, from: .inApp)
     }
 
-    /// A room invitation was tapped: read the room, switch to the Rooms tab,
-    /// and push it. The room screen does the joining.
-    private func openRoomFromNotification(_ roomId: UUID) {
+    /// Reads a room by id, switches to the Rooms tab and opens it there.
+    ///
+    /// From inside the app the room screen joins at once; from a link, a
+    /// push or an invitation the room's card comes first and only its Join
+    /// button joins (round-2 CA-1) — a read is all the server sees until then.
+    private func openRoomFromNotification(_ roomId: UUID, from origin: RoomOpenOrigin) {
         guard container.flags.rooms else { return }
         Task {
             guard let room = try? await container.roomsService.fetchRoom(id: roomId) else { return }
             selection = .rooms
-            container.router.roomsPath = [.room(room)]
+            container.router.roomsPath = [.opening(room, from: origin)]
         }
+    }
+
+    /// Join, tapped on a linked room's card: the room replaces its card, and
+    /// the room screen joins. A room that refuses says why and stays a card.
+    private func joinLinkedRoom(_ room: VoiceRoom) {
+        guard roomsViewModel.open(room) else {
+            if let toast = roomsViewModel.toast {
+                roomsViewModel.toast = nil
+                container.router.show(toast)
+            }
+            return
+        }
+        container.analytics.track(.roomCardOpened, properties: ["status": room.status.rawValue, "source": "link"])
+        container.router.roomsPath = [.room(room)]
     }
 
     /// Opens a profile from inside the Rooms tab, without disturbing any other
@@ -1502,10 +1532,19 @@ public struct MainTabView: View {
                 EventDetailViewModel(eventId: id, service: container.eventsService,
                                      onChange: { event in eventsViewModel.merge(event) })
             }) { detail in
-                EventDetailScreen(viewModel: detail, onOpenRoom: { roomId in openRoomFromNotification(roomId) },
+                EventDetailScreen(viewModel: detail, onOpenRoom: { roomId in openRoomFromNotification(roomId, from: .inApp) },
                                   onOpenProfile: openRoomProfile)
             }
             .id(id)
+
+        case let .roomLink(room):
+            RoomLinkScreen(
+                preview: RoomLinkPreview(room: room),
+                action: .join,
+                onEnter: { joinLinkedRoom(room) },
+                onCancel: { container.router.roomsPath.removeAll() }
+            )
+            .id(room.id)
 
         case let .room(room):
             // Owned, keyed on the room: a destination closure is re-run on

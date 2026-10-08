@@ -123,8 +123,8 @@ public struct GuestTabView: View {
             // A room is left when its tab is: the connection goes with it.
             if tab == .home || tab == .explore { openRoom = nil }
         }
-        // A shared room link (sila.gmai.sa/rooms/…): a guest listens to it at
-        // once, as somebody signed out does (contract v31).
+        // A shared room link (sila.gmai.sa/rooms/…): the room's card, and a
+        // guest listens only once they tap Listen (contract v31, round-2 CA-1).
         .task { openPendingRoomLink() }
         .onChange(of: container.router.pendingLink) { _, _ in openPendingRoomLink() }
         .sheet(item: Binding(
@@ -232,8 +232,10 @@ public struct GuestTabView: View {
         container.analytics.track(.guestJoinAccepted, properties: [
             "prompt": prompt.rawValue, "door": door == .register ? "register" : "signIn"
         ])
-        if let room = openRoom {
-            container.router.pendingLink = .room(id: room.id)
+        // Only a room the guest is in: a linked room still on its card was
+        // never chosen, and signing in must not join it (CA-1).
+        if let room = openRoom, !room.confirm {
+            container.router.resumeRoomId = room.id
         }
         container.session.leaveGuest()
         container.router.push(door)
@@ -245,7 +247,7 @@ public struct GuestTabView: View {
     private func listen(to card: RoomCard) {
         guard container.flags.rooms else { return ask(.room) }
         selection = .rooms
-        openRoom = GuestRoomRoute(id: card.id, card: card)
+        openRoom = GuestRoomRoute(id: card.id, card: card, confirm: false)
     }
 
     /// A room link waiting on the router, taken while this shell is the one
@@ -256,10 +258,39 @@ public struct GuestTabView: View {
               case let .room(id)? = container.router.pendingLink else { return }
         container.router.pendingLink = nil
         selection = .rooms
-        openRoom = GuestRoomRoute(id: id, card: nil)
+        // A link: the room's card and a Listen button, never a seat on the
+        // link's say-so (round-2 CA-1).
+        openRoom = GuestRoomRoute(id: id, card: nil, confirm: true)
     }
 
+    @ViewBuilder
     private func guestRoom(_ route: GuestRoomRoute) -> some View {
+        if route.confirm {
+            guestRoomLink(route)
+        } else {
+            guestRoomListening(route)
+        }
+    }
+
+    /// A shared room's card, before listening.
+    private func guestRoomLink(_ route: GuestRoomRoute) -> some View {
+        Owned({
+            GuestRoomLinkViewModel(roomId: route.id, card: route.card, service: container.guestRoomsService)
+        }) { link in
+            RoomLinkScreen(
+                preview: link.preview,
+                action: .listen,
+                onEnter: {
+                    openRoom = GuestRoomRoute(id: route.id, card: route.card, confirm: false)
+                },
+                onCancel: { openRoom = nil }
+            )
+            .task { await link.load() }
+        }
+        .id("link-\(route.id.uuidString)")
+    }
+
+    private func guestRoomListening(_ route: GuestRoomRoute) -> some View {
         Owned({
             GuestRoomViewModel(
                 roomId: route.id,
@@ -310,4 +341,6 @@ public struct GuestTabView: View {
 struct GuestRoomRoute: Identifiable, Hashable {
     let id: UUID
     let card: RoomCard?
+    /// Reached from a link: the room's card and a Listen button first.
+    let confirm: Bool
 }

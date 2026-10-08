@@ -25,10 +25,12 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>webcredentials:sila.gmai.sa</string>
-		<!-- sila.gmai.sa/posts/… and /u/… open in the app; the site's
-		     apple-app-site-association lists those paths. Vouch links
-		     (/vouch/…, /vouch, /vouching — contract v24) open in the app
-		     once it lists those too. -->
+		<!-- The site's apple-app-site-association hands these to the app:
+		     /posts/*, /u/*, /events/* (not /events/new), /rooms/* (not
+		     /rooms/series/*), /vouch/*, /vouch and /vouching — exactly what
+		     DeepLink.parse reads (AssociatedDomainsTests keeps the two in
+		     step). A room link opens on the room's card, never in the room
+		     (round-2 CA-1). -->
 		<string>applinks:sila.gmai.sa</string>
 	</array>
 </dict>

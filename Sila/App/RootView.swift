@@ -61,9 +61,9 @@ public struct RootView: View {
             if route == .unauthenticated { signedUpNow = false }
             listenToRoomLinkSignedOut()
         }
-        // A shared room link, tapped by somebody who is not signed in: they
-        // listen as a guest at once (contract v31) rather than meeting the
-        // door first.
+        // A shared room link, tapped by somebody who is not signed in: the
+        // guest shell shows the room's card (contract v31) rather than the
+        // door first, and Listen on it is the only way in (round-2 CA-1).
         .onChange(of: container.router.pendingLink) { _, _ in listenToRoomLinkSignedOut() }
     }
 
@@ -288,7 +288,9 @@ public struct RootView: View {
                 if container.flags.feed, showsOnboarding {
                     Owned({ onboardingViewModel() }) { viewModel in
                         OnboardingFlow(viewModel: viewModel, onOpenRoom: { room in
-                            container.router.pendingLink = .room(id: room.id)
+                            // Picked on the flow's last card, inside the app:
+                            // joined straight away, not stopped at a link's card.
+                            container.router.resumeRoomId = room.id
                         })
                     }
                     .transition(.opacity)

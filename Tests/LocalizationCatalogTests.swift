@@ -372,7 +372,7 @@ final class LocalizationCatalogTests: XCTestCase {
     static let namespaces = [
         "account.", "app.", "auth.", "badge.", "biometrics.", "common.", "composer.",
         "communities.", "discover.", "document.", "ds.", "error.", "events.", "feed.", "format.", "guidelines.", "groups.", "guest.", "messages.", "mutedTerms.", "nationality.", "notifications.", "onboarding.", "people.", "poll.", "post.", "prompt.", "push.", "reaction.",
-        "preferences.", "profile.", "rooms.", "safety.", "saved.", "search.", "video.", "voice.",
+        "preferences.", "profile.", "rooms.", "safety.", "saved.", "search.", "settings.", "video.", "voice.",
         "verification.", "vouch."
     ]
 

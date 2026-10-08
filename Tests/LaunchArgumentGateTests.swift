@@ -62,4 +62,14 @@ final class LaunchArgumentGateTests: XCTestCase {
             FeatureFlags.launchLink(arguments: ["Sila", "-openLink", "https://sila.gmai.sa.evil.example/u/x"], readsTestArguments: true)
         )
     }
+
+    func testOpenLinkAfterSignInIsDebugOnlyAndDropsItsValue() {
+        let link = "https://sila.gmai.sa/rooms/00000000-0000-4000-8000-000000000702"
+        let arguments = ["Sila", "-openLinkAfterSignIn", link, "-noRealtime"]
+        let room = DeepLink.room(id: UUID(uuidString: "00000000-0000-4000-8000-000000000702")!)
+        XCTAssertEqual(FeatureFlags.launchLink(option: "-openLinkAfterSignIn", arguments: arguments, readsTestArguments: true), room)
+        XCTAssertNil(FeatureFlags.launchLink(option: "-openLinkAfterSignIn", arguments: arguments, readsTestArguments: false))
+        XCTAssertNil(FeatureFlags.launchLink(arguments: arguments, readsTestArguments: true), "not the launch link")
+        XCTAssertEqual(FeatureFlags.launchArguments(arguments, readsTestArguments: false), ["Sila", "-noRealtime"])
+    }
 }

@@ -50,6 +50,8 @@ import Foundation
 /// -videoAutoplay on|off (debug) decide autoplay instead of the network
 /// -noVideoPosts        take video out of the composer
 /// -openLink URL        open a sila.gmai.sa link on launch, as a tap would
+/// -openLinkAfterSignIn URL  (debug) open it once the session reaches the feed,
+///                      as a tap arriving while signed in would
 /// ```
 public struct FeatureFlags: Sendable {
 
@@ -283,10 +285,10 @@ public struct FeatureFlags: Sendable {
     /// Test-only options that are followed by a value; the value is dropped
     /// with them.
     private static let testOptionsWithValue: Set<String> = [
-        "-mockRealtime", "-mockVideoPick", "-openLink", "-videoAutoplay", "-apiOrigin",
+        "-mockRealtime", "-mockVideoPick", "-openLink", "-openLinkAfterSignIn", "-videoAutoplay", "-apiOrigin",
     ]
     private static let testOptions: Set<String> = [
-        "-openLink", "-freshStorage", "-resetVideoUploads", "-videoAutoplay", "-nafathAvailable", "-apiOrigin",
+        "-openLink", "-openLinkAfterSignIn", "-freshStorage", "-resetVideoUploads", "-videoAutoplay", "-nafathAvailable", "-apiOrigin",
     ]
 
     static func isTestOnly(_ argument: String) -> Bool {
@@ -317,12 +319,15 @@ public struct FeatureFlags: Sendable {
     }
 
     /// `-openLink URL`: a UI journey's way to tap a link. Debug builds only.
+    /// `-openLinkAfterSignIn URL` is the same link, held until the session
+    /// reaches the feed — the way to tap one while signed in.
     static func launchLink(
+        option: String = "-openLink",
         arguments: [String] = ProcessInfo.processInfo.arguments,
         readsTestArguments: Bool = FeatureFlags.readsTestArguments
     ) -> DeepLink? {
         let arguments = launchArguments(arguments, readsTestArguments: readsTestArguments)
-        guard let index = arguments.firstIndex(of: "-openLink"), arguments.indices.contains(index + 1),
+        guard let index = arguments.firstIndex(of: option), arguments.indices.contains(index + 1),
               let url = URL(string: arguments[index + 1]) else { return nil }
         return DeepLink.parse(url)
     }

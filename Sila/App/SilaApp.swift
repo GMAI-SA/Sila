@@ -11,6 +11,9 @@ struct SilaApp: App {
     @State private var container = AppContainer()
     @UIApplicationDelegateAdaptor(SilaAppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    #if DEBUG
+    @State private var openedLinkAfterSignIn = false
+    #endif
 
     var body: some Scene {
         WindowGroup {
@@ -51,6 +54,16 @@ struct SilaApp: App {
                         #endif
                         await container.pushRegistrar.refreshRegistration()
                     }
+                    #if DEBUG
+                    // `-openLinkAfterSignIn URL`: a UI journey's way to tap a
+                    // link while signed in. Debug builds only.
+                    .onChange(of: container.session.route) { _, route in
+                        guard route == .feed, !openedLinkAfterSignIn,
+                              let link = FeatureFlags.launchLink(option: "-openLinkAfterSignIn") else { return }
+                        openedLinkAfterSignIn = true
+                        container.open(link)
+                    }
+                    #endif
                     // The socket: up in the foreground, closed in the
                     // background (the push covers the time between).
                     .onChange(of: scenePhase, initial: true) { _, phase in

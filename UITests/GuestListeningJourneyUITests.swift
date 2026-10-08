@@ -7,7 +7,8 @@ import XCTest
 /// taps a room and is listening at once; speaking, a hand, a reaction or the
 /// chat meet "Join Sila to take part", whose sign-in comes back to the room;
 /// every refusal the server can answer is said in its own words; a shared
-/// room link opens for somebody signed out. And members see the guests on a
+/// room link opens for somebody signed out on the room's card, and Listen
+/// on it is the only way in. And members see the guests on a
 /// room, and its host can turn them off.
 ///
 /// Entirely against the mocks — rooms, guest seats and a mocked media engine
@@ -262,20 +263,39 @@ final class GuestListeningJourneyUITests: XCTestCase {
 
     // MARK: - Links
 
-    /// A shared room link opens for somebody signed out: listening, at once.
+    /// A shared room link opens for somebody signed out on the room's card,
+    /// and listening starts only when they tap Listen (round-2 CA-1).
     func testASharedRoomLinkOpensForSomebodySignedOut() throws {
         let link = "https://sila.gmai.sa/rooms/00000000-0000-4000-8000-000000000702"
         for language in ["en", "ar"] {
             let app = launch(language: language, extra: ["-openLink", link])
-            XCTAssertTrue(element(app, "guest.room.listening").waitForExistence(timeout: 25),
-                          "a shared room link did not open for somebody signed out (\(language))")
+            XCTAssertTrue(element(app, "roomLink.card").waitForExistence(timeout: 25),
+                          "a shared room link did not show the room's card for somebody signed out (\(language))")
             XCTAssertTrue(showing(app, "قهوة الصباح").exists, "the link opened a different room")
+            // Nothing is heard on the link's say-so.
+            XCTAssertFalse(element(app, "guest.room.listening").waitForExistence(timeout: 3),
+                           "a shared room link started listening without a tap (\(language))")
+            shot(app, "guest-room-link-card-\(language)")
+            XCTAssertTrue(tap(app, "roomLink.enter"), "the card had no Listen button")
+            XCTAssertTrue(element(app, "guest.room.listening").waitForExistence(timeout: 25),
+                          "Listen on the card did not listen (\(language))")
             shot(app, "guest-room-link-\(language)")
             XCTAssertTrue(tap(app, "guest.room.leave"))
             XCTAssertTrue(element(app, "guest.room.card").waitForExistence(timeout: 15),
                           "leaving a linked room did not land on the guest's rooms")
             app.terminate()
         }
+    }
+
+    /// "Not now" on a shared room's card leaves without ever listening.
+    func testNotNowOnASharedRoomLinkNeverListens() throws {
+        let link = "https://sila.gmai.sa/rooms/00000000-0000-4000-8000-000000000702"
+        let app = launch(extra: ["-openLink", link])
+        XCTAssertTrue(element(app, "roomLink.card").waitForExistence(timeout: 25))
+        XCTAssertTrue(tap(app, "roomLink.cancel"))
+        XCTAssertTrue(element(app, "guest.room.card").waitForExistence(timeout: 15),
+                      "Not now did not land on the guest's rooms")
+        XCTAssertFalse(element(app, "guest.room.listening").exists)
     }
 
     // MARK: - Members and hosts
