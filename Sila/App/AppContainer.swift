@@ -220,7 +220,8 @@ public final class AppContainer {
         // journey otherwise inherits whatever the journey before it left —
         // a pinned subject, say, which quietly filters the feed the next
         // test is asserting against.
-        let storage = storage ?? (ProcessInfo.processInfo.arguments.contains("-freshStorage")
+        // Debug builds only: a release build never reads it (FeatureFlags).
+        let storage = storage ?? (FeatureFlags.launchArguments().contains("-freshStorage")
             ? InMemoryStorageClient()
             : UserDefaultsStorageClient())
         let keychain = keychain ?? Self.launchKeychain(flags: flags, storage: storage)

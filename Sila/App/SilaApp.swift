@@ -42,12 +42,13 @@ struct SilaApp: App {
                             guard PushRegistrar.isVouching(info), container.session.user != nil else { return }
                             Task { await container.session.refreshUser() }
                         }
+                        #if DEBUG
                         // `-openLink URL`: a UI journey's way to tap a link.
-                        let arguments = ProcessInfo.processInfo.arguments
-                        if let index = arguments.firstIndex(of: "-openLink"), arguments.indices.contains(index + 1),
-                           let url = URL(string: arguments[index + 1]), let link = DeepLink.parse(url) {
+                        // Debug builds only (FeatureFlags.readsTestArguments).
+                        if let link = FeatureFlags.launchLink() {
                             container.open(link)
                         }
+                        #endif
                         await container.pushRegistrar.refreshRegistration()
                     }
                     // The socket: up in the foreground, closed in the

@@ -6,8 +6,10 @@ import Foundation
 /// only one implemented so far; the rest are declared here so later phases add
 /// code, not new flags.
 ///
-/// Launch arguments override the compiled defaults, which is how UI tests and
-/// TestFlight builds select a configuration:
+/// Launch arguments override the compiled defaults, which is how UI tests
+/// select a configuration. Every `-mock…` argument and `-openLink` are read by
+/// debug builds only (``readsTestArguments``); a release build keeps just the
+/// kill switches:
 ///
 /// ```
 /// -mockAuth            run against AuthServiceMock instead of the live API
@@ -261,11 +263,80 @@ public struct FeatureFlags: Sendable {
 
     public init() {}
 
+    // MARK: Test-only launch arguments (security round 2)
+
+    /// Whether this build reads the mock and test-only launch arguments.
+    ///
+    /// Debug builds only, the way `-apiOrigin` is (``AppConfig``). A release
+    /// build — TestFlight and the store — ignores every `-mock…` switch,
+    /// `-openLink`, `-freshStorage`, `-resetVideoUploads`, `-videoAutoplay`
+    /// and `-nafathAvailable`, so nothing handed to a real install at launch
+    /// can put it on mocked services, an in-memory store, or a screen behind
+    /// a link nobody tapped. The kill switches (`-no…`, `-forceOnboarding`)
+    /// still apply: they only turn things off.
+    #if DEBUG
+    public static let readsTestArguments = true
+    #else
+    public static let readsTestArguments = false
+    #endif
+
+    /// Test-only options that are followed by a value; the value is dropped
+    /// with them.
+    private static let testOptionsWithValue: Set<String> = [
+        "-mockRealtime", "-mockVideoPick", "-openLink", "-videoAutoplay", "-apiOrigin",
+    ]
+    private static let testOptions: Set<String> = [
+        "-openLink", "-freshStorage", "-resetVideoUploads", "-videoAutoplay", "-nafathAvailable", "-apiOrigin",
+    ]
+
+    static func isTestOnly(_ argument: String) -> Bool {
+        argument.hasPrefix("-mock") || testOptions.contains(argument)
+    }
+
+    /// `arguments` as this build may read them: unchanged in a debug build;
+    /// in a release build, without any test-only option or the value after it.
+    public static func launchArguments(
+        _ arguments: [String] = ProcessInfo.processInfo.arguments,
+        readsTestArguments: Bool = FeatureFlags.readsTestArguments
+    ) -> [String] {
+        guard !readsTestArguments else { return arguments }
+        var kept: [String] = []
+        var skipValue = false
+        for argument in arguments {
+            if skipValue {
+                skipValue = false
+                continue
+            }
+            if isTestOnly(argument) {
+                skipValue = argument.hasSuffix("Scenario") || testOptionsWithValue.contains(argument)
+                continue
+            }
+            kept.append(argument)
+        }
+        return kept
+    }
+
+    /// `-openLink URL`: a UI journey's way to tap a link. Debug builds only.
+    static func launchLink(
+        arguments: [String] = ProcessInfo.processInfo.arguments,
+        readsTestArguments: Bool = FeatureFlags.readsTestArguments
+    ) -> DeepLink? {
+        let arguments = launchArguments(arguments, readsTestArguments: readsTestArguments)
+        guard let index = arguments.firstIndex(of: "-openLink"), arguments.indices.contains(index + 1),
+              let url = URL(string: arguments[index + 1]) else { return nil }
+        return DeepLink.parse(url)
+    }
+
     /// Builds the flag set for a launch, applying launch-argument overrides.
-    /// - Parameter arguments: Defaults to `ProcessInfo.processInfo.arguments`.
+    /// - Parameters:
+    ///   - arguments: Defaults to `ProcessInfo.processInfo.arguments`.
+    ///   - readsTestArguments: Whether the `-mock…` switches count; only in
+    ///     a debug build (``readsTestArguments``).
     public static func resolved(
-        arguments: [String] = ProcessInfo.processInfo.arguments
+        arguments: [String] = ProcessInfo.processInfo.arguments,
+        readsTestArguments: Bool = FeatureFlags.readsTestArguments
     ) -> FeatureFlags {
+        let arguments = launchArguments(arguments, readsTestArguments: readsTestArguments)
         var flags = FeatureFlags()
 
         if arguments.contains("-mockAuth") {

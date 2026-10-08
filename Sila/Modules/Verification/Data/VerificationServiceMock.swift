@@ -106,7 +106,7 @@ public actor VerificationServiceMock: VerificationServiceProtocol {
         self.pendingPolls = pendingPolls
         self.requestLifetime = requestLifetime
         self.latency = latency
-        let slow = ProcessInfo.processInfo.arguments.contains("-mockSlowDocumentUpload")
+        let slow = FeatureFlags.launchArguments().contains("-mockSlowDocumentUpload")
         self.uploadSeconds = slow ? 4 : latency * 2
         self.checkSeconds = slow ? 3 : latency
     }

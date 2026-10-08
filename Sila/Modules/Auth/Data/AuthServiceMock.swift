@@ -122,8 +122,8 @@ public actor AuthServiceMock: AuthServiceProtocol {
         latency: Double = 0,
         biometry: BiometryKind = .faceID,
         hasBiometricCredential: Bool = false,
-        nafathAvailable: Bool = ProcessInfo.processInfo.arguments.contains("-nafathAvailable"),
-        handleUnchosen: Bool = ProcessInfo.processInfo.arguments.contains("-mockHandleUnchosen")
+        nafathAvailable: Bool = FeatureFlags.launchArguments().contains("-nafathAvailable"),
+        handleUnchosen: Bool = FeatureFlags.launchArguments().contains("-mockHandleUnchosen")
     ) {
         self.nafathAvailable = nafathAvailable
         self.handleUnchosen = handleUnchosen
