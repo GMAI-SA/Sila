@@ -84,10 +84,16 @@ final class NationalityTests: XCTestCase {
         for expected in ["SA", "US", "ES", "EG", "JP", "IR", "IL", "GB", "DE"] {
             XCTAssertTrue(codes.contains(expected), expected)
         }
-        for notACountry in ["EU", "ZZ", "UK", "XA"] {
+        // CLDR extras `Locale.Region.isoRegions` lists and the server refuses.
+        for notACountry in ["EU", "ZZ", "UK", "XA", "AC", "CP", "DG", "EA", "IC", "QO", "TA", "XK"] {
             XCTAssertFalse(codes.contains(notACountry), notACountry)
         }
-        XCTAssertGreaterThan(codes.count, 200)
+        // All of ISO 3166-1, territories included, each named in both languages.
+        XCTAssertEqual(codes.count, 249)
+        for territory in ["PR", "HK", "MO", "PS", "GI", "BQ", "SX", "CW", "SS"] {
+            XCTAssertTrue(codes.contains(territory), territory)
+        }
+        XCTAssertEqual(NationalityPickerSheet.allCountries(locale: Locale(identifier: "ar")).count, 249)
         let names = NationalityPickerSheet.allCountries(locale: Locale(identifier: "en_US")).map(\.name)
         XCTAssertEqual(names, names.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending })
     }

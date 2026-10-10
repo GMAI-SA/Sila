@@ -49,9 +49,9 @@ public struct NationalityPickerSheet: View {
 
     /// Every real country, named for the current locale, sorted by name.
     public static func allCountries(locale: Locale = .current) -> [Country] {
-        Locale.Region.isoRegions
-            .compactMap { region -> Country? in
-                guard let code = CountryCode.normalised(region.identifier),
+        CountryCode.isoAlpha2Codes
+            .compactMap { raw -> Country? in
+                guard let code = CountryCode.normalised(raw),
                       let name = CountryCode.name(code, locale: locale) else { return nil }
                 return Country(code: code, name: name)
             }
