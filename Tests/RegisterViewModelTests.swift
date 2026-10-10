@@ -106,7 +106,7 @@ final class RegisterViewModelTests: XCTestCase {
 
         await viewModel.submit()
 
-        XCTAssertEqual(viewModel.emailError, "That email already has a Sila account.")
+        XCTAssertEqual(viewModel.emailError, "That email already has a Known account.")
         XCTAssertNil(viewModel.registeredEmail)
         XCTAssertEqual(viewModel.toast?.kind, .error)
     }

@@ -239,7 +239,7 @@ public struct SLTabBar<Tab: Hashable & Sendable>: View {
                         .init(id: "home", icon: "house", selectedIcon: "house.fill",
                               label: "Home", hint: "Shows your feeds", kind: .tab("home")),
                         .init(id: "explore", icon: "magnifyingglass",
-                              label: "Explore", hint: "Search Sila", kind: .tab("explore")),
+                              label: "Explore", hint: "Search Known", kind: .tab("explore")),
                         .init(id: "compose", icon: "plus",
                               label: "Post", hint: "Writes a new post", kind: .action),
                         .init(id: "notifications", icon: "bell", selectedIcon: "bell.fill",

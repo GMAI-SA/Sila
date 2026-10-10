@@ -1023,7 +1023,7 @@ final class VouchCopyReviewTests: XCTestCase {
     func testTheWelcomeNoLongerSaysEveryAccountIsVerified() {
         L10n.use("en")
         XCTAssertEqual(L10n.t("auth.wall.verified.message"),
-                       "Welcome to Sila. Every account you'll see here belongs to a real person — verified, or vouched for by one.")
+                       "Welcome to Known. Every account you'll see here belongs to a real person — verified, or vouched for by one.")
         L10n.use("ar")
         XCTAssertTrue(L10n.t("auth.wall.verified.message").contains("مُزكّى"))
     }

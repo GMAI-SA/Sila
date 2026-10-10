@@ -71,7 +71,7 @@ final class NationalityTests: XCTestCase {
     func testMachineReasonsReadAsSentencesAndReviewerWordsPassThrough() {
         XCTAssertEqual(VerificationRejection.display("nationality_mismatch"), "The nationality on the identity you presented does not match the nationality you selected.")
         XCTAssertEqual(VerificationRejection.display("document_expired"), "The identity document you presented has expired.")
-        XCTAssertEqual(VerificationRejection.display("under_minimum_age"), "The identity you presented is under the minimum age for Sila.")
+        XCTAssertEqual(VerificationRejection.display("under_minimum_age"), "The identity you presented is under the minimum age for Known.")
         XCTAssertEqual(VerificationRejection.display("The photo is blurry"), "The photo is blurry")
         XCTAssertNil(VerificationRejection.display(nil))
         XCTAssertNil(VerificationRejection.display("  "))

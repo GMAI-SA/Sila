@@ -278,11 +278,11 @@ final class GuestListeningTests: XCTestCase {
 
     func testTheInvitationToTakePartIsWorded() {
         L10n.withLanguage("en") {
-            XCTAssertEqual(JoinPrompt.takePart.title, "Join Sila to take part")
+            XCTAssertEqual(JoinPrompt.takePart.title, "Join Known to take part")
             XCTAssertTrue(JoinPrompt.takePart.detail.contains("Guests can listen"))
         }
         L10n.withLanguage("ar") {
-            XCTAssertEqual(JoinPrompt.takePart.title, "انضم إلى صلة لتشارك")
+            XCTAssertEqual(JoinPrompt.takePart.title, "انضم إلى «معروف» لتشارك")
         }
     }
 

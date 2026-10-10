@@ -370,13 +370,13 @@ final class VerificationFilesConsentTests: XCTestCase {
             XCTAssertNotEqual(english, key, "missing English: \(key)")
             XCTAssertNotEqual(arabic, key, "missing Arabic: \(key)")
             XCTAssertNotEqual(english, arabic, "not translated: \(key)")
-            XCTAssertFalse(arabic.contains("سلة"), "the brand is صلة: \(key)")
+            XCTAssertFalse(arabic.contains("سلة"), "the brand is معروف: \(key)")
         }
         let card = (["document.consent.title"] + RetentionConsentCard.lineKeys + ["document.consent.checkbox"])
             .map { key in L10n.withLanguage("ar") { L10n.t(key) } }
             .joined()
         XCTAssertNil(card.range(of: "[A-Za-z]", options: .regularExpression), "one language on the card: \(card)")
-        XCTAssertTrue(L10n.withLanguage("ar") { L10n.t("document.consent.line2") }.contains("صلة"))
+        XCTAssertTrue(L10n.withLanguage("ar") { L10n.t("document.consent.line2") }.contains("معروف"))
     }
 
     func testTheOldWordingStaysAndTheNewOneSaysKept() {

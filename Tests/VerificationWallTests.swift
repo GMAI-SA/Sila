@@ -44,7 +44,7 @@ final class VerificationWallTests: XCTestCase {
     func testVerifiedOffersEntryToTheApp() {
         let presentation = WallPresentation.make(for: .verified)
         XCTAssertEqual(presentation.badgeText, "Verified")
-        XCTAssertEqual(presentation.primaryActionTitle, "Enter Sila")
+        XCTAssertEqual(presentation.primaryActionTitle, "Enter Known")
         XCTAssertFalse(presentation.showsProcessingAnimation)
     }
 

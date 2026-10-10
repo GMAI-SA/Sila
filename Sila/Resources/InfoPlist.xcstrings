@@ -1,96 +1,1223 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "NSCalendarsUsageDescription" : {
-      "comment" : "System calendar prompt, shown when somebody adds a room to their calendar.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تضيف صلة الغرفة التي تختارها إلى تقويمك لتعرف متى تبدأ. صلة لا تقرأ تقويمك أبدًا."
+  "sourceLanguage": "en",
+  "strings": {
+    "CFBundleDisplayName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معروف"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known"
           }
         }
       }
     },
-    "NSCalendarsWriteOnlyAccessUsageDescription" : {
-      "comment" : "System calendar prompt, shown when somebody adds a room to their calendar.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تضيف صلة الغرفة التي تختارها إلى تقويمك لتعرف متى تبدأ. صلة لا تقرأ تقويمك أبدًا."
+    "NSCalendarsUsageDescription": {
+      "comment": "System calendar prompt, shown when somebody adds a room to their calendar.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يضيف معروف الغرفة التي تختارها إلى تقويمك لتعرف متى تبدأ. ومعروف لا يقرأ تقويمك أبدًا."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar."
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার বেছে নেওয়া রুম কখন শুরু হবে তা জানাতে Known সেটি আপনার ক্যালেন্ডারে যোগ করে। Known কখনও আপনার ক্যালেন্ডার পড়ে না।"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known afegeix al calendari la sala que triïs, perquè sàpigues quan comença. Known mai no llegeix el teu calendari."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known přidá místnost, kterou vybereš, do tvého kalendáře, abys věděl, kdy začíná. Known tvůj kalendář nikdy nečte."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known føjer et rum, du vælger, til din kalender, så du ved, hvornår det starter. Known læser aldrig din kalender."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known fügt einen von dir gewählten Raum zu deinem Kalender hinzu, damit du weißt, wann er beginnt. Known liest deinen Kalender nie."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Known προσθέτει στο ημερολόγιό σου μια αίθουσα που επιλέγεις, ώστε να ξέρεις πότε ξεκινά. Το Known δεν διαβάζει ποτέ το ημερολόγιό σου."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known adds a room you choose to your calendar, so you know when it starts. Known never reads your calendar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known añade a tu calendario la sala que elijas, para que sepas cuándo empieza. Known nunca lee tu calendario."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known lisää valitsemasi huoneen kalenteriisi, jotta tiedät milloin se alkaa. Known ei koskaan lue kalenteriasi."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known ajoute à votre calendrier un salon que vous choisissez, pour que vous sachiez quand il commence. Known ne lit jamais votre calendrier."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known מוסיפה ליומן שלך חדר שבחרת, כדי שתדע מתי הוא מתחיל. Known אף פעם לא קוראת את היומן שלך."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known आपके चुने हुए रूम को आपके कैलेंडर में जोड़ता है, ताकि आपको पता रहे कि वह कब शुरू होगा। Known आपका कैलेंडर कभी नहीं पढ़ता।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known dodaje sobu koju odabereš u tvoj kalendar kako bi znao/la kada počinje. Known nikada ne čita tvoj kalendar."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known a naptáradba teszi az általad választott szobát, hogy tudd, mikor kezdődik. A Known soha nem olvassa a naptáradat."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known menambahkan room pilihanmu ke kalender agar kamu tahu kapan dimulai. Known tidak pernah membaca kalendermu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known aggiunge al tuo calendario una stanza che scegli tu, così sai quando inizia. Known non legge mai il tuo calendario."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Knownは、選択したルームをカレンダーに追加して、開始時刻をお知らせします。Knownがカレンダーを読み取ることはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known은 선택한 룸을 캘린더에 추가해 시작 시간을 알려드려요. Known은 캘린더를 읽지 않아요."
+          }
+        },
+        "ml": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "നിങ്ങൾ തിരഞ്ഞെടുക്കുന്ന റൂം എപ്പോൾ തുടങ്ങുമെന്ന് അറിയാൻ Known അത് നിങ്ങളുടെ കലണ്ടറിൽ ചേർക്കുന്നു. Known ഒരിക്കലും നിങ്ങളുടെ കലണ്ടർ വായിക്കില്ല."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known menambah bilik pilihan anda ke kalendar supaya anda tahu bila ia bermula. Known tidak pernah membaca kalendar anda."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known legger til et rom du velger i kalenderen din, slik at du vet når det starter. Known leser aldri kalenderen din."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known zet een room die je kiest in je agenda, zodat je weet wanneer die begint. Known leest je agenda nooit."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known dodaje wybrany przez Ciebie pokój do kalendarza, żebyś wiedział(a), kiedy się zaczyna. Known nigdy nie czyta Twojego kalendarza."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Known adiciona ao seu calendário a sala que você escolher, para você saber quando ela começa. O Known nunca lê o seu calendário."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known adiciona ao seu calendário uma sala que escolher, para saber quando começa. A Known nunca lê o seu calendário."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known adaugă în calendar o cameră aleasă de tine, ca să știi când începe. Known nu îți citește niciodată calendarul."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known добавляет выбранную вами комнату в календарь, чтобы вы знали, когда она начнётся. Known никогда не читает ваш календарь."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known pridá miestnosť, ktorú si vyberieš, do tvojho kalendára, aby si vedel, kedy začína. Known nikdy nečíta tvoj kalendár."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known lägger till ett rum som du väljer i din kalender så att du vet när det startar. Known läser aldrig din kalender."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நீங்கள் தேர்வு செய்யும் அறையை Known உங்கள் நாட்காட்டியில் சேர்க்கும், அதனால் அது எப்போது தொடங்கும் என்பது உங்களுக்குத் தெரியும். Known உங்கள் நாட்காட்டியை ஒருபோதும் படிக்காது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మీరు ఎంచుకున్న రూమ్‌ను Known మీ క్యాలెండర్‌లో చేరుస్తుంది, తద్వారా అది ఎప్పుడు మొదలవుతుందో మీకు తెలుస్తుంది. Known మీ క్యాలెండర్‌ను ఎప్పుడూ చదవదు."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known จะเพิ่มห้องที่คุณเลือกลงในปฏิทินของคุณ เพื่อให้คุณรู้ว่าห้องเริ่มเมื่อไหร่ Known ไม่อ่านปฏิทินของคุณ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known, seçtiğiniz bir odayı takviminize ekler; böylece ne zaman başlayacağını bilirsiniz. Known takviminizi asla okumaz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known додає вибрану вами кімнату до вашого календаря, щоб ви знали, коли вона почнеться. Known ніколи не читає ваш календар."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known آپ کے منتخب کردہ روم کو آپ کے کیلنڈر میں شامل کرتا ہے تاکہ آپ کو پتا رہے کہ وہ کب شروع ہوگا۔ Known آپ کا کیلنڈر کبھی نہیں پڑھتا۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known thêm phòng bạn chọn vào lịch để bạn biết khi nào phòng bắt đầu. Known không bao giờ đọc lịch của bạn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known 会把你选择的房间添加到日历，方便你知道开始时间。Known 绝不会读取你的日历。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known 會把你選擇的聊天室加入行事曆，讓你知道開始時間。Known 絕不會讀取你的行事曆。"
           }
         }
       }
     },
-    "NSCameraUsageDescription" : {
-      "comment" : "System camera prompt, shown when the document verification flow opens the camera.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تستخدم صلة الكاميرا فقط لتصوير وثيقة هويتك والتقاط صورة سيلفي قصيرة أثناء التحقق. لا يُسجَّل أي شيء خارج هذه الخطوة."
+    "NSCalendarsWriteOnlyAccessUsageDescription": {
+      "comment": "System calendar prompt, shown when somebody adds a room to their calendar.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يضيف معروف الغرفة التي تختارها إلى تقويمك لتعرف متى تبدأ. ومعروف لا يقرأ تقويمك أبدًا."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sila uses the camera only to photograph your identity document and take a short selfie during verification. Nothing is recorded outside that step."
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার বেছে নেওয়া রুম কখন শুরু হবে তা জানাতে Known সেটি আপনার ক্যালেন্ডারে যোগ করে। Known কখনও আপনার ক্যালেন্ডার পড়ে না।"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known afegeix al calendari la sala que triïs, perquè sàpigues quan comença. Known mai no llegeix el teu calendari."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known přidá místnost, kterou vybereš, do tvého kalendáře, abys věděl, kdy začíná. Known tvůj kalendář nikdy nečte."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known føjer et rum, du vælger, til din kalender, så du ved, hvornår det starter. Known læser aldrig din kalender."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known fügt einen von dir gewählten Raum zu deinem Kalender hinzu, damit du weißt, wann er beginnt. Known liest deinen Kalender nie."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Known προσθέτει στο ημερολόγιό σου μια αίθουσα που επιλέγεις, ώστε να ξέρεις πότε ξεκινά. Το Known δεν διαβάζει ποτέ το ημερολόγιό σου."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known adds a room you choose to your calendar, so you know when it starts. Known never reads your calendar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known añade a tu calendario la sala que elijas, para que sepas cuándo empieza. Known nunca lee tu calendario."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known lisää valitsemasi huoneen kalenteriisi, jotta tiedät milloin se alkaa. Known ei koskaan lue kalenteriasi."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known ajoute à votre calendrier un salon que vous choisissez, pour que vous sachiez quand il commence. Known ne lit jamais votre calendrier."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known מוסיפה ליומן שלך חדר שבחרת, כדי שתדע מתי הוא מתחיל. Known אף פעם לא קוראת את היומן שלך."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known आपके चुने हुए रूम को आपके कैलेंडर में जोड़ता है, ताकि आपको पता रहे कि वह कब शुरू होगा। Known आपका कैलेंडर कभी नहीं पढ़ता।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known dodaje sobu koju odabereš u tvoj kalendar kako bi znao/la kada počinje. Known nikada ne čita tvoj kalendar."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known a naptáradba teszi az általad választott szobát, hogy tudd, mikor kezdődik. A Known soha nem olvassa a naptáradat."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known menambahkan room pilihanmu ke kalender agar kamu tahu kapan dimulai. Known tidak pernah membaca kalendermu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known aggiunge al tuo calendario una stanza che scegli tu, così sai quando inizia. Known non legge mai il tuo calendario."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Knownは、選択したルームをカレンダーに追加して、開始時刻をお知らせします。Knownがカレンダーを読み取ることはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known은 선택한 룸을 캘린더에 추가해 시작 시간을 알려드려요. Known은 캘린더를 읽지 않아요."
+          }
+        },
+        "ml": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "നിങ്ങൾ തിരഞ്ഞെടുക്കുന്ന റൂം എപ്പോൾ തുടങ്ങുമെന്ന് അറിയാൻ Known അത് നിങ്ങളുടെ കലണ്ടറിൽ ചേർക്കുന്നു. Known ഒരിക്കലും നിങ്ങളുടെ കലണ്ടർ വായിക്കില്ല."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known menambah bilik pilihan anda ke kalendar supaya anda tahu bila ia bermula. Known tidak pernah membaca kalendar anda."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known legger til et rom du velger i kalenderen din, slik at du vet når det starter. Known leser aldri kalenderen din."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known zet een room die je kiest in je agenda, zodat je weet wanneer die begint. Known leest je agenda nooit."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known dodaje wybrany przez Ciebie pokój do kalendarza, żebyś wiedział(a), kiedy się zaczyna. Known nigdy nie czyta Twojego kalendarza."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Known adiciona ao seu calendário a sala que você escolher, para você saber quando ela começa. O Known nunca lê o seu calendário."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known adiciona ao seu calendário uma sala que escolher, para saber quando começa. A Known nunca lê o seu calendário."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known adaugă în calendar o cameră aleasă de tine, ca să știi când începe. Known nu îți citește niciodată calendarul."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known добавляет выбранную вами комнату в календарь, чтобы вы знали, когда она начнётся. Known никогда не читает ваш календарь."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known pridá miestnosť, ktorú si vyberieš, do tvojho kalendára, aby si vedel, kedy začína. Known nikdy nečíta tvoj kalendár."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known lägger till ett rum som du väljer i din kalender så att du vet när det startar. Known läser aldrig din kalender."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நீங்கள் தேர்வு செய்யும் அறையை Known உங்கள் நாட்காட்டியில் சேர்க்கும், அதனால் அது எப்போது தொடங்கும் என்பது உங்களுக்குத் தெரியும். Known உங்கள் நாட்காட்டியை ஒருபோதும் படிக்காது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మీరు ఎంచుకున్న రూమ్‌ను Known మీ క్యాలెండర్‌లో చేరుస్తుంది, తద్వారా అది ఎప్పుడు మొదలవుతుందో మీకు తెలుస్తుంది. Known మీ క్యాలెండర్‌ను ఎప్పుడూ చదవదు."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known จะเพิ่มห้องที่คุณเลือกลงในปฏิทินของคุณ เพื่อให้คุณรู้ว่าห้องเริ่มเมื่อไหร่ Known ไม่อ่านปฏิทินของคุณ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known, seçtiğiniz bir odayı takviminize ekler; böylece ne zaman başlayacağını bilirsiniz. Known takviminizi asla okumaz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known додає вибрану вами кімнату до вашого календаря, щоб ви знали, коли вона почнеться. Known ніколи не читає ваш календар."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known آپ کے منتخب کردہ روم کو آپ کے کیلنڈر میں شامل کرتا ہے تاکہ آپ کو پتا رہے کہ وہ کب شروع ہوگا۔ Known آپ کا کیلنڈر کبھی نہیں پڑھتا۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known thêm phòng bạn chọn vào lịch để bạn biết khi nào phòng bắt đầu. Known không bao giờ đọc lịch của bạn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known 会把你选择的房间添加到日历，方便你知道开始时间。Known 绝不会读取你的日历。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known 會把你選擇的聊天室加入行事曆，讓你知道開始時間。Known 絕不會讀取你的行事曆。"
           }
         }
       }
     },
-    "NSFaceIDUsageDescription" : {
-      "comment" : "System Face ID prompt, shown the first time biometric sign-in is offered.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تسجيل الدخول بـ Face ID"
+    "NSCameraUsageDescription": {
+      "comment": "System camera prompt, shown when the document verification flow opens the camera.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستخدم معروف الكاميرا فقط لتصوير وثيقة هويتك والتقاط صورة سيلفي قصيرة أثناء التحقق. لا يُسجَّل أي شيء خارج هذه الخطوة."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in with Face ID"
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ভেরিফিকেশনের সময় Known ক্যামেরা শুধু আপনার পরিচয়পত্রের ছবি তুলতে ও একটি ছোট সেলফি তুলতে ব্যবহার করে। এর বাইরে কিছুই রেকর্ড করা হয় না।"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known fa servir la càmera només per fotografiar el teu document d'identitat i fer un selfie curt durant la verificació. No s'enregistra res fora d'aquest pas."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known používá fotoaparát jen k vyfotografování tvého dokladu totožnosti a pořízení krátkého selfie při ověření. Mimo tento krok se nic nenahrává."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known bruger kun kameraet til at fotografere dit id-dokument og tage en kort selfie under verificeringen. Intet optages uden for det trin."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known nutzt die Kamera nur, um dein Ausweisdokument zu fotografieren und bei der Verifizierung ein kurzes Selfie aufzunehmen. Außerhalb dieses Schritts wird nichts aufgenommen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Known χρησιμοποιεί την κάμερα μόνο για να φωτογραφίσει το έγγραφο ταυτότητάς σου και να τραβήξει μια σύντομη selfie κατά την επαλήθευση. Τίποτα δεν καταγράφεται εκτός αυτού του βήματος."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known uses the camera only to photograph your identity document and take a short selfie during verification. Nothing is recorded outside that step."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known usa la cámara solo para fotografiar tu documento de identidad y hacerte un selfie breve durante la verificación. Fuera de ese paso no se graba nada."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known käyttää kameraa vain henkilöllisyysasiakirjasi valokuvaamiseen ja lyhyen selfien ottamiseen vahvistuksen aikana. Mitään ei tallenneta tämän vaiheen ulkopuolella."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known utilise l’appareil photo uniquement pour photographier votre document d’identité et prendre un court selfie pendant la vérification. Rien n’est enregistré en dehors de cette étape."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known משתמשת במצלמה רק כדי לצלם את מסמך הזהות שלך ולצלם סלפי קצר במהלך האימות. שום דבר לא מוקלט מחוץ לשלב הזה."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known कैमरे का उपयोग केवल सत्यापन के दौरान आपके पहचान दस्तावेज़ की फ़ोटो लेने और एक छोटी सेल्फ़ी लेने के लिए करता है। इस चरण के बाहर कुछ भी रिकॉर्ड नहीं होता।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known koristi kameru samo za fotografiranje tvoje osobne isprave i kratki selfie tijekom provjere. Izvan tog koraka ništa se ne snima."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known a kamerát csak az azonosító okmányod lefényképezésére és egy rövid szelfi készítésére használja a hitelesítés során. Ezen a lépésen kívül semmi nem kerül rögzítésre."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known memakai kamera hanya untuk memotret dokumen identitasmu dan mengambil selfie singkat saat verifikasi. Tidak ada yang direkam di luar langkah itu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known usa la fotocamera solo per fotografare il tuo documento d'identità e scattare un breve selfie durante la verifica. Fuori da questo passaggio non viene registrato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Knownは、本人確認の際に身分証明書の撮影と短い自撮りを行うためだけにカメラを使用します。それ以外で録画されることはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known은 인증 중 신분증을 촬영하고 짧은 셀카를 찍을 때만 카메라를 사용해요. 그 단계 외에는 아무것도 녹화되지 않아요."
+          }
+        },
+        "ml": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "പരിശോധനയ്ക്കിടെ നിങ്ങളുടെ തിരിച്ചറിയൽ രേഖയുടെ ഫോട്ടോ എടുക്കാനും ഒരു ചെറിയ സെൽഫി എടുക്കാനും മാത്രമാണ് Known ക്യാമറ ഉപയോഗിക്കുന്നത്. ആ ഘട്ടത്തിന് പുറത്ത് ഒന്നും റെക്കോർഡ് ചെയ്യില്ല."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known menggunakan kamera hanya untuk memotret dokumen identiti anda dan mengambil swafoto ringkas semasa pengesahan. Tiada apa-apa dirakam di luar langkah itu."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known bruker kameraet bare til å ta bilde av legitimasjonen din og et kort selfie under verifiseringen. Ingenting tas opp utenfor dette trinnet."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known gebruikt de camera alleen om je identiteitsbewijs te fotograferen en tijdens de verificatie een korte selfie te maken. Buiten die stap wordt niets opgenomen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known używa aparatu wyłącznie do sfotografowania dokumentu tożsamości i zrobienia krótkiego selfie podczas weryfikacji. Poza tym krokiem nic nie jest nagrywane."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Known usa a câmera apenas para fotografar seu documento de identidade e tirar uma selfie rápida durante a verificação. Nada é gravado fora dessa etapa."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known usa a câmara apenas para fotografar o seu documento de identificação e tirar uma selfie rápida durante a verificação. Nada é gravado fora deste passo."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known folosește camera doar pentru a fotografia actul de identitate și a face un scurt selfie la verificare. În afara acestui pas nu se înregistrează nimic."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known использует камеру только для съёмки вашего документа и короткого селфи при проверке личности. Вне этого шага ничего не записывается."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known používa fotoaparát iba na odfotenie tvojho dokladu totožnosti a krátkeho selfie počas overenia. Mimo tohto kroku sa nič nenahráva."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known använder kameran bara för att fotografera ditt id-dokument och ta en kort selfie under verifieringen. Inget spelas in utanför det steget."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சரிபார்ப்பின்போது உங்கள் அடையாள ஆவணத்தைப் படம் எடுக்கவும் சிறிய செல்ஃபி எடுக்கவும் மட்டுமே Known கேமராவைப் பயன்படுத்தும். அந்தப் படிக்கு வெளியே எதுவும் பதிவு செய்யப்படாது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ధృవీకరణ సమయంలో మీ గుర్తింపు పత్రాన్ని ఫోటో తీయడానికి, చిన్న సెల్ఫీ తీసుకోవడానికి మాత్రమే Known కెమెరాను ఉపయోగిస్తుంది. ఆ దశ వెలుపల ఏదీ రికార్డ్ చేయబడదు."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known ใช้กล้องเพื่อถ่ายภาพเอกสารยืนยันตัวตนและเซลฟีสั้นๆ ระหว่างการยืนยันตัวตนเท่านั้น จะไม่มีการบันทึกใดๆ นอกขั้นตอนนี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known kamerayı yalnızca doğrulama sırasında kimlik belgenizi fotoğraflamak ve kısa bir selfie çekmek için kullanır. Bu adım dışında hiçbir şey kaydedilmez."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known використовує камеру лише для того, щоб сфотографувати ваш документ і зробити коротке селфі під час верифікації. Поза цим кроком нічого не записується."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known کیمرا صرف تصدیق کے دوران آپ کے شناختی دستاویز کی تصویر لینے اور مختصر سیلفی کے لیے استعمال کرتا ہے۔ اس مرحلے کے باہر کچھ ریکارڈ نہیں کیا جاتا۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known chỉ dùng camera để chụp giấy tờ tùy thân và quay một ảnh selfie ngắn trong lúc xác minh. Không có gì được ghi lại ngoài bước này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known 仅在验证身份时使用相机，用于拍摄你的身份证件和一张简短的自拍。除此步骤外不会录制任何内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known 僅在驗證時使用相機拍攝你的身分證件並錄製簡短的自拍。除此步驟外不會錄下任何內容。"
           }
         }
       }
     },
-    "NSMicrophoneUsageDescription" : {
-      "comment" : "System microphone prompt, shown the first time somebody speaks in a room or records a voice post.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يستخدم صلة الميكروفون عندما تتحدث في غرفة أو تسجّل منشورًا صوتيًا. الغرف لا تُسجَّل أبدًا؛ المنشور الصوتي يُسجَّل فقط عندما تضغط زر التسجيل، وأنت وحدك من يقرر نشره."
+    "NSFaceIDUsageDescription": {
+      "comment": "System Face ID prompt, shown the first time biometric sign-in is offered.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تسجيل الدخول بـ Face ID"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sila uses the microphone when you speak in a room or record a voice post. Rooms are never recorded; a voice post is recorded only when you press record, and only you decide to post it."
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID দিয়ে সাইন ইন করুন"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia la sessió amb Face ID"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přihlášení pomocí Face ID"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log ind med Face ID"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit Face ID anmelden"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σύνδεση με Face ID"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Face ID"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión con Face ID"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kirjaudu sisään Face ID:llä"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter avec Face ID"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "התחברות עם Face ID"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID से साइन इन करें"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prijava pomoću Face ID-a"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bejelentkezés Face ID-val"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masuk dengan Face ID"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi con Face ID"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face IDでサインイン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID로 로그인"
+          }
+        },
+        "ml": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log masuk dengan Face ID"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logg inn med Face ID"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inloggen met Face ID"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się za pomocą Face ID"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar com Face ID"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sessão com Face ID"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autentifică-te cu Face ID"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вход с помощью Face ID"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prihlás sa pomocou Face ID"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logga in med Face ID"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID மூலம் உள்நுழையுங்கள்"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face IDతో సైన్ ఇన్ చేయండి"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลงชื่อเข้าใช้ด้วย Face ID"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID ile giriş yapın"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вхід за допомогою Face ID"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID سے سائن اِن کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập bằng Face ID"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Face ID 登录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Face ID 登入"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "comment": "System microphone prompt, shown the first time somebody speaks in a room or records a voice post.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستخدم معروف الميكروفون عندما تتحدث في غرفة أو تسجّل منشورًا صوتيًا. الغرف لا تُسجَّل أبدًا؛ المنشور الصوتي يُسجَّل فقط عندما تضغط زر التسجيل، وأنت وحدك من يقرر نشره."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনি কোনো রুমে কথা বললে বা ভয়েস পোস্ট রেকর্ড করলে Known মাইক্রোফোন ব্যবহার করে। রুম কখনও রেকর্ড করা হয় না; ভয়েস পোস্ট শুধু আপনি রেকর্ড চাপলেই রেকর্ড হয়, আর পোস্ট করবেন কি না সেটা শুধু আপনিই ঠিক করেন।"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known fa servir el micròfon quan parles en una sala o graves una publicació de veu. Les sales no s'enregistren mai; una publicació de veu només s'enregistra quan prems enregistrar, i només tu decideixes si la publiques."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known používá mikrofon, když mluvíš v místnosti nebo nahráváš hlasový příspěvek. Místnosti se nikdy nenahrávají; hlasový příspěvek se nahrává jen po stisknutí tlačítka nahrávání a jen ty rozhoduješ, zda ho zveřejníš."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known bruger mikrofonen, når du taler i et rum eller optager et lydopslag. Rum bliver aldrig optaget. Et lydopslag optages kun, når du trykker på optag, og det er kun dig, der bestemmer, om det skal slås op."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known nutzt das Mikrofon, wenn du in einem Raum sprichst oder einen Sprachbeitrag aufnimmst. Räume werden nie aufgezeichnet; ein Sprachbeitrag wird nur aufgenommen, wenn du auf Aufnehmen tippst, und nur du entscheidest, ob er gepostet wird."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Known χρησιμοποιεί το μικρόφωνο όταν μιλάς σε μια αίθουσα ή ηχογραφείς μια φωνητική ανάρτηση. Οι αίθουσες δεν ηχογραφούνται ποτέ· η φωνητική ανάρτηση ηχογραφείται μόνο όταν πατήσεις την εγγραφή και μόνο εσύ αποφασίζεις αν θα τη δημοσιεύσεις."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known uses the microphone when you speak in a room or record a voice post. Rooms are never recorded; a voice post is recorded only when you press record, and only you decide to post it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known usa el micrófono cuando hablas en una sala o grabas una publicación de voz. Las salas nunca se graban; una publicación de voz solo se graba cuando pulsas grabar, y solo tú decides si la publicas."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known käyttää mikrofonia, kun puhut huoneessa tai nauhoitat ääniviestin. Huoneita ei koskaan tallenneta; ääniviesti tallennetaan vain, kun painat nauhoitusta, ja vain sinä päätät julkaista sen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known utilise le micro quand vous parlez dans un salon ou enregistrez un post vocal. Les salons ne sont jamais enregistrés ; un post vocal n’est enregistré que lorsque vous appuyez sur enregistrer, et vous seul décidez de le publier."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known משתמשת במיקרופון כשאתה מדבר בחדר או מקליט פוסט קולי. חדרים לא מוקלטים לעולם; פוסט קולי מוקלט רק כשאתה לוחץ על הקלטה, ורק אתה מחליט לפרסם אותו."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known माइक्रोफ़ोन का उपयोग तब करता है जब आप किसी रूम में बोलते हैं या वॉइस पोस्ट रिकॉर्ड करते हैं। रूम कभी रिकॉर्ड नहीं होते; वॉइस पोस्ट तभी रिकॉर्ड होती है जब आप रिकॉर्ड दबाते हैं, और उसे पोस्ट करना या न करना सिर्फ़ आपका फ़ैसला है।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known koristi mikrofon kada govoriš u sobi ili snimaš glasovnu objavu. Sobe se nikada ne snimaju; glasovna objava snima se samo kada pritisneš snimanje, a samo ti odlučuješ hoćeš li je objaviti."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known a mikrofont akkor használja, amikor egy szobában beszélsz, vagy hangbejegyzést rögzítesz. A szobákat soha nem rögzíti; a hangbejegyzés csak a felvétel gomb megnyomásakor készül, és csak te döntöd el, hogy közzéteszed-e."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known memakai mikrofon saat kamu berbicara di room atau merekam postingan suara. Room tidak pernah direkam; postingan suara hanya direkam saat kamu menekan rekam, dan hanya kamu yang memutuskan untuk memostingnya."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known usa il microfono quando parli in una stanza o registri un post vocale. Le stanze non vengono mai registrate; un post vocale viene registrato solo quando premi registra, e sei solo tu a decidere se pubblicarlo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Knownは、ルームで話すときや音声投稿を録音するときにマイクを使用します。ルームが録音されることはありません。音声投稿は録音ボタンを押したときだけ録音され、投稿するかどうかはあなたが決めます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known은 룸에서 말하거나 음성 게시물을 녹음할 때 마이크를 사용해요. 룸은 절대 녹음되지 않아요. 음성 게시물은 녹음 버튼을 누를 때만 녹음되며, 게시 여부는 직접 결정해요."
+          }
+        },
+        "ml": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ഒരു റൂമിൽ സംസാരിക്കുമ്പോഴോ വോയ്‌സ് പോസ്റ്റ് റെക്കോർഡ് ചെയ്യുമ്പോഴോ Known മൈക്രോഫോൺ ഉപയോഗിക്കുന്നു. റൂമുകൾ ഒരിക്കലും റെക്കോർഡ് ചെയ്യില്ല; നിങ്ങൾ റെക്കോർഡ് അമർത്തുമ്പോൾ മാത്രമാണ് വോയ്‌സ് പോസ്റ്റ് റെക്കോർഡ് ചെയ്യുന്നത്, അത് പോസ്റ്റ് ചെയ്യണോ എന്ന് നിങ്ങൾ മാത്രം തീരുമാനിക്കുന്നു."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known menggunakan mikrofon apabila anda bercakap dalam bilik atau merakam siaran suara. Bilik tidak pernah dirakam; siaran suara dirakam hanya apabila anda menekan rakam, dan hanya anda yang memutuskan untuk menyiarkannya."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known bruker mikrofonen når du snakker i et rom eller tar opp et lydinnlegg. Rom tas aldri opp. Et lydinnlegg tas bare opp når du trykker på opptak, og det er bare du som bestemmer om det skal publiseres."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known gebruikt de microfoon wanneer je in een room spreekt of een spraakbericht opneemt. Rooms worden nooit opgenomen; een spraakbericht wordt alleen opgenomen als je op opnemen drukt, en alleen jij beslist of je het plaatst."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known używa mikrofonu, gdy mówisz w pokoju lub nagrywasz wpis głosowy. Pokoje nigdy nie są nagrywane; wpis głosowy jest nagrywany tylko po naciśnięciu przycisku nagrywania, a jego opublikowanie zależy wyłącznie od Ciebie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Known usa o microfone quando você fala em uma sala ou grava um post de voz. As salas nunca são gravadas; um post de voz só é gravado quando você toca em gravar, e só você decide publicá-lo."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Known usa o microfone quando fala numa sala ou grava uma publicação de voz. As salas nunca são gravadas; uma publicação de voz só é gravada quando carrega em gravar, e só você decide se a publica."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known folosește microfonul când vorbești într-o cameră sau înregistrezi o postare vocală. Camerele nu sunt înregistrate niciodată; o postare vocală se înregistrează doar când apeși înregistrare, iar tu decizi dacă o postezi."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known использует микрофон, когда вы говорите в комнате или записываете голосовой пост. Комнаты никогда не записываются; голосовой пост записывается только когда вы нажимаете запись, и только вы решаете, публиковать ли его."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known používa mikrofón, keď hovoríš v miestnosti alebo nahrávaš hlasový príspevok. Miestnosti sa nikdy nenahrávajú; hlasový príspevok sa nahráva iba vtedy, keď stlačíš nahrávanie, a o jeho zverejnení rozhoduješ len ty."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known använder mikrofonen när du talar i ett rum eller spelar in ett röstinlägg. Rum spelas aldrig in. Ett röstinlägg spelas bara in när du trycker på spela in, och bara du bestämmer om det ska publiceras."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நீங்கள் அறையில் பேசும்போது அல்லது குரல் இடுகையைப் பதிவு செய்யும்போது Known மைக்ரோஃபோனைப் பயன்படுத்தும். அறைகள் ஒருபோதும் பதிவு செய்யப்படுவதில்லை; பதிவு பொத்தானை அழுத்தும்போது மட்டுமே குரல் இடுகை பதிவாகும், அதை இடுவதா என்பதை நீங்கள் மட்டுமே முடிவு செய்வீர்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మీరు రూమ్‌లో మాట్లాడినప్పుడు లేదా వాయిస్ పోస్ట్ రికార్డ్ చేసినప్పుడు Known మైక్రోఫోన్‌ను ఉపయోగిస్తుంది. రూమ్‌లు ఎప్పుడూ రికార్డ్ చేయబడవు; మీరు రికార్డ్ నొక్కినప్పుడు మాత్రమే వాయిస్ పోస్ట్ రికార్డ్ అవుతుంది, దాన్ని పోస్ట్ చేయాలా వద్దా అనేది మీరే నిర్ణయిస్తారు."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known ใช้ไมโครโฟนเมื่อคุณพูดในห้องหรืออัดโพสต์เสียง ห้องจะไม่ถูกบันทึกเสียง โพสต์เสียงจะอัดเมื่อคุณกดอัดเท่านั้น และคุณเป็นผู้ตัดสินใจเองว่าจะโพสต์หรือไม่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known mikrofonu, bir odada konuştuğunuzda veya sesli gönderi kaydettiğinizde kullanır. Odalar asla kaydedilmez; sesli gönderi yalnızca kayıt düğmesine bastığınızda kaydedilir ve paylaşıp paylaşmayacağınıza yalnızca siz karar verirsiniz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known використовує мікрофон, коли ви говорите в кімнаті або записуєте голосовий допис. Кімнати ніколи не записуються; голосовий допис записується лише коли ви натискаєте запис, і лише ви вирішуєте, чи публікувати його."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known مائیکروفون اس وقت استعمال کرتا ہے جب آپ کسی روم میں بولتے ہیں یا وائس پوسٹ ریکارڈ کرتے ہیں۔ روم کبھی ریکارڈ نہیں ہوتے؛ وائس پوسٹ صرف اس وقت ریکارڈ ہوتی ہے جب آپ ریکارڈ دباتے ہیں، اور اسے پوسٹ کرنے کا فیصلہ صرف آپ کا ہوتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known dùng micro khi bạn nói trong phòng hoặc ghi âm một bài đăng giọng nói. Phòng không bao giờ bị ghi âm; bài đăng giọng nói chỉ được ghi khi bạn nhấn ghi, và chỉ bạn quyết định có đăng hay không."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当你在房间中发言或录制语音帖子时，Known 会使用麦克风。房间不会被录音；语音帖子只在你按下录制时才会录音，是否发布也由你决定。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當你在聊天室發言或錄製語音貼文時，Known 會使用麥克風。聊天室絕不會被錄音；語音貼文僅在你按下錄音時才會錄製，且是否發布由你決定。"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

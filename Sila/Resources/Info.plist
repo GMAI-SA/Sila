@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Sila</string>
+	<string>Known</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,16 +24,16 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Known adds a room you choose to your calendar, so you know when it starts. Known never reads your calendar.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Known adds a room you choose to your calendar, so you know when it starts. Known never reads your calendar.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Sila uses the camera only to photograph your identity document and take a short selfie during verification. Nothing is recorded outside that step.</string>
+	<string>Known uses the camera only to photograph your identity document and take a short selfie during verification. Nothing is recorded outside that step.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Sign in with Face ID</string>
-	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar.</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>Sila adds a room you choose to your calendar, so you know when it starts. Sila never reads your calendar.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Sila uses the microphone when you speak in a room or record a voice post. Rooms are never recorded; a voice post is recorded only when you press record, and only you decide to post it.</string>
+	<string>Known uses the microphone when you speak in a room or record a voice post. Rooms are never recorded; a voice post is recorded only when you press record, and only you decide to post it.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

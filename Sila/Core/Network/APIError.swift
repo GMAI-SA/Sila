@@ -1047,7 +1047,7 @@ extension APIError {
 
     /// The error a guest's client raises for an action it will not even try.
     public static let signInRequired = APIError.api(
-        code: .signInRequired, message: "Join Sila to do that", status: 401
+        code: .signInRequired, message: "Join Known to do that", status: 401
     )
 
     /// Whether this is the app asking somebody to join rather than a failure.

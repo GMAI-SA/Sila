@@ -97,7 +97,7 @@ public enum SLRadius {
 
 #Preview("Typography") {
     VStack(alignment: .leading, spacing: SLSpacing.md) {
-        Text("Sila").font(SLFont.displayXL)
+        Text("Known").font(SLFont.displayXL)
         Text("Display L").font(SLFont.displayL)
         Text("Display M").font(SLFont.displayM)
         Text("Body emphasis").font(SLFont.bodyEmphasis)
