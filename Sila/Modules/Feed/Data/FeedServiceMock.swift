@@ -417,7 +417,7 @@ extension FeedServiceMock {
         Post(
             id: id(8),
             author: aziz,
-            text: "Voice Rooms next. Country rooms first — the majlis, digitised. #Sila",
+            text: "Voice Rooms next. Country rooms first — the majlis, digitised. #Known",
             createdAt: minutesAgo(60 * 26),
             language: "en",
             scope: .country,

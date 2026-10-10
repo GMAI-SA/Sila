@@ -244,7 +244,7 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
 
     /// Bios, at or under the server's 160-character limit.
     static let bios: [String: String] = [
-        "aziz": "Building Sila. Verified humans only — no bots, no farms, no anonymous "
+        "aziz": "Building Known. Verified humans only — no bots, no farms, no anonymous "
             + "crowds. Riyadh.",
         "yuki": "Tokyo. Writing about identity, trust and the internet we could have had.",
         "maria": "São Paulo · researcher · interested in what verification does to a "

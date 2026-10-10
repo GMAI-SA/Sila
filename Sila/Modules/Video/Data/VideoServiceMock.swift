@@ -346,8 +346,8 @@ public actor VideoServiceMock: VideoServiceProtocol {
         func vtt(_ first: String, _ second: String) -> String {
             "WEBVTT\n\n00:00:00.000 --> \(stamp(half))\n\(first)\n\n\(stamp(half)) --> \(stamp(end))\n\(second)\n"
         }
-        try? vtt("مرحبًا من صلة", "هذا فيديو تجريبي").write(to: file(id, "captions-ar.vtt"), atomically: true, encoding: .utf8)
-        try? vtt("Hello from Sila", "This is a test video").write(to: file(id, "captions-en.vtt"), atomically: true, encoding: .utf8)
+        try? vtt("مرحبًا من معروف", "هذا فيديو تجريبي").write(to: file(id, "captions-ar.vtt"), atomically: true, encoding: .utf8)
+        try? vtt("Hello from Known", "This is a test video").write(to: file(id, "captions-en.vtt"), atomically: true, encoding: .utf8)
     }
 
     private func stamp(_ seconds: Double) -> String {

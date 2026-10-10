@@ -101,7 +101,7 @@ public actor SearchServiceMock: SearchServiceProtocol {
     static let tags: [TrendingTag] = [
         TrendingTag(tag: "proofofpersonhood", postCount: 34),
         TrendingTag(tag: "riyadh", postCount: 21),
-        TrendingTag(tag: "sila", postCount: 12)
+        TrendingTag(tag: "known", postCount: 12)
     ]
 
     private func delay() async throws {
