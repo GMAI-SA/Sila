@@ -713,13 +713,20 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         Date().addingTimeInterval(minutes * 60)
     }
 
+    /// A room's topic id — none in the Arabic screenshot run, because a room
+    /// card names its topic from the id in English (``VoiceRoom/topicLabel``),
+    /// and an English chip has no place in an Arabic picture.
+    private static func topic(_ id: String) -> String? {
+        MockCopy.isArabic ? nil : id
+    }
+
     /// The one country room the demo viewer cannot speak in, plus the refusal
     /// the server would send — which the UI renders verbatim.
     static let cast: [VoiceRoom] = [
         VoiceRoom(
             id: id(701),
-            title: "What verification actually changes",
-            topic: "technology",
+            title: MockCopy.pick("What verification actually changes", "ما الذي يغيّره التحقق فعلًا"),
+            topic: topic("technology"),
             scope: .international,
             status: .live,
             host: FeedServiceMock.yuki,
@@ -731,8 +738,8 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         ),
         VoiceRoom(
             id: id(702),
-            title: "قهوة الصباح — Riyadh morning",
-            topic: "culture",
+            title: MockCopy.pick("قهوة الصباح — Riyadh morning", "قهوة الصباح في الرياض"),
+            topic: topic("culture"),
             scope: .country,
             scopeCountry: "SA",
             status: .live,
@@ -742,12 +749,15 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             startedAt: minutesAgo(64),
             createdAt: minutesAgo(70),
             canSpeak: false,
-            speakRefusal: "Only 🇸🇦 Saudi Arabia-verified accounts can speak in this room. You can still listen."
+            speakRefusal: MockCopy.pick(
+                "Only 🇸🇦 Saudi Arabia-verified accounts can speak in this room. You can still listen.",
+                "التحدث في هذه الغرفة للحسابات الموثّقة في 🇸🇦 السعودية فقط. ما زال بإمكانك الاستماع."
+            )
         ),
         VoiceRoom(
             id: id(703),
-            title: "Founders in the Gulf: raising in 2026",
-            topic: "business",
+            title: MockCopy.pick("Founders in the Gulf: raising in 2026", "مؤسسو الخليج: جمع التمويل في 2026"),
+            topic: topic("business"),
             scope: .region,
             scopeRegion: "GCC",
             status: .live,
@@ -757,12 +767,15 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
             startedAt: minutesAgo(4),
             createdAt: minutesAgo(6),
             canSpeak: false,
-            speakRefusal: "Only accounts verified in the GCC region can speak in this room. You can still listen."
+            speakRefusal: MockCopy.pick(
+                "Only accounts verified in the GCC region can speak in this room. You can still listen.",
+                "التحدث في هذه الغرفة للحسابات الموثّقة في دول الخليج فقط. ما زال بإمكانك الاستماع."
+            )
         ),
         VoiceRoom(
             id: id(704),
-            title: "Weekly science reading group",
-            topic: "science",
+            title: MockCopy.pick("Weekly science reading group", "حلقة القراءة العلمية الأسبوعية"),
+            topic: topic("science"),
             scope: .international,
             status: .scheduled,
             host: FeedServiceMock.maria,
@@ -774,8 +787,8 @@ public actor RoomsServiceMock: RoomsServiceProtocol {
         ),
         VoiceRoom(
             id: id(705),
-            title: "Match review, live after the whistle",
-            topic: "sports",
+            title: MockCopy.pick("Match review, live after the whistle", "تحليل المباراة مباشرة بعد صافرة النهاية"),
+            topic: topic("sports"),
             scope: .international,
             status: .scheduled,
             host: FeedServiceMock.yuki,

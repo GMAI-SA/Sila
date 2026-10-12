@@ -82,6 +82,9 @@ final class AppStoreScreenshotTests: XCTestCase {
             "-mockVoiceEngine",
             "-noBiometrics",
             "-noOnboarding",
+            // Sample posts, rooms, bios and topics in the UI's language, and
+            // no idle character ring in the composer (debug builds only).
+            "-mockScreenshot",
         ] + extra
         app.launch()
         return app
@@ -167,7 +170,7 @@ final class AppStoreScreenshotTests: XCTestCase {
         let app = launch()
         signIn(app)
         tap(app, id: "segment.following", timeout: 10)
-        let bodies = app.textViews.matching(NSPredicate(format: "label CONTAINS %@", "biggest change"))
+        let bodies = app.textViews.matching(NSPredicate(format: "label CONTAINS %@", lang == "ar" ? "أكبر تغيير" : "biggest change"))
         XCTAssertTrue(bodies.firstMatch.waitForExistence(timeout: 10), "no root post in Following")
         settle(1.5)
         guard let body = bodies.allElementsBoundByIndex.first(where: { $0.exists && $0.isHittable }) else {
@@ -253,13 +256,36 @@ final class AppStoreScreenshotTests: XCTestCase {
         let app = launch()
         signIn(app)
         tap(app, id: "tab.explore")
-        _ = app.buttons.containing(NSPredicate(format: "label CONTAINS '#riyadh'")).firstMatch.waitForExistence(timeout: 15)
-        // In Arabic the Live now rail opens scrolled one card past its start
-        // (a right-to-left offset quirk); one swipe brings it back.
+        _ = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", lang == "ar" ? "#الرياض" : "#riyadh"))
+            .firstMatch.waitForExistence(timeout: 15)
+        // In Arabic the Live now rail opens scrolled away from its start (a
+        // right-to-left offset quirk), and a swipe's momentum carries it to
+        // the far end. Slow drags, measured after each, bring its first card
+        // back flush with the right edge; a drag that makes it worse flips
+        // the direction, so the flipped scroll coordinates do not matter.
         let room = byId(app, "discover.live.room")
         if lang == "ar", room.waitForExistence(timeout: 8) {
             settle(1.5)
-            room.swipeRight()
+            let window = app.windows.firstMatch.frame
+            let target = window.maxX - 20
+            func firstCardEdge() -> CGFloat? {
+                app.descendants(matching: .any).matching(identifier: "discover.live.room")
+                    .allElementsBoundByIndex.map(\.frame.maxX).max()
+            }
+            var direction: CGFloat = 1
+            for _ in 0..<6 {
+                guard let edge = firstCardEdge() else { break }
+                let error = edge - target
+                print("live rail: first card edge \(edge), target \(target)")
+                if abs(error) < 12 { break }
+                let distance = max(-window.width * 0.7, min(window.width * 0.7, -error * direction))
+                let from = app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: window.midX, dy: room.frame.midY))
+                from.press(forDuration: 0.1, thenDragTo: from.withOffset(CGVector(dx: distance, dy: 0)),
+                           withVelocity: .slow, thenHoldForDuration: 0.6)
+                settle(1)
+                if let after = firstCardEdge(), abs(after - target) > abs(error) { direction = -direction }
+            }
         }
         shot("06-explore", settleFor: 3)
     }

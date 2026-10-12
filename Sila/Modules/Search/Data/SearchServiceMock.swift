@@ -99,9 +99,9 @@ public actor SearchServiceMock: SearchServiceProtocol {
 
     /// Tags counted from the fixture posts' hashtags.
     static let tags: [TrendingTag] = [
-        TrendingTag(tag: "proofofpersonhood", postCount: 34),
-        TrendingTag(tag: "riyadh", postCount: 21),
-        TrendingTag(tag: "known", postCount: 12)
+        TrendingTag(tag: MockCopy.pick("proofofpersonhood", "إثبات_الهوية"), postCount: 34),
+        TrendingTag(tag: MockCopy.pick("riyadh", "الرياض"), postCount: 21),
+        TrendingTag(tag: MockCopy.pick("known", "معروف"), postCount: 12)
     ]
 
     private func delay() async throws {

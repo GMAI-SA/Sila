@@ -243,7 +243,14 @@ public actor ProfileServiceMock: ProfileServiceProtocol {
     ]
 
     /// Bios, at or under the server's 160-character limit.
-    static let bios: [String: String] = [
+    /// In Arabic for the Arabic screenshot run (``MockCopy``).
+    static let bios: [String: String] = MockCopy.isArabic ? [
+        "aziz": "نبني «معروف». بشر موثّقون فقط — لا حسابات آلية ولا مزارع حسابات ولا حشود "
+            + "مجهولة. الرياض.",
+        "yuki": "طوكيو. أكتب عن الهوية والثقة والإنترنت الذي كان يمكن أن نحظى به.",
+        "maria": "ساو باولو · باحثة · مهتمة بما يُحدثه التحقق في الحوار.",
+        "noor": "أبوظبي."
+    ] : [
         "aziz": "Building Known. Verified humans only — no bots, no farms, no anonymous "
             + "crowds. Riyadh.",
         "yuki": "Tokyo. Writing about identity, trust and the internet we could have had.",

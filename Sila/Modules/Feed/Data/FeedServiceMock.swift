@@ -314,9 +314,12 @@ extension FeedServiceMock {
         Post(
             id: id(1),
             author: aziz,
-            text: "What's the single biggest change identity verification will bring to social media? Answers from every country welcome 👇 #ProofOfPersonhood",
+            text: MockCopy.pick(
+                "What's the single biggest change identity verification will bring to social media? Answers from every country welcome 👇 #ProofOfPersonhood",
+                "ما أكبر تغيير سيُحدثه التحقق من الهوية في وسائل التواصل الاجتماعي؟ ننتظر إجاباتكم من كل البلدان 👇 #إثبات_الهوية"
+            ),
             createdAt: minutesAgo(125),
-            language: "en",
+            language: MockCopy.language,
             scope: .international,
             replyCountDirect: 2,
             metrics: PostMetrics(likes: 412, reposts: 88, replies: 2, views: 20_140, bookmarks: 61),
@@ -329,7 +332,10 @@ extension FeedServiceMock {
         Post(
             id: id(2),
             author: noor,
-            text: "الطقس اليوم في الرياض ممتاز. Anyone else out walking? #Riyadh",
+            text: MockCopy.pick(
+                "الطقس اليوم في الرياض ممتاز. Anyone else out walking? #Riyadh",
+                "الطقس اليوم في الرياض ممتاز. هل خرج أحد غيري للمشي؟ #الرياض"
+            ),
             createdAt: minutesAgo(46),
             language: "ar",
             scope: .country,
@@ -345,9 +351,12 @@ extension FeedServiceMock {
         Post(
             id: id(3),
             author: yuki,
-            text: "GCC founders: what's the hardest part of cross-border KYC right now? Ask @aziz too.",
+            text: MockCopy.pick(
+                "GCC founders: what's the hardest part of cross-border KYC right now? Ask @aziz too.",
+                "إلى المؤسسين في الخليج: ما أصعب ما في التحقق من هوية العملاء عبر الحدود اليوم؟ اسألوا @aziz أيضًا."
+            ),
             createdAt: minutesAgo(300),
-            language: "en",
+            language: MockCopy.language,
             scope: .region,
             scopeRegion: "GCC",
             replyCountDirect: 0,
@@ -361,9 +370,12 @@ extension FeedServiceMock {
         Post(
             id: id(4),
             author: maria,
-            text: "This is the part nobody outside the region gets yet.",
+            text: MockCopy.pick(
+                "This is the part nobody outside the region gets yet.",
+                "هذا هو الجانب الذي لم يستوعبه أحد خارج المنطقة بعد."
+            ),
             createdAt: minutesAgo(18),
-            language: "en",
+            language: MockCopy.language,
             scope: .international,
             metrics: PostMetrics(likes: 77, reposts: 21, replies: 0, views: 4_006, bookmarks: 12),
             viewer: PostViewerState(bookmarked: true, canReply: true),
@@ -376,9 +388,12 @@ extension FeedServiceMock {
         Post(
             id: id(5),
             author: pending,
-            text: "Just joined — waiting on my ID review. Reading only for now.",
+            text: MockCopy.pick(
+                "Just joined — waiting on my ID review. Reading only for now.",
+                "انضممت للتو وأنتظر مراجعة هويتي. أكتفي بالقراءة حاليًا."
+            ),
             createdAt: minutesAgo(9),
-            language: "en",
+            language: MockCopy.language,
             scope: .international,
             metrics: PostMetrics(likes: 3, reposts: 0, replies: 0, views: 88, bookmarks: 0),
             viewer: PostViewerState(canReply: true)
@@ -389,9 +404,12 @@ extension FeedServiceMock {
         Post(
             id: id(6),
             author: yuki,
-            text: "The end of anonymous brigading. Every voice traceable to a real human in a real country.",
+            text: MockCopy.pick(
+                "The end of anonymous brigading. Every voice traceable to a real human in a real country.",
+                "نهاية الحملات المنظّمة من حسابات مجهولة. كل صوت يعود إلى إنسان حقيقي في بلد حقيقي."
+            ),
             createdAt: minutesAgo(110),
-            language: "en",
+            language: MockCopy.language,
             scope: .international,
             replyToPostId: id(1),
             metrics: PostMetrics(likes: 140, reposts: 9, replies: 0, views: 5_500, bookmarks: 4),
@@ -403,9 +421,12 @@ extension FeedServiceMock {
         Post(
             id: id(7),
             author: maria,
-            text: "Cross-border commerce with verified counterparties. Trust unlocks trade.",
+            text: MockCopy.pick(
+                "Cross-border commerce with verified counterparties. Trust unlocks trade.",
+                "تجارة عابرة للحدود مع أطراف موثّقة. الثقة تفتح أبواب التجارة."
+            ),
             createdAt: minutesAgo(95),
-            language: "en",
+            language: MockCopy.language,
             scope: .international,
             replyToPostId: id(1),
             metrics: PostMetrics(likes: 88, reposts: 3, replies: 0, views: 2_410, bookmarks: 2),
@@ -417,9 +438,12 @@ extension FeedServiceMock {
         Post(
             id: id(8),
             author: aziz,
-            text: "Voice Rooms next. Country rooms first — the majlis, digitised. #Known",
+            text: MockCopy.pick(
+                "Voice Rooms next. Country rooms first — the majlis, digitised. #Known",
+                "الغرف الصوتية قادمة، وأولها غرف كل بلد — المجلس بصيغة رقمية. #معروف"
+            ),
             createdAt: minutesAgo(60 * 26),
-            language: "en",
+            language: MockCopy.language,
             scope: .country,
             scopeCountry: "SA",
             metrics: PostMetrics(likes: 233, reposts: 40, replies: 0, views: 9_800, bookmarks: 30),
@@ -449,4 +473,29 @@ extension FeedServiceMock {
             return [quotePost, internationalRoot, unverifiedAuthorPost]
         }
     }
+}
+
+// MARK: - Sample copy in the UI's language
+
+/// The mock worlds' sample copy — posts, room titles, bios, topics — in Arabic
+/// when the App Store screenshot run (`-mockScreenshot`, debug builds only)
+/// renders the UI in Arabic, and in English otherwise.
+///
+/// Off unless that argument is passed, so every other test and UI journey,
+/// Arabic ones included, keeps the English fixtures it matches against.
+/// People's names and handles are never translated: they are names.
+enum MockCopy {
+
+    /// `true` for the Arabic screenshot run.
+    static var isArabic: Bool {
+        FeatureFlags.screenshotRun && L10n.languageCode == "ar"
+    }
+
+    /// `english`, or `arabic` in the Arabic screenshot run.
+    static func pick(_ english: String, _ arabic: String) -> String {
+        isArabic ? arabic : english
+    }
+
+    /// The language code a sample post written in English declares.
+    static var language: String { isArabic ? "ar" : "en" }
 }

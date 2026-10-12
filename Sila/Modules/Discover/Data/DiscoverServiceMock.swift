@@ -91,7 +91,7 @@ public final class DiscoverServiceMock: DiscoverServiceProtocol, @unchecked Send
         try await pause()
         guard scenario == .populated else { return nil }
         return WeeklyPrompt(title: "What are you working on this week?", titleAr: "على ماذا تعمل هذا الأسبوع؟",
-                            hashtag: "WorkingOn", kind: .text, responseCount: 12)
+                            hashtag: MockCopy.pick("WorkingOn", "مشروع_الأسبوع"), kind: .text, responseCount: 12)
     }
 
     public func submitOnboardingInterests(topics: [String], skipped: Bool) async throws -> FeedPreferences {
@@ -113,8 +113,8 @@ public final class DiscoverServiceMock: DiscoverServiceProtocol, @unchecked Send
         Poll(
             id: UUID(uuidString: "00000000-0000-4000-8000-000000000901")!,
             options: [
-                PollOption(id: UUID(uuidString: "00000000-0000-4000-8000-000000000911")!, position: 0, text: "Tea"),
-                PollOption(id: UUID(uuidString: "00000000-0000-4000-8000-000000000912")!, position: 1, text: "Coffee")
+                PollOption(id: UUID(uuidString: "00000000-0000-4000-8000-000000000911")!, position: 0, text: MockCopy.pick("Tea", "شاي")),
+                PollOption(id: UUID(uuidString: "00000000-0000-4000-8000-000000000912")!, position: 1, text: MockCopy.pick("Coffee", "قهوة"))
             ],
             totalVotes: 4,
             closesAt: Date().addingTimeInterval(3 * 3600),
@@ -128,9 +128,12 @@ public final class DiscoverServiceMock: DiscoverServiceProtocol, @unchecked Send
         Post(
             id: UUID(uuidString: "00000000-0000-4000-8000-000000000950")!,
             author: FeedServiceMock.maria,
-            text: "Anyone know a good Arabic course for beginners in Riyadh?",
+            text: MockCopy.pick(
+                "Anyone know a good Arabic course for beginners in Riyadh?",
+                "هل يعرف أحدكم دورة جيدة في اللغة العربية للمبتدئين في الرياض؟"
+            ),
             createdAt: Date().addingTimeInterval(-40 * 60),
-            language: "en",
+            language: MockCopy.language,
             viewer: PostViewerState(canReply: true)
         )
     }
@@ -139,9 +142,9 @@ public final class DiscoverServiceMock: DiscoverServiceProtocol, @unchecked Send
         Post(
             id: UUID(uuidString: "00000000-0000-4000-8000-000000000951")!,
             author: FeedServiceMock.noor,
-            text: "Tea or coffee for the morning?",
+            text: MockCopy.pick("Tea or coffee for the morning?", "شاي أم قهوة في الصباح؟"),
             createdAt: Date().addingTimeInterval(-20 * 60),
-            language: "en",
+            language: MockCopy.language,
             viewer: PostViewerState(canReply: true),
             poll: samplePoll
         )

@@ -627,16 +627,20 @@ struct ComposerCharacterRing: View {
                     .slContentDirection(.leftToRight)
             }
 
-            ZStack {
-                Circle()
-                    .stroke(SLColor.surface2, lineWidth: 2.5)
-                Circle()
-                    .trim(from: 0, to: metrics.isOverLimit ? 1 : metrics.progress)
-                    .stroke(tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
+            // The App Store screenshot run (debug builds only) leaves the
+            // quiet ring out: in a still frame it reads as a spinner.
+            if metrics.counterText != nil || !FeatureFlags.screenshotRun {
+                ZStack {
+                    Circle()
+                        .stroke(SLColor.surface2, lineWidth: 2.5)
+                    Circle()
+                        .trim(from: 0, to: metrics.isOverLimit ? 1 : metrics.progress)
+                        .stroke(tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
+                .frame(width: 20, height: 20)
+                .animation(.easeOut(duration: 0.15), value: metrics.progress)
             }
-            .frame(width: 20, height: 20)
-            .animation(.easeOut(duration: 0.15), value: metrics.progress)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(L10n.t("composer.counter.a11yLabel")))

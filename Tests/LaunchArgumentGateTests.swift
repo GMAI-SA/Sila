@@ -53,6 +53,13 @@ final class LaunchArgumentGateTests: XCTestCase {
         XCTAssertEqual(FeatureFlags.launchArguments(raw, readsTestArguments: true), raw)
     }
 
+    func testTheScreenshotRunIsDebugOnly() {
+        let arguments = ["Sila", "-mockAuth", "-mockScreenshot"]
+        XCTAssertTrue(FeatureFlags.isScreenshotRun(arguments: arguments, readsTestArguments: true))
+        XCTAssertFalse(FeatureFlags.isScreenshotRun(arguments: arguments, readsTestArguments: false))
+        XCTAssertFalse(FeatureFlags.isScreenshotRun(arguments: ["Sila", "-mockAuth"], readsTestArguments: true))
+    }
+
     func testOpenLinkIsDebugOnly() {
         let arguments = ["Sila", "-openLink", "https://sila.gmai.sa/u/noura"]
         XCTAssertEqual(FeatureFlags.launchLink(arguments: arguments, readsTestArguments: true), .profile(handle: "noura"))

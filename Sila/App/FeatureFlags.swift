@@ -49,6 +49,9 @@ import Foundation
 /// -resetVideoUploads   (debug) start with no uploads kept on the phone
 /// -videoAutoplay on|off (debug) decide autoplay instead of the network
 /// -noVideoPosts        take video out of the composer
+/// -mockScreenshot      (debug) App Store screenshots: the mock worlds' sample
+///                      copy follows an Arabic UI, and the composer's idle
+///                      character ring stays out of the picture
 /// -openLink URL        open a sila.gmai.sa link on launch, as a tap would
 /// -openLinkAfterSignIn URL  (debug) open it once the session reaches the feed,
 ///                      as a tap arriving while signed in would
@@ -317,6 +320,21 @@ public struct FeatureFlags: Sendable {
         }
         return kept
     }
+
+    /// `-mockScreenshot`: the App Store screenshot run (debug builds only).
+    /// The mock worlds' sample posts, rooms, bios and topics speak Arabic when
+    /// the UI does (``MockCopy``), and the composer leaves out its character
+    /// ring until the warning band, where a still frame reads it as a spinner.
+    /// Never on in a release build: the filter drops every `-mock…` argument.
+    public static func isScreenshotRun(
+        arguments: [String] = ProcessInfo.processInfo.arguments,
+        readsTestArguments: Bool = FeatureFlags.readsTestArguments
+    ) -> Bool {
+        launchArguments(arguments, readsTestArguments: readsTestArguments).contains("-mockScreenshot")
+    }
+
+    /// ``isScreenshotRun(arguments:readsTestArguments:)`` for this launch.
+    public static let screenshotRun = isScreenshotRun()
 
     /// `-openLink URL`: a UI journey's way to tap a link. Debug builds only.
     /// `-openLinkAfterSignIn URL` is the same link, held until the session

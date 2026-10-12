@@ -125,29 +125,57 @@ public actor PreferencesServiceMock: PreferencesServiceProtocol {
     // MARK: - Fixture world
 
     /// The server's taxonomy, verbatim. Ids are the wire contract, so these are
-    /// copied rather than invented.
+    /// copied rather than invented. The Arabic names and descriptions are the
+    /// server's own (`label_ar`, `description_ar`), shown in the Arabic
+    /// screenshot run (``MockCopy``).
     public static let taxonomy: [TopicOption] = [
-        TopicOption(id: "technology", detail: "Software, hardware, AI, startups, engineering"),
-        TopicOption(id: "business", detail: "Companies, management, entrepreneurship, commerce"),
-        TopicOption(id: "finance", detail: "Markets, investing, banking, personal finance, crypto"),
-        TopicOption(id: "politics", detail: "Government, policy, elections, public affairs"),
-        TopicOption(id: "news", detail: "Current events and breaking news not covered by another topic"),
-        TopicOption(id: "sports", detail: "Athletes, matches, leagues, fitness competition"),
-        TopicOption(id: "health", detail: "Medicine, wellbeing, fitness, mental health"),
-        TopicOption(id: "science", detail: "Research, space, physics, biology, discovery"),
-        TopicOption(id: "education", detail: "Schools, universities, teaching, studying, courses"),
-        TopicOption(id: "religion", detail: "Faith, worship, religious practice and scholarship"),
-        TopicOption(id: "culture", detail: "Society, heritage, language, traditions, social commentary"),
-        TopicOption(id: "entertainment", detail: "Film, television, music, celebrities, streaming"),
-        TopicOption(id: "gaming", detail: "Video games, esports, game development"),
-        TopicOption(id: "art", detail: "Visual art, design, photography, literature, architecture"),
-        TopicOption(id: "food", detail: "Cooking, restaurants, recipes, coffee, dining"),
-        TopicOption(id: "travel", detail: "Destinations, tourism, flights, hotels, exploring"),
-        TopicOption(id: "environment", detail: "Climate, sustainability, nature, conservation"),
-        TopicOption(id: "motoring", detail: "Cars, motorsport, driving, vehicles"),
-        TopicOption(id: "real_estate", detail: "Property, housing, construction, land"),
-        TopicOption(id: "jobs", detail: "Hiring, careers, workplace, recruitment")
+        topic("technology", "Software, hardware, AI, startups, engineering",
+              "التقنية", "البرمجيات والعتاد والذكاء الاصطناعي والشركات الناشئة والهندسة"),
+        topic("business", "Companies, management, entrepreneurship, commerce",
+              "الأعمال", "الشركات والإدارة وريادة الأعمال والتجارة"),
+        topic("finance", "Markets, investing, banking, personal finance, crypto",
+              "المال", "الأسواق والاستثمار والمصارف والمال الشخصي والعملات الرقمية"),
+        topic("politics", "Government, policy, elections, public affairs",
+              "السياسة", "الحكومة والسياسات والانتخابات والشأن العام"),
+        topic("news", "Current events and breaking news not covered by another topic",
+              "الأخبار", "الأحداث الجارية والأخبار العاجلة التي لا يغطيها موضوع آخر"),
+        topic("sports", "Athletes, matches, leagues, fitness competition",
+              "الرياضة", "الرياضيون والمباريات والدوريات ومنافسات اللياقة"),
+        topic("health", "Medicine, wellbeing, fitness, mental health",
+              "الصحة", "الطب والعافية واللياقة والصحة النفسية"),
+        topic("science", "Research, space, physics, biology, discovery",
+              "العلوم", "البحث والفضاء والفيزياء والأحياء والاكتشاف"),
+        topic("education", "Schools, universities, teaching, studying, courses",
+              "التعليم", "المدارس والجامعات والتدريس والدراسة والدورات"),
+        topic("religion", "Faith, worship, religious practice and scholarship",
+              "الدين", "الإيمان والعبادة والممارسة الدينية والعلم الشرعي"),
+        topic("culture", "Society, heritage, language, traditions, social commentary",
+              "الثقافة", "المجتمع والتراث واللغة والتقاليد والتعليق الاجتماعي"),
+        topic("entertainment", "Film, television, music, celebrities, streaming",
+              "الترفيه", "الموسيقى والمشاهير والعروض الحية وصنّاع المحتوى"),
+        topic("gaming", "Video games, esports, game development",
+              "الألعاب", "ألعاب الفيديو والرياضات الإلكترونية وتطوير الألعاب"),
+        topic("art", "Visual art, design, photography, literature, architecture",
+              "الفن", "الفن البصري والتصميم والتصوير والأدب والعمارة"),
+        topic("food", "Cooking, restaurants, recipes, coffee, dining",
+              "الطعام", "الطبخ والمطاعم والوصفات والقهوة والمأكولات"),
+        topic("travel", "Destinations, tourism, flights, hotels, exploring",
+              "السفر", "الوجهات والسياحة والرحلات الجوية والفنادق والاستكشاف"),
+        topic("environment", "Climate, sustainability, nature, conservation",
+              "البيئة", "المناخ والاستدامة والطبيعة والحفاظ على البيئة"),
+        topic("motoring", "Cars, motorsport, driving, vehicles",
+              "السيارات", "السيارات ورياضة المحركات والقيادة والمركبات"),
+        topic("real_estate", "Property, housing, construction, land",
+              "العقار", "العقارات والإسكان والبناء والأراضي"),
+        topic("jobs", "Hiring, careers, workplace, recruitment",
+              "الوظائف", "التوظيف والمسار المهني وبيئة العمل والاستقطاب")
     ]
+
+    private static func topic(_ id: String, _ detail: String, _ labelAr: String, _ detailAr: String) -> TopicOption {
+        MockCopy.isArabic
+            ? TopicOption(id: id, detail: detailAr, label: labelAr)
+            : TopicOption(id: id, detail: detail)
+    }
 
     /// The ``MockScenario/populated`` starting point.
     static let filledIn = FeedPreferences(

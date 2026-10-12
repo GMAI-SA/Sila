@@ -19,10 +19,11 @@ public struct TopicOption: Identifiable, Hashable, Sendable, Decodable {
     /// - Parameters:
     ///   - id: Server topic id.
     ///   - detail: The server's description of the topic.
-    public init(id: String, detail: String) {
+    ///   - label: The name the server gives it; derived from `id` when `nil`.
+    public init(id: String, detail: String, label: String? = nil) {
         self.id = id
         self.detail = detail
-        self.label = TopicOption.makeLabel(from: id)
+        self.label = label ?? TopicOption.makeLabel(from: id)
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom. The wire
