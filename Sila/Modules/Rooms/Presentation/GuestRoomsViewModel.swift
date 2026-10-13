@@ -49,6 +49,25 @@ public final class GuestRoomsViewModel {
         }
     }
 
+    /// Re-reads both lists while the tab is on screen, without a spinner, so
+    /// a room that starts while a guest is looking turns up by itself. A
+    /// failure keeps what is showing.
+    public func refreshQuietly() async {
+        guard live != nil, !isLoading else { return }
+        do {
+            async let now = service.fetchRooms(status: .live, limit: RoomConstants.defaultLimit)
+            async let coming = service.fetchRooms(status: .scheduled, limit: RoomConstants.defaultLimit)
+            let freshLive = try await now
+            let freshLater = (try? await coming) ?? later
+            guard !isLoading else { return }
+            live = freshLive
+            later = freshLater
+            self.error = nil
+        } catch {
+            // Quiet by design; the next tick or a pull tries again.
+        }
+    }
+
     /// Loads once, on the tab's first appearance.
     public func loadIfNeeded() async {
         guard live == nil, error == nil else { return }

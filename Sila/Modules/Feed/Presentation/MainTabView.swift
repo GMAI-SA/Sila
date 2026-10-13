@@ -921,7 +921,9 @@ public struct MainTabView: View {
                         onAnswerPrompt: answer(prompt:)
                     )
                 }
-                .task { if container.flags.rooms { await hub.loadLive() } }
+                // The Live now rail stays current while Home is on screen,
+                // not only as of the last time the tab appeared.
+                .roomsAutoRefresh { if container.flags.rooms { await hub.loadLive() } }
                 .task { await hub.loadPrompt() }
                 .tnNavigationBar(title: L10n.t("feed.home.navTitle"))
                 .navigationDestination(for: FeedRoute.self) { route in

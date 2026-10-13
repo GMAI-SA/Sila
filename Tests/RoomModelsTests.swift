@@ -36,6 +36,28 @@ final class RoomModelsTests: XCTestCase {
         """
     }
 
+    // MARK: - A real page
+
+    /// The exact body production sent for `GET /rooms?status=live&for_you=true`
+    /// on 2026-10-13 (a throwaway host), every field the server has today —
+    /// microsecond timestamps, `kind`, `cohosts`, `guest_count` and all. One
+    /// unreadable field must never cost the room its place on the list.
+    func testAProductionLivePageDecodesItsRoom() throws {
+        let json = #"""
+        {"rooms": [{"id": "baa2de68-2194-4c2a-b4d0-3700b5fb21bb", "title": "repro live", "topic": null, "scope": "international", "scope_country": null, "scope_region": null, "status": "live", "host": {"id": "83b32f9c-25bd-4dc2-a34f-301ba01bb81f", "handle": "rta85006", "display_name": "Rooms Test", "avatar_url": null, "is_verified": true, "country_code": "SA", "verified_since": "2026-10-13T09:50:16.214678Z", "is_private": false, "verified_name": "Rooms Test", "vouched_by": null}, "speaker_count": 1, "listener_count": 0, "scheduled_for": null, "started_at": "2026-10-13T09:50:36.342683Z", "created_at": "2026-10-13T09:50:36.344542Z", "can_speak": true, "speak_refusal": null, "is_host": false, "is_removed": false, "is_invite_only": false, "is_following_only": false, "group_id": null, "group_name": null, "community_id": null, "community_slug": null, "community_name": null, "is_invited": false, "can_join": true, "join_refusal": null, "viewer_role": null, "hand_raised": false, "hands_count": 0, "matches_interests": false, "metrics": {"likes": 0, "shares": 0, "views": 0, "listeners": 1}, "viewer_liked": false, "starter_question": null, "kind": "room", "series_id": null, "reminder_set": false, "reminder_count": 0, "cohosts": [], "is_cohost": false, "pinned_question": null, "allow_guests": true, "guest_count": 0}]}
+        """#
+        let list = try decode(VoiceRoomList.self, json)
+        XCTAssertEqual(list.rooms.count, 1)
+        let room = try XCTUnwrap(list.rooms.first)
+        XCTAssertEqual(room.id, UUID(uuidString: "baa2de68-2194-4c2a-b4d0-3700b5fb21bb"))
+        XCTAssertEqual(room.status, .live)
+        XCTAssertEqual(room.title, "repro live")
+        XCTAssertEqual(room.host.handle, "rta85006")
+        XCTAssertTrue(room.canJoin)
+        XCTAssertNotNil(room.startedAt)
+        XCTAssertTrue(room.status.isJoinable)
+    }
+
     // MARK: - RoomOut
 
     func testARoomOutDecodesEveryFieldTheContractNames() throws {

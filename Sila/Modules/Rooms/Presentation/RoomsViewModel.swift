@@ -139,21 +139,50 @@ public final class RoomsViewModel {
                 status: .scheduled, topic: nil, limit: RoomConstants.defaultLimit
             )
             live = try await liveRooms
-            scheduled = try await scheduledRooms.sorted { lhs, rhs in
-                // Soonest first. A scheduled room with no time sorts last:
-                // there is nothing to count down to.
-                switch (lhs.scheduledFor, rhs.scheduledFor) {
-                case let (left?, right?): return left < right
-                case (nil, _?): return false
-                case (_?, nil): return true
-                case (nil, nil): return lhs.createdAt > rhs.createdAt
-                }
-            }
+            scheduled = try await scheduledRooms.sorted(by: Self.soonestFirst)
         } catch {
             guard suspension?.notice(error) != true else { return }
             live = []
             scheduled = []
             loadError = APIError.wrapping(error).presentableMessage
+        }
+    }
+
+    /// Re-reads both sections without a spinner, while the tab is on screen.
+    ///
+    /// A room that starts while somebody is looking at this list has to turn
+    /// up without them leaving the tab or knowing to pull — rooms are short,
+    /// and one that opened and closed between two visits was never seen at
+    /// all (2026-10-13). Called on every appearance, on a return to the
+    /// foreground and on a light timer. A failure keeps what is on screen:
+    /// a list that empties itself every time a timer misses is worse than
+    /// one that is a few seconds old.
+    public func refreshQuietly() async {
+        guard hasLoaded, !isLoading, !isRefreshing else { return }
+        do {
+            async let liveRooms = service.fetchRooms(status: .live, topic: nil, limit: RoomConstants.defaultLimit)
+            async let scheduledRooms = service.fetchRooms(
+                status: .scheduled, topic: nil, limit: RoomConstants.defaultLimit
+            )
+            let freshLive = try await liveRooms
+            let freshScheduled = try await scheduledRooms
+            guard !isLoading, !isRefreshing else { return }
+            live = freshLive
+            scheduled = freshScheduled.sorted(by: Self.soonestFirst)
+            loadError = nil
+        } catch {
+            // Quiet by design; the next tick or a pull tries again.
+        }
+    }
+
+    /// Soonest first. A scheduled room with no time sorts last: there is
+    /// nothing to count down to.
+    nonisolated static func soonestFirst(_ lhs: VoiceRoom, _ rhs: VoiceRoom) -> Bool {
+        switch (lhs.scheduledFor, rhs.scheduledFor) {
+        case let (left?, right?): return left < right
+        case (nil, _?): return false
+        case (_?, nil): return true
+        case (nil, nil): return lhs.createdAt > rhs.createdAt
         }
     }
 

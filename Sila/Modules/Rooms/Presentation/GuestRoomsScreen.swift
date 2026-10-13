@@ -36,6 +36,7 @@ public struct GuestRoomsScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tnScreenBackground()
         .task { await viewModel.loadIfNeeded() }
+        .roomsAutoRefresh { await viewModel.refreshQuietly() }
     }
 
     // MARK: - Search

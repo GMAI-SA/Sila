@@ -928,6 +928,10 @@ public enum RoomConstants {
     public static let minimumTitleLength = 2
     /// How often a live room re-reads its participant list.
     public static let participantPollInterval: TimeInterval = 8
+    /// How often a rooms list on screen (the Rooms tab, Home's Live now rail,
+    /// a guest's rooms) re-reads itself, so a room that starts while it is
+    /// open turns up without a pull. Rooms can be short; minutes are too slow.
+    public static let listRefreshInterval: TimeInterval = 20
     /// Stage sizes the create sheet offers.
     public static let speakerLimits = [4, 8, 12, 20]
     /// The stage size a new room opens with.

@@ -61,6 +61,7 @@ public struct RoomsScreen: View {
         // No `+` in the bar: opening a room is the floating button's job on
         // this tab, in the same corner writing a post is on Home.
         .task { await viewModel.load() }
+        .roomsAutoRefresh { await viewModel.refreshQuietly() }
         .confirmationDialog(
             Text(L10n.t("rooms.live.end.confirmTitle")),
             isPresented: Binding(
@@ -495,6 +496,41 @@ struct RoomCardView: View {
             }
             Spacer(minLength: 0)
         }
+    }
+}
+
+// MARK: - Keeping a list current
+
+/// Keeps a rooms list current while it is on screen: a read on every
+/// appearance and every return to the foreground, then one every
+/// ``RoomConstants/listRefreshInterval`` until the view leaves the screen or
+/// the app the foreground.
+///
+/// Before this the Rooms tab read its lists once per launch and Home's rail
+/// once per appearance, so a room that opened while somebody sat on the tab
+/// never appeared — the owner missed a room that was live for under a minute
+/// (2026-10-13). There is no realtime event for a room starting; a light poll
+/// of an already-cheap list is the simplest thing that works.
+struct RoomsAutoRefresh: ViewModifier {
+    let refresh: @MainActor @Sendable () async -> Void
+    @Environment(\.scenePhase) private var scenePhase
+
+    func body(content: Content) -> some View {
+        content.task(id: scenePhase == .active) {
+            guard scenePhase == .active else { return }
+            let interval = UInt64(RoomConstants.listRefreshInterval * 1_000_000_000)
+            while !Task.isCancelled {
+                await refresh()
+                try? await Task.sleep(nanoseconds: interval)
+            }
+        }
+    }
+}
+
+extension View {
+    /// See ``RoomsAutoRefresh``.
+    func roomsAutoRefresh(_ refresh: @escaping @MainActor @Sendable () async -> Void) -> some View {
+        modifier(RoomsAutoRefresh(refresh: refresh))
     }
 }
 
