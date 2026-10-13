@@ -258,7 +258,8 @@ public struct NotificationsScreen: View {
                                 initials: notification.actor.initials,
                                 size: .md,
                                 isVerified: notification.actor.isVerified,
-                                displayName: notification.actor.displayName
+                                displayName: notification.actor.displayName,
+                                isNews: notification.actor.isNewsAccount
                             )
                         }
 

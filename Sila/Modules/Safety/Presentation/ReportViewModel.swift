@@ -78,7 +78,12 @@ public final class ReportViewModel {
     public var target: SafetyTarget { draft.subject.target }
 
     /// Every reason, in the order the picker shows them.
-    public var reasons: [ReportReason] { ReportReason.allCases }
+    ///
+    /// The automated news account cannot be an impostor — the server refuses
+    /// that report with `403 news_account` — so the reason is not offered.
+    public var reasons: [ReportReason] {
+        target.isNewsAccount ? ReportReason.allCases.filter { $0 != .impersonation } : ReportReason.allCases
+    }
 
     /// The chosen reason, or `nil`.
     public var reason: ReportReason? { draft.reason }

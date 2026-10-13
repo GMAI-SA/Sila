@@ -1,5 +1,22 @@
 import Foundation
 
+// MARK: - Account type
+
+/// What kind of account a ``UserSummary`` is (contract v37).
+///
+/// Only two kinds exist: a person, and the one automated news account. Any
+/// value this build does not know — and a missing field — is a person, which
+/// is how an older client already treats the news account.
+public enum AccountType: String, Sendable, Hashable, Codable {
+    case person
+    case news
+
+    public init(from decoder: Decoder) throws {
+        let raw = (try? decoder.singleValueContainer().decode(String.self)) ?? ""
+        self = AccountType(rawValue: raw.lowercased()) ?? .person
+    }
+}
+
 // MARK: - User
 
 /// The slice of an account that appears next to a post.
@@ -14,8 +31,24 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Codable {
     public let id: UUID
     /// Unique, lowercase, 3–20 chars of `[a-z0-9_]`. No leading `@`.
     public let handle: String
-    /// Human-chosen name. Falls back to the handle when the server sends "".
-    public let displayName: String
+    /// The name as the account wrote it. Falls back to the handle when the
+    /// server sends "". Read through ``displayName``.
+    private let baseDisplayName: String
+    /// The Arabic display name — set only for the news account (contract v37).
+    public let displayNameAr: String?
+    /// A person, or the automated news account (contract v37).
+    public let accountType: AccountType
+
+    /// The name to show: the Arabic one in an Arabic interface when the
+    /// account has one, otherwise the name the account wrote.
+    public var displayName: String {
+        if let displayNameAr, L10n.languageCode == "ar" { return displayNameAr }
+        return baseDisplayName
+    }
+
+    /// `true` for the automated news account: no seal, no flag, no messages,
+    /// no impersonation reports.
+    public var isNewsAccount: Bool { accountType == .news }
     /// Remote avatar image, or `nil` for the monogram fallback.
     public let avatarURL: URL?
     /// Whether identity verification has completed.
@@ -42,23 +75,30 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Codable {
         countryCode: String? = nil,
         verifiedSince: Date? = nil,
         verifiedName: String? = nil,
-        vouchedBy: VouchedBy? = nil
+        vouchedBy: VouchedBy? = nil,
+        accountType: AccountType = .person,
+        displayNameAr: String? = nil
     ) {
+        let isNews = accountType == .news
         self.id = id
         self.handle = handle
-        self.displayName = displayName.isEmpty ? handle : displayName
+        self.baseDisplayName = displayName.isEmpty ? handle : displayName
+        self.displayNameAr = (displayNameAr?.isEmpty == false) ? displayNameAr : nil
+        self.accountType = accountType
         self.avatarURL = avatarURL
-        self.isVerified = isVerified
-        self.countryCode = CountryCode.normalised(countryCode)
-        self.verifiedSince = verifiedSince
-        self.verifiedName = verifiedName
-        self.vouchedBy = isVerified ? nil : vouchedBy
+        // The news account never wears the human signals, whatever arrives.
+        self.isVerified = isNews ? false : isVerified
+        self.countryCode = isNews ? nil : CountryCode.normalised(countryCode)
+        self.verifiedSince = isNews ? nil : verifiedSince
+        self.verifiedName = isNews ? nil : verifiedName
+        self.vouchedBy = (isVerified || isNews) ? nil : vouchedBy
     }
 
     /// Explicit keys are required because ``init(from:)`` is custom, and the
     /// raw values are the *camel-cased* forms `.convertFromSnakeCase` produces.
     private enum CodingKeys: String, CodingKey {
         case id, handle, displayName, isVerified, countryCode, verifiedSince, verifiedName, vouchedBy
+        case accountType, displayNameAr
         case avatarURL = "avatarUrl"
     }
 
@@ -74,7 +114,14 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Codable {
         let decodedHandle = (try? container.decode(String.self, forKey: .handle)) ?? ""
         handle = decodedHandle
         let name = (try? container.decodeIfPresent(String.self, forKey: .displayName)) ?? nil
-        displayName = (name?.isEmpty == false ? name : nil) ?? decodedHandle
+        baseDisplayName = (name?.isEmpty == false ? name : nil) ?? decodedHandle
+        let arabicName = (try? container.decodeIfPresent(String.self, forKey: .displayNameAr)) ?? nil
+        displayNameAr = (arabicName?.isEmpty == false) ? arabicName : nil
+        // Missing, null or unknown → a person (contract v37 §1).
+        let type = (try? container.decodeIfPresent(AccountType.self, forKey: .accountType)) ?? nil
+        let resolvedType = type ?? .person
+        accountType = resolvedType
+        let isNews = resolvedType == .news
         // Resolved against the API origin rather than decoded straight into a
         // `URL`. The server sends a root-relative path
         // (`/api/v1/media/avatars/…`), which `URL(string:)` accepts and turns
@@ -84,17 +131,19 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Codable {
         avatarURL = AppConfig.mediaURL(
             (try? container.decodeIfPresent(String.self, forKey: .avatarURL)) ?? nil
         )
-        isVerified = (try? container.decode(Bool.self, forKey: .isVerified)) ?? false
-        countryCode = CountryCode.normalised(
+        // The news account never shows the seal, a flag, a verified name or
+        // a vouch — the server already sends none; this keeps it that way.
+        isVerified = isNews ? false : ((try? container.decode(Bool.self, forKey: .isVerified)) ?? false)
+        countryCode = isNews ? nil : CountryCode.normalised(
             (try? container.decodeIfPresent(String.self, forKey: .countryCode)) ?? nil
         )
-        verifiedSince = (try? container.decodeIfPresent(Date.self, forKey: .verifiedSince)) ?? nil
+        verifiedSince = isNews ? nil : ((try? container.decodeIfPresent(Date.self, forKey: .verifiedSince)) ?? nil)
         let confirmed = (try? container.decodeIfPresent(String.self, forKey: .verifiedName)) ?? nil
-        verifiedName = (confirmed?.isEmpty == false) ? confirmed : nil
+        verifiedName = (isNews || confirmed?.isEmpty != false) ? nil : confirmed
         // The seal wins: a tag beside `is_verified` is never drawn, whatever
         // arrives. A tag with no handle is nothing to draw either.
         let vouch = (try? container.decodeIfPresent(VouchedBy.self, forKey: .vouchedBy)) ?? nil
-        vouchedBy = (isVerified || vouch?.handle.isEmpty != false) ? nil : vouch
+        vouchedBy = (isNews || isVerified || vouch?.handle.isEmpty != false) ? nil : vouch
     }
 
     /// Written only into the device's own copy of the session (a vouch's
@@ -103,7 +152,9 @@ public struct UserSummary: Identifiable, Hashable, Sendable, Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(handle, forKey: .handle)
-        try container.encode(displayName, forKey: .displayName)
+        try container.encode(baseDisplayName, forKey: .displayName)
+        try container.encodeIfPresent(displayNameAr, forKey: .displayNameAr)
+        if accountType != .person { try container.encode(accountType, forKey: .accountType) }
         try container.encodeIfPresent(avatarURL?.absoluteString, forKey: .avatarURL)
         try container.encode(isVerified, forKey: .isVerified)
         try container.encodeIfPresent(countryCode, forKey: .countryCode)
@@ -340,6 +391,125 @@ public enum SensitiveKind: String, Sendable, Hashable, Decodable, CaseIterable {
     public var wireValue: String { rawValue }
 }
 
+// MARK: - News
+
+/// The article behind a post by the news account (contract v37 §2).
+///
+/// Every field is optional on the wire; a news block without a usable link and
+/// without either summary is dropped, so the post falls back to its ``Post/text``.
+public struct PostNews: Equatable, Sendable, Hashable, Decodable {
+
+    /// The original article — `http(s)` only; anything else is `nil` and the
+    /// link card is inert.
+    public let url: URL?
+    /// The article's own headline, in its own language.
+    public let title: String?
+    public let sourceName: String?
+    public let sourceNameAr: String?
+    public let sourceDomain: String?
+    public let publishedAt: Date?
+    public let summaryAr: String?
+    public let summaryEn: String?
+    /// Used only when the article's licence allows it; normally `nil`.
+    public let imageURL: URL?
+    /// ISO codes of the countries the story is about.
+    public let countries: [String]
+
+    public init(
+        url: URL?,
+        title: String? = nil,
+        sourceName: String? = nil,
+        sourceNameAr: String? = nil,
+        sourceDomain: String? = nil,
+        publishedAt: Date? = nil,
+        summaryAr: String? = nil,
+        summaryEn: String? = nil,
+        imageURL: URL? = nil,
+        countries: [String] = []
+    ) {
+        self.url = PostNews.webURL(url?.absoluteString)
+        self.title = PostNews.clean(title)
+        self.sourceName = PostNews.clean(sourceName)
+        self.sourceNameAr = PostNews.clean(sourceNameAr)
+        self.sourceDomain = PostNews.clean(sourceDomain)
+        self.publishedAt = publishedAt
+        self.summaryAr = PostNews.clean(summaryAr)
+        self.summaryEn = PostNews.clean(summaryEn)
+        self.imageURL = PostNews.webURL(imageURL?.absoluteString)
+        self.countries = countries
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case url, title, sourceName, sourceNameAr, sourceDomain, publishedAt
+        case summaryAr, summaryEn, countries
+        case imageURL = "imageUrl"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        func string(_ key: CodingKeys) -> String? {
+            PostNews.clean((try? container.decodeIfPresent(String.self, forKey: key)) ?? nil)
+        }
+        url = PostNews.webURL(string(.url))
+        title = string(.title)
+        sourceName = string(.sourceName)
+        sourceNameAr = string(.sourceNameAr)
+        sourceDomain = string(.sourceDomain)
+        publishedAt = (try? container.decodeIfPresent(Date.self, forKey: .publishedAt)) ?? nil
+        summaryAr = string(.summaryAr)
+        summaryEn = string(.summaryEn)
+        imageURL = PostNews.webURL(string(.imageURL))
+        countries = ((try? container.decodeIfPresent([String].self, forKey: .countries)) ?? nil) ?? []
+    }
+
+    /// `true` when there is something to draw instead of the post's text.
+    public var hasContent: Bool { summaryAr != nil || summaryEn != nil || url != nil }
+
+    /// The two summaries, the interface's language first. Arabic first in an
+    /// Arabic interface, English first in every other one.
+    public func summaries(languageCode: String) -> [NewsSummary] {
+        var pair: [NewsSummary] = []
+        if let summaryAr { pair.append(NewsSummary(language: "ar", text: summaryAr)) }
+        if let summaryEn { pair.append(NewsSummary(language: "en", text: summaryEn)) }
+        return languageCode == "ar" ? pair : pair.reversed()
+    }
+
+    /// The source's name for this interface: the Arabic one in Arabic when it
+    /// exists, then the name, then the domain.
+    public func sourceDisplayName(languageCode: String) -> String {
+        if languageCode == "ar", let sourceNameAr { return sourceNameAr }
+        return sourceName ?? sourceNameAr ?? sourceDomain ?? url?.host ?? ""
+    }
+
+    /// The domain shown on the card, without a leading `www.`.
+    public var displayDomain: String? {
+        let raw = sourceDomain ?? url?.host
+        guard let raw else { return nil }
+        return raw.lowercased().hasPrefix("www.") ? String(raw.dropFirst(4)) : raw
+    }
+
+    /// An absolute `http`/`https` address with a host, or `nil`.
+    public static func webURL(_ raw: String?) -> URL? {
+        guard let raw = clean(raw), let url = URL(string: raw),
+              let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              let host = url.host, !host.isEmpty else { return nil }
+        return url
+    }
+
+    private static func clean(_ raw: String?) -> String? {
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+/// One of a news post's two summaries.
+public struct NewsSummary: Identifiable, Equatable, Sendable, Hashable {
+    /// `"ar"` or `"en"`.
+    public let language: String
+    public let text: String
+    public var id: String { language }
+}
+
 public struct Post: Identifiable, Equatable, Sendable, Decodable {
 
     public let id: UUID
@@ -396,6 +566,9 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
     public var event: EventCard?
     /// The author's weekly recognition, raw (contract v23).
     public var authorBadges: [String] = []
+    /// The article, when the news account wrote this post (contract v37).
+    /// `nil` on every other post.
+    public var news: PostNews?
     /// Who may reply to this thread.
     public let scope: PostScope
     /// Set when ``scope`` is ``PostScope/country``.
@@ -448,8 +621,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         hiddenByAuthor: Bool = false,
         mentions: [PostMention]? = nil,
         voice: VoiceClip? = nil,
-        video: PostVideo? = nil
+        video: PostVideo? = nil,
+        news: PostNews? = nil
     ) {
+        self.news = news
         self.voice = voice
         self.video = video
         self.poll = poll
@@ -485,7 +660,7 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         case replyToPostId, replyCountDirect, metrics, viewer, quotedPost
         case sensitive, sensitiveNote, repostedBy, repostedAt
         case communityId, communitySlug, communityName, gif, room
-        case poll, hiddenByAuthor, mentions, voice, video, event, authorBadges
+        case poll, hiddenByAuthor, mentions, voice, video, event, authorBadges, news
     }
 
     /// Lower-cased, region stripped: the server may send `"ar-SA"`, and
@@ -565,6 +740,10 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
         video = (try? container.decodeIfPresent(PostVideo.self, forKey: .video)) ?? nil
         event = (try? container.decodeIfPresent(EventCard.self, forKey: .event)) ?? nil
         authorBadges = (try? container.decode([String].self, forKey: .authorBadges)) ?? []
+        // A news block that cannot be decoded — or says nothing — costs the
+        // card, never the post: its text still holds the Arabic summary.
+        let article = (try? container.decodeIfPresent(PostNews.self, forKey: .news)) ?? nil
+        news = (article?.hasContent == true) ? article : nil
     }
 
     /// A copy with no quoted post — the flattening step for the one-level rule.
@@ -596,7 +775,8 @@ public struct Post: Identifiable, Equatable, Sendable, Decodable {
             hiddenByAuthor: hiddenByAuthor,
             mentions: mentions,
             voice: voice,
-            video: video
+            video: video,
+            news: news
         )
     }
 }

@@ -48,6 +48,7 @@ public struct SLAvatar: View {
     private let size: Size
     private let isVerified: Bool
     private let displayName: String?
+    private let isNews: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var ringPhase: CGFloat = 0
@@ -59,18 +60,22 @@ public struct SLAvatar: View {
     ///   - size: Diameter preset.
     ///   - isVerified: Draws the rotating brand ring.
     ///   - displayName: Used for the accessibility label when available.
+    ///   - isNews: The automated news account (contract v37): a newspaper
+    ///     glyph instead of the monogram, and never the verified ring.
     public init(
         url: URL? = nil,
         initials: String = "?",
         size: Size = .md,
         isVerified: Bool = false,
-        displayName: String? = nil
+        displayName: String? = nil,
+        isNews: Bool = false
     ) {
         self.url = url
         self.initials = String(initials.prefix(2)).uppercased()
         self.size = size
-        self.isVerified = isVerified
+        self.isVerified = isNews ? false : isVerified
         self.displayName = displayName
+        self.isNews = isNews
     }
 
     public var body: some View {
@@ -122,7 +127,16 @@ public struct SLAvatar: View {
         }
     }
 
+    @ViewBuilder
     private var monogram: some View {
+        if isNews {
+            NewsGlyphTile(diameter: size.diameter)
+        } else {
+            initialsTile
+        }
+    }
+
+    private var initialsTile: some View {
         ZStack {
             LinearGradient(
                 colors: [SLColor.surface2, SLColor.surface1],
@@ -138,6 +152,30 @@ public struct SLAvatar: View {
     private var accessibilityText: String {
         let who = displayName ?? L10n.t("ds.avatar.fallbackName", initials)
         return isVerified ? L10n.t("ds.avatar.verifiedLabel", who) : who
+    }
+}
+
+/// The news account's face: a newspaper on the brand tint (contract v37).
+public struct NewsGlyphTile: View {
+
+    private let diameter: CGFloat
+
+    public init(diameter: CGFloat) {
+        self.diameter = diameter
+    }
+
+    public var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [SLColor.primary.opacity(0.28), SLColor.secondary.opacity(0.22)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Image(systemName: "newspaper.fill")
+                .font(.system(size: diameter * 0.42, weight: .semibold))
+                .foregroundStyle(SLColor.primary)
+        }
+        .accessibilityHidden(true)
     }
 }
 

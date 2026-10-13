@@ -196,7 +196,9 @@ public struct ProfileScreen: View {
 
     /// Who this page is about, for the local state updates.
     private var safetyTarget: SafetyTarget {
-        SafetyTarget(handle: viewModel.handle, name: viewModel.profile?.displayName)
+        var target = SafetyTarget(handle: viewModel.handle, name: viewModel.profile?.displayName)
+        target.isNewsAccount = viewModel.profile?.user.isNewsAccount ?? false
+        return target
     }
 
     /// Whether the app's safety model says this account is blocked.
@@ -466,7 +468,8 @@ public struct ProfileScreen: View {
                         initials: profile.user.initials,
                         size: .xl,
                         isVerified: profile.user.isVerified,
-                        displayName: profile.displayName
+                        displayName: profile.displayName,
+                        isNews: profile.user.isNewsAccount
                     )
 
                     Spacer(minLength: 0)
@@ -500,6 +503,10 @@ public struct ProfileScreen: View {
                             SLVerifiedBadge(size: 20, isPulsing: false)
                         }
 
+                        if profile.user.isNewsAccount {
+                            NewsAccountLabel(compact: false)
+                        }
+
                         // A preference, not a warning — drawn muted, beside
                         // the name, so a reader knows before they follow.
                         if profile.isPrivate {
@@ -519,6 +526,15 @@ public struct ProfileScreen: View {
                             .foregroundStyle(SLColor.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("profile.vouchedRow")
+                    }
+
+                    // What the news account is, in one line (contract v37 §1).
+                    if profile.user.isNewsAccount {
+                        Text(L10n.t("profile.news.explainer"))
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("profile.newsExplainer")
                     }
 
                     if let confirmed = profile.user.verifiedName, confirmed != profile.displayName {
@@ -654,7 +670,8 @@ public struct ProfileScreen: View {
 
             // A vouched account cannot use messages, so nobody can message
             // one (`403 recipient_cannot_message`): no envelope to meet it.
-            if let onMessage, profile.user.vouchedBy == nil {
+            // Nor the automated news account (`403 news_account`).
+            if let onMessage, profile.user.vouchedBy == nil, !profile.user.isNewsAccount {
                 // Writing to somebody starts here, where you are already
                 // looking at them, rather than only from an existing thread.
                 Button {

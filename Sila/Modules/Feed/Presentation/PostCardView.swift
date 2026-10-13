@@ -250,8 +250,15 @@ public struct PostCardView: View {
             }
 
             if post.sensitive == nil || isRevealed {
-                postText
-                    .padding(.leading, style == .detail ? 0 : 56)
+                if let news = post.news {
+                    // The news account's post (contract v37 §2): both
+                    // summaries and the article's card, instead of the text.
+                    NewsPostBody(news: news, isDetail: style == .detail, onOpenPost: { actions.onOpen(post) })
+                        .padding(.leading, style == .detail ? 0 : 56)
+                } else {
+                    postText
+                        .padding(.leading, style == .detail ? 0 : 56)
+                }
 
                 if let room = post.room {
                     PostRoomCard(room: room, onOpen: actions.onOpenRoom)
@@ -325,7 +332,8 @@ public struct PostCardView: View {
                         initials: post.author.initials,
                         size: style == .detail ? .lg : .md,
                         isVerified: post.author.isVerified,
-                        displayName: post.author.displayName
+                        displayName: post.author.displayName,
+                        isNews: post.author.isNewsAccount
                     )
                     .contentShape(Rectangle())
                 }
@@ -391,6 +399,7 @@ public struct PostCardView: View {
     /// What VoiceOver reads for the author control, without the post's text.
     private var authorAccessibilityLabel: String {
         var parts = [post.author.displayName]
+        if post.author.isNewsAccount { parts.append(L10n.t("post.news.label")) }
         if post.author.isVerified { parts.append(L10n.t("post.author.verified.accessibility")) }
         if let label = CountryCode.accessibilityLabel(post.author.countryCode) { parts.append(label) }
         if !post.author.isVerified, let vouch = post.author.vouchedBy { parts.append(VouchCopy.tagAccessibility(vouch)) }
@@ -420,6 +429,12 @@ public struct PostCardView: View {
                     // The country-verified flag. Absent when the identity does not
                     // carry one — never guessed.
                     SLCountryBadge(countryCode: post.author.countryCode)
+
+                    // The automated news account: its label where a person's
+                    // seal would be (contract v37 §1).
+                    if post.author.isNewsAccount {
+                        NewsAccountLabel()
+                    }
                 }
                 .contentShape(Rectangle())
             }
@@ -818,6 +833,7 @@ public struct PostCardView: View {
 
     private var accessibilitySummary: String {
         var parts = [post.author.displayName]
+        if post.author.isNewsAccount { parts.append(L10n.t("post.news.label")) }
         if post.author.isVerified { parts.append(L10n.t("post.author.verified.accessibility")) }
         if let label = CountryCode.accessibilityLabel(post.author.countryCode) { parts.append(label) }
         if !post.author.isVerified, let vouch = post.author.vouchedBy { parts.append(VouchCopy.tagAccessibility(vouch)) }
@@ -890,7 +906,8 @@ struct QuotedPostCard: View {
                         initials: post.author.initials,
                         size: .sm,
                         isVerified: false,
-                        displayName: post.author.displayName
+                        displayName: post.author.displayName,
+                        isNews: post.author.isNewsAccount
                     )
                     Text(post.author.displayName)
                         .font(SLFont.caption)

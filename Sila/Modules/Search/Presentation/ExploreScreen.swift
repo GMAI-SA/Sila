@@ -504,7 +504,8 @@ struct PersonResultRow: View {
                 initials: user.initials,
                 size: .md,
                 isVerified: user.isVerified,
-                displayName: user.displayName
+                displayName: user.displayName,
+                isNews: user.isNewsAccount
             )
 
             VStack(alignment: .leading, spacing: 2) {
@@ -525,6 +526,10 @@ struct PersonResultRow: View {
                     }
 
                     SLCountryBadge(countryCode: user.countryCode)
+
+                    if user.isNewsAccount {
+                        NewsAccountLabel()
+                    }
                 }
 
                 // The whole tag, on its own line as on a post card — "vouched

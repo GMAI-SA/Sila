@@ -15,6 +15,9 @@ public struct SafetyTarget: Equatable, Sendable, Hashable, Identifiable {
     public let handle: String
     /// The name to put in a sentence. Falls back to the handle.
     public let name: String
+    /// `true` for the automated news account (contract v37): nobody can
+    /// report it as an impostor. Not part of its identity — see ``==``.
+    public var isNewsAccount: Bool = false
 
     /// Identity is the handle: two references to the same person are the same
     /// dialog, whatever name each one was built from.
@@ -33,11 +36,24 @@ public struct SafetyTarget: Equatable, Sendable, Hashable, Identifiable {
     /// Builds a target from the ``UserSummary`` a post or a search result carries.
     public init(user: UserSummary) {
         self.init(handle: user.handle, name: user.displayName)
+        isNewsAccount = user.isNewsAccount
     }
 
     /// Builds a target from a loaded profile.
     public init(profile: Profile) {
         self.init(handle: profile.handle, name: profile.displayName)
+        isNewsAccount = profile.user.isNewsAccount
+    }
+
+    /// The handle and the name, as before the news flag existed: the flag
+    /// describes the account, it does not make it a different target.
+    public static func == (lhs: SafetyTarget, rhs: SafetyTarget) -> Bool {
+        lhs.handle == rhs.handle && lhs.name == rhs.name
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(handle)
+        hasher.combine(name)
     }
 
     /// The handle as it is rendered, with the `@`.
