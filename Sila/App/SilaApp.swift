@@ -1,3 +1,4 @@
+import CoreSpotlight
 import SwiftUI
 
 /// Sila's entry point.
@@ -29,6 +30,14 @@ struct SilaApp: App {
                     .onOpenURL { url in
                         guard let link = DeepLink.parse(url) else { return }
                         container.open(link)
+                    }
+                    // The app's own Spotlight entry ("social" finds Known):
+                    // tapping it only opens the app, wherever it was.
+                    .onContinueUserActivity(CSSearchableItemActionType) { _ in }
+                    // Written once per version and language; re-written when
+                    // the language row changes the app's language.
+                    .onChange(of: container.language.choice, initial: true) {
+                        AppSearchIndex.refreshIfNeeded()
                     }
                     .task {
                         container.analytics.track(

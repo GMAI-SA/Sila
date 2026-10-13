@@ -55545,6 +55545,486 @@
         }
       }
     },
+    "app.spotlight.description": {
+      "comment": "Spotlight (iPhone search) description under the app's own search entry. One sentence: what the app is.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الشبكة الاجتماعية لأشخاص حقيقيين موثَّقين: منشورات وغرف ومجتمع."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "যাচাইকৃত, আসল মানুষের সামাজিক নেটওয়ার্ক: পোস্ট, রুম আর কমিউনিটি।"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La xarxa social de persones reals i verificades: publicacions, sales i comunitat."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sociální síť ověřených, skutečných lidí: příspěvky, místnosti a komunita."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det sociale netværk for verificerede, rigtige mennesker: opslag, rum og fællesskab."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das soziale Netzwerk verifizierter, echter Menschen: Beiträge, Räume und Community."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το κοινωνικό δίκτυο επαληθευμένων, αληθινών ανθρώπων: αναρτήσεις, δωμάτια και κοινότητα."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The social network of verified, real people: posts, rooms and community."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La red social de personas reales y verificadas: publicaciones, salas y comunidad."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varmennettujen, oikeiden ihmisten sosiaalinen verkosto: julkaisut, huoneet ja yhteisö."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le réseau social des vraies personnes vérifiées : publications, salons et communauté."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הרשת החברתית של אנשים אמיתיים ומאומתים: פוסטים, חדרים וקהילה."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सत्यापित, असली लोगों का सोशल नेटवर्क: पोस्ट, रूम और कम्युनिटी।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Društvena mreža provjerenih, stvarnih ljudi: objave, sobe i zajednica."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ellenőrzött, valódi emberek közösségi hálója: bejegyzések, szobák és közösség."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jejaring sosial orang-orang nyata yang terverifikasi: postingan, ruang, dan komunitas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il social network delle persone reali e verificate: post, stanze e community."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "認証済みの実在する人たちのソーシャルネットワーク：投稿、ルーム、コミュニティ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인증된 실제 사람들의 소셜 네트워크: 게시물, 룸, 커뮤니티."
+          }
+        },
+        "ml": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "പരിശോധിച്ചുറപ്പിച്ച യഥാർത്ഥ ആളുകളുടെ സോഷ്യൽ നെറ്റ്‌വർക്ക്: പോസ്റ്റുകൾ, റൂമുകൾ, കമ്മ്യൂണിറ്റി."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rangkaian sosial orang sebenar yang disahkan: siaran, bilik dan komuniti."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det sosiale nettverket for verifiserte, ekte mennesker: innlegg, rom og fellesskap."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het sociale netwerk van geverifieerde, echte mensen: berichten, rooms en community."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieć społecznościowa zweryfikowanych, prawdziwych ludzi: posty, pokoje i społeczność."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A rede social de pessoas reais e verificadas: posts, salas e comunidade."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A rede social de pessoas reais e verificadas: publicações, salas e comunidade."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rețeaua socială a oamenilor reali, verificați: postări, camere și comunitate."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Социальная сеть проверенных, реальных людей: посты, комнаты и сообщество."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sociálna sieť overených, skutočných ľudí: príspevky, miestnosti a komunita."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det sociala nätverket för verifierade, riktiga människor: inlägg, rum och community."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சரிபார்க்கப்பட்ட உண்மையான மனிதர்களின் சமூக வலைப்பின்னல்: பதிவுகள், அறைகள், சமூகம்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ధృవీకరించబడిన నిజమైన వ్యక్తుల సోషల్ నెట్‌వర్క్: పోస్ట్‌లు, రూమ్‌లు, కమ్యూనిటీ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โซเชียลเน็ตเวิร์กของคนจริงที่ยืนยันตัวตนแล้ว: โพสต์ ห้อง และคอมมูนิตี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulanmış, gerçek insanların sosyal ağı: gönderiler, odalar ve topluluk."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Соціальна мережа перевірених, справжніх людей: дописи, кімнати та спільнота."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تصدیق شدہ، حقیقی لوگوں کا سوشل نیٹ ورک: پوسٹس، رومز اور کمیونٹی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mạng xã hội của những người thật đã xác minh: bài đăng, phòng và cộng đồng."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由经过验证的真实用户组成的社交网络：帖子、房间和社区。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由經過驗證的真實用戶組成的社交網路：貼文、房間和社群。"
+          }
+        }
+      }
+    },
+    "app.spotlight.keywords": {
+      "comment": "Spotlight search keywords, comma-separated, never shown. This language's words for 'social', 'social network' and 'community' so that searching them finds the app.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تواصل اجتماعي, شبكة اجتماعية, مجتمع, اجتماعي, سوشال"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সামাজিক, সামাজিক নেটওয়ার্ক, সোশ্যাল, কমিউনিটি"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, xarxa social, comunitat"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sociální, sociální síť, komunita"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, socialt netværk, sociale medier, fællesskab"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sozial, soziales Netzwerk, soziale Medien, Community, Gemeinschaft"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "κοινωνικό, κοινωνικό δίκτυο, κοινότητα"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, social network, community, network"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, red social, redes sociales, comunidad"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sosiaalinen, sosiaalinen media, some, yhteisö"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, réseau social, réseaux sociaux, communauté"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "חברתי, רשת חברתית, קהילה"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सोशल, सामाजिक, सोशल नेटवर्क, समुदाय"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "društveno, društvena mreža, zajednica"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "közösségi, közösségi háló, közösségi média, közösség"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sosial, jejaring sosial, media sosial, komunitas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sociale, rete sociale, community, comunità"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ソーシャル, SNS, ソーシャルネットワーク, コミュニティ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소셜, 소셜 네트워크, SNS, 커뮤니티"
+          }
+        },
+        "ml": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "സോഷ്യൽ, സോഷ്യൽ നെറ്റ്‌വർക്ക്, കമ്മ്യൂണിറ്റി"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sosial, rangkaian sosial, media sosial, komuniti"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sosial, sosialt nettverk, sosiale medier, fellesskap"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sociaal, sociaal netwerk, sociale media, gemeenschap"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "społecznościowy, sieć społecznościowa, media społecznościowe, społeczność"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, rede social, redes sociais, comunidade"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, rede social, redes sociais, comunidade"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, rețea socială, rețele sociale, comunitate"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "социальный, социальная сеть, соцсеть, сообщество"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sociálny, sociálna sieť, komunita"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "social, socialt nätverk, sociala medier, gemenskap"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சமூக, சமூக வலைப்பின்னல், சோஷியல், சமூகம்"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సోషల్, సామాజిక, సోషల్ నెట్‌వర్క్, కమ్యూనిటీ"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "โซเชียล, โซเชียลเน็ตเวิร์ก, เครือข่ายสังคม, ชุมชน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sosyal, sosyal ağ, sosyal medya, topluluk"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "соціальний, соціальна мережа, соцмережа, спільнота"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سوشل, سماجی, سوشل نیٹ ورک, کمیونٹی"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "xã hội, mạng xã hội, cộng đồng"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "社交, 社交网络, 社区"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "社交, 社交網路, 社群"
+          }
+        }
+      }
+    },
     "auth.biometric.error.noSavedSignIn": {
       "comment": "Error when biometric sign-in is attempted with nothing saved.",
       "extractionState": "manual",
