@@ -9,8 +9,15 @@ public enum AppConfig {
     /// The single source of truth for the backend origin + version prefix.
     public static let apiBaseURLString = "https://sila.gmai.sa/api/v1"
     /// The web client. Permalinks a share carries point here, and links here
-    /// open the app when it is installed (universal links).
-    public static let webBaseURLString = "https://sila.gmai.sa"
+    /// open the app when it is installed (universal links). Known's address
+    /// is known.gmai.sa since the rename; the API stays on the same origin
+    /// under its old name, which costs nothing because nobody sees it.
+    public static let webBaseURLString = "https://known.gmai.sa"
+
+    /// The web client's address before the rename. Links already out there
+    /// (shared posts, vouch links, pushes sent before the backend moved) keep
+    /// opening the app; the app never makes new ones.
+    public static let legacyWebHosts: Set<String> = ["sila.gmai.sa"]
 
     /// ``apiBaseURLString`` parsed as a `URL`.
     ///
@@ -121,10 +128,10 @@ public enum AppConfig {
 
 
     /// Terms of Service, opened in a web sheet from registration.
-    public static let termsURLString = "https://sila.gmai.sa/legal/terms"
+    public static let termsURLString = "https://known.gmai.sa/legal/terms"
 
     /// Privacy Policy, opened in a web sheet from registration.
-    public static let privacyURLString = "https://sila.gmai.sa/legal/privacy"
+    public static let privacyURLString = "https://known.gmai.sa/legal/privacy"
 
     /// How long the OTP resend button stays disabled when the server does not
     /// tell us otherwise.

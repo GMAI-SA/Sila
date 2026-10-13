@@ -226,7 +226,7 @@ public actor AuthServiceMock: AuthServiceProtocol {
         try await delay()
         try failIfOffline()
         guard let account = biometricAccount else {
-            throw APIError.biometricFailed("No saved Sila sign-in on this device.")
+            throw APIError.biometricFailed("No saved Known sign-in on this device.")
         }
         let pair = Self.makePair(email: account, scenario: scenario, emailVerified: true)
         storedPair = pair

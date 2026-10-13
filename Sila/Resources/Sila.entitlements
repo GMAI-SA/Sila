@@ -24,6 +24,7 @@
 	-->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>webcredentials:known.gmai.sa</string>
 		<string>webcredentials:sila.gmai.sa</string>
 		<!-- The site's apple-app-site-association hands these to the app:
 		     /posts/*, /u/*, /events/* (not /events/new), /rooms/* (not
@@ -31,6 +32,7 @@
 		     DeepLink.parse reads (AssociatedDomainsTests keeps the two in
 		     step). A room link opens on the room's card, never in the room
 		     (round-2 CA-1). -->
+		<string>applinks:known.gmai.sa</string>
 		<string>applinks:sila.gmai.sa</string>
 	</array>
 </dict>

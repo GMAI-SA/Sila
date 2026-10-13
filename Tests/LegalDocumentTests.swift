@@ -6,13 +6,13 @@ import XCTest
 @MainActor
 final class LegalDocumentTests: XCTestCase {
 
-    private let terms = URL(string: "https://sila.gmai.sa/legal/terms")!
+    private let terms = URL(string: "https://known.gmai.sa/legal/terms")!
 
     // MARK: - Addresses
 
     func testEachSheetOpensItsOwnLegalPage() {
-        XCTAssertEqual(AppRouter.LegalDocument.terms.url?.absoluteString, "https://sila.gmai.sa/legal/terms")
-        XCTAssertEqual(AppRouter.LegalDocument.privacy.url?.absoluteString, "https://sila.gmai.sa/legal/privacy")
+        XCTAssertEqual(AppRouter.LegalDocument.terms.url?.absoluteString, "https://known.gmai.sa/legal/terms")
+        XCTAssertEqual(AppRouter.LegalDocument.privacy.url?.absoluteString, "https://known.gmai.sa/legal/privacy")
     }
 
     // MARK: - Navigation
@@ -25,12 +25,12 @@ final class LegalDocumentTests: XCTestCase {
         )
 
         XCTAssertFalse(
-            LegalPagePolicy.allowsNavigation(to: URL(string: "https://sila.gmai.sa/"), requested: terms, isMainFrame: true),
+            LegalPagePolicy.allowsNavigation(to: URL(string: "https://known.gmai.sa/"), requested: terms, isMainFrame: true),
             "the web app's front page"
         )
-        XCTAssertFalse(LegalPagePolicy.allowsNavigation(to: URL(string: "https://sila.gmai.sa/legal/privacy"), requested: terms, isMainFrame: true))
+        XCTAssertFalse(LegalPagePolicy.allowsNavigation(to: URL(string: "https://known.gmai.sa/legal/privacy"), requested: terms, isMainFrame: true))
         XCTAssertFalse(LegalPagePolicy.allowsNavigation(to: URL(string: "https://evil.example/legal/terms"), requested: terms, isMainFrame: true))
-        XCTAssertFalse(LegalPagePolicy.allowsNavigation(to: URL(string: "http://sila.gmai.sa/legal/terms"), requested: terms, isMainFrame: true))
+        XCTAssertFalse(LegalPagePolicy.allowsNavigation(to: URL(string: "http://known.gmai.sa/legal/terms"), requested: terms, isMainFrame: true))
         XCTAssertFalse(LegalPagePolicy.allowsNavigation(to: terms, requested: terms, isMainFrame: false), "no frames")
         XCTAssertFalse(LegalPagePolicy.allowsNavigation(to: nil, requested: terms, isMainFrame: true))
     }

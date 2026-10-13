@@ -51,14 +51,14 @@ public enum DeepLink: Equatable, Sendable {
 
     /// Reads a URL the system handed the app.
     ///
-    /// Only the web client's own host is honoured, on `https`, so a look-alike
+    /// Only the web client's own host (or its pre-rename one) is honoured, on `https`, so a look-alike
     /// domain cannot drive navigation. Anything else — the site root, a legal
     /// page, an unknown path — is `nil`, and the app simply opens where it was.
     public static func parse(_ url: URL) -> DeepLink? {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               components.scheme?.lowercased() == "https",
               let host = components.host?.lowercased(),
-              host == Permalink.base.host?.lowercased()
+              host == Permalink.base.host?.lowercased() || AppConfig.legacyWebHosts.contains(host)
         else { return nil }
 
         let parts = components.path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)

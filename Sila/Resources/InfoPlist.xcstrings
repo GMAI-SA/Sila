@@ -18,6 +18,23 @@
         }
       }
     },
+    "CFBundleName": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معروف"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Known"
+          }
+        }
+      }
+    },
     "NSCalendarsUsageDescription": {
       "comment": "System calendar prompt, shown when somebody adds a room to their calendar.",
       "extractionState": "manual",

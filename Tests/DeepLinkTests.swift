@@ -8,13 +8,13 @@ final class DeepLinkTests: XCTestCase {
     func testAPostPermalinkRoundTrips() {
         let id = UUID()
         let url = Permalink.post(id)
-        XCTAssertEqual(url.absoluteString, "https://sila.gmai.sa/posts/\(id.uuidString.lowercased())")
+        XCTAssertEqual(url.absoluteString, "https://known.gmai.sa/posts/\(id.uuidString.lowercased())")
         XCTAssertEqual(DeepLink.parse(url), .post(id: id))
     }
 
     func testAProfilePermalinkRoundTrips() {
         let url = Permalink.profile("Noura")
-        XCTAssertEqual(url.absoluteString, "https://sila.gmai.sa/u/noura")
+        XCTAssertEqual(url.absoluteString, "https://known.gmai.sa/u/noura")
         XCTAssertEqual(DeepLink.parse(url), .profile(handle: "noura"))
     }
 
@@ -22,6 +22,13 @@ final class DeepLinkTests: XCTestCase {
         let id = UUID()
         XCTAssertEqual(DeepLink.parse(URL(string: "https://sila.gmai.sa/posts/\(id.uuidString)/")!), .post(id: id))
         XCTAssertEqual(DeepLink.parse(URL(string: "https://SILA.gmai.sa/u/faisal")!), .profile(handle: "faisal"))
+    }
+
+    func testTheNewAndThePreRenameAddressBothOpenTheApp() {
+        let id = UUID()
+        XCTAssertEqual(DeepLink.parse(URL(string: "https://known.gmai.sa/posts/\(id.uuidString)")!), .post(id: id))
+        XCTAssertEqual(DeepLink.parse(URL(string: "https://sila.gmai.sa/posts/\(id.uuidString)")!), .post(id: id))
+        XCTAssertNil(DeepLink.parse(URL(string: "https://known.gmai.sa.evil.example/posts/\(id.uuidString)")!))
     }
 
     func testOtherHostsAndSchemesAreIgnored() {
