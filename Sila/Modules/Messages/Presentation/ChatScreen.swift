@@ -1,3 +1,5 @@
+import PhotosUI
+import QuickLook
 import SwiftUI
 
 /// One conversation.
@@ -16,6 +18,9 @@ public struct ChatScreen: View {
     private let onReport: (@MainActor (ReportSubject) -> Void)?
 
     @FocusState private var isComposing: Bool
+    @State private var isPickingPhotos = false
+    @State private var isPickingDocuments = false
+    @State private var pickedPhotos: [PhotosPickerItem] = []
 
     public init(
         viewModel: ChatViewModel,
@@ -77,6 +82,47 @@ public struct ChatScreen: View {
             // Says what deletion actually does. The row survives with its text
             // blanked so a report keeps its evidence.
             Text(L10n.t("messages.delete.explanation"))
+        }
+        // Pictures and documents (contract v39).
+        .photosPicker(
+            isPresented: $isPickingPhotos,
+            selection: $pickedPhotos,
+            maxSelectionCount: max(1, viewModel.remainingFileSlots),
+            matching: .images
+        )
+        .onChange(of: pickedPhotos) { _, items in
+            guard !items.isEmpty else { return }
+            pickedPhotos = []
+            Task {
+                // One at a time, in the order picked, so each is checked
+                // against the room left.
+                for item in items {
+                    if let data = try? await item.loadTransferable(type: Data.self) {
+                        await viewModel.addPicture(data)
+                    } else {
+                        viewModel.toast = .error(ChatFileProblem.unreadable.message)
+                    }
+                }
+            }
+        }
+        .fileImporter(
+            isPresented: $isPickingDocuments,
+            allowedContentTypes: ChatFilePolicy.documentTypes,
+            allowsMultipleSelection: true
+        ) { result in
+            guard case let .success(urls) = result, !urls.isEmpty else { return }
+            Task { await viewModel.addDocuments(urls) }
+        }
+        .fullScreenCover(item: $viewModel.viewing) { viewing in
+            ChatPictureViewer(
+                viewing: viewing,
+                load: { attachment, thumbnail in try await viewModel.pictureData(attachment, thumbnail: thumbnail) },
+                onClose: { viewModel.viewing = nil }
+            )
+        }
+        .quickLookPreview($viewModel.previewURL)
+        .sheet(item: $viewModel.sharing) { shared in
+            ChatShareSheet(url: shared.url)
         }
     }
 
@@ -180,6 +226,18 @@ public struct ChatScreen: View {
             if mine { Spacer(minLength: SLSpacing.xxl) }
 
             VStack(alignment: mine ? .trailing : .leading, spacing: SLSpacing.xs) {
+                if !message.attachments.isEmpty {
+                    ChatMessageAttachmentsView(
+                        message: message,
+                        mine: mine,
+                        openingDocumentId: viewModel.openingDocumentId,
+                        load: { attachment, thumbnail in try await viewModel.pictureData(attachment, thumbnail: thumbnail) },
+                        onOpenPicture: { index in viewModel.openPicture(in: message, at: index) },
+                        onOpenDocument: { document in Task { await viewModel.openDocument(document) } }
+                    )
+                }
+
+                if message.deleted || message.visibleText != nil || message.attachments.isEmpty {
                 Text(message.text ?? L10n.t("messages.bubble.deleted"))
                     .font(SLFont.body)
                     .italic(message.deleted)
@@ -194,6 +252,7 @@ public struct ChatScreen: View {
                         \.layoutDirection,
                         TextDirection.resolve(languageCode: nil, text: message.text).layoutDirection
                     )
+                }
 
                 Text(RelativeTime.short(message.createdAt))
                     .font(SLFont.caption)
@@ -204,6 +263,19 @@ public struct ChatScreen: View {
             .background(mine ? SLColor.primary : SLColor.surface2)
             .clipShape(RoundedRectangle(cornerRadius: SLRadius.lg, style: .continuous))
             .contextMenu {
+                // "Open" and "Download" for each document (contract v39 §8).
+                ForEach(message.documents) { document in
+                    Button {
+                        Task { await viewModel.openDocument(document) }
+                    } label: {
+                        Label(Self.menuTitle(L10n.t("messages.files.open"), document), systemImage: "doc.viewfinder")
+                    }
+                    Button {
+                        Task { await viewModel.downloadDocument(document) }
+                    } label: {
+                        Label(Self.menuTitle(L10n.t("messages.files.download"), document), systemImage: "arrow.down.circle")
+                    }
+                }
                 if mine && !message.deleted {
                     Button(L10n.t("messages.delete.action"), role: .destructive) {
                         viewModel.requestDeletion(of: message)
@@ -221,17 +293,58 @@ public struct ChatScreen: View {
 
             if !mine { Spacer(minLength: SLSpacing.xxl) }
         }
-        .accessibilityElement(children: .combine)
+        // With files, each picture and document stays its own control.
+        .accessibilityElement(children: message.attachments.isEmpty ? .combine : .contain)
         .accessibilityLabel(
             Text(
                 mine
-                    ? L10n.t("messages.bubble.mine.a11yLabel", message.text ?? "")
-                    : L10n.t("messages.bubble.theirs.a11yLabel", viewModel.conversation.other.displayName, message.text ?? "")
+                    ? L10n.t("messages.bubble.mine.a11yLabel", message.spokenText)
+                    : L10n.t("messages.bubble.theirs.a11yLabel", viewModel.conversation.other.displayName, message.spokenText)
             )
         )
     }
 
+    /// "Open · Lease.pdf" — which document a menu item is about.
+    private static func menuTitle(_ action: String, _ document: ChatAttachment) -> String {
+        document.filename.isEmpty ? action : "\(action) · \(document.filename)"
+    }
+
     // MARK: - Composer
+
+    /// "Attach": a picture from the library, or a document from Files.
+    private var attachMenu: some View {
+        Menu {
+            Button {
+                openPicker { isPickingPhotos = true }
+            } label: {
+                Label(L10n.t("messages.files.photos"), systemImage: "photo.on.rectangle")
+            }
+            Button {
+                openPicker { isPickingDocuments = true }
+            } label: {
+                Label(L10n.t("messages.files.document"), systemImage: "doc")
+            }
+        } label: {
+            Image(systemName: "paperclip")
+                .font(.system(size: 22))
+                .foregroundStyle(SLColor.primary)
+                .frame(width: 32, height: 32)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(Text(L10n.t("messages.files.attach")))
+        .accessibilityIdentifier("chat.attach")
+    }
+
+    /// Opens a picker while the message has room for another file; says the
+    /// limit otherwise.
+    private func openPicker(_ open: () -> Void) {
+        guard viewModel.remainingFileSlots > 0 else {
+            viewModel.toast = .warning(ChatFileCopy.tooMany(viewModel.filesConfig.maxPerMessage))
+            return
+        }
+        isComposing = false
+        open()
+    }
 
     @ViewBuilder
     private var composer: some View {
@@ -239,7 +352,19 @@ public struct ChatScreen: View {
             VStack(spacing: 0) {
                 SLDivider()
 
+                if !viewModel.files.isEmpty {
+                    ChatComposerFilesTray(
+                        files: viewModel.files,
+                        onRetry: { id in viewModel.retryFile(id) },
+                        onRemove: { id in viewModel.removeFile(id) }
+                    )
+                }
+
                 HStack(alignment: .bottom, spacing: SLSpacing.sm) {
+                    if viewModel.canAttach {
+                        attachMenu
+                    }
+
                     TextField(
                         L10n.t("messages.composer.placeholder"),
                         text: $viewModel.draft,

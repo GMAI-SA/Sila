@@ -209,10 +209,11 @@ public struct ConversationsScreen: View {
                             .lineLimit(1)
                             .accessibilityIdentifier("messages.row.typing")
                     } else {
-                        Text(conversation.lastMessage ?? L10n.t("messages.preview.deleted"))
+                        // "Photo" / "Document" for a message of files (contract v39).
+                        Text(conversation.previewText ?? L10n.t("messages.preview.deleted"))
                             .font(SLFont.body)
                             .foregroundStyle(
-                                conversation.lastMessage == nil ? SLColor.textMuted : SLColor.textSecondary
+                                conversation.previewText == nil ? SLColor.textMuted : SLColor.textSecondary
                             )
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)

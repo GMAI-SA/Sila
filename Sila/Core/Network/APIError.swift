@@ -515,6 +515,27 @@ public enum APIErrorCode: String, Sendable, Equatable {
     /// that never arrived.
     case keyExists = "key_exists"
 
+    // MARK: Contract v39 — pictures and documents in messages
+
+    /// A file refused (400/413) or not there yet (409 `not_uploaded`);
+    /// `detail.reason` says why, and the words follow it.
+    case attachmentInvalid = "attachment_invalid"
+    /// One of the files is not the sender's, not ready, sent already or swept
+    /// (HTTP 400). Nothing was sent.
+    case attachmentUnavailable = "attachment_unavailable"
+    /// More files than `max_per_message` (HTTP 400).
+    case tooManyAttachments = "too_many_attachments"
+    /// Files in a conversation that is still a request (HTTP 403).
+    case attachmentsNeedAccepted = "attachments_need_accepted"
+    /// Files are off on this server (HTTP 503).
+    case chatFilesOff = "chat_files_off"
+    /// Neither words nor files (HTTP 400).
+    case emptyMessage = "empty_message"
+    /// A declared size the server will not take (HTTP 400).
+    case invalidSize = "invalid_size"
+    /// Discarding a file that has gone out in a message (HTTP 409).
+    case alreadySent = "already_sent"
+
     /// Anything the client does not recognise.
     case unknown
 
@@ -896,6 +917,16 @@ public enum APIError: Error, Equatable, Sendable {
             case .guestsNotAllowed: return L10n.t("guest.room.refusal.guestsNotAllowed.title")
             case .guestsFull: return L10n.t("guest.room.refusal.guestsFull.title")
             case .privateHost: return L10n.t("rooms.guests.allow.private")
+            case .attachmentInvalid:
+                // Worded from `reason` as the error was read off the wire.
+                return message.isEmpty ? L10n.t("messages.files.failed") : message
+            case .attachmentUnavailable: return L10n.t("messages.files.error.unavailable")
+            case .tooManyAttachments: return ChatFileCopy.tooMany(ChatFilesConfig.defaultMaxPerMessage)
+            case .attachmentsNeedAccepted: return L10n.t("messages.files.needAccepted")
+            case .chatFilesOff: return L10n.t("messages.files.error.off")
+            case .emptyMessage: return L10n.t("error.validation")
+            case .invalidSize: return L10n.t("messages.files.reason.unreadable")
+            case .alreadySent: return L10n.t("common.somethingWentWrong")
             case .attestationInvalid, .challengeStale, .keyUnknown, .keyExists:
                 // App Attest's answers stay inside `AppAttestor`: a submission
                 // goes with or without the device's signature, never stopped.

@@ -22,6 +22,10 @@ public struct Conversation: Identifiable, Hashable, Sendable {
     public let lastMessageAt: Date?
     /// A preview of the newest message, or `nil` when it was deleted.
     public let lastMessage: String?
+    /// What the newest message was (contract v39). For a picture or a
+    /// document ``lastMessage`` is empty and the row says "Photo" or
+    /// "Document"; `nil` from a server that does not say.
+    public let lastMessageKind: MessageKind?
 
     public init(
         id: UUID,
@@ -30,7 +34,8 @@ public struct Conversation: Identifiable, Hashable, Sendable {
         isRequest: Bool,
         unreadCount: Int,
         lastMessageAt: Date?,
-        lastMessage: String?
+        lastMessage: String?,
+        lastMessageKind: MessageKind? = nil
     ) {
         self.id = id
         self.other = other
@@ -39,6 +44,18 @@ public struct Conversation: Identifiable, Hashable, Sendable {
         self.unreadCount = unreadCount
         self.lastMessageAt = lastMessageAt
         self.lastMessage = lastMessage
+        self.lastMessageKind = lastMessageKind
+    }
+
+    /// The inbox row's line: the words, or "Photo" / "Document" for a message
+    /// of files; `nil` when the newest message was deleted.
+    public var previewText: String? {
+        if let lastMessage, !lastMessage.isEmpty { return lastMessage }
+        switch lastMessageKind {
+        case .image?: return ChatFileCopy.label(for: .image)
+        case .document?: return ChatFileCopy.label(for: .document)
+        case .text?, nil: return lastMessage
+        }
     }
 
     /// A conversation with somebody you have never written to.
@@ -78,6 +95,9 @@ public struct DirectMessage: Identifiable, Hashable, Sendable {
     public let deleted: Bool
     public let read: Bool
     public let createdAt: Date
+    /// Pictures and documents, in the order the sender chose (contract v39).
+    /// Always empty for a deleted message.
+    public let attachments: [ChatAttachment]
 
     public init(
         id: UUID,
@@ -86,7 +106,8 @@ public struct DirectMessage: Identifiable, Hashable, Sendable {
         text: String?,
         deleted: Bool,
         read: Bool,
-        createdAt: Date
+        createdAt: Date,
+        attachments: [ChatAttachment] = []
     ) {
         self.id = id
         self.conversationId = conversationId
@@ -95,6 +116,32 @@ public struct DirectMessage: Identifiable, Hashable, Sendable {
         self.deleted = deleted
         self.read = read
         self.createdAt = createdAt
+        self.attachments = deleted ? [] : attachments
+    }
+
+    /// The pictures, in order.
+    public var pictures: [ChatAttachment] { attachments.filter { $0.kind == .image } }
+    /// The documents, in order.
+    public var documents: [ChatAttachment] { attachments.filter { $0.kind == .document } }
+
+    /// Words to show: `nil` for a message of files only.
+    public var visibleText: String? {
+        guard let text, !text.isEmpty else { return nil }
+        return text
+    }
+
+    /// What the inbox row should say this message was.
+    public var kind: MessageKind? {
+        guard !deleted else { return nil }
+        guard let first = attachments.first else { return .text }
+        return first.kind == .image ? MessageKind.image : MessageKind.document
+    }
+
+    /// The words VoiceOver reads: the text, or "Photo" / "Document".
+    public var spokenText: String {
+        if let visibleText { return visibleText }
+        if let first = attachments.first { return ChatFileCopy.label(for: first.kind) }
+        return text ?? ""
     }
 
     /// Whether the viewer wrote this one.
@@ -132,7 +179,8 @@ extension Conversation {
         isRequest: Bool? = nil,
         unreadCount: Int? = nil,
         lastMessageAt: Date? = nil,
-        lastMessage: String?? = nil
+        lastMessage: String?? = nil,
+        lastMessageKind: MessageKind?? = nil
     ) -> Conversation {
         Conversation(
             id: id,
@@ -141,7 +189,8 @@ extension Conversation {
             isRequest: isRequest ?? self.isRequest,
             unreadCount: unreadCount ?? self.unreadCount,
             lastMessageAt: lastMessageAt ?? self.lastMessageAt,
-            lastMessage: lastMessage ?? self.lastMessage
+            lastMessage: lastMessage ?? self.lastMessage,
+            lastMessageKind: lastMessageKind ?? self.lastMessageKind
         )
     }
 }
@@ -152,7 +201,8 @@ extension DirectMessage {
     func markedRead() -> DirectMessage {
         DirectMessage(
             id: id, conversationId: conversationId, sender: sender,
-            text: text, deleted: deleted, read: true, createdAt: createdAt
+            text: text, deleted: deleted, read: true, createdAt: createdAt,
+            attachments: attachments
         )
     }
 
@@ -170,7 +220,7 @@ extension DirectMessage {
 extension Conversation: Decodable {
 
     private enum CodingKeys: String, CodingKey {
-        case id, other, accepted, isRequest, unreadCount, lastMessageAt, lastMessage
+        case id, other, accepted, isRequest, unreadCount, lastMessageAt, lastMessage, lastMessageKind
     }
 
     public init(from decoder: Decoder) throws {
@@ -186,13 +236,15 @@ extension Conversation: Decodable {
         // be a fourth implementation that has to be kept in step with it.
         lastMessageAt = try container.decodeIfPresent(Date.self, forKey: .lastMessageAt)
         lastMessage = try container.decodeIfPresent(String.self, forKey: .lastMessage)
+        let kind = (try? container.decodeIfPresent(String.self, forKey: .lastMessageKind)) ?? nil
+        lastMessageKind = kind.flatMap(MessageKind.init(rawValue:))
     }
 }
 
 extension DirectMessage: Decodable {
 
     private enum CodingKeys: String, CodingKey {
-        case id, conversationId, sender, text, deleted, read, createdAt
+        case id, conversationId, sender, text, deleted, read, createdAt, attachments
     }
 
     public init(from decoder: Decoder) throws {
@@ -204,6 +256,11 @@ extension DirectMessage: Decodable {
         deleted = try container.decodeIfPresent(Bool.self, forKey: .deleted) ?? (text == nil)
         read = try container.decodeIfPresent(Bool.self, forKey: .read) ?? false
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        // Missing (an older server), null or malformed is no files; one
+        // malformed file costs that file, never the message.
+        let files = ((try? container.decodeIfPresent(LenientAttachmentList.self, forKey: .attachments)) ?? nil)?
+            .attachments ?? []
+        attachments = deleted ? [] : files
     }
 }
 

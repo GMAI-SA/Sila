@@ -300,13 +300,17 @@ public struct AccountFeatures: Codable, Equatable, Sendable {
     /// This account may upload one now: video is open, the account is
     /// verified, and posting is not paused. The picker is shown only then.
     public var videoUpload: Bool
+    /// Pictures and documents may go into private messages (contract v39).
+    /// The attach button is shown only while this is true.
+    public var chatFiles: Bool
 
-    public init(video: Bool = false, videoUpload: Bool = false) {
+    public init(video: Bool = false, videoUpload: Bool = false, chatFiles: Bool = false) {
         self.video = video
         self.videoUpload = videoUpload
+        self.chatFiles = chatFiles
     }
 
-    private enum CodingKeys: String, CodingKey { case video, videoUpload }
+    private enum CodingKeys: String, CodingKey { case video, videoUpload, chatFiles }
 
     /// A missing or malformed flag is `false`: an entry point the server did
     /// not offer is never shown.
@@ -314,6 +318,7 @@ public struct AccountFeatures: Codable, Equatable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         video = ((try? c.decodeIfPresent(Bool.self, forKey: .video)) ?? nil) ?? false
         videoUpload = ((try? c.decodeIfPresent(Bool.self, forKey: .videoUpload)) ?? nil) ?? false
+        chatFiles = ((try? c.decodeIfPresent(Bool.self, forKey: .chatFiles)) ?? nil) ?? false
     }
 }
 

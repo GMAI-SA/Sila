@@ -172,7 +172,8 @@ public final class ConversationsViewModel {
             isRequest: filedAsRequest,
             unreadCount: current.unreadCount + (mine ? 0 : 1),
             lastMessageAt: new.message.createdAt,
-            lastMessage: .some(new.message.deleted ? nil : new.message.text)
+            lastMessage: .some(new.message.deleted ? nil : new.message.text),
+            lastMessageKind: .some(new.message.kind)
         )
         if filedAsRequest {
             requests.removeAll { $0.id == updated.id }

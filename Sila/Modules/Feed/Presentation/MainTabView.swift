@@ -1683,7 +1683,10 @@ public struct MainTabView: View {
                     viewerId: container.session.user?.id,
                     service: container.messagesService,
                     realtime: container.flags.realtime ? container.realtime : nil,
-                    typing: container.typing
+                    typing: container.typing,
+                    // Pictures and documents (contract v39): only while the
+                    // server offers them to this account.
+                    filesAllowed: { [session = container.session] in session.user?.features.chatFiles == true }
                 )
             }) { viewModel in
                 ChatScreen(

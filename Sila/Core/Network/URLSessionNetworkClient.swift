@@ -246,6 +246,9 @@ public final class URLSessionNetworkClient: NetworkClient {
             case .videoProcessingFailed:
                 // Posting a failed video: the failure's own words.
                 message = VideoCopy.failure(code: envelope.detail.failureCode)
+            case .attachmentInvalid:
+                // A file in a message (contract v39): the reason's own words.
+                message = ChatFileCopy.reason(envelope.detail.reason)
             default:
                 message = envelope.detail.message
             }
