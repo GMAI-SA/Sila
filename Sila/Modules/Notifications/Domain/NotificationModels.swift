@@ -76,6 +76,10 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
     case vouchReview = "vouch_review"
     case vouchStrike = "vouch_strike"
     case vouchInviteClosed = "vouch_invite_closed"
+    /// The outcome of your own identity check: approved, or not (`detail` =
+    /// the reason code, or `nil`). The actor is the reader. Always on.
+    case verificationApproved = "verification_approved"
+    case verificationRejected = "verification_rejected"
     /// A kind this build does not recognise.
     case unknown
 
@@ -103,7 +107,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
              .roomLike, .prompt, .identityImpostor, .roomTomorrow, .roomSoon, .roomLive, .roomCancelled,
              .eventInvite, .eventTomorrow, .eventSoon, .eventLive, .eventChanged, .eventCancelled,
              .vouchClaimed, .vouchConfirmed, .vouchDeclined, .vouchExpiring, .vouchEnded, .vouchGraduated,
-             .vouchVerified, .vouchReview, .vouchStrike, .vouchInviteClosed:
+             .vouchVerified, .vouchReview, .vouchStrike, .vouchInviteClosed,
+             .verificationApproved, .verificationRejected:
             return false
         case .like, .repost, .reply, .mention, .roomShared, .pollClosed, .reaction, .threadReply: return true
         }
@@ -147,6 +152,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .vouchReview: return "questionmark.bubble"
         case .vouchStrike: return "hand.raised.slash"
         case .vouchInviteClosed: return "lock"
+        case .verificationApproved: return "checkmark.seal.fill"
+        case .verificationRejected: return "exclamationmark.triangle.fill"
         case .unknown: return "bell"
         }
     }
@@ -182,6 +189,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .vouchConfirmed, .vouchGraduated, .vouchVerified: return SLColor.secondary
         case .vouchDeclined, .vouchEnded, .vouchInviteClosed: return SLColor.textSecondary
         case .vouchStrike: return SLColor.danger
+        case .verificationApproved: return SLColor.secondary
+        case .verificationRejected: return SLColor.warning
         case .unknown: return SLColor.textSecondary
         }
     }
@@ -199,6 +208,9 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
 
     /// Any vouching notice.
     public var isVouching: Bool { rawValue.hasPrefix("vouch_") }
+
+    /// The outcome of the reader's own identity check.
+    public var isVerificationOutcome: Bool { self == .verificationApproved || self == .verificationRejected }
 
     /// Plural label for the settings list.
     public var settingTitle: String {
@@ -241,6 +253,7 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
         case .vouchReview: return L10n.t("notifications.kind.vouchReview.title")
         case .vouchStrike: return L10n.t("notifications.kind.vouchStrike.title")
         case .vouchInviteClosed: return L10n.t("notifications.kind.vouchInviteClosed.title")
+        case .verificationApproved, .verificationRejected: return L10n.t("notifications.kind.verification.title")
         case .unknown: return L10n.t("notifications.kind.unknown.title")
         }
     }
@@ -306,6 +319,8 @@ public enum NotificationKind: String, Sendable, Hashable, Identifiable, Decodabl
             return L10n.t("notifications.kind.vouchEnded.detail")
         case .vouchReview, .vouchStrike:
             return L10n.t("notifications.kind.vouch.moderation.detail")
+        case .verificationApproved, .verificationRejected:
+            return L10n.t("notifications.kind.verification.detail")
         case .unknown:
             return L10n.t("notifications.kind.unknown.detail")
         }
@@ -466,9 +481,16 @@ public struct UserNotification: Identifiable, Equatable, Sendable, Decodable, Ha
         NotificationCopy.sentence(kind, actor: actor.displayName, community: communityName, detail: detail)
     }
 
+    /// Why an identity check was not approved, when the code is one this
+    /// build can say in words.
+    public var verificationReason: String? {
+        NotificationCopy.verificationReason(kind, detail: detail)
+    }
+
     /// The whole row as one line for VoiceOver.
     public var accessibilityDescription: String {
         var parts = [sentence, RelativeTime.accessible(createdAt)]
+        if let reason = verificationReason { parts.append(reason) }
         if let kind = postSensitive {
             parts.append(NotificationCopy.covered(kind, note: postExcerpt))
         } else if let excerpt = postExcerpt {
@@ -806,6 +828,10 @@ public enum NotificationCopy {
         case .vouchReview: return L10n.t("notifications.sentence.vouchReview")
         case .vouchStrike: return L10n.t("notifications.sentence.vouchStrike")
         case .vouchInviteClosed: return L10n.t("notifications.sentence.vouchInviteClosed")
+        // Your own identity check; the reason, when there is one, goes on
+        // the line under it (``verificationReason(_:)``).
+        case .verificationApproved: return L10n.t("notifications.sentence.verificationApproved")
+        case .verificationRejected: return L10n.t("notifications.sentence.verificationRejected")
         // Not "new notification": it still says who, and it says plainly that
         // the *app* is the part that is out of date, rather than implying the
         // event was unimportant.
@@ -829,8 +855,24 @@ public enum NotificationCopy {
     /// Shown in place of the excerpt when the post behind a row is gone.
     public static var deletedPost: String { L10n.t("notifications.row.deletedPost") }
 
+    /// The line under a `verification_rejected` row: the reason, in words,
+    /// for a code this build knows; `nil` for none or for an unknown code —
+    /// the status screen still says why, and a raw code is not a sentence.
+    public static func verificationReason(_ kind: NotificationKind, detail: String?) -> String? {
+        guard kind == .verificationRejected,
+              let code = detail?.trimmingCharacters(in: .whitespacesAndNewlines), !code.isEmpty
+        else { return nil }
+        switch code {
+        case "upheld": return L10n.t("notifications.row.verification.upheld")
+        case "revoked": return VerificationRejection.display("verification_revoked")
+        default:
+            return VerificationRejection.isMachineReason(code) ? VerificationRejection.display(code) : nil
+        }
+    }
+
     /// What tapping a row does.
     public static func openHint(_ kind: NotificationKind) -> String {
+        if kind.isVerificationOutcome { return L10n.t("notifications.row.openHint.verification") }
         if kind.isVouching { return L10n.t("notifications.row.openHint.vouch") }
         return L10n.t(kind.isAboutAPost ? "notifications.row.openHint.post" : "notifications.row.openHint.profile")
     }

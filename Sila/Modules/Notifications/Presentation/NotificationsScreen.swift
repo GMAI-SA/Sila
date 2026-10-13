@@ -32,6 +32,7 @@ public struct NotificationsScreen: View {
     /// own vouch.
     private let onOpenVouching: (@MainActor () -> Void)?
     private let onOpenOwnVouch: (@MainActor () -> Void)?
+    private let onOpenVerification: (@MainActor () -> Void)?
     private let onOpenSettings: (@MainActor () -> Void)?
 
     /// The kind marker is nudged outwards from the avatar by hand, and a raw
@@ -54,6 +55,7 @@ public struct NotificationsScreen: View {
         onOpenEvent: (@MainActor (UUID) -> Void)? = nil,
         onOpenVouching: (@MainActor () -> Void)? = nil,
         onOpenOwnVouch: (@MainActor () -> Void)? = nil,
+        onOpenVerification: (@MainActor () -> Void)? = nil,
         onOpenSettings: (@MainActor () -> Void)? = nil
     ) {
         self.viewModel = viewModel
@@ -65,6 +67,7 @@ public struct NotificationsScreen: View {
         self.onOpenEvent = onOpenEvent
         self.onOpenVouching = onOpenVouching
         self.onOpenOwnVouch = onOpenOwnVouch
+        self.onOpenVerification = onOpenVerification
         self.onOpenSettings = onOpenSettings
     }
 
@@ -241,6 +244,14 @@ public struct NotificationsScreen: View {
                                 .foregroundStyle(.white)
                                 .frame(width: 44, height: 44)
                                 .background(Circle().fill(SLColor.warning))
+                        } else if notification.kind.isVerificationOutcome {
+                            // The app speaking about your own check: its
+                            // seal or its warning, not your own face.
+                            Image(systemName: notification.kind.icon)
+                                .font(.system(size: 20))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Circle().fill(notification.kind.tint))
                         } else {
                             SLAvatar(
                                 url: notification.actor.avatarURL,
@@ -284,6 +295,14 @@ public struct NotificationsScreen: View {
                         }
                         SLCountryBadge(countryCode: notification.actor.countryCode)
                         VouchTag(person: notification.actor, style: .iconOnly)
+                    }
+
+                    if let reason = notification.verificationReason {
+                        Text(reason)
+                            .font(SLFont.caption)
+                            .foregroundStyle(SLColor.textSecondary)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     excerpt(notification)
@@ -404,6 +423,7 @@ public struct NotificationsScreen: View {
             case let .event(id): onOpenEvent?(id)
             case .vouching: onOpenVouching?()
             case .ownVouch: onOpenOwnVouch?()
+            case .verification: onOpenVerification?()
             }
         }
     }

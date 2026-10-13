@@ -307,5 +307,40 @@ final class NotificationModelsTests: XCTestCase {
         XCTAssertNotEqual(asked.sentence, letIn.sentence, "asking and being let in are different news")
         XCTAssertNotEqual(letIn.sentence, NotificationCopy.sentence(.follow, actor: "Faisal"))
     }
-}
 
+    // MARK: - Identity-check outcomes
+
+    func testVerificationOutcomesDecodeWithTheirOwnSentencesAndReason() throws {
+        let approved = try decode(UserNotification.self, Self.row(kind: "verification_approved", postId: nil, excerpt: nil))
+        XCTAssertEqual(approved.kind, .verificationApproved)
+        XCTAssertEqual(approved.sentence, "You're verified ✓")
+        XCTAssertNil(approved.verificationReason)
+        XCTAssertFalse(approved.kind.isAboutAPost)
+
+        let rejected = try decode(UserNotification.self, Self.row(kind: "verification_rejected", postId: nil, excerpt: nil))
+        XCTAssertEqual(rejected.kind, .verificationRejected)
+        XCTAssertEqual(rejected.sentence, "Your identity check wasn't approved — tap to see why")
+        XCTAssertEqual(
+            NotificationCopy.verificationReason(.verificationRejected, detail: "no_face"),
+            VerificationRejection.display("no_face")
+        )
+        XCTAssertEqual(
+            NotificationCopy.verificationReason(.verificationRejected, detail: "revoked"),
+            VerificationRejection.display("verification_revoked")
+        )
+        XCTAssertNotNil(NotificationCopy.verificationReason(.verificationRejected, detail: "upheld"))
+        // An unknown code is not a sentence: nothing under the row.
+        XCTAssertNil(NotificationCopy.verificationReason(.verificationRejected, detail: "some_new_code"))
+        XCTAssertNil(NotificationCopy.verificationReason(.verificationRejected, detail: nil))
+    }
+
+    func testAKindThisBuildDoesNotKnowStillRendersAGenericRow() throws {
+        let page = try decode(NotificationPage.self, """
+        {"notifications": [\(Self.row(kind: "brand_new_kind", postId: nil, excerpt: nil)),
+                           \(Self.row(kind: "verification_approved", postId: nil, excerpt: nil))],
+         "next_cursor": null, "unread_count": 2}
+        """)
+        XCTAssertEqual(page.notifications.map(\.kind), [.unknown, .verificationApproved])
+        XCTAssertFalse(page.notifications[0].sentence.isEmpty)
+    }
+}

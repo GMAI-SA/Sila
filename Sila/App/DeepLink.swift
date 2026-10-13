@@ -48,6 +48,9 @@ public enum DeepLink: Equatable, Sendable {
     case vouching
     /// The person's own vouch and the way to verify: `/vouch`.
     case ownVouch
+    /// Your own identity check's status: `/verify` — where a
+    /// `verification_approved` / `verification_rejected` push points.
+    case verification
 
     /// Reads a URL the system handed the app.
     ///
@@ -66,6 +69,7 @@ public enum DeepLink: Equatable, Sendable {
             switch parts[0] {
             case "vouching": return .vouching
             case "vouch": return .ownVouch
+            case "verify": return .verification
             default: return nil
             }
         }

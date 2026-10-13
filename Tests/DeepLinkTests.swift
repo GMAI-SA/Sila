@@ -46,4 +46,10 @@ final class DeepLinkTests: XCTestCase {
         XCTAssertNil(DeepLink.parse(URL(string: "https://sila.gmai.sa/u/")!))
         XCTAssertNil(DeepLink.parse(URL(string: "https://sila.gmai.sa/u/a/b")!))
     }
+
+    func testTheVerifyPageOpensTheVerificationStatus() {
+        XCTAssertEqual(DeepLink.parse(URL(string: "https://known.gmai.sa/verify")!), .verification)
+        XCTAssertEqual(PushCopy.vouchLink(forKind: "verification_rejected"), .verification)
+        XCTAssertEqual(PushCopy.vouchLink(forKind: "verification_approved"), .verification)
+    }
 }

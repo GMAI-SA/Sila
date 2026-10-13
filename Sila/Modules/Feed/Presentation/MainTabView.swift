@@ -999,6 +999,7 @@ public struct MainTabView: View {
                     onOpenEvent: { id in openEvent(id) },
                     onOpenVouching: openVouchingList,
                     onOpenOwnVouch: openOwnVouch,
+                    onOpenVerification: openVerificationStatus,
                     onOpenSettings: {
                         guard container.flags.preferences else {
                             stub(StubFeature.notificationSettings)
@@ -1183,6 +1184,8 @@ public struct MainTabView: View {
             openVouchingList()
         case .ownVouch:
             openOwnVouch()
+        case .verification:
+            openVerificationStatus()
         case .vouchInvite:
             // Taken by the inbox before it reaches the router (see
             // `AppContainer.open`); nothing to push here.
@@ -1244,6 +1247,24 @@ public struct MainTabView: View {
     private func openVouchingList() {
         selection = .profile
         container.router.profilePath = [.vouching]
+    }
+
+    /// Your own identity check, from its notification or push: `/auth/me` is
+    /// read again, so a rejected account lands on the rejected screen (with
+    /// its reason and appeal) and an approved one gets its badge. Whoever is
+    /// still here afterwards — verified, or vouched while the document was
+    /// refused — sees their own page, or their vouch and the way to verify.
+    private func openVerificationStatus() {
+        Task {
+            await container.session.refreshUser()
+            guard let user = container.session.user else { return }
+            if user.isVouched, user.verificationStatus != .verified {
+                openOwnVouch()
+            } else {
+                selection = .profile
+                container.router.profilePath = []
+            }
+        }
     }
 
     /// The person's own vouch, from the same places, on the tab they are on.

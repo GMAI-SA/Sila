@@ -51,6 +51,9 @@ public enum NotificationDestination: Equatable, Sendable {
     case vouching
     /// The person's own vouch and the way to verify.
     case ownVouch
+    /// The reader's own identity check: the status the session reads again
+    /// (the rejected screen with its reason, or the account now verified).
+    case verification
 }
 
 /// Drives ``NotificationsScreen``.
@@ -350,6 +353,12 @@ public final class NotificationsViewModel {
         if let eventId = notification.eventId {
             await markRead(notification)
             return .event(id: eventId)
+        }
+        // An identity-check outcome is about the reader's own standing, not
+        // about the actor (who is the reader).
+        if notification.kind.isVerificationOutcome {
+            await markRead(notification)
+            return .verification
         }
         // A vouching row opens the side it was written for, never the actor's
         // profile.

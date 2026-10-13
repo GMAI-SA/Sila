@@ -733,7 +733,7 @@ public final class AppContainer {
         switch link {
         case let .vouchInvite(token):
             vouchInbox.receive(token: token)
-        case .vouching, .ownVouch:
+        case .vouching, .ownVouch, .verification:
             // A vouching push is about standing — confirmed, declined, ended,
             // verified — so the session reads `/auth/me` again: somebody
             // waiting at the wall may be a member now, or the other way round.

@@ -251,7 +251,9 @@ public enum PushCopy {
         // Vouching (contract v24): a category, never a name.
         "push.vouch_claimed", "push.vouch_confirmed", "push.vouch_declined", "push.vouch_expiring",
         "push.vouch_ended", "push.vouch_graduated", "push.vouch_verified", "push.vouch_review",
-        "push.vouch_strike", "push.vouch_invite_closed"
+        "push.vouch_strike", "push.vouch_invite_closed",
+        // Your own identity check, approved or not. Always on.
+        "push.verification_approved", "push.verification_rejected"
     ]
 
     /// Where a vouching push lands when its `url` is missing or unreadable:
@@ -259,7 +261,11 @@ public enum PushCopy {
     /// (the server's `push.VOUCHER_KINDS`). `nil` for any other kind.
     /// `vouch_ended` reaches either side and is routed by its `url`, which
     /// names the recipient's page; without one it opens the person's own.
+    /// An identity-check push (`verification_*`) opens the verification
+    /// status the same way.
     public static func vouchLink(forKind kind: String) -> DeepLink? {
+        // An identity-check push without its `url` still opens the status.
+        if kind == "verification_approved" || kind == "verification_rejected" { return .verification }
         guard kind.hasPrefix("vouch_") else { return nil }
         return voucherKinds.contains(kind) ? .vouching : .ownVouch
     }
