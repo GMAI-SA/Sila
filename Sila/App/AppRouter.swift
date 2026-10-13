@@ -7,6 +7,8 @@ public enum AuthRoute: Hashable, Sendable {
     case register
     /// Six-digit code entry for a given address and purpose.
     case otp(email: String, purpose: OTPPurpose)
+    /// A staff account's emailed sign-in code (`moderator_otp_required`).
+    case staffCode(email: String)
     /// Email + password, with optional biometric unlock.
     case signIn
     /// Address entry for the forgotten-password OTP.
@@ -211,12 +213,20 @@ public final class AppRouter {
         authPath = [.otp(email: email, purpose: purpose)]
     }
 
+    /// Pushes the staff code step, holding the password for its Resend
+    /// (which signs in again — that is what mails a staff code).
+    public func pushStaffCode(email: String, password: String?) {
+        codeScreenPassword = password.map { (email, $0) }
+        authPath.append(.staffCode(email: email))
+    }
+
     /// The password for the code screen for `email`, while that screen is on
     /// the auth stack; `nil` otherwise.
     public func password(forCodeTo email: String) -> String? {
         guard let held = codeScreenPassword, held.email == email else { return nil }
         let onStack = authPath.contains { route in
             if case let .otp(address, _) = route { return address == email }
+            if case let .staffCode(address) = route { return address == email }
             return false
         }
         return onStack ? held.password : nil

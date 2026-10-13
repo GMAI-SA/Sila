@@ -676,11 +676,33 @@ struct OTPVerifyBody: Encodable {
     /// The password the person typed before the code screen, sent again with
     /// the code (contract v26 §7.1). Left out when there is none.
     var password: String?
+    /// A staff sign-in's code: ask the server for a device token that skips
+    /// the code for 30 days. Left out otherwise.
+    var rememberDevice: Bool? = nil
 }
 
 struct LoginRequestBody: Encodable {
     let email: String
     let password: String
+    /// The device token a staff code sign-in left on this phone for this
+    /// account, if any. Left out when there is none.
+    var deviceToken: String? = nil
+}
+
+/// `POST /auth/otp/verify` for a staff sign-in: the usual pair, plus the
+/// device token that lets this phone skip the code next time.
+struct StaffCodeSignInResult: Decodable {
+    let pair: TokenPair
+    let deviceToken: String?
+
+    private enum CodingKeys: String, CodingKey { case deviceToken }
+
+    init(from decoder: Decoder) throws {
+        pair = try TokenPair(from: decoder)
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let token = (try? container.decodeIfPresent(String.self, forKey: .deviceToken)) ?? nil
+        deviceToken = (token?.isEmpty == false) ? token : nil
+    }
 }
 
 struct RefreshRequestBody: Encodable {

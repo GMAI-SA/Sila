@@ -106,27 +106,52 @@ public final class AuthService: AuthServiceProtocol {
     // MARK: - Sign in / out
 
     public func signIn(email: String, password: String) async throws -> TokenPair {
+        let address = normalise(email)
+        // A staff account's remembered phone skips the emailed code; a stale
+        // token simply gets `moderator_otp_required` again.
+        let deviceToken = await store.staffDeviceToken(for: address)
         let request = try APIRequest.json(
             "/auth/login",
-            body: LoginRequestBody(email: normalise(email), password: password)
+            body: LoginRequestBody(email: address, password: password, deviceToken: deviceToken)
         )
         do {
             let pair = try await network.send(request, as: TokenPair.self)
-            await store.store(pair)
-            if biometrics.availableBiometry != .none {
-                // The label is what the Face ID prompt will *say*. It prefers
-                // the handle to the account's email because a phone-registered
-                // account's email is a placeholder nobody should ever read.
-                await store.enableBiometrics(
-                    for: normalise(email),
-                    label: pair.user.biometricIdentityLabel
-                )
-            }
+            await adoptSignIn(pair, email: address)
             analytics.track(.signInSucceeded)
             return pair
         } catch {
             analytics.track(.signInFailed)
             throw error
+        }
+    }
+
+    public func verifyStaffCode(email: String, code: String) async throws -> TokenPair {
+        let address = normalise(email)
+        let request = try APIRequest.json(
+            "/auth/otp/verify",
+            body: OTPVerifyBody(email: address, code: code, purpose: OTPPurpose.login.rawValue, password: nil, rememberDevice: true)
+        )
+        let result = try await network.send(request, as: StaffCodeSignInResult.self)
+        if let token = result.deviceToken {
+            await store.storeStaffDeviceToken(token, for: address)
+        }
+        await adoptSignIn(result.pair, email: address)
+        analytics.track(.otpVerified, properties: ["purpose": "staff_login"])
+        analytics.track(.signInSucceeded)
+        return result.pair
+    }
+
+    /// Stores a pair from a sign-in and offers biometric unlock for it.
+    private func adoptSignIn(_ pair: TokenPair, email: String) async {
+        await store.store(pair)
+        if biometrics.availableBiometry != .none {
+            // The label is what the Face ID prompt will *say*. It prefers
+            // the handle to the account's email because a phone-registered
+            // account's email is a placeholder nobody should ever read.
+            await store.enableBiometrics(
+                for: email,
+                label: pair.user.biometricIdentityLabel
+            )
         }
     }
 

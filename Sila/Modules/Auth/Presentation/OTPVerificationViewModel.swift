@@ -42,6 +42,11 @@ public final class OTPVerificationViewModel {
     /// v26 §7.1) — not whichever registration of the address, perhaps a
     /// stranger's, the server happens to have on file.
     private let password: String?
+    /// A staff account's sign-in code (`403 moderator_otp_required`): the
+    /// code goes to `verifyStaffCode`, and Resend signs in again with the
+    /// password, which is what mails a staff code — a code from
+    /// `/auth/otp/request` would only open a member session.
+    public let isStaffSignIn: Bool
     private var countdownTask: Task<Void, Never>?
 
     /// - Parameters:
@@ -56,12 +61,14 @@ public final class OTPVerificationViewModel {
         email: String,
         purpose: OTPPurpose,
         password: String? = nil,
+        isStaffSignIn: Bool = false,
         service: AuthServiceProtocol,
         initialCountdown: Int = AppConfig.defaultOTPResendSeconds
     ) {
         self.email = email
         self.purpose = purpose
         self.password = password
+        self.isStaffSignIn = isStaffSignIn
         self.service = service
         self.digits = Array(repeating: "", count: AppConfig.otpLength)
         self.focusedIndex = 0
@@ -239,6 +246,19 @@ public final class OTPVerificationViewModel {
         defer { isVerifying = false }
         errorMessage = nil
 
+        if isStaffSignIn {
+            do {
+                verifiedPair = try await service.verifyStaffCode(email: email, code: code)
+            } catch let error as APIError {
+                errorMessage = Self.staffMessage(for: error)
+                reset()
+            } catch {
+                errorMessage = L10n.t("common.somethingWentWrong")
+                reset()
+            }
+            return
+        }
+
         do {
             let pair = try await service.verifyOTP(email: email, code: code, purpose: purpose, password: password)
             verifiedPair = pair
@@ -255,12 +275,45 @@ public final class OTPVerificationViewModel {
         }
     }
 
+    /// What a staff code step says for a refusal: too many tries, a wrong
+    /// code, or the server's own sentence.
+    static func staffMessage(for error: APIError) -> String {
+        if isTooManyTries(error) { return L10n.t("auth.moderatorCode.tooMany") }
+        switch error.code {
+        case .otpInvalid, .otpExpired, .invalidCredentials, .unauthorized:
+            return L10n.t("auth.moderatorCode.wrong")
+        default:
+            break
+        }
+        switch error {
+        case let .api(_, _, status) where status == 400 || status == 401:
+            return L10n.t("auth.moderatorCode.wrong")
+        case let .http(status, _) where status == 400 || status == 401:
+            return L10n.t("auth.moderatorCode.wrong")
+        default:
+            return error.userMessage
+        }
+    }
+
+    static func isTooManyTries(_ error: APIError) -> Bool {
+        if error.code == .rateLimited || error.code == .otpAttemptsExceeded { return true }
+        switch error {
+        case let .api(_, _, status), let .http(status, _): return status == 429
+        default: return false
+        }
+    }
+
     /// Requests a fresh code and restarts the countdown.
     public func resend() async {
         guard canResend else { return }
         isResending = true
         defer { isResending = false }
         errorMessage = nil
+
+        if isStaffSignIn {
+            await resendStaffCode()
+            return
+        }
 
         do {
             let result = try await service.sendOTP(email: email, purpose: purpose)
@@ -269,6 +322,28 @@ public final class OTPVerificationViewModel {
             toast = .success(L10n.t("auth.otp.resent", maskedEmail))
         } catch let error as APIError {
             toast = .error(error.userMessage)
+        } catch {
+            toast = .error(L10n.t("auth.otp.resendFailed"))
+        }
+    }
+
+    /// A staff code is mailed by signing in again with the same password.
+    /// `moderator_otp_required` is the expected answer — a new code, or,
+    /// inside the server's cool-down, the last one still valid.
+    private func resendStaffCode() async {
+        guard let password else {
+            toast = .error(L10n.t("auth.otp.resendFailed"))
+            return
+        }
+        do {
+            // A remembered phone may simply be let in.
+            verifiedPair = try await service.signIn(email: email, password: password)
+        } catch let error as APIError where error.code == .moderatorOtpRequired {
+            reset()
+            startCountdown(from: AppConfig.defaultOTPResendSeconds)
+            toast = .success(L10n.t("auth.moderatorCode.sent"))
+        } catch let error as APIError {
+            toast = .error(Self.isTooManyTries(error) ? L10n.t("auth.moderatorCode.tooMany") : error.userMessage)
         } catch {
             toast = .error(L10n.t("auth.otp.resendFailed"))
         }

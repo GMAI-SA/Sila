@@ -462,6 +462,21 @@ public struct RootView: View {
                 }
             )
 
+        case let .staffCode(email):
+            OTPVerificationScreen(
+                email: email,
+                purpose: .login,
+                password: container.router.password(forCodeTo: email),
+                isStaffSignIn: true,
+                service: container.authService,
+                onVerified: { pair in
+                    Task {
+                        container.router.popToRoot()
+                        await container.session.adopt(pair)
+                    }
+                }
+            )
+
         case .signIn:
             SignInScreen(
                 service: container.authService,
@@ -475,6 +490,9 @@ public struct RootView: View {
                 },
                 onNeedsEmailVerification: { email, password in
                     container.router.replaceWithOTP(email: email, purpose: .login, password: password)
+                },
+                onNeedsStaffCode: { email, password in
+                    container.router.pushStaffCode(email: email, password: password)
                 },
                 onForgotPassword: { container.router.push(.forgotPassword) }
             )

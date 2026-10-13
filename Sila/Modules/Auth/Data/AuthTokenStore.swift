@@ -100,6 +100,17 @@ public actor AuthTokenStore {
         storage.setFlag(true, for: .biometricEnabled)
     }
 
+    /// The staff device token saved for `email`, if any.
+    public func staffDeviceToken(for email: String) -> String? {
+        guard let token = try? keychain.loadString(.staffDeviceToken(for: email)), !token.isEmpty else { return nil }
+        return token
+    }
+
+    /// Saves the device token a staff code sign-in issued for `email`.
+    public func storeStaffDeviceToken(_ token: String, for email: String) {
+        try? keychain.saveString(token, for: .staffDeviceToken(for: email))
+    }
+
     /// The email a biometric credential exists for, if any.
     public func biometricEmail() -> String? {
         guard storage.flag(.biometricEnabled) else { return nil }

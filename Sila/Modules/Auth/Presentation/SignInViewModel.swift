@@ -34,6 +34,10 @@ public final class SignInViewModel {
     public private(set) var signedInPair: TokenPair?
     /// Set when the server demands email confirmation first.
     public private(set) var needsEmailVerification: String?
+    /// Set when a staff account's password was right and the server emailed
+    /// a code (`403 moderator_otp_required`): the code step comes next, with
+    /// ``passwordForCode`` kept for its resend.
+    public private(set) var needsStaffCode: String?
     /// The password that answered `email_unverified`, for the code screen to
     /// send with the code (contract v26 §7.1). The field itself is cleared.
     public private(set) var passwordForCode: String?
@@ -120,6 +124,14 @@ public final class SignInViewModel {
         } catch let error as APIError {
             let typed = password
             password = ""
+            if error.code == .moderatorOtpRequired {
+                // The password was right; the server has emailed a code.
+                // The password goes with the code screen so Resend can sign
+                // in again — that is what mails a staff code.
+                passwordForCode = typed
+                needsStaffCode = normalised
+                return
+            }
             if error.code == .emailUnverified {
                 // Credentials were fine — the address just isn't confirmed.
                 // The server answers this only for the right password, so
@@ -162,6 +174,12 @@ public final class SignInViewModel {
     public func consumeNeedsEmailVerification() -> String? {
         defer { needsEmailVerification = nil }
         return needsEmailVerification
+    }
+
+    /// Consumes ``needsStaffCode`` so the screen only routes once.
+    public func consumeNeedsStaffCode() -> String? {
+        defer { needsStaffCode = nil }
+        return needsStaffCode
     }
 
     /// Consumes ``passwordForCode``: handed to the code screen once, and kept

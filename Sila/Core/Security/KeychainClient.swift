@@ -22,6 +22,12 @@ public struct KeychainKey: RawRepresentable, Hashable, Sendable {
     public static let biometricLabel = KeychainKey("auth.biometric.label")
     /// The cached ``AuthUser`` used to route on cold launch before `/auth/me` returns.
     public static let cachedUser = KeychainKey("auth.user")
+    /// The device token a staff code sign-in issued for one account, keyed by
+    /// its lower-cased email. Survives sign-out on purpose: it is what lets
+    /// this phone skip the emailed code for 30 days.
+    public static func staffDeviceToken(for email: String) -> KeychainKey {
+        KeychainKey("auth.staffDevice." + email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+    }
 }
 
 /// Failures the keychain can surface.

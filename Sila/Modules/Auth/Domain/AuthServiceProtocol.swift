@@ -48,6 +48,12 @@ public protocol AuthServiceProtocol: Sendable {
     ///   caller must be routed to the OTP screen instead.
     func signIn(email: String, password: String) async throws -> TokenPair
 
+    /// Finishes a staff sign-in that answered `moderator_otp_required`:
+    /// `POST /auth/otp/verify` with `purpose: login` and
+    /// `remember_device: true`. The returned device token is kept in the
+    /// Keychain for this account and sent with later `/auth/login` calls.
+    func verifyStaffCode(email: String, code: String) async throws -> TokenPair
+
     /// Unlocks the keychain-held session behind a Face ID / Touch ID prompt.
     func signInBiometric() async throws -> TokenPair
 
@@ -78,6 +84,11 @@ public protocol AuthServiceProtocol: Sendable {
 }
 
 extension AuthServiceProtocol {
+    /// Scripted services: a staff code is checked like any login code.
+    public func verifyStaffCode(email: String, code: String) async throws -> TokenPair {
+        try await verifyOTP(email: email, code: code, purpose: .login, password: nil)
+    }
+
     /// Exchanges a code for a session, with no password beside it.
     public func verifyOTP(email: String, code: String, purpose: OTPPurpose) async throws -> TokenPair {
         try await verifyOTP(email: email, code: code, purpose: purpose, password: nil)

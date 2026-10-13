@@ -17,6 +17,10 @@ public enum APIErrorCode: String, Sendable, Equatable {
     case emailUnverified = "email_unverified"
     /// The caller is being throttled.
     case rateLimited = "rate_limited"
+    /// A staff account's password was right, and a 6-digit code has just been
+    /// emailed (or the last one is still valid): finish with
+    /// `POST /auth/otp/verify` (`purpose: login`, `remember_device: true`).
+    case moderatorOtpRequired = "moderator_otp_required"
     /// No usable bearer token reached the server.
     ///
     /// Undocumented in either contract, but what the deployed backend actually
@@ -577,6 +581,8 @@ public enum APIError: Error, Equatable, Sendable {
                 return L10n.t("error.emailUnverified")
             case .rateLimited:
                 return L10n.t("error.rateLimited")
+            case .moderatorOtpRequired:
+                return L10n.t("auth.moderatorCode.title")
             case .unauthorized:
                 return L10n.t("error.sessionEnded")
             case .alreadyVerified:

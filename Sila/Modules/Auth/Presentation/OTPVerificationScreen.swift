@@ -31,11 +31,14 @@ public struct OTPVerificationScreen: View {
         email: String,
         purpose: OTPPurpose,
         password: String? = nil,
+        isStaffSignIn: Bool = false,
         service: AuthServiceProtocol,
         onVerified: @escaping (TokenPair) -> Void
     ) {
         _viewModel = State(
-            initialValue: OTPVerificationViewModel(email: email, purpose: purpose, password: password, service: service)
+            initialValue: OTPVerificationViewModel(
+                email: email, purpose: purpose, password: password, isStaffSignIn: isStaffSignIn, service: service
+            )
         )
         self.onVerified = onVerified
     }
@@ -82,7 +85,7 @@ public struct OTPVerificationScreen: View {
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(SLColor.primary)
 
-            Text(L10n.t("auth.otp.title"))
+            Text(viewModel.isStaffSignIn ? L10n.t("auth.moderatorCode.title") : L10n.t("auth.otp.title"))
                 .font(SLFont.displayL)
                 .foregroundStyle(SLColor.textPrimary)
 
@@ -152,7 +155,12 @@ public struct OTPVerificationScreen: View {
                     ? L10n.t("auth.otp.resend.hint")
                     : L10n.t("auth.otp.resend.waitingHint")
             ) {
-                Task { await viewModel.resend() }
+                Task {
+                    await viewModel.resend()
+                    // A staff resend signs in again, and a remembered phone
+                    // may simply be let in.
+                    if let pair = viewModel.consumeVerifiedPair() { onVerified(pair) }
+                }
             }
 
             Text(L10n.t("auth.otp.spamHint"))

@@ -177,3 +177,100 @@ final class CodeScreenPasswordTests: XCTestCase {
         }
     }
 }
+
+/// A staff account's sign-in (`403 moderator_otp_required`): the code step,
+/// the remembered-device token, and Resend by signing in again.
+@MainActor
+final class StaffSignInCodeTests: XCTestCase {
+
+    private static let password = "correct horse battery"
+
+    private func makeService(
+        _ handler: @escaping ScriptedNetwork.Handler
+    ) -> (AuthService, ScriptedNetwork, InMemoryKeychainClient) {
+        let network = ScriptedNetwork(handler)
+        let keychain = InMemoryKeychainClient()
+        let service = AuthService(
+            network: network,
+            store: AuthTokenStore(keychain: keychain, storage: InMemoryStorageClient(), leftovers: .isolated()),
+            biometrics: StubBiometricAuthenticator(),
+            analytics: RecordingAnalyticsClient()
+        )
+        return (service, network, keychain)
+    }
+
+    private static let codeRequired = APIError.api(
+        code: .moderatorOtpRequired, message: "Enter the code we emailed you to finish signing in", status: 403
+    )
+
+    private func body(_ request: APIRequest?) throws -> [String: Any] {
+        let data = try XCTUnwrap(request?.body)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    func testTheCodeAnswerOpensTheCodeStepWithThePassword() async {
+        let (service, _, _) = makeService { request in
+            if request.path == "/auth/login" { throw Self.codeRequired }
+            return "{}"
+        }
+        let model = SignInViewModel(service: service, prefilledEmail: "Aziz@Example.com", biometricsEnabled: false)
+        model.password = Self.password
+        await model.submit()
+        XCTAssertNil(model.toast, "the code step is not an error")
+        XCTAssertEqual(model.consumeNeedsStaffCode(), "aziz@example.com")
+        XCTAssertEqual(model.consumePasswordForCode(), Self.password)
+        XCTAssertNil(model.consumeNeedsEmailVerification())
+    }
+
+    func testTheDeviceTokenIsKeptAndSentWithTheNextSignIn() async throws {
+        let pair = AuthFixtures.pairJSON(access: "a", refresh: "r")
+        let withToken = String(pair.dropLast()) + #", "device_token": "dev-123"}"#
+        let (service, network, _) = makeService { request in
+            request.path == "/auth/otp/verify" ? withToken : pair
+        }
+
+        _ = try await service.verifyStaffCode(email: "Aziz@Example.com", code: "123456")
+        let verify = try body(network.requests.first { $0.path == "/auth/otp/verify" })
+        XCTAssertEqual(verify["purpose"] as? String, "login")
+        XCTAssertEqual(verify["remember_device"] as? Bool, true)
+        XCTAssertEqual(verify["code"] as? String, "123456")
+
+        _ = try await service.signIn(email: "AZIZ@example.com", password: Self.password)
+        let login = try body(network.requests.last { $0.path == "/auth/login" })
+        XCTAssertEqual(login["device_token"] as? String, "dev-123")
+    }
+
+    func testWithoutADeviceTokenTheFieldIsLeftOut() async throws {
+        let (service, network, _) = makeService { _ in AuthFixtures.pairJSON(access: "a", refresh: "r") }
+        _ = try await service.signIn(email: "aziz@example.com", password: Self.password)
+        XCTAssertNil(try body(network.requests.last)["device_token"])
+    }
+
+    func testResendSignsInAgainAndTheCodeAnswerMeansACodeIsWaiting() async throws {
+        let (service, network, _) = makeService { request in
+            if request.path == "/auth/login" { throw Self.codeRequired }
+            return "{}"
+        }
+        let model = OTPVerificationViewModel(
+            email: "aziz@example.com", purpose: .login, password: Self.password,
+            isStaffSignIn: true, service: service, initialCountdown: 0
+        )
+        await model.resend()
+        XCTAssertEqual(network.count("/auth/login"), 1)
+        XCTAssertEqual(network.count("/auth/otp/request"), 0, "a member code would open only a member session")
+        XCTAssertEqual(model.resendCountdown, 60)
+        model.stopCountdown()
+        XCTAssertNil(model.consumeVerifiedPair())
+    }
+
+    func testStaffRefusalsSayWhatHappened() {
+        XCTAssertEqual(
+            OTPVerificationViewModel.staffMessage(for: .api(code: .otpInvalid, message: "", status: 400)),
+            L10n.t("auth.moderatorCode.wrong")
+        )
+        XCTAssertEqual(
+            OTPVerificationViewModel.staffMessage(for: .http(status: 429, message: "")),
+            L10n.t("auth.moderatorCode.tooMany")
+        )
+    }
+}

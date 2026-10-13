@@ -15,6 +15,7 @@ public struct SignInScreen: View {
     @State private var viewModel: SignInViewModel
     private let onSignedIn: (TokenPair) -> Void
     private let onNeedsEmailVerification: (String, String?) -> Void
+    private let onNeedsStaffCode: ((String, String?) -> Void)?
     private let onForgotPassword: () -> Void
 
     @FocusState private var focus: Field?
@@ -36,6 +37,7 @@ public struct SignInScreen: View {
         biometricsEnabled: Bool = true,
         onSignedIn: @escaping (TokenPair) -> Void,
         onNeedsEmailVerification: @escaping (_ email: String, _ password: String?) -> Void,
+        onNeedsStaffCode: ((_ email: String, _ password: String?) -> Void)? = nil,
         onForgotPassword: @escaping () -> Void
     ) {
         _viewModel = State(initialValue: SignInViewModel(
@@ -45,6 +47,7 @@ public struct SignInScreen: View {
         ))
         self.onSignedIn = onSignedIn
         self.onNeedsEmailVerification = onNeedsEmailVerification
+        self.onNeedsStaffCode = onNeedsStaffCode
         self.onForgotPassword = onForgotPassword
     }
 
@@ -167,6 +170,10 @@ public struct SignInScreen: View {
         }
         if let email = viewModel.consumeNeedsEmailVerification() {
             onNeedsEmailVerification(email, viewModel.consumePasswordForCode())
+            return
+        }
+        if let email = viewModel.consumeNeedsStaffCode() {
+            onNeedsStaffCode?(email, viewModel.consumePasswordForCode())
         }
     }
 }
