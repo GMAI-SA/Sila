@@ -38,11 +38,20 @@ public struct SafetyMenu: View {
 
     /// Report. Not destructive-red: reporting is not an attack, and colouring it
     /// like one discourages the reports a platform most needs.
+    @ViewBuilder
     private var reportButton: some View {
-        Button(action: actions.onReport) {
-            Label(L10n.t("safety.menu.report"), systemImage: "flag")
+        if actions.isReported {
+            // Once per thing (contract v40): shown as done, not offered again.
+            Button(action: {}) {
+                Label(L10n.t("safety.menu.reported"), systemImage: "flag.fill")
+            }
+            .disabled(true)
+        } else {
+            Button(action: actions.onReport) {
+                Label(L10n.t("safety.menu.report"), systemImage: "flag")
+            }
+            .accessibilityHint(Text(L10n.t("safety.menu.report.hint", actions.target.name)))
         }
-        .accessibilityHint(Text(L10n.t("safety.menu.report.hint", actions.target.name)))
     }
 
     /// Mute or unmute. One tap either way, and the label says which.

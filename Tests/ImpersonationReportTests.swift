@@ -58,3 +58,56 @@ final class ImpersonationReportTests: XCTestCase {
         XCTAssertFalse(draft.isSubmittable)
     }
 }
+
+// MARK: - Once per thing (contract v40)
+
+/// A second report of the same thing is "already reported": the server
+/// answers so, and the app shows Reported instead of offering the form again.
+@MainActor
+final class ReportOncePerThingTests: XCTestCase {
+
+    func testTheReceiptSaysWhenItWasReportedAlready() throws {
+        let again = try JSONDecoder().decode(ReportReceipt.self, from: Data(#"{"id":"r1","status":"open","already_reported":true}"#.utf8))
+        XCTAssertTrue(again.alreadyReported)
+        let first = try JSONDecoder().decode(ReportReceipt.self, from: Data(#"{"id":"r1","status":"open"}"#.utf8))
+        XCTAssertFalse(first.alreadyReported, "an older server's receipt is a fresh report")
+    }
+
+    func testKeysMatchTheServers() {
+        let id = UUID(uuidString: "6F9619FF-8B86-D011-B42D-00C04FC964FF")!
+        let who = SafetyTarget(handle: "Yuki", name: "Yuki Tanaka")
+        XCTAssertEqual(ReportSubject.post(id: id, author: who, excerpt: "").reportKey, "post:6f9619ff-8b86-d011-b42d-00c04fc964ff")
+        XCTAssertEqual(ReportSubject.roomMessage(id: id, author: who, excerpt: "").reportKey, "room_message:6f9619ff-8b86-d011-b42d-00c04fc964ff")
+        XCTAssertEqual(ReportSubject.account(who).reportKey, "user:yuki")
+    }
+
+    func testAReportedThingIsShownAsReportedAndNotOfferedAgain() {
+        let viewModel = SafetyViewModel(
+            service: SafetyServiceMock(scenario: .populated),
+            analytics: RecordingAnalyticsClient(),
+            viewerHandle: "aziz"
+        )
+        let who = SafetyTarget(handle: "yuki", name: "Yuki Tanaka")
+        let subject = ReportSubject.account(who)
+        XCTAssertEqual(viewModel.menu(for: who)?.isReported, false)
+
+        viewModel.markReported(subject)
+        XCTAssertEqual(viewModel.menu(for: who)?.isReported, true)
+        viewModel.openReport(subject)
+        XCTAssertNil(viewModel.presentedReport, "a second report is not offered")
+        XCTAssertNotNil(viewModel.toast, "the person is told it was reported already")
+    }
+
+    func testFilingAReportRemembersIt() async {
+        let viewModel = SafetyViewModel(
+            service: SafetyServiceMock(scenario: .populated),
+            analytics: RecordingAnalyticsClient(),
+            viewerHandle: "aziz"
+        )
+        let subject = ReportSubject.account(SafetyTarget(handle: "yuki", name: "Yuki Tanaka"))
+        let sheet = viewModel.reportViewModel(for: subject)
+        sheet.draft.reason = .spam
+        await sheet.submit()
+        XCTAssertTrue(viewModel.isReported(subject))
+    }
+}

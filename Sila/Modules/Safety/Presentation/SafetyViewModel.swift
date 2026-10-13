@@ -56,6 +56,9 @@ public struct SafetyMenuActions {
     public let onUnmute: @MainActor () -> Void
     /// Opens the reason picker.
     public let onReport: @MainActor () -> Void
+    /// The viewer has reported this already: the menu says "Reported" and
+    /// offers nothing (contract v40, one report per thing).
+    public let isReported: Bool
 
     public init(
         target: SafetyTarget,
@@ -66,8 +69,10 @@ public struct SafetyMenuActions {
         onUnblock: @escaping @MainActor () -> Void,
         onMute: @escaping @MainActor () -> Void,
         onUnmute: @escaping @MainActor () -> Void,
-        onReport: @escaping @MainActor () -> Void
+        onReport: @escaping @MainActor () -> Void,
+        isReported: Bool = false
     ) {
+        self.isReported = isReported
         self.target = target
         self.isBlocked = isBlocked
         self.isMuted = isMuted
@@ -128,6 +133,10 @@ public final class SafetyViewModel {
     /// Handles the viewer has muted.
     public private(set) var mutedHandles: Set<String> = []
 
+    /// What the viewer has reported (``ReportSubject/reportKey``), so a second
+    /// report is shown as done rather than offered (contract v40).
+    public private(set) var reportedKeys: Set<String> = []
+
     /// Handles with a write in flight, so a menu can show it and a second tap
     /// cannot double-send.
     public private(set) var busyHandles: Set<String> = []
@@ -147,6 +156,7 @@ public final class SafetyViewModel {
     private let suspension: SuspensionMonitor?
     private let viewerHandle: String?
     private let onChange: (@MainActor (SafetyChange) -> Void)?
+    private let reportedStore: UserDefaults?
 
     /// - Parameters:
     ///   - service: Safety backend.
@@ -163,13 +173,37 @@ public final class SafetyViewModel {
         analytics: AnalyticsClient,
         suspension: SuspensionMonitor? = nil,
         viewerHandle: String? = nil,
-        onChange: (@MainActor (SafetyChange) -> Void)? = nil
+        onChange: (@MainActor (SafetyChange) -> Void)? = nil,
+        reportedStore: UserDefaults? = nil
     ) {
         self.service = service
         self.analytics = analytics
         self.suspension = suspension
         self.viewerHandle = viewerHandle.map(Handle.normalised)
         self.onChange = onChange
+        self.reportedStore = reportedStore
+        if let key = reportedStoreKey {
+            reportedKeys = Set(reportedStore?.stringArray(forKey: key) ?? [])
+        }
+    }
+
+    /// Per signed-in account: one person's reports are not another's.
+    private var reportedStoreKey: String? {
+        guard reportedStore != nil, let viewerHandle else { return nil }
+        return "known.reported.\(viewerHandle)"
+    }
+
+    /// Whether the viewer has reported this already.
+    public func isReported(_ subject: ReportSubject) -> Bool {
+        reportedKeys.contains(subject.reportKey)
+    }
+
+    /// Remembers a report the server took, or had already.
+    public func markReported(_ subject: ReportSubject) {
+        guard reportedKeys.insert(subject.reportKey).inserted else { return }
+        if let key = reportedStoreKey {
+            reportedStore?.set(Array(reportedKeys.suffix(500)), forKey: key)
+        }
     }
 
     // MARK: - Derived state
@@ -223,7 +257,8 @@ public final class SafetyViewModel {
             onUnblock: { [weak self] in Task { await self?.setBlocked(false, target: target) } },
             onMute: { [weak self] in Task { await self?.setMuted(true, target: target) } },
             onUnmute: { [weak self] in Task { await self?.setMuted(false, target: target) } },
-            onReport: { [weak self] in self?.openReport(subject) }
+            onReport: { [weak self] in self?.openReport(subject) },
+            isReported: isReported(subject)
         )
     }
 
@@ -349,6 +384,12 @@ public final class SafetyViewModel {
 
     /// Opens the reason picker.
     public func openReport(_ subject: ReportSubject) {
+        // Once per thing (contract v40): the server would only answer
+        // "already reported", so say it here.
+        if isReported(subject) {
+            toast = .info(SafetyCopy.reportAlreadyToast)
+            return
+        }
         presentedReport = subject
         analytics.track(.reportOpened, properties: [
             "subject": subject.postId == nil ? "user" : "post"
@@ -372,6 +413,7 @@ public final class SafetyViewModel {
             analytics: analytics,
             suspension: suspension,
             onClose: { [weak self] in self?.closeReport() },
+            onReported: { [weak self] in self?.markReported(subject) },
             onBlock: { [weak self] target in
                 self?.closeReport()
                 self?.requestBlock(target, origin: .list)

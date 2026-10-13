@@ -266,8 +266,8 @@ public struct ReportSheet: View {
         VStack(alignment: .leading, spacing: SLSpacing.lg) {
             SLEmptyState(
                 icon: "checkmark.shield.fill",
-                title: SafetyCopy.reportReceivedTitle,
-                subtitle: SafetyCopy.reportReceivedBody(id: receipt.id),
+                title: receipt.alreadyReported ? SafetyCopy.reportAlreadyTitle : SafetyCopy.reportReceivedTitle,
+                subtitle: receipt.alreadyReported ? SafetyCopy.reportAlreadyBody : SafetyCopy.reportReceivedBody(id: receipt.id),
                 tint: SLColor.secondary
             )
 

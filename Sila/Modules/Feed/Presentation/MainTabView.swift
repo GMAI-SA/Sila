@@ -165,7 +165,8 @@ public struct MainTabView: View {
                 service: container.safetyService,
                 analytics: container.analytics,
                 suspension: container.suspension,
-                viewerHandle: container.session.user?.handle
+                viewerHandle: container.session.user?.handle,
+                reportedStore: .standard
             )
         )
     }

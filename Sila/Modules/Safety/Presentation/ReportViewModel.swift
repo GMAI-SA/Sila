@@ -39,6 +39,7 @@ public final class ReportViewModel {
     private let analytics: AnalyticsClient
     private let suspension: SuspensionMonitor?
     private let onClose: (@MainActor () -> Void)?
+    private let onReported: (@MainActor () -> Void)?
     private let onBlock: (@MainActor (SafetyTarget) -> Void)?
     private let onMute: (@MainActor (SafetyTarget) -> Void)?
 
@@ -57,6 +58,7 @@ public final class ReportViewModel {
         analytics: AnalyticsClient,
         suspension: SuspensionMonitor? = nil,
         onClose: (@MainActor () -> Void)? = nil,
+        onReported: (@MainActor () -> Void)? = nil,
         onBlock: (@MainActor (SafetyTarget) -> Void)? = nil,
         onMute: (@MainActor (SafetyTarget) -> Void)? = nil
     ) {
@@ -65,6 +67,7 @@ public final class ReportViewModel {
         self.analytics = analytics
         self.suspension = suspension
         self.onClose = onClose
+        self.onReported = onReported
         self.onBlock = onBlock
         self.onMute = onMute
     }
@@ -146,6 +149,7 @@ public final class ReportViewModel {
             let receipt = try await service.submitReport(request)
             let outcome = ReportOutcome.make(receipt: receipt, reason: reason)
             stage = .finished(outcome)
+            onReported?()
             if outcome.isSupport {
                 analytics.track(.reportSupportShown, properties: [
                     "reason": reason.rawValue,

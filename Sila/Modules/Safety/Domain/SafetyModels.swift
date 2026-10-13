@@ -313,6 +313,18 @@ public enum ReportSubject: Equatable, Sendable, Hashable {
         }
     }
 
+    /// The thing reported, as the server keys it (contract v40) — the handle
+    /// stands in for the account's id, which the client may not hold.
+    public var reportKey: String {
+        switch self {
+        case let .post(id, _, _): return "post:\(id.uuidString.lowercased())"
+        case let .account(target): return "user:\(Handle.normalised(target.handle))"
+        case let .message(id, _, _): return "message:\(id.uuidString.lowercased())"
+        case let .room(id, _, _): return "room:\(id.uuidString.lowercased())"
+        case let .roomMessage(id, _, _): return "room_message:\(id.uuidString.lowercased())"
+        }
+    }
+
     /// The post being reported, when it is a post.
     public var postId: UUID? {
         switch self {
@@ -625,15 +637,20 @@ public struct ReportReceipt: Decodable, Equatable, Sendable, Identifiable {
     /// Present when the server decided this report needs a page of help rather
     /// than a receipt. `nil` otherwise.
     public let support: SupportResources?
+    /// The viewer had reported this already; nothing new was filed (contract
+    /// v40: one report per person per thing). `false` from older servers.
+    public let alreadyReported: Bool
 
-    public init(id: String, status: String = "open", support: SupportResources? = nil) {
+    public init(id: String, status: String = "open", support: SupportResources? = nil, alreadyReported: Bool = false) {
         self.id = id
         self.status = status
         self.support = support
+        self.alreadyReported = alreadyReported
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, status, support
+        case alreadyReported = "already_reported"
     }
 
     public init(from decoder: Decoder) throws {
@@ -649,6 +666,7 @@ public struct ReportReceipt: Decodable, Equatable, Sendable, Identifiable {
         }
         status = (try? container.decode(String.self, forKey: .status)) ?? "open"
         support = (try? container.decodeIfPresent(SupportResources.self, forKey: .support)) ?? nil
+        alreadyReported = (try? container.decodeIfPresent(Bool.self, forKey: .alreadyReported)) ?? false
     }
 }
 
@@ -1088,6 +1106,15 @@ public enum SafetyCopy {
 
     /// The heading on the ordinary confirmation.
     public static var reportReceivedTitle: String { L10n.t("safety.report.received.title") }
+
+    /// The confirmation when the viewer had reported this already (contract v40).
+    public static var reportAlreadyTitle: String { L10n.t("safety.report.already.title") }
+
+    /// Its body: nothing new was sent.
+    public static var reportAlreadyBody: String { L10n.t("safety.report.already.body") }
+
+    /// The banner when Report is chosen for something already reported.
+    public static var reportAlreadyToast: String { L10n.t("safety.report.already.toast") }
 
     /// The body of the ordinary confirmation.
     public static func reportReceivedBody(id: String) -> String {

@@ -698094,6 +698094,78 @@
           }
         }
       }
+    },
+    "safety.menu.reported": {
+      "comment": "Safety menu: this was reported already, so Report is shown as done and cannot be chosen.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم الإبلاغ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reported"
+          }
+        }
+      }
+    },
+    "safety.report.already.title": {
+      "comment": "Report sheet: the server says the viewer had reported this already.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم الإبلاغ من قبل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already reported"
+          }
+        }
+      }
+    },
+    "safety.report.already.body": {
+      "comment": "Report sheet body when it was reported already: nothing new was sent.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أبلغت عن هذا من قبل، فلم يُرسل شيء جديد. يراجع فريقنا كل بلاغ مرة واحدة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You reported this before, so nothing new was sent. Our team reviews every report once."
+          }
+        }
+      }
+    },
+    "safety.report.already.toast": {
+      "comment": "Banner when Report is chosen for something already reported.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أبلغت عن هذا من قبل. فريقنا يراجعه."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've already reported this. Our team has it."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
