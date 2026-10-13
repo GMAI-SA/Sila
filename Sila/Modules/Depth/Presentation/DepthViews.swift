@@ -159,7 +159,13 @@ struct QuestionQueueView: View {
                 }
             }
 
-            if viewModel.questions.isEmpty {
+            // The viewer's own question, the moment it was sent: never a
+            // field that empties into nothing while the server thinks.
+            ForEach(viewModel.pendingQuestions) { pending in
+                pendingRow(pending)
+            }
+
+            if viewModel.questions.isEmpty && viewModel.pendingQuestions.isEmpty {
                 Text(L10n.t("rooms.questions.empty"))
                     .font(SLFont.caption)
                     .foregroundStyle(SLColor.textMuted)
@@ -179,6 +185,45 @@ struct QuestionQueueView: View {
                 }
             }
         }
+    }
+
+    private func pendingRow(_ pending: RoomDepthViewModel.PendingQuestion) -> some View {
+        HStack(alignment: .top, spacing: SLSpacing.md) {
+            Group {
+                if pending.state == .sending {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Image(systemName: "exclamationmark.circle.fill").foregroundStyle(SLColor.danger)
+                }
+            }
+            .frame(width: 36)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(pending.text)
+                    .font(SLFont.body)
+                    .foregroundStyle(pending.state == .sending ? SLColor.textSecondary : SLColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .slContentDirection(TextDirection.resolve(languageCode: nil, text: pending.text))
+                switch pending.state {
+                case .sending:
+                    Text(L10n.t("rooms.questions.sending")).font(SLFont.micro).foregroundStyle(SLColor.textMuted)
+                case let .failed(reason):
+                    Text(reason).font(SLFont.micro).foregroundStyle(SLColor.danger)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: SLSpacing.md) {
+                        Button(L10n.t("rooms.questions.retry")) { Task { await viewModel.retry(pending) } }
+                            .font(SLFont.caption)
+                            .accessibilityIdentifier("rooms.questions.retry")
+                        Button(L10n.t("rooms.questions.discard"), role: .destructive) { viewModel.discard(pending) }
+                            .font(SLFont.caption)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .transition(.opacity.combined(with: .move(edge: .top)))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("rooms.questions.pending")
     }
 
     private func row(_ question: RoomQuestion) -> some View {
@@ -235,53 +280,121 @@ struct QuestionQueueView: View {
 }
 
 /// A room poll: vote, watch the tally, and on the stage close it.
+///
+/// The viewer's own choice is drawn chosen the moment it is tapped (filled
+/// bar, tick, "You voted"), the bars and the total move as the room votes,
+/// and a vote from somebody else gives the total a small pulse — so it is
+/// always clear that something happened, and what.
 @MainActor
 struct RoomPollCard: View {
     let poll: RoomPoll
     let isStage: Bool
     /// `false` for a vouched listener: the tally, never the vote.
     var canTakePart = true
+    /// The option this viewer chose, including a tap still on its way.
+    var chosen: UUID?
     let onVote: (PollOption) -> Void
     let onClose: () -> Void
+
+    @State private var pulse = false
+
+    private var isOpen: Bool { !poll.poll.isClosed() }
+    private var canVote: Bool { poll.poll.canVote && canTakePart && chosen == nil && isOpen }
 
     var body: some View {
         SLCard {
             VStack(alignment: .leading, spacing: SLSpacing.sm) {
-                Text(poll.question).font(SLFont.bodyEmphasis).foregroundStyle(SLColor.textPrimary)
-                ForEach(poll.poll.options) { option in
-                    let share = poll.poll.share(of: option) ?? 0
-                    Button { onVote(option) } label: {
-                        HStack {
-                            Text(option.text).font(SLFont.body)
-                            if poll.poll.viewerOptionId == option.id {
-                                Image(systemName: "checkmark.circle.fill").foregroundStyle(SLColor.primary)
-                            }
-                            Spacer(minLength: 0)
-                            Text(share.formatted(.percent.precision(.fractionLength(0)).locale(L10n.formattingLocale)))
-                                .font(SLFont.caption).monospacedDigit()
-                        }
-                        .padding(.horizontal, SLSpacing.md)
-                        .frame(minHeight: 36)
-                        .background(alignment: .leading) {
-                            GeometryReader { geo in
-                                RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.primary.opacity(0.15))
-                                    .frame(width: geo.size.width * share)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!poll.poll.canVote || !canTakePart)
-                }
-                HStack {
-                    Text(PollCopy.footer(poll.poll)).font(SLFont.micro).foregroundStyle(SLColor.textMuted)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(poll.question).font(SLFont.bodyEmphasis).foregroundStyle(SLColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .slContentDirection(TextDirection.resolve(languageCode: nil, text: poll.question))
                     Spacer(minLength: 0)
-                    if isStage, !poll.poll.isClosed() {
+                    if isOpen {
+                        Label(L10n.t("rooms.status.live"), systemImage: "dot.radiowaves.left.and.right")
+                            .font(SLFont.micro)
+                            .foregroundStyle(SLColor.danger)
+                            .labelStyle(.iconOnly)
+                            .accessibilityHidden(true)
+                    }
+                }
+                ForEach(poll.poll.options) { option in
+                    optionRow(option)
+                }
+                HStack(spacing: SLSpacing.xs) {
+                    if chosen != nil {
+                        Label(L10n.t("rooms.polls.youVoted"), systemImage: "checkmark.seal.fill")
+                            .font(SLFont.micro.weight(.semibold))
+                            .foregroundStyle(SLColor.primary)
+                            .accessibilityIdentifier("rooms.polls.youVoted")
+                    }
+                    Text(PollCopy.footer(poll.poll))
+                        .font(SLFont.micro)
+                        .monospacedDigit()
+                        .foregroundStyle(pulse ? SLColor.primary : SLColor.textMuted)
+                        .scaleEffect(pulse ? 1.08 : 1, anchor: .leading)
+                        .contentTransition(.numericText())
+                    Spacer(minLength: 0)
+                    if isStage, isOpen {
                         Button(L10n.t("rooms.polls.close"), action: onClose).font(SLFont.caption)
                     }
                 }
             }
         }
+        .animation(.easeOut(duration: 0.35), value: poll.poll)
+        .animation(.easeOut(duration: 0.2), value: chosen)
+        .onChange(of: poll.poll.totalVotes) { old, new in
+            guard new > old else { return }
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) { pulse = true }
+            Task {
+                try? await Task.sleep(nanoseconds: 450_000_000)
+                withAnimation(.easeOut(duration: 0.3)) { pulse = false }
+            }
+        }
+    }
+
+    private func optionRow(_ option: PollOption) -> some View {
+        let share = poll.poll.share(of: option) ?? 0
+        let mine = chosen == option.id
+        return Button { onVote(option) } label: {
+            HStack(spacing: SLSpacing.sm) {
+                Text(option.text)
+                    .font(mine ? SLFont.bodyEmphasis : SLFont.body)
+                    .foregroundStyle(SLColor.textPrimary)
+                if mine {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(SLColor.primary)
+                        .transition(.scale.combined(with: .opacity))
+                }
+                Spacer(minLength: 0)
+                if let votes = option.votes, poll.poll.resultsVisible {
+                    Text(SLFormat.number(votes))
+                        .font(SLFont.micro).monospacedDigit()
+                        .foregroundStyle(SLColor.textMuted)
+                        .contentTransition(.numericText())
+                }
+                Text(share.formatted(.percent.precision(.fractionLength(0)).locale(L10n.formattingLocale)))
+                    .font(SLFont.caption).monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            .padding(.horizontal, SLSpacing.md)
+            .frame(minHeight: 40)
+            .background(alignment: .leading) {
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: SLRadius.md)
+                        .fill(SLColor.primary.opacity(mine ? 0.32 : 0.14))
+                        .frame(width: max(0, geo.size.width * share))
+                }
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: SLRadius.md)
+                    .strokeBorder(mine ? SLColor.primary : SLColor.stroke, lineWidth: mine ? 1.5 : 1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!canVote)
+        .accessibilityLabel(Text(option.text))
+        .accessibilityValue(Text(share.formatted(.percent.precision(.fractionLength(0)).locale(L10n.formattingLocale))))
+        .accessibilityAddTraits(mine ? .isSelected : [])
     }
 }
 
@@ -292,6 +405,8 @@ struct RoomPollComposer: View {
     @State private var question = ""
     @State private var options = ["", ""]
     @State private var minutes = 5
+    /// One tap, one poll: the button waits for the answer.
+    @State private var isOpening = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: SLSpacing.sm) {
@@ -311,14 +426,18 @@ struct RoomPollComposer: View {
                 Stepper(L10n.t("rooms.polls.minutes", SLFormat.number(minutes)), value: $minutes, in: 1...30)
                     .font(SLFont.caption)
             }
-            SLButton(L10n.t("rooms.polls.open")) {
+            SLButton(L10n.t("rooms.polls.open"), isLoading: isOpening) {
+                guard !isOpening else { return }
+                isOpening = true
                 Task {
                     if await onOpen(question, options, minutes * 60) {
                         question = ""
                         options = ["", ""]
                     }
+                    isOpening = false
                 }
             }
+            .disabled(isOpening)
             .accessibilityIdentifier("rooms.polls.open")
         }
     }
@@ -364,6 +483,7 @@ public struct RoomDepthSheet: View {
                         }
                         ForEach(viewModel.polls) { poll in
                             RoomPollCard(poll: poll, isStage: viewModel.isStage, canTakePart: viewModel.canTakePart,
+                                         chosen: viewModel.chosenOption(in: poll),
                                          onVote: { option in Task { await viewModel.vote(option, in: poll) } },
                                          onClose: { Task { await viewModel.close(poll) } })
                         }
@@ -378,6 +498,7 @@ public struct RoomDepthSheet: View {
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button(L10n.t("common.done")) { onClose() } } }
             .tnToast($viewModel.toast)
             .task { await viewModel.load() }
+            .animation(.easeOut(duration: 0.2), value: viewModel.pendingQuestions)
         }
         .tint(SLColor.primary)
     }

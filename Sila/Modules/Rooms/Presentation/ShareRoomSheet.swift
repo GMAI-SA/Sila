@@ -90,3 +90,63 @@ struct ShareRoomSheet: View {
         )
     }
 }
+
+// MARK: - Sharing the link
+
+/// A room's link, its title and one short line, ready for the system share
+/// sheet — WhatsApp, Messages, X, Telegram, Mail, Copy and the rest.
+///
+/// The link is the room's universal link (`https://known.gmai.sa/rooms/<id>`):
+/// it opens the app on a phone that has it, and the room's card on the web
+/// for everybody else — never a join, so an open link costs nothing.
+public enum RoomShareContent {
+
+    /// Whether the link is offered at all. An invite-only room, or one for a
+    /// group the host chose, is not advertised — that is how such a room
+    /// would leak; and an ended room has nothing left to open.
+    public static func canShareLink(_ room: VoiceRoom) -> Bool {
+        room.status != .ended && !room.isInviteOnly && room.groupId == nil
+    }
+
+    public static func url(_ room: VoiceRoom) -> URL { Permalink.room(room.id) }
+
+    /// "Listen live with me on Known: <title>" / "Coming up on Known: <title>".
+    public static func message(_ room: VoiceRoom) -> String {
+        room.status == .live
+            ? L10n.t("rooms.shareLink.live", room.title)
+            : L10n.t("rooms.shareLink.scheduled", room.title)
+    }
+}
+
+/// The system share sheet for a room, as an icon or a labelled button.
+@MainActor
+public struct RoomShareLink: View {
+    let room: VoiceRoom
+    var showsTitle = false
+
+    public init(room: VoiceRoom, showsTitle: Bool = false) {
+        self.room = room
+        self.showsTitle = showsTitle
+    }
+
+    public var body: some View {
+        ShareLink(
+            item: RoomShareContent.url(room),
+            subject: Text(room.title),
+            // No preview of our own: iOS reads the page's link preview
+            // (its Open Graph tags) for the header of the sheet.
+            message: Text(RoomShareContent.message(room))
+        ) {
+            if showsTitle {
+                Label(L10n.t("rooms.shareLink.action"), systemImage: "square.and.arrow.up")
+            } else {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 15, weight: .regular))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+        }
+        .accessibilityLabel(Text(L10n.t("rooms.shareLink.action")))
+        .accessibilityIdentifier("rooms.shareLink")
+    }
+}

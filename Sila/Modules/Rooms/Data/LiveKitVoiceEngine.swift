@@ -1,6 +1,8 @@
 import AVFoundation
+import CallKit
 import Foundation
 import LiveKit
+import UIKit
 
 /// The production ``VoiceEngineProtocol``, on LiveKit.
 ///
@@ -63,6 +65,12 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
 
     private let room: LiveKit.Room
     private let permission: MicrophonePermissionRequesting
+    /// Calls on this phone — cellular, FaceTime, and every CallKit app
+    /// (WhatsApp, Telegram…): the room's way of knowing that "failed to
+    /// configure audio session" means "you're on another call", and when
+    /// that call is over.
+    private let callObserver = CXCallObserver()
+    private var audioObservers: [NSObjectProtocol] = []
     /// A connection that can never publish — a guest's (contract v31). Its
     /// audio session is a playback one: no recording category, so there is
     /// no input route for iOS to ask about.
@@ -94,6 +102,7 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
         // stops the other two.
         await MainActor.run { AudioSessionArbiter.shared.prepareForRoom() }
         configureAudioSession()
+        observeAudioSession()
 
         self.canPublish = canPublish
         connection = .connecting
@@ -140,12 +149,93 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
             }
         }
 
+        if enabled, isOnAnotherCall {
+            // Opening the microphone now would only fail inside WebRTC with
+            // "failed to configure audio session": say what is really going
+            // on — and tell the room a call is on, so it waits for that call
+            // to end rather than for the next route change.
+            onRoomEvent?(.audio(.otherCall(active: true)))
+            throw VoiceEngineError.audioBusy
+        }
         do {
             try await room.localParticipant.setMicrophone(enabled: enabled)
             isMicrophoneEnabled = enabled
         } catch {
+            if enabled, Self.isAudioHeldElsewhere(error) || isOnAnotherCall {
+                throw VoiceEngineError.audioBusy
+            }
             throw VoiceEngineError.transport(error.localizedDescription)
         }
+    }
+
+    /// A call on this phone that has not ended.
+    private var isOnAnotherCall: Bool {
+        callObserver.calls.contains { !$0.hasEnded }
+    }
+
+    /// The SDK's audio-session failure, or iOS refusing the session because
+    /// something with a higher priority (a call) holds it.
+    private static func isAudioHeldElsewhere(_ error: Error) -> Bool {
+        if let livekit = error as? LiveKitError, livekit.type == .audioSession || livekit.type == .audioEngine {
+            return true
+        }
+        let ns = error as NSError
+        guard ns.domain == NSOSStatusErrorDomain || ns.domain == AVFoundationErrorDomain
+            || ns.domain == "com.apple.coreaudio.avfaudio" else { return false }
+        let busy: Set<Int> = [
+            AVAudioSession.ErrorCode.cannotInterruptOthers.rawValue,
+            AVAudioSession.ErrorCode.insufficientPriority.rawValue,
+            AVAudioSession.ErrorCode.isBusy.rawValue,
+            AVAudioSession.ErrorCode.cannotStartRecording.rawValue
+        ]
+        return busy.contains(ns.code)
+    }
+
+    /// Activates the session again after a call gave it back. Best effort:
+    /// the microphone's republish, which follows, reconfigures it as well.
+    public func reactivateAudio() async {
+        try? AVAudioSession.sharedInstance().setActive(true)
+    }
+
+    // MARK: - Sharing the phone's audio
+
+    /// Interruptions, route changes, calls and the app coming back, handed
+    /// up as ``VoiceRoomEvent/audio(_:)`` for the room's state machine.
+    private func observeAudioSession() {
+        guard audioObservers.isEmpty else { return }
+        callObserver.setDelegate(self, queue: nil)
+        let center = NotificationCenter.default
+        audioObservers.append(center.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            let type = raw.flatMap(AVAudioSession.InterruptionType.init(rawValue:))
+            MainActor.assumeIsolated {
+                switch type {
+                case .began: self?.onRoomEvent?(.audio(.interruptionBegan))
+                case .ended: self?.onRoomEvent?(.audio(.interruptionEnded))
+                default: break
+                }
+            }
+        })
+        audioObservers.append(center.addObserver(
+            forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.onRoomEvent?(.audio(.routeChanged)) }
+        })
+        audioObservers.append(center.addObserver(
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.onRoomEvent?(.audio(.appActive)) }
+        })
+        if isOnAnotherCall {
+            onRoomEvent?(.audio(.otherCall(active: true)))
+        }
+    }
+
+    private func stopObservingAudioSession() {
+        for observer in audioObservers { NotificationCenter.default.removeObserver(observer) }
+        audioObservers = []
     }
 
     // MARK: - Data
@@ -179,6 +269,7 @@ public final class LiveKitVoiceEngine: NSObject, VoiceEngineProtocol {
             isMicrophoneEnabled = false
         }
         await room.disconnect()
+        stopObservingAudioSession()
         canPublish = false
         speakingIdentities = []
         mutedIdentities = []
@@ -366,6 +457,17 @@ extension LiveKitVoiceEngine: RoomDelegate {
         guard topic == RoomDataMessage.topic, let message = RoomDataMessage.decode(data) else { return }
         Task { @MainActor [weak self] in
             self?.onRoomEvent?(.message(message))
+        }
+    }
+}
+
+// MARK: - CXCallObserverDelegate
+
+extension LiveKitVoiceEngine: CXCallObserverDelegate {
+    nonisolated public func callObserver(_ callObserver: CXCallObserver, callChanged call: CXCall) {
+        let active = callObserver.calls.contains { !$0.hasEnded }
+        Task { @MainActor [weak self] in
+            self?.onRoomEvent?(.audio(.otherCall(active: active)))
         }
     }
 }

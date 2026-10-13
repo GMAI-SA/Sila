@@ -36,11 +36,21 @@ public final class RoomDepthServiceMock: RoomDepthServiceProtocol, @unchecked Se
         }
     }
 
-    public func ask(_ text: String, roomId: UUID) async throws -> RoomQuestion {
-        lock.withLock {
+    /// When set, the next ``ask(_:roomId:)`` throws it (once).
+    public var askError: Error?
+    public private(set) var askCalls = 0
+
+    public func ask(_ text: String, roomId: UUID) async throws -> [RoomQuestion] {
+        try lock.withLock {
+            askCalls += 1
+            if let askError {
+                self.askError = nil
+                throw askError
+            }
             let question = RoomQuestion(text: text, isAuthor: true)
             questionList.append(question)
-            return question
+            // As the server does: the whole queue, not the one question.
+            return questionList.filter { $0.status != .dismissed }
         }
     }
 
@@ -75,7 +85,9 @@ public final class RoomDepthServiceMock: RoomDepthServiceProtocol, @unchecked Se
 
     public func polls(roomId: UUID) async throws -> [RoomPoll] { lock.withLock { pollList } }
 
-    public func openPoll(question: String, options: [String], durationSeconds: Int, roomId: UUID) async throws -> RoomPoll {
+    public private(set) var openPollCalls = 0
+
+    public func openPoll(question: String, options: [String], durationSeconds: Int, roomId: UUID) async throws -> [RoomPoll] {
         try lock.withLock {
             if pollList.contains(where: { !$0.poll.closed }) {
                 throw APIError.api(code: .pollOpen, message: "A poll is already open", status: 409)
@@ -84,12 +96,13 @@ public final class RoomDepthServiceMock: RoomDepthServiceProtocol, @unchecked Se
                                            closesAt: Date().addingTimeInterval(TimeInterval(durationSeconds)),
                                            resultsVisibility: .always, resultsVisible: true, canVote: true),
                                 question: question)
+            openPollCalls += 1
             pollList.insert(poll, at: 0)
-            return poll
+            return pollList
         }
     }
 
-    public func vote(optionId: UUID, pollId: UUID, roomId: UUID) async throws -> RoomPoll {
+    public func vote(optionId: UUID, pollId: UUID, roomId: UUID) async throws -> [RoomPoll] {
         try lock.withLock {
             guard let i = pollList.firstIndex(where: { $0.id == pollId }) else { throw APIError.api(code: .pollNotFound, message: "", status: 404) }
             let p = pollList[i].poll
@@ -98,11 +111,24 @@ public final class RoomDepthServiceMock: RoomDepthServiceProtocol, @unchecked Se
                                            resultsVisibility: .always, resultsVisible: true, viewerOptionId: optionId,
                                            canVote: false, voteBlockReason: .alreadyVoted), question: pollList[i].question)
             pollList[i] = next
-            return next
+            return pollList
         }
     }
 
-    public func closePoll(_ pollId: UUID, roomId: UUID) async throws -> RoomPoll {
+    /// Somebody else in the room voting: the tally moves under this viewer.
+    public func simulateOtherVote(optionId: UUID, pollId: UUID) {
+        lock.withLock {
+            guard let i = pollList.firstIndex(where: { $0.id == pollId }) else { return }
+            let p = pollList[i].poll
+            let options = p.options.map { PollOption(id: $0.id, position: $0.position, text: $0.text, votes: ($0.votes ?? 0) + ($0.id == optionId ? 1 : 0)) }
+            pollList[i] = RoomPoll(poll: Poll(id: p.id, options: options, totalVotes: p.totalVotes + 1, closesAt: p.closesAt,
+                                              closed: p.closed, resultsVisibility: .always, resultsVisible: true,
+                                              viewerOptionId: p.viewerOptionId, canVote: p.canVote,
+                                              voteBlockReason: p.voteBlockReason), question: pollList[i].question)
+        }
+    }
+
+    public func closePoll(_ pollId: UUID, roomId: UUID) async throws -> [RoomPoll] {
         try lock.withLock {
             guard let i = pollList.firstIndex(where: { $0.id == pollId }) else { throw APIError.api(code: .pollNotFound, message: "", status: 404) }
             let p = pollList[i].poll
@@ -110,7 +136,7 @@ public final class RoomDepthServiceMock: RoomDepthServiceProtocol, @unchecked Se
                                            resultsVisibility: .always, resultsVisible: true, viewerOptionId: p.viewerOptionId,
                                            canVote: false, voteBlockReason: .closed), question: pollList[i].question)
             pollList[i] = next
-            return next
+            return pollList
         }
     }
 

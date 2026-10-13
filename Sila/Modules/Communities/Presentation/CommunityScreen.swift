@@ -10,6 +10,9 @@ public struct CommunityScreen: View {
     private let onOpenPost: @MainActor (Post) -> Void
     private let onOpenProfile: @MainActor (String) -> Void
     private let onOpenRoom: (@MainActor (VoiceRoom) -> Void)?
+    /// Starts a room inside this community (the create sheet, with the
+    /// community already chosen). `nil` hides the button.
+    private let onStartRoom: (@MainActor (Community) -> Void)?
     private let onCompose: (@MainActor (Community) -> Void)?
     private let postActions: (@MainActor (Post) -> PostCardActions)?
     private let people: PeopleDirectory?
@@ -20,6 +23,7 @@ public struct CommunityScreen: View {
         onOpenPost: @escaping @MainActor (Post) -> Void,
         onOpenProfile: @escaping @MainActor (String) -> Void = { _ in },
         onOpenRoom: (@MainActor (VoiceRoom) -> Void)? = nil,
+        onStartRoom: (@MainActor (Community) -> Void)? = nil,
         onCompose: (@MainActor (Community) -> Void)? = nil,
         postActions: (@MainActor (Post) -> PostCardActions)? = nil,
         people: PeopleDirectory? = nil,
@@ -29,6 +33,7 @@ public struct CommunityScreen: View {
         self.onOpenPost = onOpenPost
         self.onOpenProfile = onOpenProfile
         self.onOpenRoom = onOpenRoom
+        self.onStartRoom = onStartRoom
         self.onCompose = onCompose
         self.postActions = postActions
         self.people = people
@@ -216,6 +221,15 @@ public struct CommunityScreen: View {
             }
 
         case .rooms:
+            if let onStartRoom, community.isMember {
+                // A member opens a room here; its members are its door.
+                SLButton(L10n.t("communities.rooms.start"), variant: .secondary, size: .compact, icon: "waveform") {
+                    onStartRoom(community)
+                }
+                .padding(.horizontal, SLSpacing.lg)
+                .padding(.bottom, SLSpacing.md)
+                .accessibilityIdentifier("communities.rooms.start")
+            }
             if viewModel.rooms.isEmpty {
                 SLEmptyState(
                     icon: "mic",

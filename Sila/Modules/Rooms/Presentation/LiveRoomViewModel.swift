@@ -117,6 +117,7 @@ public final class LiveRoomViewModel {
     private var pollTask: Task<Void, Never>?
     private var eventTask: Task<Void, Never>?
     private var busyHandles: Set<String> = []
+    private var hasStarted = false
     private var mediaURL = ""
     private var mediaToken = ""
 
@@ -269,7 +270,11 @@ public final class LiveRoomViewModel {
 
     /// Joins, connects the media, reads the roster, and starts watching.
     public func start() async {
-        guard phase == .joining, !hasLeft else { return }
+        // Once. The screen is a view of a room the app holds above the tabs,
+        // and is rebuilt every time somebody comes back to it — its `.task`
+        // runs again, and must not join again.
+        guard phase == .joining, !hasLeft, !hasStarted else { return }
+        hasStarted = true
         do {
             let join = try await service.join(roomId: room.id)
             room = join.room
@@ -279,11 +284,26 @@ public final class LiveRoomViewModel {
         } catch {
             guard suspension?.notice(error) != true else { return }
             let wrapped = APIError.wrapping(error)
+            if wrapped.isCancellation {
+                // The join was abandoned, not refused: the next start tries again.
+                hasStarted = false
+                return
+            }
             analytics.track(.roomJoinRefused, properties: ["code": wrapped.code?.rawValue ?? "transport"])
             phase = .refused(refusalSentence(wrapped))
             return
         }
+        // Left (another room entered, the bar's Leave) while the door was
+        // opening: undo the join rather than connect a room nobody is in.
+        guard !hasLeft else {
+            try? await service.leave(roomId: room.id)
+            return
+        }
         await connectMedia()
+        guard !hasLeft else {
+            await engine.disconnect()
+            return
+        }
         engine.onRoomEvent = { [weak self] event in self?.handle(event) }
         phase = .inRoom
         await refresh()
@@ -360,6 +380,9 @@ public final class LiveRoomViewModel {
                 isMicrophoneEnabled = false
                 toast = .info(RoomCopy.youWereDemoted)
             }
+        case let .audio(signal):
+            Task { [weak self] in await self?.applyAudio(.signal(signal)) }
+            return  // The roster did not change.
         case let .muteChanged(identity, isMuted):
             if isMuted, role.canPublish, identity == viewerId?.uuidString.lowercased(), isMicrophoneEnabled || engine.isMicrophoneEnabled == false {
                 // The host muted us: the track went quiet under the app.
@@ -490,8 +513,13 @@ public final class LiveRoomViewModel {
     /// Builds the questions/polls panel once the room is known.
     func prepareDepth() {
         guard depth == nil, let depthService else { return }
-        depth = RoomDepthViewModel(roomId: room.id, isHost: isHost, isStage: isStage, cohosts: room.cohosts,
-                                   service: depthService, analytics: analytics, viewerIsVouched: viewerIsVouched)
+        let made = RoomDepthViewModel(roomId: room.id, isHost: isHost, isStage: isStage, cohosts: room.cohosts,
+                                      service: depthService, analytics: analytics, viewerIsVouched: viewerIsVouched)
+        depth = made
+        // A running poll is on the room's own screen, not only in the sheet,
+        // and its bars follow the room's votes.
+        Task { await made.loadPolls() }
+        if pollInterval > 0 { made.startLiveTally() }
     }
 
     /// History for somebody arriving late.
@@ -708,12 +736,110 @@ public final class LiveRoomViewModel {
             try await engine.setMicrophoneEnabled(target)
             isMicrophoneEnabled = engine.isMicrophoneEnabled
             analytics.track(target ? .roomMicEnabled : .roomMicDisabled, properties: ["role": role.rawValue])
+            perform(audioState.handle(isMicrophoneEnabled ? .micOn : .micOff))
+        } catch VoiceEngineError.audioBusy {
+            // Another call holds the phone's audio. Said plainly, and the
+            // microphone comes back by itself when that call ends.
+            isMicrophoneEnabled = false
+            perform(audioState.handle(.unmuteBlocked))
         } catch VoiceEngineError.microphoneDenied {
             analytics.track(.roomMicDenied)
             toast = .warning(RoomCopy.microphoneDenied)
         } catch VoiceEngineError.cancelled {
         } catch {
             toast = .error((error as? VoiceEngineError)?.userMessage ?? APIError.wrapping(error).userMessage)
+        }
+    }
+
+    // MARK: - Sharing the phone's audio
+
+    /// "You're on another call; your mic comes back when it ends." — shown
+    /// where the microphone is while another app holds the audio.
+    public private(set) var audioNotice: String?
+    private var audioState = RoomAudioInterruption()
+    private var audioRetryTask: Task<Void, Never>?
+    private var audioRetries = 0
+    /// Attempts to bring the microphone back before waiting for iOS again.
+    static let audioRetryLimit = 4
+
+    /// The interruption machine's state, for tests.
+    public var audioInterruption: RoomAudioInterruption { audioState }
+
+    /// Feeds one event to the machine and carries out what it asks for.
+    func applyAudio(_ event: RoomAudioInterruption.Event) async {
+        guard !hasLeft else { return }
+        await run(audioState.handle(event))
+    }
+
+    /// The notice at once; the session work after it, in order.
+    private func perform(_ effects: [RoomAudioInterruption.Effect]) {
+        var rest: [RoomAudioInterruption.Effect] = []
+        for effect in effects {
+            switch effect {
+            case .showNotice: audioNotice = L10n.t("rooms.audio.onAnotherCall")
+            case .clearNotice: audioNotice = nil
+            case .reactivate, .republishMic: rest.append(effect)
+            }
+        }
+        guard !rest.isEmpty else { return }
+        Task { [weak self] in await self?.run(rest) }
+    }
+
+    private func run(_ effects: [RoomAudioInterruption.Effect]) async {
+        for effect in effects {
+            switch effect {
+            case .showNotice:
+                audioNotice = L10n.t("rooms.audio.onAnotherCall")
+            case .clearNotice:
+                audioNotice = nil
+            case .reactivate:
+                await engine.reactivateAudio()
+            case .republishMic:
+                await republishMicrophone()
+            }
+        }
+    }
+
+    /// Takes the microphone down and up again, so a track the other call
+    /// silenced is published afresh — without leaving the room.
+    private func republishMicrophone() async {
+        guard canUseMicrophone, !hasLeft else {
+            // No microphone to bring back any more (demoted meanwhile).
+            perform(audioState.handle(.micOff))
+            return
+        }
+        try? await engine.setMicrophoneEnabled(false)
+        do {
+            try await engine.setMicrophoneEnabled(true)
+            isMicrophoneEnabled = engine.isMicrophoneEnabled
+            audioRetries = 0
+            audioRetryTask?.cancel()
+            audioRetryTask = nil
+            if isMicrophoneEnabled {
+                _ = audioState.handle(.micOn)
+                audioNotice = nil
+                toast = .success(L10n.t("rooms.audio.micBack"))
+            }
+        } catch {
+            // Still held (or failing for another reason): the notice stays
+            // up, and a spaced retry follows.
+            isMicrophoneEnabled = false
+            await run(audioState.handle(.restoreFailed))
+            scheduleAudioRetry()
+        }
+    }
+
+    /// iOS does not always say when a call has given the audio back; a few
+    /// spaced attempts cover the silence.
+    private func scheduleAudioRetry() {
+        guard audioRetries < Self.audioRetryLimit, audioRetryTask == nil, pollInterval > 0 else { return }
+        audioRetries += 1
+        let delay = UInt64(audioRetries) * 2_000_000_000
+        audioRetryTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: delay)
+            guard !Task.isCancelled else { return }
+            self?.audioRetryTask = nil
+            await self?.applyAudio(.signal(.appActive))
         }
     }
 
@@ -996,6 +1122,10 @@ public final class LiveRoomViewModel {
         eventTask = nil
         engine.onChange = nil
         engine.onRoomEvent = nil
+        depth?.stopLiveTally()
+        audioRetryTask?.cancel()
+        audioRetryTask = nil
+        audioNotice = nil
 
         let serverLeave = Task { [service, room] in
             try? await service.leave(roomId: room.id)

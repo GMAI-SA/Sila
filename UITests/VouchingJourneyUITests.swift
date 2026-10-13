@@ -367,7 +367,14 @@ final class VouchingJourneyUITests: XCTestCase {
         XCTAssertTrue(byLabelContaining(app, String(L("vouch.limited.rooms").prefix(40))).exists,
                       "the room does not say what waits for verification")
         XCTAssertFalse(byId(app, "rooms.reaction.👏").exists, "a vouched listener was offered reactions")
-        XCTAssertFalse(app.buttons[L("rooms.share.a11yLabel")].exists, "a vouched listener was offered the share")
+        // The link may go anywhere (it costs nothing and joins nobody); the
+        // timeline post waits for verification.
+        if app.buttons[L("rooms.share.a11yLabel")].exists {
+            app.buttons[L("rooms.share.a11yLabel")].tap()
+            XCTAssertFalse(app.buttons[L("rooms.shareLink.post")].waitForExistence(timeout: 2),
+                           "a vouched listener was offered the post")
+            app.tap()
+        }
         XCTAssertFalse(app.buttons[L("rooms.hand.raise")].exists, "a vouched listener was offered the hand")
 
         // Nothing past the screen's edges: the reactions row used to push

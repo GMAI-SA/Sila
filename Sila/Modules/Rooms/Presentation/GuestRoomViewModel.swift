@@ -286,6 +286,9 @@ public final class GuestRoomViewModel {
             receive(message)
         case .participantJoined, .participantLeft, .metadataChanged, .muteChanged, .permissionsChanged:
             adoptEngine()
+        case .audio:
+            // A guest only listens; playback comes back with the session.
+            break
         }
     }
 

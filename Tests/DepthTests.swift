@@ -179,3 +179,99 @@ final class SafetyDepthTests: XCTestCase {
         XCTAssertFalse(GuidelinesGate(service: SafetyDepthServiceMock()).needsAcceptance)
     }
 }
+
+// MARK: - Questions and polls feel sent (2026-10-13)
+
+@MainActor
+final class RoomDepthResponsivenessTests: XCTestCase {
+
+    private func make() -> (RoomDepthViewModel, RoomDepthServiceMock) {
+        let service = RoomDepthServiceMock()
+        return (RoomDepthViewModel(roomId: UUID(), isHost: true, isStage: true, cohosts: [], service: service,
+                                   analytics: RecordingAnalyticsClient()), service)
+    }
+
+    /// The server answers a question with the whole queue and a poll write
+    /// with every poll — the shapes the app failed to read, which is why a
+    /// question "didn't feel sent" and a poll said "couldn't reach the server"
+    /// and then opened anyway.
+    func testWritesDecodeTheListTheServerSends() throws {
+        let questions = """
+        {"questions": [{"id": "6f1f5d64-56f4-4c1b-9a43-0d6c3e1d0a11", "text": "Will it be recorded?", "status": "open",
+          "upvote_count": 0, "pinned": false, "viewer_upvoted": false, "is_author": true,
+          "created_at": "2026-10-13T15:00:00+00:00", "author": null}]}
+        """
+        let q = try JSONCoding.decoder.decode(QuestionsWriteResult.self, from: Data(questions.utf8))
+        XCTAssertEqual(q.questions.map(\.text), ["Will it be recorded?"])
+
+        let polls = """
+        {"polls": [{"id": "0b8c8f43-4b1e-4c47-9d0f-33b8a2b6e101", "question": "Tonight?", "total_votes": 3,
+          "closes_at": "2026-10-13T16:00:00+00:00", "closed": false, "results_visibility": "always",
+          "results_visible": true, "viewer_option_id": null, "can_vote": true, "vote_block_reason": null,
+          "options": [{"id": "5d6c1b0a-0000-4000-8000-000000000001", "position": 0, "text": "Yes", "votes": 2},
+                      {"id": "5d6c1b0a-0000-4000-8000-000000000002", "position": 1, "text": "No", "votes": 1}]}]}
+        """
+        let p = try JSONCoding.decoder.decode(RoomPollsWriteResult.self, from: Data(polls.utf8))
+        XCTAssertEqual(p.polls.first?.question, "Tonight?")
+        XCTAssertEqual(p.polls.first?.poll.totalVotes, 3)
+
+        // A bare object still reads.
+        let bare = try JSONCoding.decoder.decode(RoomPollsWriteResult.self, from: Data("""
+        {"id": "0b8c8f43-4b1e-4c47-9d0f-33b8a2b6e101", "question": "Tonight?", "options": []}
+        """.utf8))
+        XCTAssertEqual(bare.polls.count, 1)
+    }
+
+    func testAQuestionIsInTheQueueAtOnceAndSettlesWhenTheServerHasIt() async {
+        let (viewModel, service) = make()
+        await viewModel.load()
+        viewModel.askDraft = "Is the recap public?"
+        await viewModel.ask()
+        XCTAssertTrue(viewModel.pendingQuestions.isEmpty, "settled")
+        XCTAssertTrue(viewModel.questions.contains { $0.text == "Is the recap public?" })
+        XCTAssertEqual(viewModel.askDraft, "")
+        XCTAssertEqual(viewModel.successBeats, 1)
+        XCTAssertNil(viewModel.toast, "no error")
+        XCTAssertEqual(service.askCalls, 1)
+    }
+
+    func testAQuestionThatDidNotGetThroughCanBeRetriedOnce() async {
+        let (viewModel, service) = make()
+        await viewModel.load()
+        service.askError = APIError.transport("offline")
+        viewModel.askDraft = "Second try?"
+        await viewModel.ask()
+        guard case .failed = viewModel.pendingQuestions.first?.state else { return XCTFail("not marked failed") }
+        XCTAssertEqual(viewModel.failureBeats, 1)
+        await viewModel.retry(viewModel.pendingQuestions[0])
+        XCTAssertTrue(viewModel.pendingQuestions.isEmpty)
+        XCTAssertEqual(service.questionList.filter { $0.text == "Second try?" }.count, 1, "asked once")
+    }
+
+    func testOpeningAPollTwiceOpensOne() async {
+        let (viewModel, service) = make()
+        async let first = viewModel.openPoll(question: "Tonight?", options: ["Yes", "No"], durationSeconds: 120)
+        async let second = viewModel.openPoll(question: "Tonight?", options: ["Yes", "No"], durationSeconds: 120)
+        let results = await [first, second]
+        XCTAssertEqual(results.filter { $0 }.count, 1)
+        XCTAssertEqual(service.openPollCalls, 1)
+        XCTAssertNil(viewModel.toast)
+        XCTAssertNotNil(viewModel.openPoll)
+    }
+
+    func testAVoteShowsAtOnceAndOthersVotesMoveTheTally() async {
+        let (viewModel, service) = make()
+        _ = await viewModel.openPoll(question: "Tonight?", options: ["Yes", "No"], durationSeconds: 120)
+        let poll = viewModel.openPoll!
+        let yes = poll.poll.options[0]
+        await viewModel.vote(yes, in: poll)
+        XCTAssertEqual(viewModel.chosenOption(in: viewModel.openPoll!), yes.id, "you voted")
+        XCTAssertEqual(viewModel.openPoll?.poll.totalVotes, 1)
+        await viewModel.vote(poll.poll.options[1], in: viewModel.openPoll!)
+        XCTAssertEqual(viewModel.openPoll?.poll.totalVotes, 1, "one vote each")
+
+        service.simulateOtherVote(optionId: poll.poll.options[1].id, pollId: poll.id)
+        await viewModel.handle(event: "polls_changed")
+        XCTAssertEqual(viewModel.openPoll?.poll.totalVotes, 2)
+    }
+}

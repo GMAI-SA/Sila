@@ -5,15 +5,18 @@ public protocol RoomDepthServiceProtocol: Sendable {
     func addCohost(_ handle: String, roomId: UUID) async throws -> [UserSummary]
     func removeCohost(_ handle: String, roomId: UUID) async throws -> [UserSummary]
     func questions(roomId: UUID, status: RoomQuestion.Status) async throws -> [RoomQuestion]
-    func ask(_ text: String, roomId: UUID) async throws -> RoomQuestion
+    /// Asks; answers with the queue as it stands after the question went in
+    /// (open and answered — the server sends the list, not the question).
+    func ask(_ text: String, roomId: UUID) async throws -> [RoomQuestion]
     func setUpvote(_ on: Bool, questionId: UUID, roomId: UUID) async throws
     /// `pin | unpin | answer | dismiss | reopen` — the stage's verbs.
     func stage(_ action: String, questionId: UUID, roomId: UUID) async throws
     func withdraw(questionId: UUID, roomId: UUID) async throws
     func polls(roomId: UUID) async throws -> [RoomPoll]
-    func openPoll(question: String, options: [String], durationSeconds: Int, roomId: UUID) async throws -> RoomPoll
-    func vote(optionId: UUID, pollId: UUID, roomId: UUID) async throws -> RoomPoll
-    func closePoll(_ pollId: UUID, roomId: UUID) async throws -> RoomPoll
+    /// The three poll writes answer with the room's polls, newest first.
+    func openPoll(question: String, options: [String], durationSeconds: Int, roomId: UUID) async throws -> [RoomPoll]
+    func vote(optionId: UUID, pollId: UUID, roomId: UUID) async throws -> [RoomPoll]
+    func closePoll(_ pollId: UUID, roomId: UUID) async throws -> [RoomPoll]
     func messages(roomId: UUID) async throws -> [RoomMessage]
     func send(_ text: String, roomId: UUID) async throws -> RoomMessage
     func hide(messageId: UUID, roomId: UUID) async throws
@@ -79,8 +82,8 @@ public final class RoomDepthService: RoomDepthServiceProtocol {
                        as: QuestionsEnvelope.self).questions
     }
 
-    public func ask(_ text: String, roomId: UUID) async throws -> RoomQuestion {
-        try await json(path(roomId, "/questions"), body: TextBody(text: text), as: RoomQuestion.self)
+    public func ask(_ text: String, roomId: UUID) async throws -> [RoomQuestion] {
+        try await json(path(roomId, "/questions"), body: TextBody(text: text), as: QuestionsWriteResult.self).questions
     }
 
     public func setUpvote(_ on: Bool, questionId: UUID, roomId: UUID) async throws {
@@ -99,19 +102,19 @@ public final class RoomDepthService: RoomDepthServiceProtocol {
         try await get(path(roomId, "/polls"), as: RoomPollsEnvelope.self).polls
     }
 
-    public func openPoll(question: String, options: [String], durationSeconds: Int, roomId: UUID) async throws -> RoomPoll {
+    public func openPoll(question: String, options: [String], durationSeconds: Int, roomId: UUID) async throws -> [RoomPoll] {
         try await json(path(roomId, "/polls"),
                        body: CreateRoomPollBody(question: question, options: options, durationSeconds: durationSeconds),
-                       as: RoomPoll.self)
+                       as: RoomPollsWriteResult.self).polls
     }
 
-    public func vote(optionId: UUID, pollId: UUID, roomId: UUID) async throws -> RoomPoll {
+    public func vote(optionId: UUID, pollId: UUID, roomId: UUID) async throws -> [RoomPoll] {
         try await json(path(roomId, "/polls/\(id(pollId))/votes"), body: PollVoteRequest(optionId: optionId),
-                       as: RoomPoll.self)
+                       as: RoomPollsWriteResult.self).polls
     }
 
-    public func closePoll(_ pollId: UUID, roomId: UUID) async throws -> RoomPoll {
-        try await bare(path(roomId, "/polls/\(id(pollId))/close"), method: .post, as: RoomPoll.self)
+    public func closePoll(_ pollId: UUID, roomId: UUID) async throws -> [RoomPoll] {
+        try await bare(path(roomId, "/polls/\(id(pollId))/close"), method: .post, as: RoomPollsWriteResult.self).polls
     }
 
     public func messages(roomId: UUID) async throws -> [RoomMessage] {

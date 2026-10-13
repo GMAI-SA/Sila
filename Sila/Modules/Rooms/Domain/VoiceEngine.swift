@@ -51,6 +51,11 @@ public enum VoiceEngineError: Error, Equatable, Sendable {
     /// the user is left to interpret — the media server would drop the audio
     /// either way.
     case notPermittedToPublish
+    /// The microphone could not be opened because the phone's audio is
+    /// held by something louder than a room — a phone call, a FaceTime or
+    /// WhatsApp call in another app. Not a failure to report: the room
+    /// says so plainly and brings the microphone back when the call ends.
+    case audioBusy
     /// Anything the transport reported.
     case transport(String)
     /// The app abandoned its own connection attempt (the screen went away).
@@ -64,6 +69,8 @@ public enum VoiceEngineError: Error, Equatable, Sendable {
             return RoomCopy.microphoneDenied
         case .notPermittedToPublish:
             return L10n.t("rooms.voice.notPermittedToPublish")
+        case .audioBusy:
+            return L10n.t("rooms.audio.onAnotherCall")
         case let .transport(message):
             return message
         case .cancelled:
@@ -93,7 +100,128 @@ public enum VoiceRoomEvent: Equatable, Sendable {
     case muteChanged(identity: String, isMuted: Bool)
     /// A data message from another participant.
     case message(RoomDataMessage)
+    /// The phone's audio: another call taking it, giving it back, a route
+    /// change. See ``RoomAudioInterruption``.
+    case audio(AudioSignal)
 }
+
+/// What iOS says about the audio session underneath a room.
+public enum AudioSignal: Equatable, Sendable {
+    /// `AVAudioSession` interruption began (a call came in).
+    case interruptionBegan
+    /// `AVAudioSession` interruption ended.
+    case interruptionEnded
+    /// Whether a call — cellular, FaceTime, or any CallKit app such as
+    /// WhatsApp — is going on right now.
+    case otherCall(active: Bool)
+    /// The audio route changed (headphones, a call's route released).
+    case routeChanged
+    /// The app came back to the foreground.
+    case appActive
+}
+
+/// The room's half of sharing the phone's audio with other apps — a pure
+/// state machine, so it can be tested without a device.
+///
+/// What it fixes: unmuting while on a WhatsApp or phone call failed with a
+/// raw "failed to configure audio session"; and after the other call ended,
+/// the microphone stayed dead until the person left and re-entered the room.
+/// Now the room says "you're on another call; your mic comes back when it
+/// ends", remembers that the microphone was wanted, and when the call ends
+/// (interruption over, the call gone from CallKit, the app active again)
+/// reactivates the session and republishes the microphone — in the room,
+/// without leaving it.
+public struct RoomAudioInterruption: Equatable, Sendable {
+
+    public enum Event: Equatable, Sendable {
+        /// The microphone is open and publishing.
+        case micOn
+        /// The person shut their microphone (or lost it to a demotion).
+        case micOff
+        /// Opening the microphone failed because the audio is held elsewhere.
+        case unmuteBlocked
+        /// Reactivating or republishing after an interruption failed.
+        case restoreFailed
+        /// A signal from iOS.
+        case signal(AudioSignal)
+    }
+
+    public enum Effect: Equatable, Sendable {
+        /// Say "you're on another call…" where the microphone is.
+        case showNotice
+        /// Take that sentence down.
+        case clearNotice
+        /// Activate the audio session again (playback comes back).
+        case reactivate
+        /// Unpublish and publish the microphone again.
+        case republishMic
+    }
+
+    /// The audio is held elsewhere, or was and has not been restored.
+    public private(set) var isInterrupted = false
+    /// The person wants their microphone open: it was open when the call
+    /// came, or they tried to open it during one.
+    public private(set) var wantsMic = false
+    /// A call is going on, as CallKit tells it.
+    public private(set) var otherCallActive = false
+    /// The microphone is actually publishing.
+    public private(set) var micLive = false
+
+    public init() {}
+
+    public mutating func handle(_ event: Event) -> [Effect] {
+        switch event {
+        case .micOn:
+            micLive = true
+            wantsMic = true
+            let wasInterrupted = isInterrupted
+            isInterrupted = false
+            return wasInterrupted ? [.clearNotice] : []
+        case .micOff:
+            micLive = false
+            wantsMic = false
+            return [.clearNotice]
+        case .unmuteBlocked:
+            micLive = false
+            wantsMic = true
+            isInterrupted = true
+            return [.showNotice]
+        case .restoreFailed:
+            isInterrupted = true
+            return wantsMic ? [.showNotice] : []
+        case .signal(.interruptionBegan):
+            return interrupt()
+        case .signal(.otherCall(active: true)):
+            otherCallActive = true
+            return interrupt()
+        case .signal(.otherCall(active: false)):
+            otherCallActive = false
+            return resume()
+        case .signal(.interruptionEnded), .signal(.routeChanged), .signal(.appActive):
+            // A call still going on is still holding the audio, whatever
+            // else iOS said.
+            return otherCallActive ? [] : resume()
+        }
+    }
+
+    private mutating func interrupt() -> [Effect] {
+        if micLive { wantsMic = true }
+        micLive = false
+        let wasInterrupted = isInterrupted
+        isInterrupted = true
+        return wantsMic && !wasInterrupted ? [.showNotice] : []
+    }
+
+    private mutating func resume() -> [Effect] {
+        guard isInterrupted else { return [] }
+        isInterrupted = false
+        var effects: [Effect] = [.reactivate]
+        if wantsMic { effects.append(.republishMic) }
+        effects.append(.clearNotice)
+        return effects
+    }
+}
+
 
 /// What travels over a room's data channel.
 ///
@@ -371,6 +499,10 @@ public protocol VoiceEngineProtocol: AnyObject {
     /// which went to the API first.
     /// Sends a data message to the room, or to named identities only.
     func publish(_ message: RoomDataMessage, to identities: [String]) async
+
+    /// Activates the audio session again after another app (a call) held
+    /// it. Defaults to nothing.
+    func reactivateAudio() async
 }
 
 /// The microphone permission prompt, behind a seam.
@@ -414,5 +546,9 @@ extension VoiceEngineProtocol {
     public func publish(_ message: RoomDataMessage) async {
         await publish(message, to: [])
     }
+
+    /// Activates the audio session again after another app held it. A no-op
+    /// for an engine with no session of its own.
+    public func reactivateAudio() async {}
 }
 

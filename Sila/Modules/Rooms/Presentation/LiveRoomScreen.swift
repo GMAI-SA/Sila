@@ -1,3 +1,4 @@
+import MediaPlayer
 import SwiftUI
 import UIKit
 
@@ -23,6 +24,9 @@ public struct LiveRoomScreen: View {
 
     @Bindable private var viewModel: LiveRoomViewModel
     private let onLeave: @MainActor () -> Void
+    /// Back to the app with the room still on — `nil` where there is no
+    /// app to go back to (a preview).
+    private let onMinimise: (@MainActor () -> Void)?
     private let onOpenProfile: (@MainActor (String) -> Void)?
     /// The person whose sheet is up. A tap on a tile opens this, never the
     /// profile directly — a thumb brushing the audience grid used to navigate.
@@ -38,6 +42,7 @@ public struct LiveRoomScreen: View {
     public init(
         viewModel: LiveRoomViewModel,
         onLeave: @escaping @MainActor () -> Void,
+        onMinimise: (@MainActor () -> Void)? = nil,
         onOpenProfile: (@MainActor (String) -> Void)? = nil,
         safetyMenu: (@MainActor (SafetyTarget) -> SafetyMenuActions?)? = nil,
         onReport: (@MainActor (ReportSubject) -> Void)? = nil,
@@ -47,6 +52,7 @@ public struct LiveRoomScreen: View {
         self.onVerifySelf = onVerifySelf
         self.viewModel = viewModel
         self.onLeave = onLeave
+        self.onMinimise = onMinimise
         self.onOpenProfile = onOpenProfile
         self.safetyMenu = safetyMenu
     }
@@ -71,19 +77,34 @@ public struct LiveRoomScreen: View {
         .tnNavigationBar(title: L10n.t("rooms.live.nav.title"))
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    // A host is asked what they mean; everybody else just goes.
-                    guard viewModel.requestLeave() else { return }
-                    Task {
-                        await viewModel.leave()
-                        onLeave()
+                if let onMinimise, viewModel.phase == .inRoom || viewModel.phase == .joining {
+                    // The way back to the app is not the way out of the room:
+                    // this keeps the room on (the bar above the tabs brings it
+                    // back); Leave, in the controls below, is the only exit.
+                    Button {
+                        onMinimise()
+                    } label: {
+                        Label(L10n.t("rooms.live.minimise"), systemImage: "chevron.down")
+                            .foregroundStyle(SLColor.primary)
                     }
-                } label: {
-                    Label(L10n.t("rooms.live.leave"), systemImage: "chevron.backward")
-                        .foregroundStyle(SLColor.primary)
+                    .accessibilityLabel(Text(L10n.t("rooms.live.minimise")))
+                    .accessibilityHint(Text(L10n.t("rooms.live.minimise.a11yHint")))
+                    .accessibilityIdentifier("rooms.live.minimise")
+                } else {
+                    Button {
+                        // A host is asked what they mean; everybody else just goes.
+                        guard viewModel.requestLeave() else { return }
+                        Task {
+                            await viewModel.leave()
+                            onLeave()
+                        }
+                    } label: {
+                        Label(L10n.t("rooms.live.leave"), systemImage: "chevron.backward")
+                            .foregroundStyle(SLColor.primary)
+                    }
+                    .accessibilityLabel(Text(L10n.t("rooms.live.leave.a11yLabel")))
+                    .accessibilityHint(Text(RoomCopy.leaveHint))
                 }
-                .accessibilityLabel(Text(L10n.t("rooms.live.leave.a11yLabel")))
-                .accessibilityHint(Text(RoomCopy.leaveHint))
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -105,16 +126,29 @@ public struct LiveRoomScreen: View {
             // way it is referred to after it ends. Closed rooms are absent —
             // advertising one is how an invite-only room would leak — and so
             // is a vouched listener's share, which waits for verification.
-            if viewModel.canShare {
+            //
+            // The link goes anywhere the phone can send it (WhatsApp,
+            // Messages, X, Telegram, Copy…); the post stays the timeline's.
+            if viewModel.canShare || RoomShareContent.canShareLink(viewModel.room) {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.isSharing = true
+                    Menu {
+                        if RoomShareContent.canShareLink(viewModel.room) {
+                            RoomShareLink(room: viewModel.room, showsTitle: true)
+                        }
+                        if viewModel.canShare {
+                            Button {
+                                viewModel.isSharing = true
+                            } label: {
+                                Label(L10n.t("rooms.shareLink.post"), systemImage: "text.bubble")
+                            }
+                            .accessibilityHint(Text(L10n.t("rooms.share.a11yHint")))
+                        }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .foregroundStyle(SLColor.primary)
                     }
                     .accessibilityLabel(Text(L10n.t("rooms.share.a11yLabel")))
-                    .accessibilityHint(Text(L10n.t("rooms.share.a11yHint")))
+                    .accessibilityIdentifier("rooms.share.menu")
                 }
             }
 
@@ -209,6 +243,10 @@ public struct LiveRoomScreen: View {
         }
         .task { await viewModel.start() }
         .onChange(of: scenePhase) { _, phase in
+            // With no app around it (a preview), the screen keeps the room
+            // through the background itself; inside the app the room's
+            // session above the tabs does, whether or not this is on screen.
+            guard onMinimise == nil else { return }
             switch phase {
             case .background: Task { await viewModel.persistThroughBackgrounding() }
             case .active: Task { await viewModel.resumeFromBackground() }
@@ -218,11 +256,24 @@ public struct LiveRoomScreen: View {
         .onReceive(
             NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)
         ) { _ in
+            guard onMinimise == nil else { return }
             Task { await viewModel.handleTermination() }
         }
         .onChange(of: viewModel.hasLeft) { _, hasLeft in
             if hasLeft { onLeave() }
         }
+        // A vote or a close that failed from the poll on the room's own
+        // screen: said here, where the sheet's banner is not up.
+        .onChange(of: viewModel.depth?.toast) { _, message in
+            guard let message, !viewModel.isDepthOpen else { return }
+            viewModel.toast = message
+            viewModel.depth?.toast = nil
+        }
+        .animation(.easeOut(duration: 0.25), value: viewModel.depth?.openPoll?.id)
+        // Questions and votes, felt — here once, for the sheet above as well.
+        .sensoryFeedback(.selection, trigger: viewModel.depth?.selectionBeats ?? 0)
+        .sensoryFeedback(.success, trigger: viewModel.depth?.successBeats ?? 0)
+        .sensoryFeedback(.error, trigger: viewModel.depth?.failureBeats ?? 0)
         // The host's Leave means one of two different things, and only they
         // know which. Asked here rather than guessed.
         .confirmationDialog(
@@ -459,12 +510,24 @@ public struct LiveRoomScreen: View {
                     if let pinned = viewModel.depth?.pinned?.text ?? viewModel.room.pinnedQuestion?.text {
                         PinnedQuestionBanner(text: pinned)
                     }
+                    if let depth = viewModel.depth, let poll = depth.openPoll {
+                        // The running poll, on the room itself: everybody sees
+                        // it open, votes where they are, and watches it move.
+                        RoomPollCard(poll: poll, isStage: depth.isStage, canTakePart: depth.canTakePart,
+                                     chosen: depth.chosenOption(in: poll),
+                                     onVote: { option in Task { await depth.vote(option, in: poll) } },
+                                     onClose: { Task { await depth.close(poll) } })
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                            .accessibilityIdentifier("rooms.live.poll")
+                    }
                     if viewModel.room.isAMA, let depth = viewModel.depth {
                         // An AMA's main surface is its queue.
                         QuestionQueueView(viewModel: depth, hostName: viewModel.room.host.displayName)
                             .task { await depth.loadQuestions() }
+                            .animation(.easeOut(duration: 0.2), value: depth.pendingQuestions)
                     }
                     connectionBanner
+                    audioBanner
                     if viewModel.phase == .joining {
                         joining
                     } else {
@@ -592,6 +655,29 @@ public struct LiveRoomScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.surface1))
             .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// Another call has the phone's audio: said in words, with the promise
+    /// the room keeps — the microphone returns when that call ends.
+    @ViewBuilder
+    private var audioBanner: some View {
+        if viewModel.phase == .inRoom, let notice = viewModel.audioNotice {
+            HStack(alignment: .top, spacing: SLSpacing.sm) {
+                Image(systemName: "phone.arrow.up.right")
+                    .foregroundStyle(SLColor.warning)
+                    .accessibilityHidden(true)
+                Text(notice)
+                    .font(SLFont.caption)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(SLSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: SLRadius.md).fill(SLColor.warning.opacity(0.12)))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("rooms.audio.notice")
         }
     }
 
@@ -1057,6 +1143,9 @@ public struct LiveRoomScreen: View {
                         onLeave()
                     }
                 )
+                // The one way out of the room ("Leave room"); the bar's
+                // chevron only minimises it.
+                .accessibilityLabel(Text(L10n.t("rooms.live.leave.a11yLabel")))
 
                 if viewModel.canRaiseHand {
                     SLButton(
@@ -1225,5 +1314,325 @@ private struct ReactionChip: View {
             .accessibilityAction { onSend(false) }
             .accessibilityAction(named: Text(L10n.t("rooms.reactions.sendBig.a11yLabel"))) { onSend(true) }
             .accessibilityIdentifier("rooms.reaction.\(emoji)")
+    }
+}
+
+
+// MARK: - The room you are in, wherever you are in the app
+
+/// The one room this person is in, held above every tab.
+///
+/// The room screen used to own its room: switching tabs rebuilt the Rooms
+/// tab's stack, the screen went, and the connection went with it — "joining
+/// a room while browsing the app, it exits". The room now lives here, the
+/// screen is only a view of it, and only an explicit Leave (or the room
+/// ending) takes anybody out. Browsing elsewhere shows ``RoomMiniPlayer``.
+@MainActor
+@Observable
+public final class ActiveRoomSession {
+
+    /// The room's model, while one is held. Stays set after a leave until
+    /// another room is entered, so a screen still on its way out has a
+    /// model to draw — ``isLive`` says whether it is still a room.
+    public private(set) var current: LiveRoomViewModel?
+
+    public init() {}
+
+    /// `true` while somebody is actually in a room.
+    public var isLive: Bool {
+        guard let current, !current.hasLeft else { return false }
+        return current.phase == .inRoom || current.phase == .joining
+    }
+
+    /// The live model for this room, if it is the one held.
+    public func model(for roomId: UUID) -> LiveRoomViewModel? {
+        guard let current, current.room.id == roomId else { return nil }
+        return current
+    }
+
+    /// Enters a room: the one already held for it, or a new one — leaving
+    /// any other room first, as one person is in one room at a time.
+    @discardableResult
+    public func enter(_ room: VoiceRoom, make: @MainActor () -> LiveRoomViewModel) -> LiveRoomViewModel {
+        if let current, current.room.id == room.id, !current.hasLeft { return current }
+        if let previous = current, !previous.hasLeft {
+            Task { await previous.leave() }
+        }
+        let made = make()
+        current = made
+        nowPlaying.attach(made)
+        // Joined here, not by the screen's `.task`: switching tabs mid-join
+        // tears the screen down and would cancel a join tied to it.
+        Task { await made.start() }
+        return made
+    }
+
+    /// Leaves the room held, if any.
+    public func leave() async {
+        guard let current, !current.hasLeft else { return }
+        await current.leave()
+        nowPlaying.detach()
+    }
+
+    /// Called when the held room has been left by any path.
+    public func didLeave() {
+        nowPlaying.detach()
+    }
+
+    // MARK: Background and the lock screen
+
+    private let nowPlaying = RoomNowPlaying()
+
+    /// Re-says the room on the lock screen and in Control Center.
+    public func refreshNowPlaying() {
+        guard let current, isLive else {
+            nowPlaying.detach()
+            return
+        }
+        nowPlaying.update(current)
+    }
+
+    public func didEnterBackground() async {
+        await current?.persistThroughBackgrounding()
+    }
+
+    public func didBecomeActive() async {
+        await current?.resumeFromBackground()
+    }
+
+    public func willTerminate() async {
+        await current?.handleTermination()
+    }
+}
+
+/// The room on the lock screen, in Control Center and on a paired device:
+/// its title, its host, the app's icon; play/pause takes and drops the
+/// microphone for somebody who has one, stop leaves.
+///
+/// Audio keeps going in the background on its own (`UIBackgroundModes`
+/// `audio`, a `.playAndRecord` session held by the media engine); this only
+/// gives the room a face outside the app.
+@MainActor
+final class RoomNowPlaying {
+    private weak var model: LiveRoomViewModel?
+    private var targets: [Any] = []
+
+    func attach(_ model: LiveRoomViewModel) {
+        detach()
+        self.model = model
+        let center = MPRemoteCommandCenter.shared()
+        // iOS calls these on the main thread.
+        targets.append(center.togglePlayPauseCommand.addTarget { [weak self] _ in
+            MainActor.assumeIsolated { self?.toggleMic(wantOn: nil) ?? .commandFailed }
+        })
+        targets.append(center.pauseCommand.addTarget { [weak self] _ in
+            MainActor.assumeIsolated { self?.toggleMic(wantOn: false) ?? .commandFailed }
+        })
+        targets.append(center.playCommand.addTarget { [weak self] _ in
+            MainActor.assumeIsolated { self?.toggleMic(wantOn: true) ?? .commandFailed }
+        })
+        targets.append(center.stopCommand.addTarget { [weak self] _ in
+            MainActor.assumeIsolated { self?.leave() ?? .commandFailed }
+        })
+        update(model)
+    }
+
+    func detach() {
+        let center = MPRemoteCommandCenter.shared()
+        for target in targets {
+            center.togglePlayPauseCommand.removeTarget(target)
+            center.pauseCommand.removeTarget(target)
+            center.playCommand.removeTarget(target)
+            center.stopCommand.removeTarget(target)
+        }
+        targets = []
+        model = nil
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    }
+
+    func update(_ model: LiveRoomViewModel) {
+        let center = MPRemoteCommandCenter.shared()
+        let canMic = model.canUseMicrophone
+        center.togglePlayPauseCommand.isEnabled = canMic
+        center.pauseCommand.isEnabled = canMic
+        center.playCommand.isEnabled = canMic
+        center.stopCommand.isEnabled = !model.isHost
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle: model.room.title,
+            MPMediaItemPropertyArtist: L10n.t("rooms.nowPlaying.hostedBy", model.room.host.displayName),
+            MPMediaItemPropertyAlbumTitle: L10n.t("auth.brand.wordmark"),
+            MPNowPlayingInfoPropertyIsLiveStream: true,
+            MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
+            // "Playing" while the microphone is open (pause = mute), paused
+            // while it is shut (play = unmute). A listener is always playing.
+            MPNowPlayingInfoPropertyPlaybackRate: (!canMic || model.isMicrophoneEnabled) ? 1.0 : 0.0
+        ]
+        if let artwork = Self.artwork {
+            info[MPMediaItemPropertyArtwork] = artwork
+        }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    /// `wantOn` `nil` toggles; otherwise only moves the microphone if it is
+    /// not there already.
+    private func toggleMic(wantOn: Bool?) -> MPRemoteCommandHandlerStatus {
+        guard let model, model.canUseMicrophone else { return .commandFailed }
+        if let wantOn, wantOn == model.isMicrophoneEnabled { return .success }
+        Task { await model.toggleMicrophone() }
+        return .success
+    }
+
+    private func leave() -> MPRemoteCommandHandlerStatus {
+        // A host is asked what leaving means; that question needs the room.
+        guard let model, !model.isHost else { return .commandFailed }
+        Task { await model.leave() }
+        return .success
+    }
+
+    private static let artwork: MPMediaItemArtwork? = makeArtwork()
+
+    /// The app's own icon, read from the bundle — or a waveform if the icon
+    /// files are not where iOS usually puts them. Built outside the main
+    /// actor: iOS asks the artwork for its image on a queue of its own.
+    nonisolated private static func makeArtwork() -> MPMediaItemArtwork? {
+        let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any]
+        let primary = icons?["CFBundlePrimaryIcon"] as? [String: Any]
+        let files = primary?["CFBundleIconFiles"] as? [String]
+        let image = files?.last.flatMap { UIImage(named: $0) }
+            ?? UIImage(systemName: "waveform.circle.fill")
+        guard let image else { return nil }
+        return MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+    }
+}
+
+/// The room you are in, while you browse: its name, who is talking, your
+/// microphone and the way out. Tapping it goes back into the room.
+@MainActor
+public struct RoomMiniPlayer: View {
+    @Bindable var viewModel: LiveRoomViewModel
+    let onOpen: @MainActor () -> Void
+    let onLeave: @MainActor () -> Void
+
+    public init(viewModel: LiveRoomViewModel, onOpen: @escaping @MainActor () -> Void,
+                onLeave: @escaping @MainActor () -> Void) {
+        self.viewModel = viewModel
+        self.onOpen = onOpen
+        self.onLeave = onLeave
+    }
+
+    private var someoneSpeaking: Bool { !viewModel.speakingIds.isEmpty }
+
+    public var body: some View {
+        HStack(spacing: SLSpacing.md) {
+            Image(systemName: "waveform")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(someoneSpeaking ? SLColor.secondary : SLColor.primary)
+                .symbolEffect(.variableColor.iterative, isActive: someoneSpeaking)
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(SLColor.primary.opacity(0.15)))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(viewModel.room.title)
+                    .font(SLFont.bodyEmphasis)
+                    .foregroundStyle(SLColor.textPrimary)
+                    .lineLimit(1)
+                    .slContentDirection(TextDirection.resolve(languageCode: nil, text: viewModel.room.title))
+                Text(subtitle)
+                    .font(SLFont.micro)
+                    .foregroundStyle(SLColor.textSecondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+
+            if viewModel.canUseMicrophone {
+                Button {
+                    Task { await viewModel.toggleMicrophone() }
+                } label: {
+                    Image(systemName: viewModel.isMicrophoneEnabled ? "mic.fill" : "mic.slash.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(viewModel.isMicrophoneEnabled ? SLColor.primary : SLColor.textSecondary)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isTogglingMic)
+                .accessibilityLabel(Text(viewModel.isMicrophoneEnabled ? RoomCopy.dropMic : RoomCopy.takeMic))
+                .accessibilityIdentifier("rooms.mini.mic")
+            }
+
+            Button {
+                onLeave()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(SLColor.danger)
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(L10n.t("rooms.live.leave.a11yLabel")))
+            .accessibilityIdentifier("rooms.mini.leave")
+        }
+        .padding(.horizontal, SLSpacing.md)
+        .padding(.vertical, SLSpacing.sm)
+        .background {
+            // Behind the controls, so the microphone and Leave keep their
+            // own taps (a tap gesture on the bar would take them).
+            Button {
+                onOpen()
+            } label: {
+                Color.clear.contentShape(Rectangle())
+            }
+                .buttonStyle(.plain)
+                .accessibilityHidden(true)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: SLRadius.md, style: .continuous)
+                .fill(SLColor.surface2)
+                .shadow(color: .black.opacity(0.18), radius: 8, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: SLRadius.md, style: .continuous)
+                .strokeBorder(SLColor.primary.opacity(0.35), lineWidth: 1)
+        )
+        .padding(.horizontal, SLSpacing.md)
+        .padding(.bottom, SLSpacing.xs)
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: Text(L10n.t("rooms.mini.open"))) { onOpen() }
+        .accessibilityIdentifier("rooms.mini")
+    }
+
+    private var subtitle: String {
+        if viewModel.audioNotice != nil { return L10n.t("rooms.audio.onAnotherCall.short") }
+        if viewModel.isListening { return L10n.t("rooms.mini.listening") }
+        return viewModel.isMicrophoneEnabled ? L10n.t("rooms.mini.micOn") : L10n.t("rooms.mini.micOff")
+    }
+}
+
+/// A room screen for the room the app holds: the held model when it is this
+/// room, or — reached some other way, a restored stack — the room entered
+/// on arrival.
+@MainActor
+public struct ActiveRoomHost<Content: View>: View {
+    let room: VoiceRoom
+    let session: ActiveRoomSession
+    let make: @MainActor () -> LiveRoomViewModel
+    let content: (LiveRoomViewModel) -> Content
+
+    public init(room: VoiceRoom, session: ActiveRoomSession, make: @escaping @MainActor () -> LiveRoomViewModel,
+                @ViewBuilder content: @escaping (LiveRoomViewModel) -> Content) {
+        self.room = room
+        self.session = session
+        self.make = make
+        self.content = content
+    }
+
+    public var body: some View {
+        if let model = session.model(for: room.id) {
+            content(model)
+        } else {
+            Color.clear.onAppear { session.enter(room, make: make) }
+        }
     }
 }

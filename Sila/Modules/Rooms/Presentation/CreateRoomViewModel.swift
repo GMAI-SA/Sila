@@ -149,6 +149,7 @@ public final class CreateRoomViewModel {
         engagement: RoomEngagementServiceProtocol? = nil,
         communities: CommunitiesServiceProtocol? = nil,
         prefillTitle: String? = nil,
+        prefillCommunityId: UUID? = nil,
         onCreated: (@MainActor (VoiceRoom) -> Void)? = nil
     ) {
         self.engagement = engagement
@@ -162,6 +163,9 @@ public final class CreateRoomViewModel {
         self.suspension = suspension
         self.onCreated = onCreated
         self.scope = ScopePicker.defaultScope(for: author)
+        if let prefillCommunityId {
+            self.selectedCommunityId = prefillCommunityId
+        }
     }
 
     // MARK: - Derived state

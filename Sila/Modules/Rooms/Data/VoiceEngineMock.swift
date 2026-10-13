@@ -77,8 +77,23 @@ public final class VoiceEngineMock: VoiceEngineProtocol {
         }
     }
 
+    /// When set, turning the microphone on throws it — `.audioBusy` plays
+    /// another app's call holding the phone's audio.
+    public var micOnError: VoiceEngineError?
+    /// How many times the session was reactivated after an interruption.
+    public private(set) var reactivateCount = 0
+
+    public func reactivateAudio() async {
+        recordedCalls.append("reactivate")
+        reactivateCount += 1
+    }
+
     public func setMicrophoneEnabled(_ enabled: Bool) async throws {
         recordedCalls.append("mic:\(enabled ? "on" : "off")")
+        if enabled, let micOnError {
+            isMicrophoneEnabled = false
+            throw micOnError
+        }
         if enabled {
             // The whole point of this mock. A listener's token cannot publish,
             // and pretending otherwise here would hide the bug it exists to catch.

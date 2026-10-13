@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The verified app's shell: five slots, four screens.
 ///
@@ -21,6 +22,10 @@ public struct MainTabView: View {
 
     private let container: AppContainer
     @State private var selection: Tab = .home
+    /// The room this person is in, held above the tabs so browsing never
+    /// takes them out of it.
+    @State private var activeRoom = ActiveRoomSession()
+    @Environment(\.scenePhase) private var appPhase
     @State private var viewModel: HomeViewModel
     @State private var exploreViewModel: ExploreViewModel
     /// `true` while the feed-preferences sheet is up. A sheet rather than a
@@ -209,8 +214,44 @@ public struct MainTabView: View {
                 }
             }
 
+            // The room you are in, while you are anywhere else.
+            if let live = activeRoom.current, activeRoom.isLive, !isShowingActiveRoom {
+                RoomMiniPlayer(
+                    viewModel: live,
+                    onOpen: { showActiveRoom(live.room) },
+                    onLeave: { leaveActiveRoomFromBar() }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             // No action slot: the bar is destinations only.
             SLTabBar(items: tabBarItems, selection: $selection)
+        }
+        .animation(.easeOut(duration: 0.2), value: activeRoom.isLive && !isShowingActiveRoom)
+        // The room keeps its audio through the background whichever screen
+        // is up; the lock screen and Control Center say which room it is.
+        .onChange(of: appPhase) { _, phase in
+            switch phase {
+            case .background: Task { await activeRoom.didEnterBackground() }
+            case .active: Task { await activeRoom.didBecomeActive() }
+            default: break
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+            Task { await activeRoom.willTerminate() }
+        }
+        .onChange(of: nowPlayingKey) { _, _ in activeRoom.refreshNowPlaying() }
+        // A room that ended, or that removed this person, while they were
+        // browsing: its screen goes from the Rooms stack and its reason is
+        // said wherever they are.
+        .onChange(of: activeRoom.current?.hasLeft ?? false) { _, left in
+            guard left, let gone = activeRoom.current else { return }
+            activeRoom.didLeave()
+            if !isShowingActiveRoom {
+                if let toast = gone.toast { container.router.show(toast) }
+                popRoom(gone.room.id)
+            }
+            Task { await roomsViewModel.reload(isRefresh: true) }
         }
         .tnScreenBackground()
         .sheet(
@@ -967,7 +1008,7 @@ public struct MainTabView: View {
             )) {
                 RoomsScreen(
                     viewModel: roomsViewModel,
-                    onOpen: { room in container.router.roomsPath.append(.room(room)) },
+                    onOpen: { room in enterRoom(room) },
                     onCreate: roomCreationHandler,
                     onOpenProfile: openRoomProfile,
                     events: eventsViewModel,
@@ -1371,6 +1412,7 @@ public struct MainTabView: View {
             onOpenPost: openPost,
             onOpenProfile: openProfile,
             onOpenRoom: { room in push(.room(room)) },
+            onStartRoom: startRoomHandler,
             onCompose: { community in composeHandler?(.community(community)) },
             postActions: { post in communityPostActions(post) },
             people: container.peopleDirectory,
@@ -1460,8 +1502,30 @@ public struct MainTabView: View {
             engagement: container.roomEngagement,
             communities: container.communitiesService,
             prefillTitle: consumeRoomPrefill(),
+            prefillCommunityId: consumeRoomCommunityPrefill(),
             onCreated: { room in roomsViewModel.insert(room) }
         )
+    }
+
+    private func consumeRoomCommunityPrefill() -> UUID? {
+        let id = container.router.createRoomPrefillCommunityId
+        container.router.createRoomPrefillCommunityId = nil
+        return id
+    }
+
+    /// A community's "Start a room", or `nil` while rooms are off. A
+    /// computed handler rather than a ternary of closures in the call: that
+    /// shape has crashed the compiler here before.
+    private var startRoomHandler: (@MainActor (Community) -> Void)? {
+        guard container.flags.rooms else { return nil }
+        return { community in startRoom(in: community) }
+    }
+
+    /// "Start a room" in a community: the create sheet, that community chosen.
+    private func startRoom(in community: Community) {
+        guard let create = roomCreationHandler else { return }
+        container.router.createRoomPrefillCommunityId = community.id
+        create()
     }
 
     private func consumeRoomPrefill() -> String? {
@@ -1493,7 +1557,93 @@ public struct MainTabView: View {
     /// Pushes a room; the room screen joins. Used after creating one.
     private func openRoom(_ room: VoiceRoom) {
         guard roomsViewModel.open(room) else { return }
-        container.router.roomsPath.append(.room(room))
+        enterRoom(room)
+    }
+
+    // MARK: - The room you are in
+
+    /// Builds the model for a room. One engine per room: a shared one would
+    /// mean the second room somebody opened silently stole the first's socket.
+    private func makeLiveRoomViewModel(_ room: VoiceRoom) -> LiveRoomViewModel {
+        LiveRoomViewModel(
+            room: room,
+            viewerHandle: container.session.user?.handle ?? "",
+            viewerId: container.session.user?.id,
+            service: container.roomsService,
+            engine: container.makeVoiceEngine(),
+            analytics: container.analytics,
+            suspension: container.suspension,
+            people: container.peopleDirectory,
+            depth: container.roomDepth,
+            viewerIsVouched: isVouched
+        )
+    }
+
+    /// Enters a room (leaving any other) and shows it on the Rooms tab.
+    private func enterRoom(_ room: VoiceRoom, replacingPath: Bool = false) {
+        activeRoom.enter(room) { makeLiveRoomViewModel(room) }
+        // Another room's screen further down the stack belongs to a room
+        // that has just been left.
+        container.router.roomsPath.removeAll { route in
+            guard case let .room(other) = route else { return false }
+            return other.id != room.id
+        }
+        showActiveRoom(room, replacingPath: replacingPath)
+    }
+
+    /// The room screen, on the Rooms tab: back to it if it is in the stack,
+    /// pushed otherwise.
+    private func showActiveRoom(_ room: VoiceRoom, replacingPath: Bool = false) {
+        selection = .rooms
+        if let index = container.router.roomsPath.firstIndex(where: { Self.isRoute($0, room: room.id) }) {
+            container.router.roomsPath = Array(container.router.roomsPath.prefix(through: index))
+        } else if replacingPath {
+            container.router.roomsPath = [.room(room)]
+        } else {
+            container.router.roomsPath.append(.room(room))
+        }
+    }
+
+    /// Takes a room's screen (and anything opened above it) off the stack.
+    /// The room itself is untouched: this is the way back to the app.
+    private func popRoom(_ roomId: UUID) {
+        guard let index = container.router.roomsPath.firstIndex(where: { Self.isRoute($0, room: roomId) }) else { return }
+        container.router.roomsPath = Array(container.router.roomsPath.prefix(upTo: index))
+    }
+
+    private static func isRoute(_ route: RoomsRoute, room id: UUID) -> Bool {
+        if case let .room(room) = route { return room.id == id }
+        return false
+    }
+
+    /// Whether the room screen of the room this person is in is on screen.
+    private var isShowingActiveRoom: Bool {
+        guard selection == .rooms, let live = activeRoom.current,
+              let last = container.router.roomsPath.last else { return false }
+        return Self.isRoute(last, room: live.room.id)
+    }
+
+    /// The bar's Leave. A host is asked what leaving means, on the room's
+    /// own screen; everybody else is out at once.
+    private func leaveActiveRoomFromBar() {
+        guard let live = activeRoom.current else { return }
+        guard live.requestLeave() else {
+            showActiveRoom(live.room)
+            return
+        }
+        Task {
+            await activeRoom.leave()
+            popRoom(live.room.id)
+            await roomsViewModel.reload(isRefresh: true)
+        }
+    }
+
+    /// What the lock screen shows, as one value to watch.
+    private var nowPlayingKey: String {
+        guard let live = activeRoom.current, activeRoom.isLive else { return "" }
+        return [live.room.id.uuidString, live.room.title, live.room.host.displayName,
+                String(live.isMicrophoneEnabled), String(live.canUseMicrophone), String(live.isHost)]
+            .joined(separator: "|")
     }
 
     /// A room card on a timeline was tapped. The card carries only what a
@@ -1513,8 +1663,19 @@ public struct MainTabView: View {
         guard container.flags.rooms else { return }
         Task {
             guard let room = try? await container.roomsService.fetchRoom(id: roomId) else { return }
-            selection = .rooms
-            container.router.roomsPath = [.opening(room, from: origin)]
+            if origin.joinsAtOnce {
+                guard roomsViewModel.open(room) else {
+                    selection = .rooms
+                    return
+                }
+                enterRoom(room)
+            } else if activeRoom.model(for: room.id) != nil, activeRoom.isLive {
+                // A link to the room this person is already in: the room.
+                showActiveRoom(room)
+            } else {
+                selection = .rooms
+                container.router.roomsPath = [.opening(room, from: origin)]
+            }
         }
     }
 
@@ -1529,7 +1690,7 @@ public struct MainTabView: View {
             return
         }
         container.analytics.track(.roomCardOpened, properties: ["status": room.status.rawValue, "source": "link"])
-        container.router.roomsPath = [.room(room)]
+        enterRoom(room, replacingPath: true)
     }
 
     /// Opens a profile from inside the Rooms tab, without disturbing any other
@@ -1548,7 +1709,9 @@ public struct MainTabView: View {
     private func roomsDestination(for route: RoomsRoute) -> some View {
         switch route {
         case let .community(slug):
-            communityScreen(slug: slug, push: { container.router.roomsPath.append($0) })
+            communityScreen(slug: slug, push: { route in
+                if case let .room(room) = route { openRoom(room) } else { container.router.roomsPath.append(route) }
+            })
 
         case let .event(id):
             Owned({
@@ -1570,35 +1733,22 @@ public struct MainTabView: View {
             .id(room.id)
 
         case let .room(room):
-            // Owned, keyed on the room: a destination closure is re-run on
-            // every update of this view, and a room model built inline was
-            // replaced under a live connection.
-            Owned({
-                LiveRoomViewModel(
-                    room: room,
-                    viewerHandle: container.session.user?.handle ?? "",
-                    viewerId: container.session.user?.id,
-                    service: container.roomsService,
-                    // One engine per room. A shared one would mean the second
-                    // room somebody opened silently stole the first's socket.
-                    engine: container.makeVoiceEngine(),
-                    analytics: container.analytics,
-                    suspension: container.suspension,
-                    people: container.peopleDirectory,
-                    depth: container.roomDepth,
-                    viewerIsVouched: isVouched
-                )
-            }) { viewModel in
+            // The room lives above the tabs (``ActiveRoomSession``); this is
+            // only its screen, rebuilt whenever somebody comes back to it.
+            ActiveRoomHost(room: room, session: activeRoom, make: { makeLiveRoomViewModel(room) }) { viewModel in
                 LiveRoomScreen(
                     viewModel: viewModel,
                     onLeave: {
-                        // Back to the list, and anything pushed above the room —
-                        // a profile opened from the participant list — goes with
-                        // it: it was reached through a room that has been left.
-                        container.router.roomsPath.removeAll()
+                        // Back to where the room was opened from, and anything
+                        // pushed above the room — a profile opened from the
+                        // participant list — goes with it: it was reached
+                        // through a room that has been left.
+                        activeRoom.didLeave()
+                        popRoom(room.id)
                         // The count on the row behind is stale by exactly one.
                         Task { await roomsViewModel.reload(isRefresh: true) }
                     },
+                    onMinimise: { popRoom(room.id) },
                     onOpenProfile: openRoomProfile,
                     safetyMenu: { target in safety.menu(for: target) },
                     onReport: { subject in safety.openReport(subject) },

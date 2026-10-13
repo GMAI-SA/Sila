@@ -138,6 +138,9 @@ public final class AppRouter {
     public var composerPrefill: ComposerPrefill?
     /// The title the next create-room sheet opens with.
     public var createRoomPrefillTitle: String?
+    /// A community the next room-creation sheet opens with already chosen
+    /// — set by a community's "Start a room", consumed by the sheet.
+    public var createRoomPrefillCommunityId: UUID?
     /// App-level toast.
     public var toast: SLToastMessage?
     /// A link the system handed the app that nothing has opened yet.

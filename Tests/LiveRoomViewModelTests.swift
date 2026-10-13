@@ -647,6 +647,155 @@ final class VouchedRoomDepthTests: XCTestCase {
     }
 }
 
+// MARK: - Another call holding the phone's audio
+
+/// ``RoomAudioInterruption``: unmuting during a WhatsApp or phone call, and
+/// the microphone coming back on its own when that call ends — without
+/// leaving the room.
+final class RoomAudioInterruptionTests: XCTestCase {
+
+    func testUnmuteDuringACallShowsTheNoticeAndRepublishesWhenTheCallEnds() {
+        var machine = RoomAudioInterruption()
+        XCTAssertEqual(machine.handle(.signal(.otherCall(active: true))), [], "a listener is told nothing")
+        XCTAssertEqual(machine.handle(.unmuteBlocked), [.showNotice])
+        XCTAssertTrue(machine.wantsMic)
+        XCTAssertEqual(machine.handle(.signal(.interruptionEnded)), [], "the call is still on: wait")
+        XCTAssertEqual(machine.handle(.signal(.appActive)), [], "still on")
+        XCTAssertEqual(machine.handle(.signal(.otherCall(active: false))), [.reactivate, .republishMic, .clearNotice])
+        XCTAssertFalse(machine.isInterrupted)
+        XCTAssertEqual(machine.handle(.micOn), [])
+        XCTAssertTrue(machine.micLive)
+    }
+
+    func testAnOpenMicCutByACallComesBackWhenTheInterruptionEnds() {
+        var machine = RoomAudioInterruption()
+        _ = machine.handle(.micOn)
+        XCTAssertEqual(machine.handle(.signal(.interruptionBegan)), [.showNotice])
+        XCTAssertFalse(machine.micLive)
+        XCTAssertEqual(machine.handle(.signal(.interruptionBegan)), [], "said once")
+        XCTAssertEqual(machine.handle(.signal(.interruptionEnded)), [.reactivate, .republishMic, .clearNotice])
+        XCTAssertEqual(machine.handle(.signal(.interruptionEnded)), [], "nothing left to restore")
+    }
+
+    func testAListenerGetsPlaybackBackWithoutAMicrophone() {
+        var machine = RoomAudioInterruption()
+        XCTAssertEqual(machine.handle(.signal(.interruptionBegan)), [])
+        XCTAssertEqual(machine.handle(.signal(.routeChanged)), [.reactivate, .clearNotice])
+    }
+
+    func testMutingDuringTheCallMeansTheMicStaysShutAfterIt() {
+        var machine = RoomAudioInterruption()
+        _ = machine.handle(.micOn)
+        _ = machine.handle(.signal(.otherCall(active: true)))
+        XCTAssertEqual(machine.handle(.micOff), [.clearNotice])
+        XCTAssertEqual(machine.handle(.signal(.otherCall(active: false))), [.reactivate, .clearNotice])
+    }
+
+    func testAFailedRestoreKeepsTheNoticeAndTriesAgainLater() {
+        var machine = RoomAudioInterruption()
+        _ = machine.handle(.unmuteBlocked)
+        _ = machine.handle(.signal(.interruptionEnded))
+        XCTAssertEqual(machine.handle(.restoreFailed), [.showNotice])
+        XCTAssertTrue(machine.isInterrupted)
+        XCTAssertEqual(machine.handle(.signal(.appActive)), [.reactivate, .republishMic, .clearNotice])
+    }
+}
+
+@MainActor
+final class LiveRoomAudioInterruptionTests: XCTestCase {
+
+    private func speakerRoom() -> (LiveRoomViewModel, VoiceEngineMock) {
+        let room = VoiceRoom(
+            id: UUID(), title: "Night shift", topic: "technology", status: .live, host: FeedServiceMock.yuki,
+            speakerCount: 1, listenerCount: 3, startedAt: Date(), canSpeak: true
+        )
+        let engine = VoiceEngineMock()
+        let viewModel = LiveRoomViewModel(
+            room: room, viewerHandle: "aziz", viewerId: FeedServiceMock.aziz.id,
+            service: ScriptedRoomService(room: room, viewerRole: .speaker), engine: engine,
+            analytics: RecordingAnalyticsClient(), pollInterval: 0, eventDebounce: 0
+        )
+        return (viewModel, engine)
+    }
+
+    /// The owner's report: "failed to configure audio session" while on
+    /// another call, then nobody heard them until they re-entered.
+    func testUnmuteOnAnotherCallSaysSoThenTheMicComesBackInTheRoom() async {
+        let (viewModel, engine) = speakerRoom()
+        await viewModel.start()
+        engine.micOnError = .audioBusy
+        await viewModel.toggleMicrophone()
+        XCTAssertFalse(viewModel.isMicrophoneEnabled)
+        XCTAssertEqual(viewModel.audioNotice, L10n.t("rooms.audio.onAnotherCall"))
+        XCTAssertNotEqual(viewModel.toast?.kind, .error, "no raw error")
+
+        engine.micOnError = nil
+        await viewModel.applyAudio(.signal(.otherCall(active: false)))
+        XCTAssertTrue(viewModel.isMicrophoneEnabled, "republished without leaving")
+        XCTAssertNil(viewModel.audioNotice)
+        XCTAssertEqual(engine.reactivateCount, 1)
+        XCTAssertEqual(viewModel.phase, .inRoom)
+        XCTAssertEqual(engine.disconnectCount, 0, "never left the room")
+    }
+
+    func testAMicCutByAnInterruptionIsRepublishedWhenItEnds() async {
+        let (viewModel, engine) = speakerRoom()
+        await viewModel.start()
+        await viewModel.toggleMicrophone()
+        XCTAssertTrue(viewModel.isMicrophoneEnabled)
+        await viewModel.applyAudio(.signal(.interruptionBegan))
+        XCTAssertNotNil(viewModel.audioNotice)
+        await viewModel.applyAudio(.signal(.interruptionEnded))
+        XCTAssertTrue(viewModel.isMicrophoneEnabled)
+        XCTAssertEqual(Array(engine.recordedCalls.suffix(3)), ["reactivate", "mic:off", "mic:on"])
+    }
+
+    /// The room screen is rebuilt each time somebody comes back to it; its
+    /// `.task` must not join twice.
+    func testStartingTwiceJoinsOnce() async {
+        let (viewModel, engine) = speakerRoom()
+        await viewModel.start()
+        await viewModel.start()
+        XCTAssertEqual(engine.recordedCalls.filter { $0.hasPrefix("connect") }.count, 1)
+    }
+}
+
+@MainActor
+final class ActiveRoomSessionTests: XCTestCase {
+
+    private func model(_ room: VoiceRoom) -> LiveRoomViewModel {
+        LiveRoomViewModel(room: room, viewerHandle: "aziz", service: ScriptedRoomService(room: room, viewerRole: .listener),
+                          engine: VoiceEngineMock(), analytics: RecordingAnalyticsClient(), pollInterval: 0, eventDebounce: 0)
+    }
+
+    func testTheSameRoomIsTheSameModelWhereverItIsOpenedFrom() {
+        let room = VoiceRoom(id: UUID(), title: "A", topic: nil, status: .live, host: FeedServiceMock.yuki,
+                             speakerCount: 1, listenerCount: 1, startedAt: Date(), canSpeak: false)
+        let session = ActiveRoomSession()
+        let first = session.enter(room) { model(room) }
+        var built = 0
+        let again = session.enter(room) { built += 1; return model(room) }
+        XCTAssertTrue(first === again)
+        XCTAssertEqual(built, 0)
+        XCTAssertTrue(session.model(for: room.id) === first)
+    }
+
+    func testEnteringAnotherRoomLeavesTheFirst() async {
+        let a = VoiceRoom(id: UUID(), title: "A", topic: nil, status: .live, host: FeedServiceMock.yuki,
+                          speakerCount: 1, listenerCount: 1, startedAt: Date(), canSpeak: false)
+        let b = VoiceRoom(id: UUID(), title: "B", topic: nil, status: .live, host: FeedServiceMock.yuki,
+                          speakerCount: 1, listenerCount: 1, startedAt: Date(), canSpeak: false)
+        let session = ActiveRoomSession()
+        let first = session.enter(a) { model(a) }
+        await first.start()
+        let second = session.enter(b) { model(b) }
+        for _ in 0..<50 where !first.hasLeft { await Task.yield() }
+        XCTAssertTrue(first.hasLeft)
+        XCTAssertTrue(session.model(for: b.id) === second)
+        XCTAssertNil(session.model(for: a.id))
+    }
+}
+
 // MARK: - Test double
 
 /// Serves one room whose status, removal flag, roster role and hands the test

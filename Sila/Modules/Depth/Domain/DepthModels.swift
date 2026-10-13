@@ -164,6 +164,39 @@ struct RoomPollsEnvelope: Decodable {
             .compactMap(\.value) ?? []
     }
 }
+/// What a question write answers with. The backend sends the whole queue
+/// back (`{"questions": [...]}`, open and answered) — never the one question
+/// that was asked. Decoding that as a single question failed every time, so
+/// the asker saw an error and their question turned up a moment later, when
+/// the room's refresh read the queue. A bare question is still accepted.
+struct QuestionsWriteResult: Decodable {
+    let questions: [RoomQuestion]
+    private enum CodingKeys: String, CodingKey { case questions }
+    init(from decoder: Decoder) throws {
+        if let c = try? decoder.container(keyedBy: CodingKeys.self), c.contains(.questions) {
+            questions = ((try? c.decode([FailableDecodable<RoomQuestion>].self, forKey: .questions)) ?? []).compactMap(\.value)
+        } else {
+            questions = [try RoomQuestion(from: decoder)]
+        }
+    }
+}
+
+/// What a poll write (open, vote, close) answers with: the room's polls,
+/// newest first (`{"polls": [...]}`), not the one poll. The same mismatch
+/// as ``QuestionsWriteResult`` — "couldn't reach the server", then the poll
+/// opened anyway. A bare poll is still accepted.
+struct RoomPollsWriteResult: Decodable {
+    let polls: [RoomPoll]
+    private enum CodingKeys: String, CodingKey { case polls }
+    init(from decoder: Decoder) throws {
+        if let c = try? decoder.container(keyedBy: CodingKeys.self), c.contains(.polls) {
+            polls = ((try? c.decode([FailableDecodable<RoomPoll>].self, forKey: .polls)) ?? []).compactMap(\.value)
+        } else {
+            polls = [try RoomPoll(from: decoder)]
+        }
+    }
+}
+
 struct RoomMessagesEnvelope: Decodable { let messages: [RoomMessage] }
 struct CohostsEnvelope: Decodable { let cohosts: [UserSummary] }
 struct HandleBody: Encodable { let handle: String }

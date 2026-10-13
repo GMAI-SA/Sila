@@ -404,6 +404,11 @@ struct RoomCardView: View {
                     .foregroundStyle(SLColor.textMuted)
                     .lineLimit(1)
             }
+            if RoomShareContent.canShareLink(room) {
+                // Its own control, so a tap shares instead of opening the room.
+                RoomShareLink(room: room)
+                    .foregroundStyle(SLColor.textSecondary)
+            }
         }
     }
 
