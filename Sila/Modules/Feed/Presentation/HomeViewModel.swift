@@ -46,7 +46,7 @@ public struct FeedTabState: Equatable, Sendable {
 
 /// Drives ``HomeScreen``.
 ///
-/// Owns four independent ``FeedTabState`` values, cursor pagination, and the
+/// Owns one independent ``FeedTabState`` per tab values, cursor pagination, and the
 /// optimistic engagement updates. Engagement changes are applied to *every*
 /// tab holding the post, so liking something in For You is already liked when
 /// the user swipes to International.
@@ -55,7 +55,7 @@ public struct FeedTabState: Equatable, Sendable {
 public final class HomeViewModel {
 
     /// The visible tab.
-    public private(set) var selectedTab: FeedTab = .forYou
+    public private(set) var selectedTab: FeedTab = .all
     /// Per-tab state, keyed by tab.
     public private(set) var states: [FeedTab: FeedTabState] = [:]
     /// Banner message.
@@ -94,7 +94,7 @@ public final class HomeViewModel {
     /// - Parameters:
     ///   - service: Feed backend.
     ///   - analytics: Event sink.
-    ///   - initialTab: Tab to open on. Defaults to ``FeedTab/forYou``.
+    ///   - initialTab: Tab to open on. Defaults to ``FeedTab/all``.
     ///   - subjects: Where the strip's vocabulary comes from. `nil` — the
     ///     default — leaves the strip out entirely, which is what every screen
     ///     that shows a feed without one already had.
@@ -104,7 +104,7 @@ public final class HomeViewModel {
     public init(
         service: FeedServiceProtocol,
         analytics: AnalyticsClient,
-        initialTab: FeedTab = .forYou,
+        initialTab: FeedTab = .all,
         subjects: SubjectCatalogProviding? = nil,
         storage: StorageClient? = nil,
         subjectDebounce: UInt64 = HomeViewModel.defaultSubjectDebounce
@@ -579,7 +579,7 @@ public final class HomeViewModel {
     /// own post qualifies for exactly when it carries that scope.
     private func belongs(_ post: Post, in tab: FeedTab) -> Bool {
         switch tab {
-        case .forYou: return true
+        case .all, .forYou: return true
         case .following: return false
         case .myCountry: return post.scope == .country
         case .international: return post.scope == .international

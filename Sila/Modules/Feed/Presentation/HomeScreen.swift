@@ -132,6 +132,14 @@ public struct HomeScreen: View {
     /// said plainly, with the other order one tap away.
     @ViewBuilder
     private var forYouHeader: some View {
+        liveHeader
+        orderButton
+    }
+
+    /// The week's prompt and the rooms live now. On All — where Home opens —
+    /// and on For You; All has no order to choose, it is always newest first.
+    @ViewBuilder
+    private var liveHeader: some View {
         if let prompt, let onAnswerPrompt {
             PromptCard(
                 prompt: prompt,
@@ -142,6 +150,9 @@ public struct HomeScreen: View {
         if let onOpenLiveRoom {
             LiveNowRail(rooms: liveRooms, onOpen: onOpenLiveRoom)
         }
+    }
+
+    private var orderButton: some View {
         Button {
             isShowingOrder = true
         } label: {
@@ -196,6 +207,8 @@ public struct HomeScreen: View {
             PendingVideoPostsStrip()
             if tab == .forYou {
                 forYouHeader
+            } else if tab == .all {
+                liveHeader
             }
             if state.isLoading && !state.isPopulated {
                 skeleton
@@ -300,6 +313,7 @@ public struct HomeScreen: View {
         case .myCountry: return "flag"
         case .international: return "globe"
         case .forYou: return "sparkles"
+        case .all: return "square.stack"
         }
     }
 
@@ -309,6 +323,7 @@ public struct HomeScreen: View {
         case .myCountry: return L10n.t("feed.empty.myCountry.title")
         case .international: return L10n.t("feed.empty.international.title")
         case .forYou: return L10n.t("feed.empty.forYou.title")
+        case .all: return L10n.t("feed.empty.all.title")
         }
     }
 
@@ -318,6 +333,7 @@ public struct HomeScreen: View {
         case .myCountry: return L10n.t("feed.empty.myCountry.subtitle")
         case .international: return L10n.t("feed.empty.international.subtitle")
         case .forYou: return L10n.t("feed.empty.forYou.subtitle")
+        case .all: return L10n.t("feed.empty.all.subtitle")
         }
     }
 

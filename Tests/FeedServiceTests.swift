@@ -88,6 +88,7 @@ final class FeedServiceTests: XCTestCase {
 
     func testEachTabHitsItsDocumentedPath() async throws {
         let expected: [FeedTab: String] = [
+            .all: "/feed/all",
             .forYou: "/feed/for-you",
             .following: "/feed/following",
             .myCountry: "/feed/country",

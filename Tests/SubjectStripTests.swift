@@ -41,6 +41,7 @@ final class SubjectStripTests: XCTestCase {
         HomeViewModel(
             service: service,
             analytics: RecordingAnalyticsClient(),
+            initialTab: .forYou,
             subjects: subjects,
             storage: storage,
             subjectDebounce: 0

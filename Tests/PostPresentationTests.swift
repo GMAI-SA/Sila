@@ -275,9 +275,9 @@ final class PostPresentationTests: XCTestCase {
 
     // MARK: Feed tabs
 
-    func testTheFourTabsAreTheV4ProductsTabs() {
-        XCTAssertEqual(FeedTab.allCases, [.forYou, .following, .myCountry, .international])
-        XCTAssertEqual(FeedTab.allCases.map(\.title), ["For You", "Following", "My Country", "International"])
+    func testAllComesFirstThenTheV4ProductsTabs() {
+        XCTAssertEqual(FeedTab.allCases, [.all, .forYou, .following, .myCountry, .international])
+        XCTAssertEqual(FeedTab.allCases.map(\.title), ["All", "For You", "Following", "My Country", "International"])
     }
 
     func testEveryTabHasAPathAndAnAccessibilityHint() {

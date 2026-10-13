@@ -59,53 +59,50 @@ struct TopicTile: View {
     private var isMuted: Bool { stance == .muted }
 
     var body: some View {
-        VStack(spacing: SLSpacing.sm) {
-            ZStack(alignment: .topTrailing) {
-                // The logo: a rounded square the size of an app icon, which is
-                // what a row of choices reads as at a glance.
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(background)
-                    .aspectRatio(1, contentMode: .fit)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(border, lineWidth: isInterested ? 2.5 : 1)
-                    )
-                    .overlay {
-                        Image(systemName: TopicIcon.symbol(for: topic.id))
-                            .font(.system(size: 30, weight: .regular))
-                            .foregroundStyle(tint)
-                            .symbolRenderingMode(.hierarchical)
-                    }
-                    .overlay(alignment: .bottomTrailing) {
-                        // A chosen subject says so on its own face.
-                        if isInterested {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 18))
-                                .symbolRenderingMode(.palette)
-                                .foregroundStyle(.white, SLColor.primary)
-                                .padding(6)
-                        }
-                    }
-
-                if showsMuteControl {
-                Button {
-                    onSelect(isMuted ? .none : .muted)
-                } label: {
-                    Image(systemName: isMuted ? "eye.slash.fill" : "eye.slash")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(isMuted ? SLColor.danger : SLColor.textMuted)
-                        .padding(6)
-                        .background(Circle().fill(SLColor.surface1))
-                }
-                .buttonStyle(.plain)
-                .padding(6)
-                .accessibilityLabel(Text(isMuted
-                    ? L10n.t("preferences.topics.unhide.a11yLabel", topic.label)
-                    : L10n.t("preferences.topics.hide.a11yLabel", topic.label)))
-                .accessibilityHint(Text(L10n.t("preferences.topics.hide.a11yHint")))
-                .accessibilityIdentifier("preferences.topic.hide.\(topic.id)")
-                }
+        // The whole tile is the button. Its old shape — a button *behind* the
+        // content — never fired: the filled square and the label in front of
+        // it are hit-testable, so a tap on them reached neither, and choosing
+        // a subject at sign-up did nothing (owner, 2026-10-13). The corner eye
+        // sits in an overlay *above* the button, so it keeps its own tap.
+        Button { onSelect(isInterested ? .none : .interested) } label: { tile }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("\(topic.label). \(stance.title)"))
+            .accessibilityValue(Text(topic.detail))
+            .accessibilityAddTraits(isInterested ? .isSelected : [])
+            .accessibilityIdentifier("preferences.topic.\(topic.id)")
+            .overlay(alignment: .topTrailing) {
+                if showsMuteControl { muteButton }
             }
+            .opacity(isMuted ? 0.55 : 1)
+    }
+
+    private var tile: some View {
+        VStack(spacing: SLSpacing.sm) {
+            // The logo: a rounded square the size of an app icon, which is
+            // what a row of choices reads as at a glance.
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(background)
+                .aspectRatio(1, contentMode: .fit)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(border, lineWidth: isInterested ? 2.5 : 1)
+                )
+                .overlay {
+                    Image(systemName: TopicIcon.symbol(for: topic.id))
+                        .font(.system(size: 30, weight: .regular))
+                        .foregroundStyle(tint)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    // A chosen subject says so on its own face.
+                    if isInterested {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 18))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, SLColor.primary)
+                            .padding(6)
+                    }
+                }
 
             Text(topic.label)
                 .font(SLFont.caption)
@@ -115,22 +112,26 @@ struct TopicTile: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
-        // The tile's own meaning — "more of this" / "no opinion" — is a
-        // button *behind* the content rather than a gesture over it, so the
-        // corner eye keeps its tap. A gesture on the tile won that race and
-        // hiding a subject sometimes chose it instead.
-        .background {
-            Button { onSelect(isInterested ? .none : .interested) } label: {
-                Color.clear.contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityHidden(true)
+        .contentShape(Rectangle())
+    }
+
+    private var muteButton: some View {
+        Button {
+            onSelect(isMuted ? .none : .muted)
+        } label: {
+            Image(systemName: isMuted ? "eye.slash.fill" : "eye.slash")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(isMuted ? SLColor.danger : SLColor.textMuted)
+                .padding(6)
+                .background(Circle().fill(SLColor.surface1))
         }
-        .opacity(isMuted ? 0.55 : 1)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text("\(topic.label). \(stance.title)"))
-        .accessibilityValue(Text(topic.detail))
-        .accessibilityIdentifier("preferences.topic.\(topic.id)")
+        .buttonStyle(.plain)
+        .padding(6)
+        .accessibilityLabel(Text(isMuted
+            ? L10n.t("preferences.topics.unhide.a11yLabel", topic.label)
+            : L10n.t("preferences.topics.hide.a11yLabel", topic.label)))
+        .accessibilityHint(Text(L10n.t("preferences.topics.hide.a11yHint")))
+        .accessibilityIdentifier("preferences.topic.hide.\(topic.id)")
     }
 
     private var background: Color {

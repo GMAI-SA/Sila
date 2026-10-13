@@ -463,6 +463,8 @@ extension FeedServiceMock {
     static func samplePosts(for tab: FeedTab, page: Int = 1) -> [Post] {
         guard page == 1 else { return [secondPagePost] }
         switch tab {
+        case .all:
+            return [quotePost, countryThread, unverifiedAuthorPost, internationalRoot, regionThread]
         case .forYou:
             return [quotePost, countryThread, unverifiedAuthorPost, internationalRoot, regionThread]
         case .following:

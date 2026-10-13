@@ -830,12 +830,16 @@ public struct FeedPage: Equatable, Sendable, Decodable {
 
 // MARK: - Feed tabs
 
-/// The four feeds on the home screen.
+/// The five feeds on the home screen. ``all`` comes first and is where Home
+/// opens: every post this account may see, newest first, the way Rooms lists
+/// every room (owner, 2026-10-13).
 ///
 /// "My Country" is the v4 product's signature surface: content by verified
 /// compatriots, with membership decided by verified identity rather than by
 /// where a request appears to come from.
 public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
+    /// Everything, newest first; nothing ranks or narrows it (contract v37).
+    case all
     /// Ranked (recency + engagement).
     case forYou
     /// Chronological, authors the viewer follows.
@@ -855,6 +859,7 @@ public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
     /// an account that has no country yet.
     public func title(countryCode: String?) -> String {
         switch self {
+        case .all: return L10n.t("feed.tab.all")
         case .forYou: return L10n.t("feed.tab.forYou")
         case .following: return L10n.t("feed.tab.following")
         case .myCountry:
@@ -871,6 +876,7 @@ public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
     /// API path under ``AppConfig/apiBaseURL``.
     public var path: String {
         switch self {
+        case .all: return "/feed/all"
         case .forYou: return "/feed/for-you"
         case .following: return "/feed/following"
         case .myCountry: return "/feed/country"
@@ -881,6 +887,7 @@ public enum FeedTab: String, CaseIterable, Identifiable, Sendable, Hashable {
     /// Accessibility hint for the segmented control.
     public var accessibilityHint: String {
         switch self {
+        case .all: return L10n.t("feed.tab.all.hint")
         case .forYou: return L10n.t("feed.tab.forYou.hint")
         case .following: return L10n.t("feed.tab.following.hint")
         case .myCountry: return L10n.t("feed.tab.myCountry.hint")

@@ -10,7 +10,7 @@ import XCTest
 final class NewPostVisibilityTests: XCTestCase {
 
     private func makeHome(_ service: ScriptedFeedService = ScriptedFeedService()) -> HomeViewModel {
-        HomeViewModel(service: service, analytics: RecordingAnalyticsClient())
+        HomeViewModel(service: service, analytics: RecordingAnalyticsClient(), initialTab: .forYou)
     }
 
     private func post(scope: PostScope, country: String? = nil, replyTo: UUID? = nil) -> Post {

@@ -184,7 +184,26 @@ final class HomeViewModelTests: XCTestCase {
     private func makeViewModel(
         _ service: FeedServiceProtocol
     ) -> HomeViewModel {
-        HomeViewModel(service: service, analytics: RecordingAnalyticsClient())
+        HomeViewModel(service: service, analytics: RecordingAnalyticsClient(), initialTab: .forYou)
+    }
+
+    // MARK: Where Home opens
+
+    /// Home opens on All — every post, newest first — the way Rooms lists
+    /// every room (owner, 2026-10-13). Not remembered between launches.
+    func testHomeOpensOnAll() async {
+        let service = ScriptedFeedService()
+        service.pages[.all] = [FeedFixture.page(2, cursor: nil)]
+        let viewModel = HomeViewModel(service: service, analytics: RecordingAnalyticsClient())
+
+        XCTAssertEqual(viewModel.selectedTab, .all)
+        await viewModel.loadIfNeeded(viewModel.selectedTab)
+        XCTAssertEqual(service.feedCallCount(.all), 1)
+        XCTAssertEqual(service.feedCallCount(.forYou), 0, "For You is not fetched until chosen")
+        XCTAssertEqual(viewModel.state(for: .all).posts.count, 2)
+
+        await viewModel.select(.forYou)
+        XCTAssertEqual(viewModel.selectedTab, .forYou, "the other tabs stay selectable")
     }
 
     // MARK: First load
